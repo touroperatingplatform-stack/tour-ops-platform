@@ -16,7 +16,7 @@ interface Tour {
 
 export default function TourDetailPage() {
   const params = useParams()
-  const [tour, setTour] = useState<T | null>(null)
+  const [tour, setTour] = useState<Tour | null>(null)
   const [loading, setLoading] = useState(true)
   const [updating, setUpdating] = useState(false)
 
