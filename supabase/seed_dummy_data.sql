@@ -42,13 +42,13 @@ INSERT INTO vehicles (company_id, plate_number, make, model, year, capacity, sta
 ON CONFLICT DO NOTHING;
 
 -- ============================================
--- BRANDS (Tour Brands)
+-- BRANDS
 -- ============================================
-INSERT INTO brands (company_id, name, description, created_at) VALUES
-('550e8400-e29b-41d4-a716-446655440000', 'Chichen Itza Tours', 'Mayan ruins and cenote experiences', NOW()),
-('550e8400-e29b-41d4-a716-446655440000', 'Tulum Express', 'Beach and ruins combo tours', NOW()),
-('550e8400-e29b-41d4-a716-446655440000', 'Cenote Adventures', 'Swimming and diving in cenotes', NOW()),
-('550e8400-e29b-41d4-a716-446655440000', 'Snorkeling Paradise', 'Coral reef and marine life tours', NOW())
+INSERT INTO brands (id, company_id, name, slug, primary_color, secondary_color, is_active) VALUES
+('b1111111-1111-1111-1111-111111111111', '550e8400-e29b-41d4-a716-446655440000', 'Chichen Itza Tours', 'chichen-itza-tours', '#1A56DB', '#057A55', true),
+('b2222222-2222-2222-2222-222222222222', '550e8400-e29b-41d4-a716-446655440000', 'Tulum Express', 'tulum-express', '#7E3AF2', '#9061F9', true),
+('b3333333-3333-3333-3333-333333333333', '550e8400-e29b-41d4-a716-446655440000', 'Cenote Adventures', 'cenote-adventures', '#E02424', '#F98080', true),
+('b4444444-4444-4444-4444-444444444444', '550e8400-e29b-41d4-a716-446655440000', 'Snorkeling Paradise', 'snorkeling-paradise', '#0E9F6E', '#31C48D', true)
 ON CONFLICT DO NOTHING;
 
 -- ============================================
