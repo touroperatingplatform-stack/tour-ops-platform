@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState } from 'react'
 import { usePathname } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase/client'
@@ -29,69 +29,33 @@ export default function AdminLayout({
   const pathname = usePathname()
   const [profile, setProfile] = useState<Profile | null>(null)
   const [loading, setLoading] = useState(true)
-  const [authError, setAuthError] = useState('')
-  const checkedRef = useRef(false)
 
   useEffect(() => {
-    if (checkedRef.current) return
-    checkedRef.current = true
+    let mounted = true
 
-    async function checkAuth() {
-      try {
-        console.log('Admin layout - Checking session...')
-        const { data: { session } } = await supabase.auth.getSession()
-        console.log('Admin layout - Session:', session ? 'found' : 'none')
-        
-        if (!session?.user) {
-          console.log('Admin layout - No session, redirecting to login')
-          setAuthError('No session')
-          window.location.href = '/login'
-          return
-        }
+    async function loadProfile() {
+      const { data: { session } } = await supabase.auth.getSession()
+      
+      if (!session?.user || !mounted) {
+        if (mounted) setLoading(false)
+        return
+      }
 
-        console.log('Admin layout - User:', session.user.id)
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('id, full_name, role')
+        .eq('id', session.user.id)
+        .single()
 
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('id, full_name, role, is_active')
-          .eq('id', session.user.id)
-          .single()
-
-        console.log('Admin layout - Profile:', profile)
-
-        if (!profile) {
-          console.log('Admin layout - No profile')
-          setAuthError('No profile')
-          window.location.href = '/login'
-          return
-        }
-
-        if (!profile.is_active) {
-          console.log('Admin layout - Inactive')
-          setAuthError('Inactive')
-          window.location.href = '/login'
-          return
-        }
-
-        const allowedRoles = ['super_admin', 'company_admin', 'supervisor', 'manager']
-        if (!allowedRoles.includes(profile.role)) {
-          console.log('Admin layout - Role not allowed:', profile.role)
-          setAuthError('Role not allowed: ' + profile.role)
-          window.location.href = '/login'
-          return
-        }
-
-        console.log('Admin layout - Auth OK')
-        setProfile(profile)
-        setLoading(false)
-      } catch (err) {
-        console.error('Admin auth error:', err)
-        setAuthError('Error: ' + String(err))
+      if (profileData && mounted) {
+        setProfile(profileData)
         setLoading(false)
       }
     }
 
-    checkAuth()
+    loadProfile()
+    
+    return () => { mounted = false }
   }, [])
 
   async function handleSignOut() {
@@ -106,12 +70,38 @@ export default function AdminLayout({
         alignItems: 'center', 
         justifyContent: 'center', 
         height: '100vh', 
+        backgroundColor: '#f9fafb' 
+      }}>
+        <p>Loading...</p>
+      </div>
+    )
+  }
+
+  // If no profile after loading, show error with login link
+  if (!profile) {
+    return (
+      <div style={{ 
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'center', 
+        height: '100vh', 
         backgroundColor: '#f9fafb',
         flexDirection: 'column',
         gap: '16px'
       }}>
-        <p>Loading admin...</p>
-        {authError && <p style={{ color: '#dc2626' }}>{authError}</p>}
+        <p style={{ color: '#dc2626' }}>Please log in to access admin</p>
+        <a 
+          href="/login"
+          style={{
+            backgroundColor: '#2563eb',
+            color: 'white',
+            padding: '12px 24px',
+            borderRadius: '8px',
+            textDecoration: 'none',
+          }}
+        >
+          Go to Login
+        </a>
       </div>
     )
   }
@@ -131,12 +121,10 @@ export default function AdminLayout({
       }}>
         <div style={{ padding: '24px', borderBottom: '1px solid #374151' }}>
           <h1 style={{ fontSize: '20px', fontWeight: 'bold', margin: 0 }}>Admin</h1>
-          {profile && (
-            <div style={{ marginTop: '8px' }}>
-              <p style={{ fontSize: '14px', margin: 0, fontWeight: '500' }}>{profile.full_name}</p>
-              <p style={{ fontSize: '12px', margin: '4px 0 0 0', color: '#9ca3af' }}>{profile.role}</p>
-            </div>
-          )}
+          <div style={{ marginTop: '8px' }}>
+            <p style={{ fontSize: '14px', margin: 0, fontWeight: '500' }}>{profile.full_name}</p>
+            <p style={{ fontSize: '12px', margin: '4px 0 0 0', color: '#9ca3af' }}>{profile.role}</p>
+          </div>
         </div>
 
         <nav style={{ flex: 1, padding: '16px 0' }}>

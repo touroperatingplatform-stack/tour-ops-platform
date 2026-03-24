@@ -8,45 +8,47 @@ export default function LoginPage() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
-  const [checked, setChecked] = useState(false)
-  const checkingRef = useRef(false)
+  const [status, setStatus] = useState('Loading...')
+  const checkedRef = useRef(false)
 
+  // Check if already logged in on mount
   useEffect(() => {
-    if (checkingRef.current) return
-    checkingRef.current = true
+    if (typeof window === 'undefined') return
+    if (checkedRef.current) return
+    checkedRef.current = true
 
     async function checkSession() {
-      try {
-        const { data: { session } } = await supabase.auth.getSession()
-        console.log('Login page - Session check:', session ? 'found' : 'none')
+      console.log('Checking existing session...')
+      const { data: { session } } = await supabase.auth.getSession()
+      console.log('Existing session:', session)
+      
+      if (session?.user) {
+        console.log('User already logged in, getting profile...')
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', session.user.id)
+          .single()
         
-        if (session?.user) {
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('role')
-            .eq('id', session.user.id)
-            .single()
-          
-          console.log('Login page - Profile:', profile?.role)
-          
-          if (profile) {
-            const redirects: Record<string, string> = {
-              super_admin: '/admin',
-              company_admin: '/admin',
-              supervisor: '/supervisor',
-              manager: '/supervisor',
-              operations: '/operations',
-              guide: '/guide',
-            }
-            console.log('Login page - Redirecting to:', redirects[profile.role])
-            window.location.href = redirects[profile.role] || '/admin'
-            return
+        console.log('Profile:', profile)
+        
+        if (profile) {
+          const redirects: Record<string, string> = {
+            super_admin: '/admin',
+            company_admin: '/admin',
+            supervisor: '/supervisor',
+            manager: '/supervisor',
+            operations: '/operations',
+            guide: '/guide',
           }
+          const path = redirects[profile.role] || '/admin'
+          console.log('Redirecting to:', path)
+          window.location.href = path
+          return
         }
-      } catch (err) {
-        console.error('Session check error:', err)
       }
-      setChecked(true)
+      console.log('No session found, showing login form')
+      setStatus('ready')
     }
 
     checkSession()
@@ -58,28 +60,22 @@ export default function LoginPage() {
     setError('')
 
     try {
-      console.log('Login - Attempting sign in...')
+      console.log('Attempting login...')
       const { data, error: signInError } = await supabase.auth.signInWithPassword({
         email,
         password,
       })
 
-      if (signInError) {
-        console.log('Login - Sign in error:', signInError.message)
+      console.log('Sign in result:', { user: !!data.user, error: signInError?.message })
+
+      if (signInError || !data.user) {
         setError('Invalid email or password')
         setLoading(false)
         return
       }
 
-      if (!data.user) {
-        console.log('Login - No user returned')
-        setError('Login failed')
-        setLoading(false)
-        return
-      }
-
-      console.log('Login - User signed in:', data.user.email)
-      console.log('Login - Session:', data.session ? 'present' : 'missing')
+      console.log('Login successful, user:', data.user.email)
+      console.log('Session present:', !!data.session)
 
       // Get profile
       const { data: profile } = await supabase
@@ -88,7 +84,7 @@ export default function LoginPage() {
         .eq('id', data.user.id)
         .single()
 
-      console.log('Login - Profile:', profile)
+      console.log('Profile result:', profile)
 
       if (!profile) {
         setError('Profile not found')
@@ -112,9 +108,8 @@ export default function LoginPage() {
       }
       
       const redirectPath = redirects[profile.role] || '/admin'
-      console.log('Login - Redirecting to:', redirectPath)
+      console.log('Redirecting to:', redirectPath)
       
-      // Use href for full page reload
       window.location.href = redirectPath
       
     } catch (err: any) {
@@ -124,7 +119,7 @@ export default function LoginPage() {
     }
   }
 
-  if (!checked) {
+  if (status !== 'ready') {
     return (
       <div style={{
         minHeight: '100vh',
@@ -133,7 +128,7 @@ export default function LoginPage() {
         justifyContent: 'center',
         backgroundColor: '#f9fafb',
       }}>
-        <p>Checking session...</p>
+        <p>{status}</p>
       </div>
     )
   }
