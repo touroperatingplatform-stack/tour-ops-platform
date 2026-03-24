@@ -97,9 +97,9 @@ export default function OperationsLayout({
             </div>
           </header>
 
-          {/* Page Content */}
-          <main className="flex-1 px-4 py-4 overflow-y-auto">
-            {children}
+          {/* Page Content - padding inside scroll area */}
+          <main className="flex-1 overflow-y-auto">
+            <div className="p-3">{children}</div>
           </main>
         </div>
       </div>
