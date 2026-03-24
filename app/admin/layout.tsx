@@ -169,7 +169,7 @@ export default function AdminLayout({
       </aside>
 
       {/* Main Content */}
-      <main className="lg:ml-64">
+      <main className="lg:ml-64 p-4 lg:p-6">
         {children}
       </main>
     </div>
