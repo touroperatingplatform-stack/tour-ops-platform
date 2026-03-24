@@ -8,6 +8,7 @@ import NotificationsDropdown from '@/components/NotificationsDropdown'
 const bottomNavItems = [
   { href: '/operations', label: 'Today', icon: '📅' },
   { href: '/operations/fleet', label: 'Fleet', icon: '🚐' },
+  { href: '/operations/maintenance', label: 'Maintenance', icon: '🔧' },
   { href: '/operations/reports', label: 'Reports', icon: '📊' },
 ]
 
