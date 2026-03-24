@@ -217,6 +217,20 @@ export default function TourDetailPage() {
                 Complete Tour
               </button>
             )}
+            <Link
+              href={`/guide/tours/${tour.id}/guests`}
+              style={{
+                backgroundColor: '#7c3aed',
+                color: 'white',
+                padding: '12px 24px',
+                borderRadius: '8px',
+                textDecoration: 'none',
+                fontWeight: '500',
+                display: 'inline-block',
+              }}
+            >
+              👥 Guest List
+            </Link>
             <button
               onClick={() => setShowIncidentForm(true)}
               style={{
