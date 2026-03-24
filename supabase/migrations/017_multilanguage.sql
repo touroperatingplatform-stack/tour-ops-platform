@@ -19,10 +19,12 @@ CREATE TABLE app_translations (
   section TEXT, -- 'nav', 'forms', 'buttons', 'errors', etc.
   
   created_at TIMESTAMPTZ DEFAULT NOW(),
-  updated_at TIMESTAMPTZ DEFAULT NOW(),
-  
-  UNIQUE(company_id, key)
+  updated_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- Unique constraint: key must be unique per company (or global if company_id is NULL)
+CREATE UNIQUE INDEX IF NOT EXISTS idx_app_translations_unique 
+  ON app_translations (key, COALESCE(company_id, '00000000-0000-0000-0000-000000000000'::uuid));
 
 CREATE INDEX idx_app_translations_key ON app_translations(key);
 CREATE INDEX idx_app_translations_section ON app_translations(section);
@@ -109,5 +111,4 @@ INSERT INTO app_translations (key, en, es, section) VALUES
 ('error.required', 'This field is required', 'Este campo es obligatorio', 'errors'),
 ('error.invalid_email', 'Invalid email address', 'Correo inválido', 'errors'),
 ('error.unauthorized', 'You are not authorized', 'No autorizado', 'errors'),
-('error.not_found', 'Not found', 'No encontrado', 'errors')
-ON CONFLICT (key) DO NOTHING;
+('error.not_found', 'Not found', 'No encontrado', 'errors');
