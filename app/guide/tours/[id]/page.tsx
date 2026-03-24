@@ -1,337 +1,199 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useParams } from 'next/navigation'
 import Link from 'next/link'
+import { useParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase/client'
-import IncidentReportForm from '@/components/IncidentReportForm'
 
 interface Tour {
   id: string
   name: string
-  description: string
   start_time: string
-  end_time: string
+  status: string
   pickup_location: string
-  dropoff_location: string
-  status: 'scheduled' | 'in_progress' | 'completed' | 'cancelled'
-  vehicle_id?: string
-  vehicle: { plate_number: string; make: string; model: string; capacity: number } | null
+  guide: { first_name: string; last_name: string } | null
 }
 
 interface ChecklistItem {
   id: string
-  stage: string
   label: string
-  description: string | null
-  requires_photo: boolean
-  requires_gps: boolean
-  requires_selfie: boolean
-  completed: boolean
+  checked: boolean
 }
 
-export default function TourDetailPage() {
+const defaultChecklist: ChecklistItem[] = [
+  { id: 'vehicle', label: 'Vehicle inspected & clean', checked: false },
+  { id: 'supplies', label: 'Water/snacks stocked', checked: false },
+  { id: 'first_aid', label: 'First aid kit present', checked: false },
+  { id: 'passengers', label: 'All passengers boarded', checked: false },
+  { id: 'safety_brief', label: 'Safety briefing completed', checked: false },
+]
+
+export default function GuideTourPage() {
   const params = useParams()
-  const tourId = params.id as string
-  
-  const [tour, setTour] = useState<Tour | null>(null)
-  const [checklist, setChecklist] = useState<ChecklistItem[]>([])
+  const [tour, setTour] = useState<T | null>(null)
   const [loading, setLoading] = useState(true)
-  const [showIncidentForm, setShowIncidentForm] = useState(false)
+  const [checklist, setChecklist] = useState<ChecklistItem[]>(defaultChecklist)
+  const [notes, setNotes] = useState('')
 
   useEffect(() => {
-    async function loadTour() {
-      const { data: tourData } = await supabase
-        .from('tours')
-        .select(`
-          id, name, description, start_time, end_time,
-          pickup_location, dropoff_location, status, vehicle_id
-        `)
-        .eq('id', tourId)
-        .single()
-
-      if (tourData) {
-        // Get vehicle data separately
-        let vehicle = null
-        if (tourData.vehicle_id) {
-          const { data: v } = await supabase
-            .from('vehicles')
-            .select('plate_number, make, model, capacity')
-            .eq('id', tourData.vehicle_id)
-            .single()
-          vehicle = v
-        }
-        setTour({ ...tourData, vehicle })
-      }
-
-      // Load checklist templates
-      const { data: templates } = await supabase
-        .from('checklist_templates')
-        .select('*')
-        .eq('is_active', true)
-        .order('sort_order')
-
-      if (templates) {
-        setChecklist(templates.map(t => ({
-          ...t,
-          completed: false,
-        })))
-      }
-
-      setLoading(false)
-    }
-
     loadTour()
-  }, [tourId])
+  }, [])
 
-  async function updateStatus(newStatus: string) {
-    await supabase
+  async function loadTour() {
+    const { data: tourData } = await supabase
       .from('tours')
-      .update({ status: newStatus })
-      .eq('id', tourId)
-    
-    setTour(prev => prev ? { ...prev, status: newStatus as any } : null)
+      .select('id, name, start_time, status, pickup_location, guide_id')
+      .eq('id', params.id)
+      .single()
+
+    if (tourData && tourData.guide_id) {
+      const { data: guide } = await supabase
+        .from('profiles')
+        .select('first_name, last_name')
+        .eq('id', tourData.guide_id)
+        .single()
+      setTour({ ...tourData, guide })
+    } else {
+      setTour(tourData as any)
+    }
+    setLoading(false)
   }
 
-  async function toggleChecklistItem(itemId: string) {
-    setChecklist(prev => 
-      prev.map(item => 
-        item.id === itemId ? { ...item, completed: !item.completed } : item
-      )
-    )
+  function toggleChecklist(id: string) {
+    setChecklist(prev => prev.map(item => 
+      item.id === id ? { ...item, checked: !item.checked } : item
+    ))
+  }
+
+  async function startTour() {
+    const allChecked = checklist.every(i => i.checked)
+    if (!allChecked) {
+      alert('Please complete all checklist items before starting')
+      return
+    }
+
+    const { error } = await supabase
+      .from('tours')
+      .update({ status: 'in_progress' })
+      .eq('id', params.id)
+
+    if (error) {
+      alert('Failed to start tour')
+    } else {
+      setTour(prev => prev ? { ...prev, status: 'in_progress' } : null)
+    }
+  }
+
+  async function completeTour() {
+    const { error } = await supabase
+      .from('tours')
+      .update({ status: 'completed' })
+      .eq('id', params.id)
+
+    if (error) {
+      alert('Failed to complete tour')
+    } else {
+      setTour(prev => prev ? { ...prev, status: 'completed' } : null)
+    }
   }
 
   if (loading) {
     return (
-      <div style={{ minHeight: '100vh', backgroundColor: '#f9fafb', padding: '24px' }}>
-        <p>Loading tour...</p>
+      <div className="flex items-center justify-center h-64">
+        <div className="text-gray-500">Loading tour...</div>
       </div>
     )
   }
 
   if (!tour) {
     return (
-      <div style={{ minHeight: '100vh', backgroundColor: '#f9fafb', padding: '24px' }}>
-        <p>Tour not found</p>
-        <Link href="/guide" style={{ color: '#2563eb' }}>Back to Dashboard</Link>
+      <div className="text-center py-12">
+        <h1 className="text-2xl font-bold text-gray-900 mb-2">Tour not found</h1>
+        <Link href="/guide" className="text-blue-600 hover:underline">
+          ← Back to my tours
+        </Link>
       </div>
     )
   }
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#f9fafb' }}>
+    <div className="space-y-6">
       {/* Header */}
-      <header style={{
-        backgroundColor: '#111827',
-        color: 'white',
-        padding: '16px 24px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-      }}>
-        <Link href="/guide" style={{ color: 'white', textDecoration: 'none' }}>
-          ← Back
-        </Link>
-        <span style={{ fontWeight: '500' }}>Tour Details</span>
-        <div style={{ width: '50px' }}></div>
-      </header>
+      <div>
+        <h1 className="text-2xl font-bold text-gray-900">{tour.name}</h1>
+        <p className="text-gray-500 mt-1">{tour.start_time?.slice(0, 5)} • {tour.pickup_location}</p>
+      </div>
 
-      <div style={{ padding: '24px', maxWidth: '800px', margin: '0 auto' }}>
-        {/* Tour Info */}
-        <div style={{
-          backgroundColor: 'white',
-          borderRadius: '12px',
-          padding: '24px',
-          marginBottom: '24px',
-        }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
-            <h1 style={{ fontSize: '24px', fontWeight: 'bold', color: '#111827', margin: 0 }}>{tour.name}</h1>
-            <span style={{
-              padding: '6px 12px',
-              borderRadius: '20px',
-              fontSize: '12px',
-              fontWeight: '500',
-              backgroundColor: tour.status === 'in_progress' ? '#dbeafe' : '#f3f4f6',
-              color: tour.status === 'in_progress' ? '#1d4ed8' : '#6b7280',
-            }}>
-              {tour.status}
-            </span>
-          </div>
+      {/* Status */}
+      <div className={`px-4 py-2 rounded-full text-sm font-medium inline-block ${
+        tour.status === 'in_progress' ? 'bg-blue-100 text-blue-700' :
+        tour.status === 'completed' ? 'bg-green-100 text-green-700' :
+        'bg-gray-100 text-gray-700'
+      }`}>
+        {tour.status.replace('_', ' ')}
+      </div>
 
-          {tour.description && (
-            <p style={{ color: '#6b7280', marginBottom: '16px' }}>{tour.description}</p>
-          )}
-
-          <div style={{ display: 'grid', gap: '12px' }}>
-            <div>
-              <span style={{ color: '#9ca3af', fontSize: '14px' }}>Start Time: </span>
-              <span style={{ fontWeight: '500' }}>{tour.start_time}</span>
-            </div>
-            <div>
-              <span style={{ color: '#9ca3af', fontSize: '14px' }}>Pickup: </span>
-              <span style={{ fontWeight: '500' }}>{tour.pickup_location || 'TBD'}</span>
-            </div>
-            <div>
-              <span style={{ color: '#9ca3af', fontSize: '14px' }}>Dropoff: </span>
-              <span style={{ fontWeight: '500' }}>{tour.dropoff_location || 'TBD'}</span>
-            </div>
-            {tour.vehicle && (
-              <div>
-                <span style={{ color: '#9ca3af', fontSize: '14px' }}>Vehicle: </span>
-                <span style={{ fontWeight: '500' }}>{tour.vehicle.plate_number} - {tour.vehicle.make} {tour.vehicle.model}</span>
-              </div>
-            )}
-          </div>
-
-          {/* Status Actions */}
-          <div style={{ marginTop: '24px', display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-            {tour.status === 'scheduled' && (
-              <Link
-                href={`/guide/tours/${tour.id}/checklist`}
-                style={{
-                  backgroundColor: '#2563eb',
-                  color: 'white',
-                  padding: '12px 24px',
-                  borderRadius: '8px',
-                  textDecoration: 'none',
-                  fontWeight: '500',
-                  display: 'inline-block',
-                }}
-              >
-                📋 Pre-tour Checklist
-              </Link>
-            )}
-            {tour.status === 'in_progress' && (
-              <button
-                onClick={() => updateStatus('completed')}
-                style={{
-                  backgroundColor: '#16a34a',
-                  color: 'white',
-                  padding: '12px 24px',
-                  borderRadius: '8px',
-                  border: 'none',
-                  fontWeight: '500',
-                  cursor: 'pointer',
-                }}
-              >
-                Complete Tour
-              </button>
-            )}
-            <Link
-              href={`/guide/tours/${tour.id}/guests`}
-              style={{
-                backgroundColor: '#7c3aed',
-                color: 'white',
-                padding: '12px 24px',
-                borderRadius: '8px',
-                textDecoration: 'none',
-                fontWeight: '500',
-                display: 'inline-block',
-              }}
-            >
-              👥 Guest List
-            </Link>
-            <Link
-              href={`/guide/tours/${tour.id}/expenses`}
-              style={{
-                backgroundColor: '#ea580c',
-                color: 'white',
-                padding: '12px 24px',
-                borderRadius: '8px',
-                textDecoration: 'none',
-                fontWeight: '500',
-                display: 'inline-block',
-              }}
-            >
-              💵 Expenses
-            </Link>
-            <button
-              onClick={() => setShowIncidentForm(true)}
-              style={{
-                backgroundColor: '#dc2626',
-                color: 'white',
-                padding: '12px 24px',
-                borderRadius: '8px',
-                border: 'none',
-                fontWeight: '500',
-                cursor: 'pointer',
-              }}
-            >
-              🚨 Report Incident
-            </button>
-          </div>
-        </div>
-
-        {/* Incident Form Modal */}
-        {showIncidentForm && tour && (
-          <IncidentReportForm
-            tourId={tour.id}
-            tourName={tour.name}
-            onClose={() => setShowIncidentForm(false)}
-            onSuccess={() => {
-              setShowIncidentForm(false)
-              alert('Incident reported! Supervisors have been notified.')
-            }}
-          />
-        )}
-
-        {/* Checklist */}
-        <div style={{
-          backgroundColor: 'white',
-          borderRadius: '12px',
-          padding: '24px',
-        }}>
-          <h2 style={{ fontSize: '18px', fontWeight: '600', color: '#111827', margin: '0 0 16px 0' }}>Checklist</h2>
-
-          {checklist.length === 0 ? (
-            <p style={{ color: '#6b7280' }}>No checklist items configured</p>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              {checklist.map((item) => (
-                <div
-                  key={item.id}
-                  onClick={() => toggleChecklistItem(item.id)}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'flex-start',
-                    gap: '12px',
-                    padding: '16px',
-                    backgroundColor: item.completed ? '#f0fdf4' : '#f9fafb',
-                    borderRadius: '8px',
-                    border: item.completed ? '1px solid #86efac' : '1px solid #e5e7eb',
-                    cursor: 'pointer',
-                  }}
-                >
-                  <div style={{
-                    width: '24px',
-                    height: '24px',
-                    borderRadius: '4px',
-                    border: item.completed ? 'none' : '2px solid #d1d5db',
-                    backgroundColor: item.completed ? '#22c55e' : 'transparent',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    flexShrink: 0,
-                  }}>
-                    {item.completed && <span style={{ color: 'white' }}>✓</span>}
-                  </div>
-                  <div style={{ flex: 1 }}>
-                    <p style={{ fontWeight: '500', color: '#111827', margin: '0 0 4px 0' }}>{item.label}</p>
-                    {item.description && (
-                      <p style={{ fontSize: '14px', color: '#6b7280', margin: 0 }}>{item.description}</p>
-                    )}
-                    <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
-                      {item.requires_photo && <span style={{ fontSize: '12px', color: '#2563eb' }}>📷 Photo required</span>}
-                      {item.requires_gps && <span style={{ fontSize: '12px', color: '#2563eb' }}>📍 GPS required</span>}
-                      {item.requires_selfie && <span style={{ fontSize: '12px', color: '#2563eb' }}>🤳 Selfie required</span>}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+      {/* Pre-Trip Checklist */}
+      <div className="bg-white rounded-2xl border border-gray-200 p-6">
+        <h2 className="font-semibold text-gray-900 mb-4">Pre-Trip Checklist</h2>
+        <div className="space-y-3">
+          {checklist.map((item) => (
+            <label key={item.id} className="flex items-center gap-3">
+              <input
+                type="checkbox"
+                checked={item.checked}
+                onChange={() => toggleChecklist(item.id)}
+                className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+              />
+              <span className="text-gray-700">{item.label}</span>
+            </label>
+          ))}
         </div>
       </div>
+
+      {/* Notes */}
+      <div className="bg-white rounded-2xl border border-gray-200 p-6">
+        <h2 className="font-semibold text-gray-900 mb-4">Tour Notes</h2>
+        <textarea
+          value={notes}
+          onChange={(e) => setNotes(e.target.value)}
+          placeholder="Add any notes about this tour..."
+          rows={4}
+          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+      </div>
+
+      {/* Actions */}
+      <div className="flex gap-3">
+        {tour.status === 'scheduled' && (
+          <button
+            onClick={startTour}
+            className="flex-1 bg-blue-600 text-white px-4 py-3 rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            Start Tour
+          </button>
+        )}
+        {tour.status === 'in_progress' && (
+          <button
+            onClick={completeTour}
+            className="flex-1 bg-green-600 text-white px-4 py-3 rounded-lg hover:bg-green-700 transition-colors"
+          >
+            Complete Tour
+          </button>
+        )}
+        {['completed', 'cancelled'].includes(tour.status) && (
+          <div className="flex-1 text-center text-gray-500 py-3">
+            Tour {tour.status}
+          </div>
+        )}
+      </div>
+
+      <Link
+        href="/guide"
+        className="block text-center text-gray-600 hover:text-gray-900 text-sm"
+      >
+        ← Back to My Tours
+      </Link>
     </div>
   )
 }

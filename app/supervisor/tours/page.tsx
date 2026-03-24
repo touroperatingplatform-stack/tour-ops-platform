@@ -4,270 +4,139 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase/client'
 
-export default function SupervisorToursPage() {
-  const [tours, setTours] = useState<any[]>([])
-  const [guides, setGuides] = useState<any[]>([])
+interface Tour {
+  id: string
+  name: string
+  start_time: string
+  status: 'scheduled' | 'in_progress' | 'completed' | 'cancelled'
+  pickup_location: string
+  guide: { first_name: string; last_name: string } | null
+}
+
+export default function ToursPage() {
+  const [tours, setTours] = useState<Tour[]>([])
   const [loading, setLoading] = useState(true)
-  const [filter, setFilter] = useState('today')
-  const [view, setView] = useState('tours')
+  const [filter, setFilter] = useState('all')
 
   useEffect(() => {
-    loadData()
-  }, [filter])
+    loadTours()
+  }, [])
 
-  async function loadData() {
-    const today = new Date().toISOString().split('T')[0]
-    const weekFromNow = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
-
-    // Load tours based on filter
-    let tourQuery = supabase
+  async function loadTours() {
+    const { data: toursData } = await supabase
       .from('tours')
-      .select(`
-        *,
-        guide:profiles(id, first_name, last_name, phone),
-        vehicle:vehicles(plate_number),
-        brand:brands(name)
-      `)
-      .order('tour_date', { ascending: true })
-      .order('start_time', { ascending: true })
+      .select('id, name, start_time, status, pickup_location, guide_id')
+      .order('start_time', { ascending: false })
 
-    if (filter === 'today') {
-      tourQuery = tourQuery.eq('tour_date', today)
-    } else if (filter === 'week') {
-      tourQuery = tourQuery.gte('tour_date', today).lte('tour_date', weekFromNow)
-    } else if (filter === 'active') {
-      tourQuery = tourQuery.eq('status', 'in_progress')
-    }
+    const toursWithGuide = await Promise.all((toursData || []).map(async (tour: any) => {
+      let guide = null
+      if (tour.guide_id) {
+        const { data: g } = await supabase
+          .from('profiles')
+          .select('first_name, last_name')
+          .eq('id', tour.guide_id)
+          .single()
+        guide = g
+      }
+      return { ...tour, guide }
+    }))
 
-    const { data: toursData } = await tourQuery
-
-    // Load all guides with their tour counts
-    const { data: guidesData } = await supabase
-      .from('profiles')
-      .select('id, first_name, last_name, phone, email')
-      .eq('role', 'guide')
-      .order('first_name')
-
-    // Get tour counts for guides
-    const guidesWithCounts = await Promise.all(
-      (guidesData || []).map(async (guide) => {
-        const { count: todayCount } = await supabase
-          .from('tours')
-          .select('*', { count: 'exact', head: true })
-          .eq('guide_id', guide.id)
-          .eq('tour_date', today)
-
-        const { count: weekCount } = await supabase
-          .from('tours')
-          .select('*', { count: 'exact', head: true })
-          .eq('guide_id', guide.id)
-          .gte('tour_date', today)
-          .lte('tour_date', weekFromNow)
-
-        return { ...guide, todayCount: todayCount || 0, weekCount: weekCount || 0 }
-      })
-    )
-
-    setTours(toursData || [])
-    setGuides(guidesWithCounts)
+    setTours(toursWithGuide)
     setLoading(false)
   }
 
-  async function reassignGuide(tourId: string, guideId: string) {
-    const { error } = await supabase
-      .from('tours')
-      .update({ guide_id: guideId || null })
-      .eq('id', tourId)
+  const filteredTours = filter === 'all' 
+    ? tours 
+    : tours.filter(t => t.status === filter)
 
-    if (!error) {
-      loadData()
-    } else {
-      alert('Failed to reassign: ' + error.message)
-    }
+  const statusCounts = {
+    all: tours.length,
+    scheduled: tours.filter(t => t.status === 'scheduled').length,
+    in_progress: tours.filter(t => t.status === 'in_progress').length,
+    completed: tours.filter(t => t.status === 'completed').length,
+    cancelled: tours.filter(t => t.status === 'cancelled').length,
   }
 
-  if (loading) return <div className="p-4 text-center">Loading...</div>
-
-  const activeTours = tours.filter(t => t.status === 'in_progress').length
-  const completedToday = tours.filter(t => t.status === 'completed').length
-  const pendingGuides = tours.filter(t => !t.guide_id && t.status === 'scheduled').length
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-gray-500">Loading tours...</div>
+      </div>
+    )
+  }
 
   return (
-    <div className="p-4">
-      <h1 className="text-xl font-bold text-gray-900 mb-4">Tours & Guides</h1>
-
-      {/* Toggle */}
-      <div className="flex bg-gray-100 rounded-lg p-1 mb-4">
-        <button
-          onClick={() => setView('tours')}
-          className={`flex-1 py-2 text-sm font-medium rounded-md ${
-            view === 'tours' ? 'bg-white shadow text-gray-900' : 'text-gray-500'
-          }`}
-        >
-          📅 Tours
-        </button>
-        <button
-          onClick={() => setView('guides')}
-          className={`flex-1 py-2 text-sm font-medium rounded-md ${
-            view === 'guides' ? 'bg-white shadow text-gray-900' : 'text-gray-500'
-          }`}
-        >
-          👥 Guides
-        </button>
+    <div className="space-y-6">
+      {/* Header */}
+      <div>
+        <h1 className="text-2xl font-bold text-gray-900">All Tours</h1>
+        <p className="text-gray-500 mt-1">Manage and monitor all tours</p>
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-3 gap-3 mb-4">
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-center">
-          <p className="text-2xl font-bold text-blue-700">{activeTours}</p>
-          <p className="text-xs text-blue-600">Active Now</p>
-        </div>
-        <div className="bg-green-50 border border-green-200 rounded-lg p-3 text-center">
-          <p className="text-2xl font-bold text-green-700">{completedToday}</p>
-          <p className="text-xs text-green-600">Completed</p>
-        </div>
-        <div className="bg-orange-50 border border-orange-200 rounded-lg p-3 text-center">
-          <p className="text-2xl font-bold text-orange-700">{pendingGuides}</p>
-          <p className="text-xs text-orange-600">Need Guide</p>
-        </div>
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+        {Object.entries(statusCounts).map(([key, count]) => (
+          <button
+            key={key}
+            onClick={() => setFilter(key)}
+            className={`rounded-2xl p-3 text-center transition-all ${
+              filter === key
+                ? 'bg-blue-600 text-white'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }`}
+          >
+            <p className="text-2xl font-bold">{count}</p>
+            <p className="text-xs capitalize">{key.replace('_', ' ')}</p>
+          </button>
+        ))}
       </div>
 
-      {view === 'tours' ? (
-        <>
-          {/* Filter */}
-          <div className="flex gap-2 mb-4">
-            {['today', 'week', 'active', 'all'].map((f) => (
-              <button
-                key={f}
-                onClick={() => setFilter(f)}
-                className={`px-3 py-1 text-sm rounded-full ${
-                  filter === f
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-gray-100 text-gray-600'
-                }`}
+      {/* Tours List */}
+      <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+        {filteredTours.length === 0 ? (
+          <div className="p-8 text-center text-gray-500">
+            <p className="text-lg mb-2">No tours found</p>
+            <p className="text-sm">Try adjusting your filter.</p>
+          </div>
+        ) : (
+          <div className="divide-y divide-gray-200">
+            {filteredTours.map((tour) => (
+              <Link
+                key={tour.id}
+                href={`/supervisor/tours/${tour.id}`}
+                className="block p-4 hover:bg-gray-50 transition-colors"
               >
-                {f.charAt(0).toUpperCase() + f.slice(1)}
-              </button>
-            ))}
-          </div>
-
-          {/* Tours List */}
-          <div className="space-y-3">
-            {tours.length === 0 ? (
-              <div className="text-center text-gray-500 py-8">No tours found</div>
-            ) : (
-              tours.map((tour) => (
-                <div key={tour.id} className="bg-white rounded-lg p-4 border border-gray-200">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2">
-                        <span
-                          className={`w-2 h-2 rounded-full ${
-                            tour.status === 'in_progress'
-                              ? 'bg-blue-500'
-                              : tour.status === 'completed'
-                              ? 'bg-green-500'
-                              : tour.status === 'cancelled'
-                              ? 'bg-red-500'
-                              : 'bg-gray-400'
-                          }`}
-                        />
-                        <p className="font-semibold text-gray-900">{tour.name}</p>
-                      </div>
-                      
-                      <p className="text-sm text-gray-500 mt-1">
-                        {new Date(tour.tour_date).toLocaleDateString()} at {tour.start_time}
-                      </p>
-                      
-                      {tour.guide ? (
-                        <div className="mt-2 p-2 bg-green-50 rounded-lg">
-                          <p className="text-sm font-medium text-green-900">
-                            👤 {tour.guide.first_name} {tour.guide.last_name}
-                          </p>
-                          {tour.guide.phone && (
-                            <p className="text-xs text-green-700">📞 {tour.guide.phone}</p>
-                          )}
-                        </div>
-                      ) : (
-                        <div className="mt-2 p-2 bg-orange-50 rounded-lg">
-                          <p className="text-sm text-orange-700">⚠️ No guide assigned</p>
-                        </div>
-                      )}
-                      
-                      {tour.vehicle && (
-                        <p className="text-sm text-gray-500 mt-1">🚐 {tour.vehicle.plate_number}</p>
-                      )}
-                    </div>
-                    
-                    <div className="flex flex-col gap-2">
-                      <Link
-                        href={`/guide/tours/${tour.id}`}
-                        className="px-3 py-1.5 bg-blue-50 text-blue-700 text-sm rounded-lg text-center"
-                      >
-                        View
-                      </Link>
-                      <select
-                        value={tour.guide_id || ''}
-                        onChange={(e) => reassignGuide(tour.id, e.target.value)}
-                        className="text-sm px-2 py-1 border border-gray-300 rounded-lg"
-                      >
-                        <option value="">Assign Guide</option>
-                        {guides.map((g) => (
-                          <option key={g.id} value={g.id}>
-                            {g.first_name} {g.last_name}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        </>
-      ) : (
-        <>
-          {/* Guides List */}
-          <div className="space-y-3">
-            {guides.map((guide) => (
-              <div key={guide.id} className="bg-white rounded-lg p-4 border border-gray-200">
-                <div className="flex items-start justify-between">
+                <div className="flex items-center justify-between">
                   <div className="flex-1">
-                    <p className="font-semibold text-gray-900">
-                      {guide.first_name} {guide.last_name}
+                    <div className="flex items-center gap-3 mb-1">
+                      <h3 className="font-semibold text-gray-900">{tour.name}</h3>
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                        tour.status === 'in_progress' ? 'bg-blue-100 text-blue-700' :
+                        tour.status === 'completed' ? 'bg-green-100 text-green-700' :
+                        tour.status === 'cancelled' ? 'bg-red-100 text-red-700' :
+                        'bg-gray-100 text-gray-700'
+                      }`}>
+                        {tour.status.replace('_', ' ')}
+                      </span>
+                    </div>
+                    <p className="text-sm text-gray-500">
+                      {tour.start_time?.slice(0, 5)} • {tour.pickup_location || 'No location'}
                     </p>
-                    {guide.phone && (
-                      <p className="text-sm text-gray-500">📞 {guide.phone}</p>
+                    {tour.guide && (
+                      <p className="text-xs text-gray-400 mt-1">
+                        Guide: {tour.guide.first_name} {tour.guide.last_name}
+                      </p>
                     )}
-                    {guide.email && (
-                      <p className="text-sm text-gray-500">✉️ {guide.email}</p>
-                    )}
                   </div>
-                  <div className="text-right">
-                    <p className="text-2xl font-bold text-blue-600">{guide.todayCount}</p>
-                    <p className="text-xs text-gray-500">Tours Today</p>
-                  </div>
+                  <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
                 </div>
-                
-                <div className="grid grid-cols-2 gap-2 mt-3 pt-3 border-t border-gray-100">
-                  <div className="text-center">
-                    <p className="text-lg font-bold text-gray-900">{guide.weekCount}</p>
-                    <p className="text-xs text-gray-500">This Week</p>
-                  </div>
-                  <div className="text-center">
-                    <Link
-                      href={`/guide/tours`}
-                      className="text-sm text-blue-600 underline"
-                    >
-                      View Tours →
-                    </Link>
-                  </div>
-                </div>
-              </div>
+              </Link>
             ))}
           </div>
-        </>
-      )}
+        )}
+      </div>
     </div>
   )
 }

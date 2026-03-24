@@ -16,8 +16,9 @@ interface Tour {
 
 export default function TourDetailPage() {
   const params = useParams()
-  const [tour, setTour] = useState<Tour | null>(null)
+  const [tour, setTour] = useState<T | null>(null)
   const [loading, setLoading] = useState(true)
+  const [updating, setUpdating] = useState(false)
 
   useEffect(() => {
     loadTour()
@@ -42,6 +43,21 @@ export default function TourDetailPage() {
       setTour(tourData as any)
     }
     setLoading(false)
+  }
+
+  async function updateStatus(newStatus: string) {
+    setUpdating(true)
+    const { error } = await supabase
+      .from('tours')
+      .update({ status: newStatus })
+      .eq('id', params.id)
+    
+    if (error) {
+      alert('Failed to update status')
+    } else {
+      setTour(prev => prev ? { ...prev, status: newStatus } : null)
+    }
+    setUpdating(false)
   }
 
   if (loading) {
@@ -107,17 +123,57 @@ export default function TourDetailPage() {
         </div>
       </div>
 
-      {/* Actions */}
+      {/* Actions - Status Updates */}
+      <div className="bg-white rounded-2xl border border-gray-200 p-6">
+        <h3 className="font-semibold text-gray-900 mb-4">Update Status</h3>
+        <div className="grid grid-cols-2 gap-3">
+          {tour.status !== 'in_progress' && (
+            <button
+              onClick={() => updateStatus('in_progress')}
+              disabled={updating}
+              className="bg-blue-600 text-white px-4 py-3 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+            >
+              Start Tour
+            </button>
+          )}
+          {tour.status === 'in_progress' && (
+            <button
+              onClick={() => updateStatus('completed')}
+              disabled={updating}
+              className="bg-green-600 text-white px-4 py-3 rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50"
+            >
+              Complete Tour
+            </button>
+          )}
+          {tour.status !== 'cancelled' && tour.status !== 'completed' && (
+            <button
+              onClick={() => updateStatus('cancelled')}
+              disabled={updating}
+              className="bg-red-600 text-white px-4 py-3 rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50"
+            >
+              Cancel Tour
+            </button>
+          )}
+          {tour.status === 'scheduled' && (
+            <button
+              onClick={() => updateStatus('scheduled')}
+              disabled={updating}
+              className="bg-gray-600 text-white px-4 py-3 rounded-lg hover:bg-gray-700 transition-colors disabled:opacity-50"
+            >
+              Reschedule
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Navigation */}
       <div className="flex gap-3">
         <Link
           href="/supervisor"
           className="flex-1 bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 transition-colors text-center"
         >
-          Back
+          Back to Dashboard
         </Link>
-        <button className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
-          Edit Tour
-        </button>
       </div>
     </div>
   )
