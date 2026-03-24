@@ -97,8 +97,8 @@ export default function SupervisorLayout({
             </div>
           </header>
 
-          {/* Page Content - 12px breathing room from all edges */}
-          <main className="flex-1 p-3 overflow-y-auto">
+          {/* Page Content - TEST: p-6 to verify padding works */}
+          <main className="flex-1 p-6 overflow-y-auto">
             {children}
           </main>
         </div>
