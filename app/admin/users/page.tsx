@@ -173,9 +173,12 @@ export default function UsersPage() {
                       {new Date(user.created_at).toLocaleDateString()}
                     </td>
                     <td className="py-3 px-4 text-right">
-                      <button className="text-blue-600 hover:text-blue-800 text-sm font-medium">
+                      <Link 
+                        href={`/admin/users/${user.id}`}
+                        className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                      >
                         Edit
-                      </button>
+                      </Link>
                     </td>
                   </tr>
                 ))}

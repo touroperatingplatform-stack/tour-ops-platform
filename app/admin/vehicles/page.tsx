@@ -96,9 +96,21 @@ export default function VehiclesPage() {
                       </span>
                     </td>
                     <td className="py-3 px-4 text-right">
-                      <button className="text-blue-600 hover:text-blue-800 text-sm font-medium">
-                        Edit
-                      </button>
+                      <div className="flex items-center justify-end gap-2">
+                        <Link 
+                          href={`/admin/vehicles/${vehicle.id}`}
+                          className="text-gray-600 hover:text-gray-800 text-sm font-medium"
+                        >
+                          View
+                        </Link>
+                        <span className="text-gray-300">|</span>
+                        <Link 
+                          href={`/admin/vehicles/${vehicle.id}`}
+                          className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                        >
+                          Edit
+                        </Link>
+                      </div>
                     </td>
                   </tr>
                 ))}
