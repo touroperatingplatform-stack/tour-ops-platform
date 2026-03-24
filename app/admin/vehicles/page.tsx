@@ -7,17 +7,24 @@ import { supabase } from '@/lib/supabase/client'
 interface Vehicle {
   id: string
   plate_number: string
+  make: string
   model: string
-  year: number
-  capacity: number
-  status: 'active' | 'maintenance' | 'inactive'
-  last_inspection: string | null
+  year: number | null
+  capacity: number | null
+  status: 'available' | 'maintenance' | 'unavailable'
+  mileage: number | null
 }
 
 const statusColors: Record<string, string> = {
-  active: 'bg-green-100 text-green-700',
+  available: 'bg-green-100 text-green-700',
   maintenance: 'bg-yellow-100 text-yellow-700',
-  inactive: 'bg-red-100 text-red-700',
+  unavailable: 'bg-red-100 text-red-700',
+}
+
+const statusLabels: Record<string, string> = {
+  available: 'Available',
+  maintenance: 'In Service',
+  unavailable: 'Unavailable',
 }
 
 export default function VehiclesPage() {
@@ -85,13 +92,13 @@ export default function VehiclesPage() {
           <p className="text-xs">Total</p>
         </button>
         <button
-          onClick={() => setFilter('active')}
+          onClick={() => setFilter('available')}
           className={`rounded-2xl p-3 text-center transition-all ${
-            filter === 'active' ? 'bg-green-600 text-white' : 'bg-gray-100 text-gray-700'
+            filter === 'available' ? 'bg-green-600 text-white' : 'bg-gray-100 text-gray-700'
           }`}
         >
-          <p className="text-2xl font-bold">{vehicles.filter(v => v.status === 'active').length}</p>
-          <p className="text-xs">Active</p>
+          <p className="text-2xl font-bold">{vehicles.filter(v => v.status === 'available').length}</p>
+          <p className="text-xs">Available</p>
         </button>
         <button
           onClick={() => setFilter('maintenance')}
@@ -100,16 +107,16 @@ export default function VehiclesPage() {
           }`}
         >
           <p className="text-2xl font-bold">{vehicles.filter(v => v.status === 'maintenance').length}</p>
-          <p className="text-xs">Service</p>
+          <p className="text-xs">In Service</p>
         </button>
         <button
-          onClick={() => setFilter('inactive')}
+          onClick={() => setFilter('unavailable')}
           className={`rounded-2xl p-3 text-center transition-all ${
-            filter === 'inactive' ? 'bg-red-600 text-white' : 'bg-gray-100 text-gray-700'
+            filter === 'unavailable' ? 'bg-red-600 text-white' : 'bg-gray-100 text-gray-700'
           }`}
         >
-          <p className="text-2xl font-bold">{vehicles.filter(v => v.status === 'inactive').length}</p>
-          <p className="text-xs">Inactive</p>
+          <p className="text-2xl font-bold">{vehicles.filter(v => v.status === 'unavailable').length}</p>
+          <p className="text-xs">Unavailable</p>
         </button>
       </div>
 
@@ -123,28 +130,26 @@ export default function VehiclesPage() {
           >
             <div className="flex items-start justify-between mb-3">
               <div>
-                <h3 className="font-semibold text-gray-900">{vehicle.model}</h3>
+                <h3 className="font-semibold text-gray-900">{vehicle.make} {vehicle.model}</h3>
                 <p className="text-sm text-gray-500">{vehicle.plate_number}</p>
               </div>
               <span className={`px-2 py-1 rounded-full text-xs font-medium ${statusColors[vehicle.status]}`}>
-                {vehicle.status}
+                {statusLabels[vehicle.status]}
               </span>
             </div>
             <div className="space-y-2 text-sm text-gray-600">
               <div className="flex justify-between">
                 <span>Year:</span>
-                <span className="font-medium">{vehicle.year}</span>
+                <span className="font-medium">{vehicle.year || 'N/A'}</span>
               </div>
               <div className="flex justify-between">
                 <span>Capacity:</span>
-                <span className="font-medium">{vehicle.capacity} passengers</span>
+                <span className="font-medium">{vehicle.capacity || 'N/A'} passengers</span>
               </div>
-              {vehicle.last_inspection && (
-                <div className="flex justify-between">
-                  <span>Last inspection:</span>
-                  <span className="font-medium">{new Date(vehicle.last_inspection).toLocaleDateString()}</span>
-                </div>
-              )}
+              <div className="flex justify-between">
+                <span>Mileage:</span>
+                <span className="font-medium">{vehicle.mileage?.toLocaleString() || 'N/A'} km</span>
+              </div>
             </div>
           </Link>
         ))}

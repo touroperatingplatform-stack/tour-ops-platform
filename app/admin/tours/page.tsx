@@ -10,8 +10,12 @@ interface Tour {
   tour_date: string
   start_time: string
   status: 'scheduled' | 'in_progress' | 'completed' | 'cancelled'
+  guest_count: number
+  capacity: number
   guide_id: string | null
   vehicle_id: string | null
+  guide: { full_name: string } | null
+  vehicle: { plate_number: string; model: string } | null
 }
 
 export default function ToursPage() {
@@ -25,9 +29,13 @@ export default function ToursPage() {
   }, [])
 
   async function loadTours() {
-    const { data, error } = await (supabase as any)
+    const { data, error } = await supabase
       .from('tours')
-      .select('*')
+      .select(`
+        *,
+        guide:profiles!guide_id(full_name),
+        vehicle:vehicles!vehicle_id(plate_number, model)
+      `)
       .order('tour_date', { ascending: false })
 
     if (error) {
@@ -125,9 +133,11 @@ export default function ToursPage() {
             <table className="w-full">
               <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
-                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-700">Name</th>
-                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-700">Date</th>
-                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-700">Time</th>
+                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-700">Tour</th>
+                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-700">Date & Time</th>
+                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-700">Guide</th>
+                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-700">Vehicle</th>
+                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-700">Guests</th>
                   <th className="text-left py-3 px-4 text-sm font-medium text-gray-700">Status</th>
                   <th className="text-right py-3 px-4 text-sm font-medium text-gray-700">Actions</th>
                 </tr>
@@ -135,11 +145,22 @@ export default function ToursPage() {
               <tbody className="divide-y divide-gray-200">
                 {filteredTours.map((tour) => (
                   <tr key={tour.id} className="hover:bg-gray-50">
-                    <td className="py-3 px-4 font-medium text-gray-900">{tour.name}</td>
-                    <td className="py-3 px-4 text-gray-600">
-                      {new Date(tour.tour_date).toLocaleDateString()}
+                    <td className="py-3 px-4">
+                      <p className="font-medium text-gray-900">{tour.name}</p>
                     </td>
-                    <td className="py-3 px-4 text-gray-600">{tour.start_time}</td>
+                    <td className="py-3 px-4 text-gray-600">
+                      <div>{new Date(tour.tour_date).toLocaleDateString()}</div>
+                      <div className="text-sm text-gray-500">{tour.start_time}</div>
+                    </td>
+                    <td className="py-3 px-4 text-gray-600">
+                      {tour.guide?.full_name || 'Unassigned'}
+                    </td>
+                    <td className="py-3 px-4 text-gray-600">
+                      {tour.vehicle ? `${tour.vehicle.plate_number} (${tour.vehicle.model})` : 'Unassigned'}
+                    </td>
+                    <td className="py-3 px-4 text-gray-600">
+                      {tour.guest_count || 0} / {tour.capacity || 'N/A'}
+                    </td>
                     <td className="py-3 px-4">
                       <span className={`px-2 py-1 rounded-full text-xs font-medium capitalize ${getStatusBadgeColor(tour.status)}`}>
                         {tour.status?.replace('_', ' ')}

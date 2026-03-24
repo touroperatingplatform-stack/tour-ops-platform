@@ -160,6 +160,12 @@ export default function ExpensesPage() {
                 </div>
                 <div className="flex items-center gap-4">
                   <p className="font-semibold text-gray-900">${expense.amount.toFixed(2)}</p>
+                  <Link
+                    href={`/admin/expenses/${expense.id}`}
+                    className="text-blue-600 hover:text-blue-800 text-sm"
+                  >
+                    Edit
+                  </Link>
                   <button
                     onClick={() => deleteExpense(expense.id)}
                     className="text-red-600 hover:text-red-800 text-sm"
