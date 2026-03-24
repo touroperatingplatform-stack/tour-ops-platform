@@ -8,179 +8,216 @@ import { supabase } from '@/lib/supabase/client'
 export default function VehicleDetailPage() {
   const router = useRouter()
   const params = useParams()
-  const vehicleId = params.id as string
-  
-  const [vehicle, setVehicle] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [vehicle, setVehicle] = useState({
+    id: '',
+    plate_number: '',
+    model: '',
+    year: 2020,
+    capacity: 10,
+    status: 'active',
+    last_inspection: '',
+  })
 
   useEffect(() => {
     loadVehicle()
-  }, [vehicleId])
+  }, [])
 
   async function loadVehicle() {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('vehicles')
       .select('*')
-      .eq('id', vehicleId)
+      .eq('id', params.id)
       .single()
 
-    if (data) {
-      setVehicle(data)
+    if (error) {
+      console.error('Error loading vehicle:', error)
+      return
     }
+
+    setVehicle({
+      id: data.id,
+      plate_number: data.plate_number || '',
+      model: data.model || '',
+      year: data.year || 2020,
+      capacity: data.capacity || 10,
+      status: data.status || 'active',
+      last_inspection: data.last_inspection || '',
+    })
     setLoading(false)
   }
 
-  async function handleUpdate(updates: any) {
+  function handleChange(field: string, value: string | number) {
+    setVehicle(prev => ({ ...prev, [field]: value }))
+  }
+
+  async function handleSave(e: React.FormEvent) {
+    e.preventDefault()
     setSaving(true)
-    await supabase
+
+    const { error } = await supabase
       .from('vehicles')
-      .update(updates)
-      .eq('id', vehicleId)
-    
-    setVehicle({ ...vehicle, ...updates })
+      .update({
+        plate_number: vehicle.plate_number,
+        model: vehicle.model,
+        year: vehicle.year,
+        capacity: vehicle.capacity,
+        status: vehicle.status,
+        last_inspection: vehicle.last_inspection || null,
+      })
+      .eq('id', params.id)
+
+    if (error) {
+      alert('Failed to save vehicle')
+    } else {
+      alert('Vehicle saved!')
+      router.push('/admin/vehicles')
+    }
     setSaving(false)
   }
 
-  async function handleDelete() {
-    if (!confirm('Are you sure you want to delete this vehicle?')) return
-    
-    await supabase
+  async function deleteVehicle() {
+    if (!confirm('Delete this vehicle? This cannot be undone.')) return
+
+    const { error } = await supabase
       .from('vehicles')
       .delete()
-      .eq('id', vehicleId)
-    
-    router.push('/admin/vehicles')
+      .eq('id', params.id)
+
+    if (error) {
+      alert('Failed to delete')
+    } else {
+      router.push('/admin/vehicles')
+    }
   }
 
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="text-gray-500">Loading...</div>
+        <div className="text-gray-500">Loading vehicle...</div>
       </div>
     )
   }
 
-  if (!vehicle) {
-    return <div>Vehicle not found</div>
-  }
-
   return (
-    <div>
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <Link href="/admin/vehicles" className="text-blue-600 hover:text-blue-800 text-sm">
-            ← Back to Vehicles
-          </Link>
-          <h1 className="text-2xl font-bold text-gray-900 mt-2">{vehicle.plate_number}</h1>
-        </div>
-        <div className="flex gap-3">
-          <button
-            onClick={() => handleDelete()}
-            className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700"
-          >
-            Delete
-          </button>
-        </div>
+    <div className="max-w-2xl mx-auto">
+      {/* Header */}
+      <div className="mb-6">
+        <Link href="/admin/vehicles" className="text-gray-600 hover:text-gray-900 text-sm flex items-center gap-2 mb-3">
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+          </svg>
+          Back to Fleet
+        </Link>
+        <h1 className="text-2xl font-bold text-gray-900">Edit Vehicle</h1>
+        <p className="text-gray-500 mt-1">{vehicle.model} • {vehicle.plate_number}</p>
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 max-w-2xl">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      {/* Form */}
+      <form onSubmit={handleSave} className="bg-white rounded-2xl border border-gray-200 p-6 space-y-6">
+        {/* Plate & Model */}
+        <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Plate Number</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Plate Number *</label>
             <input
               type="text"
+              required
               value={vehicle.plate_number}
-              onChange={(e) => handleUpdate({ plate_number: e.target.value })}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+              onChange={(e) => handleChange('plate_number', e.target.value)}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
-            {saving && <span className="text-xs text-gray-500">Saving...</span>}
           </div>
-
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
-            <select
-              value={vehicle.status}
-              onChange={(e) => handleUpdate({ status: e.target.value })}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-            >
-              <option value="available">Available</option>
-              <option value="in_use">In Use</option>
-              <option value="maintenance">Maintenance</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Make</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Model *</label>
             <input
               type="text"
-              value={vehicle.make || ''}
-              onChange={(e) => handleUpdate({ make: e.target.value })}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Model</label>
-            <input
-              type="text"
-              value={vehicle.model || ''}
-              onChange={(e) => handleUpdate({ model: e.target.value })}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Year</label>
-            <input
-              type="number"
-              value={vehicle.year || ''}
-              onChange={(e) => handleUpdate({ year: parseInt(e.target.value) || null })}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Capacity</label>
-            <input
-              type="number"
-              value={vehicle.capacity || ''}
-              onChange={(e) => handleUpdate({ capacity: parseInt(e.target.value) || null })}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">VIN</label>
-            <input
-              type="text"
-              value={vehicle.vin || ''}
-              onChange={(e) => handleUpdate({ vin: e.target.value })}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Insurance Expiry</label>
-            <input
-              type="date"
-              value={vehicle.insurance_expiry || ''}
-              onChange={(e) => handleUpdate({ insurance_expiry: e.target.value })}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+              required
+              value={vehicle.model}
+              onChange={(e) => handleChange('model', e.target.value)}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
         </div>
 
-        <div className="mt-6">
-          <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
-          <textarea
-            value={vehicle.notes || ''}
-            onChange={(e) => handleUpdate({ notes: e.target.value })}
-            rows={4}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-            placeholder="Maintenance notes, issues, etc."
+        {/* Year & Capacity */}
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Year *</label>
+            <input
+              type="number"
+              required
+              min={2000}
+              max={new Date().getFullYear() + 1}
+              value={vehicle.year}
+              onChange={(e) => handleChange('year', parseInt(e.target.value))}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Capacity *</label>
+            <input
+              type="number"
+              required
+              min={1}
+              value={vehicle.capacity}
+              onChange={(e) => handleChange('capacity', parseInt(e.target.value))}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+        </div>
+
+        {/* Status */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Status *</label>
+          <select
+            value={vehicle.status}
+            onChange={(e) => handleChange('status', e.target.value)}
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="active">Active</option>
+            <option value="maintenance">Maintenance</option>
+            <option value="inactive">Inactive</option>
+          </select>
+        </div>
+
+        {/* Last Inspection */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Last Inspection Date</label>
+          <input
+            type="date"
+            value={vehicle.last_inspection}
+            onChange={(e) => handleChange('last_inspection', e.target.value)}
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
+
+        {/* Actions */}
+        <div className="flex gap-3 pt-4 border-t border-gray-200">
+          <Link
+            href="/admin/vehicles"
+            className="flex-1 bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 transition-colors text-center"
+          >
+            Cancel
+          </Link>
+          <button
+            type="submit"
+            disabled={saving}
+            className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+          >
+            {saving ? 'Saving...' : 'Save Changes'}
+          </button>
+        </div>
+      </form>
+
+      {/* Delete */}
+      <div className="mt-6">
+        <button
+          onClick={deleteVehicle}
+          className="w-full bg-red-50 text-red-700 px-4 py-3 rounded-lg hover:bg-red-100 transition-colors border border-red-200"
+        >
+          Delete Vehicle
+        </button>
       </div>
     </div>
   )
