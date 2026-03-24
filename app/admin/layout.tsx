@@ -17,6 +17,7 @@ const navItems = [
   { href: '/admin', label: 'Overview', icon: '📊' },
   { href: '/admin/users', label: 'Users', icon: '👥' },
   { href: '/admin/tours', label: 'Tours', icon: '🚌' },
+  { href: '/admin/templates', label: 'Templates', icon: '📋' },
   { href: '/admin/guests', label: 'Guests', icon: '🎫' },
   { href: '/admin/vehicles', label: 'Vehicles', icon: '🚐' },
   { href: '/admin/checklists', label: 'Checklists', icon: '✅' },
