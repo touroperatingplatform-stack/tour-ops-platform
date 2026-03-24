@@ -1,6 +1,9 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+
+@theme {
+  --color-brand-primary: #1A56DB;
+  --color-brand-secondary: #FFFFFF;
+}
 
 :root {
   --brand-primary: #1A56DB;
