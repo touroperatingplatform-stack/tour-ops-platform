@@ -14,6 +14,7 @@ interface Tour {
   pickup_location: string
   dropoff_location: string
   status: 'scheduled' | 'in_progress' | 'completed' | 'cancelled'
+  vehicle_id?: string
   vehicle: { plate_number: string; make: string; model: string; capacity: number } | null
 }
 
@@ -42,14 +43,23 @@ export default function TourDetailPage() {
         .from('tours')
         .select(`
           id, name, description, start_time, end_time,
-          pickup_location, dropoff_location, status,
-          vehicle:vehicles(plate_number, make, model, capacity)
+          pickup_location, dropoff_location, status, vehicle_id
         `)
         .eq('id', tourId)
         .single()
 
       if (tourData) {
-        setTour(tourData)
+        // Get vehicle data separately
+        let vehicle = null
+        if (tourData.vehicle_id) {
+          const { data: v } = await supabase
+            .from('vehicles')
+            .select('plate_number, make, model, capacity')
+            .eq('id', tourData.vehicle_id)
+            .single()
+          vehicle = v
+        }
+        setTour({ ...tourData, vehicle })
       }
 
       // Load checklist templates
