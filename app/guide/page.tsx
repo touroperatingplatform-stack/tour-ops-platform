@@ -77,7 +77,7 @@ export default function GuideDashboard() {
   }
 
   return (
-    <div className="p-4 space-y-4">
+    <div className="space-y-4 pt-4">
       <section>
         <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">
           Today's Tours

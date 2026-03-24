@@ -10,7 +10,7 @@ export default function GuideLayout({
   return (
     <div className="min-h-screen bg-gray-50">
       <GuideNav />
-      <main className="pb-20">
+      <main className="px-4 pb-20 max-w-2xl mx-auto">
         {children}
       </main>
     </div>

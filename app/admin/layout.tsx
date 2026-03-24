@@ -10,7 +10,7 @@ export default function AdminLayout({
   return (
     <div className="min-h-screen bg-gray-50">
       <AdminNav />
-      <main className="p-4 pb-6">
+      <main className="px-4 py-4 pb-6 max-w-2xl mx-auto">
         {children}
       </main>
     </div>

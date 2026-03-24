@@ -53,7 +53,7 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 pt-4">
       {/* Stats */}
       <div className="grid grid-cols-2 gap-3">
         <div className="bg-blue-600 rounded-2xl p-4 text-white">
