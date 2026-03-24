@@ -148,7 +148,7 @@ export default function IncidentsPage() {
                 <div className="flex items-start justify-between mb-2">
                   <div className="flex items-center gap-2">
                     <span className="text-xl">{typeIcons[incident.type] || '📝'}</span>
-                    <h3 className="font-semibold text-gray-900">{incident.title}</h3>
+                    <h3 className="font-semibold text-gray-900">{incident.type.replace('_', ' ')}</h3>
                   </div>
                   <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                     severityColors[incident.severity] || 'bg-gray-100'
@@ -160,7 +160,6 @@ export default function IncidentsPage() {
                 <div className="flex items-center gap-4 text-xs text-gray-500">
                   <span>Reported by: {incident.reporter?.first_name || 'Unknown'}</span>
                   <span>{new Date(incident.created_at).toLocaleDateString()}</span>
-                  {incident.location && <span>• {incident.location}</span>}
                 </div>
                 <div className="flex gap-2 mt-3">
                   {incident.status === 'open' && (
