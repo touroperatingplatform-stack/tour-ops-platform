@@ -39,46 +39,28 @@ export default function CreateUserPage() {
     setSuccess('')
 
     try {
-      // Create auth user via Supabase Auth API
-      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-      const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-
-      const authResponse = await fetch(`${supabaseUrl}/auth/v1/admin/users`, {
+      // Create user via API route
+      const response = await fetch('/api/users', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'apikey': anonKey!,
-          'Authorization': `Bearer ${anonKey}`,
         },
         body: JSON.stringify({
           email: formData.email,
           password: formData.password,
-          email_confirm: true,
+          first_name: formData.firstName,
+          last_name: formData.lastName,
+          phone: formData.phone,
+          role: formData.role,
+          employee_id: formData.employeeId,
         }),
       })
 
-      if (!authResponse.ok) {
-        const authError = await authResponse.json()
-        throw new Error(authError.message || 'Failed to create auth user')
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to create user')
       }
-
-      const authData = await authResponse.json()
-      const userId = authData.id
-
-      // Create profile
-      const { error: profileError } = await (supabase as any)
-        .from('profiles')
-        .insert({
-          id: userId,
-          company_id: 'a0000000-0000-0000-0000-000000000001',
-          brand_id: 'b0000000-0000-0000-0000-000000000001',
-          role: formData.role,
-          first_name: formData.firstName,
-          last_name: formData.lastName,
-          phone: formData.phone || null,
-          employee_id: formData.employeeId || null,
-          is_active: true,
-        })
 
       if (profileError) {
         throw new Error(profileError.message)
