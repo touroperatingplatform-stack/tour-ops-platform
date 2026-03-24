@@ -7,19 +7,12 @@ const inter = Inter({ subsets: ['latin'] })
 export const metadata: Metadata = {
   title: 'Tour Ops Platform',
   description: 'Tour operator operations platform',
-  manifest: '/manifest.json',
-  appleWebApp: {
-    capable: true,
-    statusBarStyle: 'default',
-    title: 'Tour Ops',
-  },
 }
 
 export const viewport: Viewport = {
   themeColor: '#1A56DB',
   width: 'device-width',
   initialScale: 1,
-  maximumScale: 1,
 }
 
 export default function RootLayout({
