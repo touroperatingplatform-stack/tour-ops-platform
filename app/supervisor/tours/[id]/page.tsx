@@ -36,10 +36,11 @@ export default function TourDetailPage() {
         .select('first_name, last_name')
         .eq('id', tourData.guide_id)
         .single()
-      tourData.guide = guide
+      
+      setTour({ ...tourData, guide })
+    } else {
+      setTour(tourData as any)
     }
-
-    setTour(tourData)
     setLoading(false)
   }
 
