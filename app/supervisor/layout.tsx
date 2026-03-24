@@ -27,10 +27,10 @@ export default function SupervisorLayout({
 
   return (
     <div className="h-screen bg-gray-100 flex flex-col">
-      {/* Gray frame padding - 12px to match stat card gaps */}
+      {/* Gray frame with 12px breathing room from screen edges */}
       <div className="flex-1 p-3 pb-[5.5rem] overflow-hidden">
-        {/* White bordered container */}
-        <div className="mx-auto w-full h-full bg-white border-2 border-gray-300 rounded-2xl shadow-sm overflow-hidden flex flex-col">
+        {/* White container - 12px from screen edges, content touches edges */}
+        <div className="mx-auto w-full h-full bg-white rounded-2xl shadow-sm overflow-hidden flex flex-col">
           
           {/* Top Navigation */}
           <header className="bg-gray-900 text-white shadow-sm flex-shrink-0 z-10">
@@ -97,7 +97,7 @@ export default function SupervisorLayout({
             </div>
           </header>
 
-          {/* Page Content - 12px padding on all sides for breathing room */}
+          {/* Page Content - 12px breathing room from all edges */}
           <main className="flex-1 p-3 overflow-y-auto">
             {children}
           </main>
