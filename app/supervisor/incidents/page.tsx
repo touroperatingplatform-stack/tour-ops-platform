@@ -8,11 +8,9 @@ interface Incident {
   id: string
   type: string
   severity: string
-  title: string
   description: string
   status: string
   tour_id: string | null
-  location: string | null
   reported_by: string | null
   created_at: string
   reporter: { first_name: string; last_name: string } | null
