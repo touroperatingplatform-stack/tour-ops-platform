@@ -1,100 +1,167 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { getProfile, signOut } from '@/lib/auth'
-import { Profile } from '@/lib/supabase/types'
+import { supabase } from '@/lib/supabase/client'
+import Link from 'next/link'
+
+interface Tour {
+  id: string
+  name: string
+  start_time: string
+  status: 'scheduled' | 'in_progress' | 'completed' | 'cancelled'
+  pickup_location: string
+  vehicle: { plate_number: string; make: string; model: string } | null
+}
 
 export default function GuideDashboard() {
-  const router = useRouter()
-  const [profile, setProfile] = useState<Profile | null>(null)
+  const [tours, setTours] = useState<Tour[]>([])
   const [loading, setLoading] = useState(true)
+  const [profile, setProfile] = useState<any>(null)
 
   useEffect(() => {
-    async function load() {
-      const p = await getProfile()
-      if (!p) { router.push('/login'); return }
-      if (p.role !== 'guide') { router.push('/login'); return }
-      setProfile(p)
+    async function loadData() {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session?.user) return
+
+      // Get profile
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('id, first_name, last_name')
+        .eq('id', session.user.id)
+        .single()
+      
+      setProfile(profileData)
+
+      // Get today's tours for this guide
+      const today = new Date().toISOString().split('T')[0]
+      const { data: toursData } = await supabase
+        .from('tours')
+        .select(`
+          id, name, start_time, status, pickup_location,
+          vehicle:vehicles(plate_number, make, model)
+        `)
+        .eq('guide_id', session.user.id)
+        .eq('tour_date', today)
+        .order('start_time')
+
+      setTours(toursData || [])
       setLoading(false)
     }
-    load()
-  }, [router])
+
+    loadData()
+  }, [])
 
   async function handleSignOut() {
-    await signOut()
-    router.push('/login')
+    await supabase.auth.signOut()
+    window.location.href = '/login'
   }
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-gray-400 text-sm">Loading...</div>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', backgroundColor: '#f9fafb' }}>
+        <p>Loading...</p>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="bg-blue-600 text-white px-4 py-4 flex items-center justify-between">
+    <div style={{ minHeight: '100vh', backgroundColor: '#f9fafb' }}>
+      {/* Header */}
+      <header style={{
+        backgroundColor: '#111827',
+        color: 'white',
+        padding: '16px 24px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+      }}>
         <div>
-          <h1 className="font-bold text-lg">Tour Ops</h1>
-          <p className="text-blue-200 text-xs">Guide Dashboard</p>
+          <h1 style={{ fontSize: '20px', fontWeight: 'bold', margin: 0 }}>Guide Dashboard</h1>
+          {profile && (
+            <p style={{ fontSize: '14px', color: '#9ca3af', margin: '4px 0 0 0' }}>
+              {profile.first_name} {profile.last_name}
+            </p>
+          )}
         </div>
-        <div className="flex items-center gap-3">
-          <span className="text-sm text-blue-100">
-            {profile?.first_name} {profile?.last_name}
-          </span>
-          <button
-            onClick={handleSignOut}
-            className="text-xs bg-blue-700 px-3 py-1 rounded-lg hover:bg-blue-800"
-          >
-            Sign out
-          </button>
-        </div>
-      </div>
-
-      <div className="px-4 py-6 space-y-4 max-w-lg mx-auto">
-        <h2 className="text-lg font-semibold text-gray-800">Today's Actions</h2>
-
         <button
-          onClick={() => router.push('/guide/tours')}
-          className="w-full bg-white border border-gray-200 rounded-2xl p-4 flex items-center gap-4 shadow-sm hover:shadow-md transition-shadow text-left"
+          onClick={handleSignOut}
+          style={{
+            backgroundColor: 'transparent',
+            color: '#9ca3af',
+            border: 'none',
+            cursor: 'pointer',
+            fontSize: '14px',
+          }}
         >
-          <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center text-2xl">
-            📅
-          </div>
-          <div>
-            <p className="font-semibold text-gray-900">My Tours</p>
-            <p className="text-sm text-gray-500">View today's pickup schedule</p>
-          </div>
+          Sign Out
         </button>
+      </header>
 
-        <button
-          onClick={() => router.push('/guide/incidents/new')}
-          className="w-full bg-white border border-gray-200 rounded-2xl p-4 flex items-center gap-4 shadow-sm hover:shadow-md transition-shadow text-left"
-        >
-          <div className="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center text-2xl">
-            🚨
-          </div>
-          <div>
-            <p className="font-semibold text-gray-900">Report Incident</p>
-            <p className="text-sm text-gray-500">Log a new incident</p>
-          </div>
-        </button>
+      {/* Main Content */}
+      <div style={{ padding: '24px', maxWidth: '800px', margin: '0 auto' }}>
+        <h2 style={{ fontSize: '18px', fontWeight: '600', color: '#111827', marginBottom: '16px' }}>Today's Tours</h2>
 
-        <button
-          onClick={() => router.push('/guide/checklist')}
-          className="w-full bg-white border border-gray-200 rounded-2xl p-4 flex items-center gap-4 shadow-sm hover:shadow-md transition-shadow text-left"
-        >
-          <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center text-2xl">
-            ✅
+        {tours.length === 0 ? (
+          <div style={{
+            backgroundColor: 'white',
+            borderRadius: '12px',
+            padding: '32px',
+            textAlign: 'center',
+            color: '#6b7280',
+          }}>
+            <p>No tours scheduled for today</p>
           </div>
-          <div>
-            <p className="font-semibold text-gray-900">Pre-Tour Checklist</p>
-            <p className="text-sm text-gray-500">Complete your checklist</p>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            {tours.map((tour) => (
+              <Link
+                key={tour.id}
+                href={`/guide/tours/${tour.id}`}
+                style={{
+                  backgroundColor: 'white',
+                  borderRadius: '12px',
+                  padding: '20px',
+                  textDecoration: 'none',
+                  color: 'inherit',
+                  display: 'block',
+                  border: tour.status === 'in_progress' ? '2px solid #3b82f6' : '1px solid #e5e7eb',
+                }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                  <div>
+                    <h3 style={{ fontSize: '18px', fontWeight: '600', color: '#111827', margin: '0 0 8px 0' }}>
+                      {tour.name}
+                    </h3>
+                    <p style={{ color: '#6b7280', fontSize: '14px', margin: '0 0 4px 0' }}>
+                      ⏰ {tour.start_time}
+                    </p>
+                    <p style={{ color: '#6b7280', fontSize: '14px', margin: '0 0 4px 0' }}>
+                      📍 {tour.pickup_location || 'Location TBD'}
+                    </p>
+                    {tour.vehicle && (
+                      <p style={{ color: '#6b7280', fontSize: '14px', margin: 0 }}>
+                        🚐 {tour.vehicle.plate_number} - {tour.vehicle.make} {tour.vehicle.model}
+                      </p>
+                    )}
+                  </div>
+                  <span style={{
+                    padding: '6px 12px',
+                    borderRadius: '20px',
+                    fontSize: '12px',
+                    fontWeight: '500',
+                    backgroundColor: tour.status === 'in_progress' ? '#dbeafe' : '#f3f4f6',
+                    color: tour.status === 'in_progress' ? '#1d4ed8' : '#6b7280',
+                  }}>
+                    {tour.status === 'scheduled' && 'Scheduled'}
+                    {tour.status === 'in_progress' && 'In Progress'}
+                    {tour.status === 'completed' && 'Completed'}
+                    {tour.status === 'cancelled' && 'Cancelled'}
+                  </span>
+                </div>
+              </Link>
+            ))}
           </div>
-        </button>
+        )}
       </div>
     </div>
   )

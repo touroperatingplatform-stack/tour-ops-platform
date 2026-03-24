@@ -1,87 +1,254 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { getProfile, signOut } from '@/lib/auth'
-import { Profile } from '@/lib/supabase/types'
+import { supabase } from '@/lib/supabase/client'
+import Link from 'next/link'
+
+interface Tour {
+  id: string
+  name: string
+  start_time: string
+  status: 'scheduled' | 'in_progress' | 'completed' | 'cancelled'
+  pickup_location: string
+  guide: { first_name: string; last_name: string } | null
+  vehicle: { plate_number: string } | null
+}
+
+interface Guide {
+  id: string
+  first_name: string
+  last_name: string
+  is_active: boolean
+}
 
 export default function SupervisorDashboard() {
-  const router = useRouter()
-  const [profile, setProfile] = useState<Profile | null>(null)
+  const [tours, setTours] = useState<Tour[]>([])
+  const [guides, setGuides] = useState<Guide[]>([])
   const [loading, setLoading] = useState(true)
+  const [activeTab, setActiveTab] = useState<'live' | 'today' | 'guides'>('live')
 
   useEffect(() => {
-    async function load() {
-      const p = await getProfile()
-      if (!p) { router.push('/login'); return }
-      const allowed = ['supervisor', 'manager', 'company_admin', 'super_admin']
-      if (!allowed.includes(p.role)) { router.push('/login'); return }
-      setProfile(p)
+    async function loadData() {
+      const today = new Date().toISOString().split('T')[0]
+      
+      // Get today's tours
+      const { data: toursData } = await supabase
+        .from('tours')
+        .select(`
+          id, name, start_time, status, pickup_location,
+          guide:profiles(first_name, last_name),
+          vehicle:vehicles(plate_number)
+        `)
+        .eq('tour_date', today)
+        .order('start_time')
+
+      setTours(toursData || [])
+
+      // Get active guides
+      const { data: guidesData } = await supabase
+        .from('profiles')
+        .select('id, first_name, last_name, is_active')
+        .eq('role', 'guide')
+        .eq('is_active', true)
+
+      setGuides(guidesData || [])
       setLoading(false)
     }
-    load()
-  }, [router])
+
+    loadData()
+  }, [])
 
   async function handleSignOut() {
-    await signOut()
-    router.push('/login')
+    await supabase.auth.signOut()
+    window.location.href = '/login'
   }
+
+  const liveTours = tours.filter(t => t.status === 'in_progress')
+  const todayTours = tours
+  const completedTours = tours.filter(t => t.status === 'completed')
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-gray-400 text-sm">Loading...</div>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', backgroundColor: '#f9fafb' }}>
+        <p>Loading...</p>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="bg-gray-900 text-white px-4 py-4 flex items-center justify-between">
-        <div>
-          <h1 className="font-bold text-lg">Tour Ops</h1>
-          <p className="text-gray-400 text-xs capitalize">{profile?.role} Dashboard</p>
-        </div>
-        <div className="flex items-center gap-3">
-          <span className="text-sm text-gray-300">
-            {profile?.first_name} {profile?.last_name}
-          </span>
-          <button
-            onClick={handleSignOut}
-            className="text-xs bg-gray-700 px-3 py-1 rounded-lg hover:bg-gray-600"
-          >
-            Sign out
-          </button>
-        </div>
-      </div>
+    <div style={{ minHeight: '100vh', backgroundColor: '#f9fafb' }}>
+      {/* Header */}
+      <header style={{
+        backgroundColor: '#111827',
+        color: 'white',
+        padding: '16px 24px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+      }}>
+        <h1 style={{ fontSize: '20px', fontWeight: 'bold', margin: 0 }}>Supervisor Dashboard</h1>
+        <button
+          onClick={handleSignOut}
+          style={{
+            backgroundColor: 'transparent',
+            color: '#9ca3af',
+            border: 'none',
+            cursor: 'pointer',
+            fontSize: '14px',
+          }}
+        >
+          Sign Out
+        </button>
+      </header>
 
-      <div className="px-4 py-6 space-y-4 max-w-4xl mx-auto">
-        <h2 className="text-lg font-semibold text-gray-800">Operations Overview</h2>
-
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-          <div className="bg-white rounded-2xl p-4 border border-gray-200 shadow-sm text-center">
-            <p className="text-3xl font-bold text-blue-600">0</p>
-            <p className="text-xs text-gray-500 mt-1">Active Tours</p>
+      {/* Stats */}
+      <div style={{ padding: '24px', maxWidth: '1200px', margin: '0 auto' }}>
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(4, 1fr)',
+          gap: '16px',
+          marginBottom: '24px',
+        }}>
+          <div style={{ backgroundColor: 'white', borderRadius: '12px', padding: '20px', textAlign: 'center' }}>
+            <p style={{ fontSize: '32px', fontWeight: 'bold', color: '#111827', margin: 0 }}>{liveTours.length}</p>
+            <p style={{ color: '#6b7280', fontSize: '14px', margin: '8px 0 0 0' }}>Live Tours</p>
           </div>
-          <div className="bg-white rounded-2xl p-4 border border-gray-200 shadow-sm text-center">
-            <p className="text-3xl font-bold text-green-600">0</p>
-            <p className="text-xs text-gray-500 mt-1">Guides On Tour</p>
+          <div style={{ backgroundColor: 'white', borderRadius: '12px', padding: '20px', textAlign: 'center' }}>
+            <p style={{ fontSize: '32px', fontWeight: 'bold', color: '#111827', margin: 0 }}>{todayTours.length}</p>
+            <p style={{ color: '#6b7280', fontSize: '14px', margin: '8px 0 0 0' }}>Today's Tours</p>
           </div>
-          <div className="bg-white rounded-2xl p-4 border border-gray-200 shadow-sm text-center">
-            <p className="text-3xl font-bold text-red-600">0</p>
-            <p className="text-xs text-gray-500 mt-1">Open Incidents</p>
+          <div style={{ backgroundColor: 'white', borderRadius: '12px', padding: '20px', textAlign: 'center' }}>
+            <p style={{ fontSize: '32px', fontWeight: 'bold', color: '#111827', margin: 0 }}>{completedTours.length}</p>
+            <p style={{ color: '#6b7280', fontSize: '14px', margin: '8px 0 0 0' }}>Completed</p>
           </div>
-          <div className="bg-white rounded-2xl p-4 border border-gray-200 shadow-sm text-center">
-            <p className="text-3xl font-bold text-yellow-600">0</p>
-            <p className="text-xs text-gray-500 mt-1">Pending Approvals</p>
+          <div style={{ backgroundColor: 'white', borderRadius: '12px', padding: '20px', textAlign: 'center' }}>
+            <p style={{ fontSize: '32px', fontWeight: 'bold', color: '#111827', margin: 0 }}>{guides.length}</p>
+            <p style={{ color: '#6b7280', fontSize: '14px', margin: '8px 0 0 0' }}>Active Guides</p>
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4">
-          <h3 className="font-semibold text-gray-800 mb-3">Today's Tours</h3>
-          <p className="text-sm text-gray-400 text-center py-8">
-            No tours scheduled yet. Create tours to see them here.
-          </p>
+        {/* Tabs */}
+        <div style={{ display: 'flex', gap: '8px', marginBottom: '24px' }}>
+          {['live', 'today', 'guides'].map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab as any)}
+              style={{
+                padding: '10px 20px',
+                borderRadius: '8px',
+                border: 'none',
+                backgroundColor: activeTab === tab ? '#2563eb' : '#e5e7eb',
+                color: activeTab === tab ? 'white' : '#374151',
+                fontWeight: '500',
+                cursor: 'pointer',
+                textTransform: 'capitalize',
+              }}
+            >
+              {tab}
+            </button>
+          ))}
+        </div>
+
+        {/* Content */}
+        <div style={{ backgroundColor: 'white', borderRadius: '12px', padding: '24px' }}>
+          {activeTab === 'live' && (
+            <div>
+              <h2 style={{ fontSize: '18px', fontWeight: '600', margin: '0 0 16px 0' }}>Live Tours</h2>
+              {liveTours.length === 0 ? (
+                <p style={{ color: '#6b7280' }}>No tours currently in progress</p>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  {liveTours.map((tour) => (
+                    <div key={tour.id} style={{
+                      padding: '16px',
+                      backgroundColor: '#dbeafe',
+                      borderRadius: '8px',
+                      border: '1px solid #3b82f6',
+                    }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div>
+                          <p style={{ fontWeight: '600', margin: 0 }}>{tour.name}</p>
+                          <p style={{ fontSize: '14px', color: '#6b7280', margin: '4px 0 0 0' }}>
+                            Guide: {tour.guide?.first_name} {tour.guide?.last_name} | Vehicle: {tour.vehicle?.plate_number || 'N/A'}
+                          </p>
+                        </div>
+                        <span style={{
+                          padding: '4px 12px',
+                          backgroundColor: '#3b82f6',
+                          color: 'white',
+                          borderRadius: '20px',
+                          fontSize: '12px',
+                        }}>
+                          LIVE
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {activeTab === 'today' && (
+            <div>
+              <h2 style={{ fontSize: '18px', fontWeight: '600', margin: '0 0 16px 0' }}>Today's Schedule</h2>
+              {todayTours.length === 0 ? (
+                <p style={{ color: '#6b7280' }}>No tours scheduled today</p>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  {todayTours.map((tour) => (
+                    <div key={tour.id} style={{
+                      padding: '16px',
+                      backgroundColor: '#f9fafb',
+                      borderRadius: '8px',
+                      border: '1px solid #e5e7eb',
+                    }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div>
+                          <p style={{ fontWeight: '600', margin: 0 }}>{tour.name}</p>
+                          <p style={{ fontSize: '14px', color: '#6b7280', margin: '4px 0 0 0' }}>
+                            {tour.start_time} | {tour.pickup_location || 'TBD'}
+                          </p>
+                        </div>
+                        <span style={{
+                          padding: '4px 12px',
+                          backgroundColor: tour.status === 'completed' ? '#dcfce7' : '#f3f4f6',
+                          color: tour.status === 'completed' ? '#166534' : '#6b7280',
+                          borderRadius: '20px',
+                          fontSize: '12px',
+                          textTransform: 'capitalize',
+                        }}>
+                          {tour.status}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {activeTab === 'guides' && (
+            <div>
+              <h2 style={{ fontSize: '18px', fontWeight: '600', margin: '0 0 16px 0' }}>Active Guides</h2>
+              {guides.length === 0 ? (
+                <p style={{ color: '#6b7280' }}>No guides found</p>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  {guides.map((guide) => (
+                    <div key={guide.id} style={{
+                      padding: '16px',
+                      backgroundColor: '#f9fafb',
+                      borderRadius: '8px',
+                      border: '1px solid #e5e7eb',
+                    }}>
+                      <p style={{ fontWeight: '500', margin: 0 }}>{guide.first_name} {guide.last_name}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </div>
