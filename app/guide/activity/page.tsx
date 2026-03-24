@@ -179,8 +179,8 @@ export default function ActivityFeedPage() {
       </div>
 
       {/* Message Input */}
-      <div className="fixed bottom-20 left-0 right-0 bg-white border-t border-gray-200 p-4 z-40">
-        <div className="max-w-md mx-auto flex gap-2">
+      <div className="bg-white border-t border-gray-200 p-4 -mx-4 -mb-4 mt-4">
+        <div className="flex gap-2">
           <input
             type="text"
             value={newMessage}
