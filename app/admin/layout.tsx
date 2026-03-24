@@ -11,7 +11,13 @@ const navItems = [
   { href: '/admin/guides', label: 'Guides', icon: '👨‍🏫' },
   { href: '/admin/expenses', label: 'Expenses', icon: '💵' },
   { href: '/admin/vehicles', label: 'Fleet', icon: '🚐' },
+]
+
+const bottomNavItems = [
+  { href: '/admin', label: 'Dashboard', icon: '📊' },
+  { href: '/admin/tours', label: 'Tours', icon: '🚌' },
   { href: '/admin/users', label: 'Team', icon: '👥' },
+  { href: '/admin/settings', label: 'Settings', icon: '⚙️' },
 ]
 
 export default function AdminLayout({
@@ -35,7 +41,7 @@ export default function AdminLayout({
     <div className="min-h-screen bg-gray-100">
       {/* Desktop: Full width with border. Mobile: Centered phone width */}
       <div className="mx-auto w-full max-w-full lg:px-4 lg:py-4">
-        <div className="mx-auto w-full max-w-md lg:max-w-none bg-white lg:border lg:border-gray-300 lg:rounded-2xl lg:shadow-sm overflow-hidden">
+        <div className="mx-auto w-full max-w-md lg:max-w-none bg-white lg:border lg:border-gray-300 lg:rounded-2xl lg:shadow-sm overflow-hidden flex flex-col">
           
           {/* Top Navigation */}
           <header className="bg-white border-b border-gray-200">
@@ -68,20 +74,41 @@ export default function AdminLayout({
                     )
                   })}
                 </nav>
-                <button 
-                  onClick={handleSignOut}
-                  className="px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-100 rounded-lg"
-                >
-                  Sign Out
-                </button>
+                <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-bold text-sm">
+                  T
+                </div>
               </div>
             </div>
           </header>
 
           {/* Page Content */}
-          <main className="p-4">
+          <main className="p-4 flex-1">
             {children}
           </main>
+
+          {/* Bottom Navigation - always visible */}
+          <nav className="bg-white border-t border-gray-200">
+            <div className="flex justify-around items-center h-16">
+              {bottomNavItems.map((item) => {
+                const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`)
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={`flex flex-col items-center justify-center flex-1 h-full relative ${
+                      isActive ? 'text-blue-600' : 'text-gray-400'
+                    }`}
+                  >
+                    <span className="text-xl">{item.icon}</span>
+                    <span className="text-[10px] font-medium mt-0.5">{item.label}</span>
+                    {isActive && (
+                      <div className="absolute -bottom-px left-1/2 -translate-x-1/2 w-12 h-0.5 bg-blue-600 rounded-full" />
+                    )}
+                  </Link>
+                )
+              })}
+            </div>
+          </nav>
         </div>
       </div>
 
@@ -133,7 +160,7 @@ export default function AdminLayout({
 
             <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-200">
               <button 
-                onClick={handleSignOut}
+                onClick={() => { handleSignOut(); setIsMenuOpen(false); }}
                 className="flex items-center gap-3 px-4 py-3 text-gray-600 w-full rounded-xl hover:bg-gray-50"
               >
                 <span>🚪</span>

@@ -68,8 +68,8 @@ export default function OperationsLayout({
             {children}
           </main>
 
-          {/* Bottom Navigation - mobile only */}
-          <nav className="bg-white border-t border-gray-200 lg:hidden">
+          {/* Bottom Navigation - always visible */}
+          <nav className="bg-white border-t border-gray-200">
             <div className="flex justify-around items-center h-16">
               {navItems.map((item) => {
                 const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`)
