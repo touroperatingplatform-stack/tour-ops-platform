@@ -26,7 +26,7 @@ export default function LoginPage() {
         console.log('User already logged in, getting profile...')
         const { data: profile } = await supabase
           .from('profiles')
-          .select('role')
+          .select('first_name, last_name, role')
           .eq('id', session.user.id)
           .single()
         
@@ -80,7 +80,7 @@ export default function LoginPage() {
       // Get profile
       const { data: profile } = await supabase
         .from('profiles')
-        .select('role, is_active')
+        .select('first_name, last_name, role, is_active')
         .eq('id', data.user.id)
         .single()
 

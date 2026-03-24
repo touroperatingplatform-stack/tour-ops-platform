@@ -7,7 +7,8 @@ import { supabase } from '@/lib/supabase/client'
 
 interface Profile {
   id: string
-  full_name: string
+  first_name: string
+  last_name: string
   role: string
 }
 
@@ -33,30 +34,22 @@ export default function AdminLayout({
 
   useEffect(() => {
     async function loadProfile() {
-      console.log('Admin: Loading profile...')
-      
       const { data: { session } } = await supabase.auth.getSession()
-      console.log('Admin: Session:', session ? 'found' : 'none')
       
       if (!session?.user) {
-        console.log('Admin: No session, showing error')
         setError('Please log in')
         setLoading(false)
         return
       }
 
-      console.log('Admin: User ID:', session.user.id)
-
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
-        .select('id, full_name, role')
+        .select('id, first_name, last_name, role')
         .eq('id', session.user.id)
         .single()
 
-      console.log('Admin: Profile result:', profileData, 'Error:', profileError)
-
       if (profileError) {
-        setError('Error loading profile: ' + profileError.message)
+        setError('Error: ' + profileError.message)
         setLoading(false)
         return
       }
@@ -67,7 +60,6 @@ export default function AdminLayout({
         return
       }
 
-      console.log('Admin: Profile loaded:', profileData.full_name)
       setProfile(profileData)
       setLoading(false)
     }
@@ -87,24 +79,9 @@ export default function AdminLayout({
         alignItems: 'center', 
         justifyContent: 'center', 
         height: '100vh', 
-        backgroundColor: '#f9fafb',
-        flexDirection: 'column',
-        gap: '16px'
+        backgroundColor: '#f9fafb' 
       }}>
-        <p>Loading admin...</p>
-        <button 
-          onClick={() => window.location.reload()}
-          style={{
-            padding: '8px 16px',
-            backgroundColor: '#2563eb',
-            color: 'white',
-            border: 'none',
-            borderRadius: '4px',
-            cursor: 'pointer',
-          }}
-        >
-          Refresh
-        </button>
+        <p>Loading...</p>
       </div>
     )
   }
@@ -137,6 +114,10 @@ export default function AdminLayout({
     )
   }
 
+  const displayName = profile.first_name && profile.last_name 
+    ? `${profile.first_name} ${profile.last_name}`
+    : profile.first_name || profile.last_name || 'User'
+
   return (
     <div style={{ display: 'flex', minHeight: '100vh' }}>
       <aside style={{
@@ -153,7 +134,7 @@ export default function AdminLayout({
         <div style={{ padding: '24px', borderBottom: '1px solid #374151' }}>
           <h1 style={{ fontSize: '20px', fontWeight: 'bold', margin: 0 }}>Admin</h1>
           <div style={{ marginTop: '8px' }}>
-            <p style={{ fontSize: '14px', margin: 0, fontWeight: '500' }}>{profile.full_name}</p>
+            <p style={{ fontSize: '14px', margin: 0, fontWeight: '500' }}>{displayName}</p>
             <p style={{ fontSize: '12px', margin: '4px 0 0 0', color: '#9ca3af' }}>{profile.role}</p>
           </div>
         </div>
