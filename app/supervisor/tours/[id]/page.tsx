@@ -55,7 +55,7 @@ export default function TourDetailPage() {
     if (error) {
       alert('Failed to update status')
     } else {
-      setTour(prev => prev ? { ...prev, status: newStatus } : null)
+      setTour(prev => prev ? { ...prev, status: newStatus as Tour['status'] } : null)
     }
     setUpdating(false)
   }
