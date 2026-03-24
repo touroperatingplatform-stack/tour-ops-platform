@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase/client'
 import NotificationsDropdown from '@/components/NotificationsDropdown'
+import GlobalSearch from '@/components/GlobalSearch'
 
 interface Profile {
   id: string
