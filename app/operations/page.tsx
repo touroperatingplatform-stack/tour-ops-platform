@@ -14,6 +14,8 @@ interface Tour {
   dropoff_location: string
   capacity: number
   guest_count: number
+  guide_id?: string
+  vehicle_id?: string
   guide: { first_name: string; last_name: string; phone: string } | null
   vehicle: { plate_number: string; make: string; model: string } | null
 }
