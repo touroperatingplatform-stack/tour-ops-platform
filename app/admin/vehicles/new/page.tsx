@@ -2,183 +2,162 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { supabase } from '@/lib/supabase/client'
 
-export default function CreateVehiclePage() {
+export default function NewVehiclePage() {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
-  const [success, setSuccess] = useState('')
-
   const [formData, setFormData] = useState({
-    plateNumber: '',
-    make: '',
+    plate_number: '',
     model: '',
     year: new Date().getFullYear(),
-    capacity: 12,
+    capacity: 10,
+    status: 'active',
+    last_inspection: '',
   })
 
-  function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const { name, value } = e.target
-    setFormData({
-      ...formData,
-      [name]: name === 'year' || name === 'capacity' ? parseInt(value) || 0 : value,
-    })
+  function handleChange(field: string, value: string | number) {
+    setFormData(prev => ({ ...prev, [field]: value }))
   }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setLoading(true)
-    setError('')
-    setSuccess('')
 
     try {
-      const { error: vehicleError } = await (supabase as any)
+      const { error } = await supabase
         .from('vehicles')
         .insert({
-          brand_id: 'b0000000-0000-0000-0000-000000000001',
-          plate_number: formData.plateNumber,
-          make: formData.make,
+          plate_number: formData.plate_number,
           model: formData.model,
           year: formData.year,
           capacity: formData.capacity,
-          is_active: true,
+          status: formData.status,
+          last_inspection: formData.last_inspection || null,
         })
 
-      if (vehicleError) {
-        throw new Error(vehicleError.message)
-      }
+      if (error) throw error
 
-      setSuccess('Vehicle added successfully!')
-      setTimeout(() => {
-        router.push('/admin/vehicles')
-      }, 1500)
+      router.push('/admin/vehicles')
     } catch (err: any) {
-      setError(err.message || 'Failed to add vehicle')
+      alert(err.message || 'Failed to add vehicle')
     } finally {
       setLoading(false)
     }
   }
 
   return (
-    <div>
+    <div className="max-w-2xl mx-auto">
+      {/* Header */}
       <div className="mb-6">
+        <Link href="/admin/vehicles" className="text-gray-600 hover:text-gray-900 text-sm flex items-center gap-2 mb-3">
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+          </svg>
+          Back to Fleet
+        </Link>
         <h1 className="text-2xl font-bold text-gray-900">Add New Vehicle</h1>
-        <p className="text-gray-500 mt-1">Add a vehicle to the fleet</p>
+        <p className="text-gray-500 mt-1">Register a new vehicle to the fleet</p>
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 max-w-2xl">
-        {error && (
-          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
-            {error}
+      {/* Form */}
+      <form onSubmit={handleSubmit} className="bg-white rounded-2xl border border-gray-200 p-6 space-y-6">
+        {/* Plate & Model */}
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Plate Number *</label>
+            <input
+              type="text"
+              required
+              value={formData.plate_number}
+              onChange={(e) => handleChange('plate_number', e.target.value)}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="ABC-123"
+            />
           </div>
-        )}
-
-        {success && (
-          <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg text-green-700">
-            {success}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Model *</label>
+            <input
+              type="text"
+              required
+              value={formData.model}
+              onChange={(e) => handleChange('model', e.target.value)}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="Toyota Hiace"
+            />
           </div>
-        )}
+        </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Plate Number *
-              </label>
-              <input
-                type="text"
-                name="plateNumber"
-                required
-                value={formData.plateNumber}
-                onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="ABC-123"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Make *
-              </label>
-              <input
-                type="text"
-                name="make"
-                required
-                value={formData.make}
-                onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Mercedes-Benz"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Model *
-              </label>
-              <input
-                type="text"
-                name="model"
-                required
-                value={formData.model}
-                onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Sprinter"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Year *
-              </label>
-              <input
-                type="number"
-                name="year"
-                required
-                min={2000}
-                max={2030}
-                value={formData.year}
-                onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Capacity (seats) *
-              </label>
-              <input
-                type="number"
-                name="capacity"
-                required
-                min={1}
-                max={100}
-                value={formData.capacity}
-                onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
+        {/* Year & Capacity */}
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Year *</label>
+            <input
+              type="number"
+              required
+              min={2000}
+              max={new Date().getFullYear() + 1}
+              value={formData.year}
+              onChange={(e) => handleChange('year', parseInt(e.target.value))}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
           </div>
-
-          <div className="flex items-center gap-4 pt-4">
-            <button
-              type="submit"
-              disabled={loading}
-              className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {loading ? 'Adding...' : 'Add Vehicle'}
-            </button>
-
-            <button
-              type="button"
-              onClick={() => router.push('/admin/vehicles')}
-              className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
-            >
-              Cancel
-            </button>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Capacity *</label>
+            <input
+              type="number"
+              required
+              min={1}
+              value={formData.capacity}
+              onChange={(e) => handleChange('capacity', parseInt(e.target.value))}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
           </div>
-        </form>
-      </div>
+        </div>
+
+        {/* Status */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Status *</label>
+          <select
+            value={formData.status}
+            onChange={(e) => handleChange('status', e.target.value)}
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="active">Active</option>
+            <option value="maintenance">Maintenance</option>
+            <option value="inactive">Inactive</option>
+          </select>
+        </div>
+
+        {/* Last Inspection */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Last Inspection Date</label>
+          <input
+            type="date"
+            value={formData.last_inspection}
+            onChange={(e) => handleChange('last_inspection', e.target.value)}
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+
+        {/* Actions */}
+        <div className="flex gap-3 pt-4 border-t border-gray-200">
+          <Link
+            href="/admin/vehicles"
+            className="flex-1 bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 transition-colors text-center"
+          >
+            Cancel
+          </Link>
+          <button
+            type="submit"
+            disabled={loading}
+            className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+          >
+            {loading ? 'Adding...' : 'Add Vehicle'}
+          </button>
+        </div>
+      </form>
     </div>
   )
 }
