@@ -71,7 +71,7 @@ export default function SupervisorLayout({
                           className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50"
                         >
                           <span>👤</span>
-                          <span className="text-sm">Profile</span>
+                          <span className="text-sm text-gray-900">Profile</span>
                         </Link>
                         <Link 
                           href="/supervisor/settings"
@@ -79,7 +79,7 @@ export default function SupervisorLayout({
                           className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50"
                         >
                           <span>⚙️</span>
-                          <span className="text-sm">Settings</span>
+                          <span className="text-sm text-gray-900">Settings</span>
                         </Link>
                         <div className="border-t border-gray-200 my-1"></div>
                         <button 
@@ -87,7 +87,7 @@ export default function SupervisorLayout({
                           className="flex items-center gap-3 px-4 py-3 w-full hover:bg-gray-50 text-left"
                         >
                           <span>🚪</span>
-                          <span className="text-sm">Logout</span>
+                          <span className="text-sm text-gray-900">Logout</span>
                         </button>
                       </div>
                     </>
