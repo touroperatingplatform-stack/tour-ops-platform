@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase/client'
 
@@ -12,14 +12,41 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false)
   const [debug, setDebug] = useState('')
 
+  // Check if already logged in
+  useEffect(() => {
+    async function checkSession() {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (session) {
+        setDebug('Already logged in, checking profile...')
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', session.user.id)
+          .single()
+        
+        if (profile) {
+          const redirects: Record<string, string> = {
+            super_admin: '/admin',
+            company_admin: '/admin',
+            supervisor: '/supervisor',
+            manager: '/supervisor',
+            operations: '/operations',
+            guide: '/guide',
+          }
+          window.location.href = redirects[profile.role] || '/admin'
+        }
+      }
+    }
+    checkSession()
+  }, [])
+
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault()
     setLoading(true)
     setError('')
-    setDebug('')
+    setDebug('Signing in...')
 
     try {
-      setDebug('Signing in...')
       const { data, error: signInError } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -31,7 +58,17 @@ export default function LoginPage() {
         return
       }
 
-      setDebug('Getting profile...')
+      if (!data.user) {
+        setError('No user returned from sign in')
+        setLoading(false)
+        return
+      }
+
+      setDebug('Got user: ' + data.user.email + ', getting profile...')
+      
+      // Add small delay to ensure session is persisted
+      await new Promise(resolve => setTimeout(resolve, 500))
+      
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('*')
@@ -45,18 +82,18 @@ export default function LoginPage() {
       }
 
       if (!profile) {
-        setError('Account not set up. Contact your administrator.')
+        setError('No profile found. Contact your administrator.')
         setLoading(false)
         return
       }
 
       if (!profile.is_active) {
-        setError('Your account has been deactivated. Contact your administrator.')
+        setError('Your account has been deactivated.')
         setLoading(false)
         return
       }
 
-      setDebug('Redirecting...')
+      setDebug('Profile loaded, role: ' + profile.role + ', redirecting...')
       
       // Role-based redirect
       const redirects: Record<string, string> = {
@@ -68,14 +105,16 @@ export default function LoginPage() {
         guide: '/guide',
       }
       
-      const redirectPath = redirects[profile.role] || '/login'
+      const redirectPath = redirects[profile.role] || '/admin'
       
-      // Use window.location for hard navigation
-      window.location.href = redirectPath
+      // Small delay to let session persist
+      setTimeout(() => {
+        window.location.href = redirectPath
+      }, 100)
       
     } catch (err: any) {
       console.error('Login error:', err)
-      setError('An error occurred: ' + (err.message || 'Unknown error'))
+      setError('Error: ' + (err.message || 'Unknown error'))
       setLoading(false)
     }
   }
@@ -90,7 +129,6 @@ export default function LoginPage() {
       padding: '16px',
     }}>
       <div style={{ width: '100%', maxWidth: '384px' }}>
-        {/* Logo */}
         <div style={{ textAlign: 'center', marginBottom: '32px' }}>
           <div style={{
             display: 'inline-flex',
@@ -105,10 +143,9 @@ export default function LoginPage() {
             <span style={{ color: 'white', fontSize: '24px', fontWeight: 'bold' }}>T</span>
           </div>
           <h1 style={{ fontSize: '24px', fontWeight: 'bold', color: '#111827', margin: 0 }}>Tour Ops</h1>
-          <p style={{ color: '#6b7280', fontSize: '14px', marginTop: '4px', margin: '4px 0 0 0' }}>Sign in to your account</p>
+          <p style={{ color: '#6b7280', fontSize: '14px', marginTop: '4px' }}>Sign in to your account</p>
         </div>
 
-        {/* Form */}
         <form onSubmit={handleLogin} style={{
           backgroundColor: 'white',
           borderRadius: '16px',
@@ -116,7 +153,6 @@ export default function LoginPage() {
           border: '1px solid #e5e7eb',
           padding: '24px',
         }}>
-          {/* Email */}
           <div style={{ marginBottom: '16px' }}>
             <label style={{ display: 'block', fontSize: '14px', fontWeight: '500', color: '#374151', marginBottom: '4px' }}>
               Email
@@ -133,15 +169,11 @@ export default function LoginPage() {
                 border: '1px solid #d1d5db',
                 borderRadius: '8px',
                 fontSize: '14px',
-                outline: 'none',
               }}
               placeholder="you@example.com"
-              onFocus={(e) => e.target.style.borderColor = '#2563eb'}
-              onBlur={(e) => e.target.style.borderColor = '#d1d5db'}
             />
           </div>
 
-          {/* Password */}
           <div style={{ marginBottom: '16px' }}>
             <label style={{ display: 'block', fontSize: '14px', fontWeight: '500', color: '#374151', marginBottom: '4px' }}>
               Password
@@ -158,15 +190,11 @@ export default function LoginPage() {
                 border: '1px solid #d1d5db',
                 borderRadius: '8px',
                 fontSize: '14px',
-                outline: 'none',
               }}
               placeholder="********"
-              onFocus={(e) => e.target.style.borderColor = '#2563eb'}
-              onBlur={(e) => e.target.style.borderColor = '#d1d5db'}
             />
           </div>
 
-          {/* Error */}
           {error && (
             <p style={{
               color: '#dc2626',
@@ -180,18 +208,12 @@ export default function LoginPage() {
             </p>
           )}
 
-          {/* Debug */}
           {debug && (
-            <p style={{
-              color: '#2563eb',
-              fontSize: '12px',
-              marginBottom: '16px',
-            }}>
+            <p style={{ color: '#2563eb', fontSize: '12px', marginBottom: '16px' }}>
               {debug}
             </p>
           )}
 
-          {/* Submit */}
           <button
             type="submit"
             disabled={loading}

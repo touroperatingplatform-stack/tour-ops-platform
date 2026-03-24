@@ -30,29 +30,89 @@ export default function AdminLayout({
   const pathname = usePathname()
   const [profile, setProfile] = useState<Profile | null>(null)
   const [loading, setLoading] = useState(true)
+  const [authError, setAuthError] = useState('')
 
   useEffect(() => {
     async function checkAuth() {
-      const { data: { user } } = await supabase.auth.getUser()
-      
-      if (!user) {
-        router.push('/login')
-        return
+      try {
+        // Get session first
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+        
+        if (sessionError) {
+          console.error('Session error:', sessionError)
+          setAuthError('Session error: ' + sessionError.message)
+          router.push('/login')
+          return
+        }
+        
+        if (!session) {
+          console.log('No session found')
+          setAuthError('No session - redirecting to login')
+          router.push('/login')
+          return
+        }
+
+        console.log('Session found for user:', session.user.id)
+        
+        // Get user
+        const { data: { user }, error: userError } = await supabase.auth.getUser()
+        
+        if (userError || !user) {
+          console.error('User error:', userError)
+          setAuthError('User error - redirecting to login')
+          router.push('/login')
+          return
+        }
+
+        console.log('User found:', user.id)
+        
+        // Get profile with error handling
+        const { data: profileData, error: profileError } = await supabase
+          .from('profiles')
+          .select('id, full_name, role, is_active')
+          .eq('id', user.id)
+          .single()
+
+        if (profileError) {
+          console.error('Profile error:', profileError)
+          setAuthError('Profile error: ' + profileError.message)
+          router.push('/login')
+          return
+        }
+
+        if (!profileData) {
+          console.error('No profile found')
+          setAuthError('No profile found')
+          router.push('/login')
+          return
+        }
+
+        console.log('Profile found:', profileData.role)
+
+        // Check role
+        const allowedRoles = ['super_admin', 'company_admin', 'supervisor', 'manager']
+        if (!allowedRoles.includes(profileData.role)) {
+          console.error('Role not allowed:', profileData.role)
+          setAuthError('Role not allowed: ' + profileData.role)
+          router.push('/login')
+          return
+        }
+
+        // Check if active
+        if (!profileData.is_active) {
+          console.error('Account inactive')
+          setAuthError('Account inactive')
+          router.push('/login')
+          return
+        }
+
+        setProfile(profileData)
+        setLoading(false)
+      } catch (err: any) {
+        console.error('Auth check error:', err)
+        setAuthError('Error: ' + err.message)
+        setLoading(false)
       }
-
-      const { data: profile } = await (supabase as any)
-        .from('profiles')
-        .select('id, full_name, role')
-        .eq('id', user.id)
-        .single()
-
-      if (!profile || !['super_admin', 'company_admin', 'supervisor', 'manager'].includes(profile.role)) {
-        router.push('/login')
-        return
-      }
-
-      setProfile(profile)
-      setLoading(false)
     }
 
     checkAuth()
@@ -65,8 +125,9 @@ export default function AdminLayout({
 
   if (loading) {
     return (
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', backgroundColor: '#f9fafb' }}>
-        <p style={{ color: '#6b7280' }}>Loading...</p>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', backgroundColor: '#f9fafb', flexDirection: 'column', gap: '16px' }}>
+        <p style={{ color: '#6b7280' }}>Loading admin...</p>
+        {authError && <p style={{ color: '#dc2626', fontSize: '14px' }}>{authError}</p>}
       </div>
     )
   }
