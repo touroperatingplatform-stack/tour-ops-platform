@@ -61,7 +61,7 @@ export default function SupervisorDashboard() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       {/* Stats */}
       <div className="grid grid-cols-3 gap-3">
         <div className="bg-blue-600 rounded-2xl p-3 text-white text-center">
@@ -80,7 +80,7 @@ export default function SupervisorDashboard() {
 
       {/* Live Tours */}
       <section>
-        <h2 className="font-semibold text-gray-900 mb-3">Live Tours</h2>
+        <h2 className="font-semibold text-gray-900 mb-3 px-1">Live Tours</h2>
         
         {liveTours.length === 0 ? (
           <div className="bg-gray-50 rounded-2xl p-6 text-center border border-gray-200">

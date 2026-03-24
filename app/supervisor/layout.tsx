@@ -27,8 +27,8 @@ export default function SupervisorLayout({
 
   return (
     <div className="h-screen bg-gray-100 flex flex-col">
-      {/* Gray frame padding */}
-      <div className="flex-1 p-4 pb-20 overflow-hidden">
+      {/* Gray frame padding - 12px to match stat card gaps */}
+      <div className="flex-1 p-3 pb-[5.5rem] overflow-hidden">
         {/* White bordered container */}
         <div className="mx-auto w-full h-full bg-white border-2 border-gray-300 rounded-2xl shadow-sm overflow-hidden flex flex-col">
           
@@ -97,8 +97,8 @@ export default function SupervisorLayout({
             </div>
           </header>
 
-          {/* Page Content */}
-          <main className="flex-1 px-4 py-4 overflow-y-auto">
+          {/* Page Content - 12px padding to match stat card gaps */}
+          <main className="flex-1 px-3 py-3 overflow-y-auto">
             {children}
           </main>
         </div>
