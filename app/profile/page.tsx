@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import Link from 'next/link'
 import { supabase } from '@/lib/supabase/client'
 
 export default function ProfilePage() {
@@ -98,16 +97,8 @@ export default function ProfilePage() {
 
   return (
     <div className="space-y-6">
-      {/* Back Button */}
-      <Link href="/guide" className="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900">
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-        </svg>
-        <span>Back</span>
-      </Link>
-
       {/* Profile Card */}
-      <div className="bg-white rounded-2xl p-6 border border-gray-200">
+      <div className="bg-white rounded-2xl p-6">
         <div className="flex items-center gap-4 mb-6">
           <div className="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center text-white text-2xl font-bold">
             {formData.first_name?.[0]?.toUpperCase() || '?'}
