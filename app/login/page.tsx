@@ -26,7 +26,7 @@ export default function LoginPage() {
         console.log('User already logged in, getting profile...')
         const { data: profile } = await supabase
           .from('profiles')
-          .select('first_name, last_name, role')
+          .select('first_name, last_name, role, status')
           .eq('id', session.user.id)
           .single()
         
@@ -80,7 +80,7 @@ export default function LoginPage() {
       // Get profile
       const { data: profile } = await supabase
         .from('profiles')
-        .select('first_name, last_name, role, is_active')
+        .select('first_name, last_name, role, status')
         .eq('id', data.user.id)
         .single()
 
@@ -92,7 +92,7 @@ export default function LoginPage() {
         return
       }
 
-      if (!profile.is_active) {
+      if (profile.status !== 'active') {
         setError('Account deactivated')
         setLoading(false)
         return
