@@ -32,28 +32,37 @@ export default function AdminLayout({
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Top Navigation Bar */}
-      <header className="fixed top-0 left-0 right-0 bg-white border-b border-gray-200 z-50">
-        <div className="max-w-md mx-auto px-4 h-14 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <button 
-              onClick={() => setIsMenuOpen(true)}
-              className="w-10 h-10 flex items-center justify-center -ml-2 rounded-lg hover:bg-gray-100"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-              </svg>
-            </button>
-            <span className="font-semibold text-gray-900">{currentPage}</span>
+    <div className="min-h-screen bg-gray-100 py-4 px-4">
+      {/* Centered Container with Border */}
+      <div className="max-w-md mx-auto bg-white border border-gray-300 rounded-2xl shadow-sm overflow-hidden">
+        
+        {/* Top Navigation - Above content, scrolls together */}
+        <header className="bg-white border-b border-gray-200">
+          <div className="px-4 h-14 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <button 
+                onClick={() => setIsMenuOpen(true)}
+                className="w-10 h-10 flex items-center justify-center -ml-2 rounded-lg hover:bg-gray-100"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+              </button>
+              <span className="font-semibold text-gray-900">{currentPage}</span>
+            </div>
+            <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-bold text-sm">
+              T
+            </div>
           </div>
-          <button className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-bold text-sm">
-            T
-          </button>
-        </div>
-      </header>
+        </header>
 
-      {/* Side Menu */}
+        {/* Page Content */}
+        <main className="p-4">
+          {children}
+        </main>
+      </div>
+
+      {/* Side Menu Overlay */}
       {isMenuOpen && (
         <>
           <div 
@@ -111,13 +120,6 @@ export default function AdminLayout({
           </aside>
         </>
       )}
-
-      {/* Main Content - Centered like login */}
-      <main className="pt-14 pb-6 px-4">
-        <div className="max-w-md mx-auto">
-          {children}
-        </div>
-      </main>
     </div>
   )
 }
