@@ -62,10 +62,6 @@ export default function CreateUserPage() {
         throw new Error(data.error || 'Failed to create user')
       }
 
-      if (profileError) {
-        throw new Error(profileError.message)
-      }
-
       setSuccess('User created successfully!')
       setTimeout(() => {
         router.push('/admin/users')
