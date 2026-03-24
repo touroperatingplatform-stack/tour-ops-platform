@@ -1,7 +1,7 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { useRouter, usePathname } from 'next/navigation'
+import { useEffect, useState, useRef } from 'react'
+import { usePathname } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase/client'
 
@@ -26,115 +26,82 @@ export default function AdminLayout({
 }: {
   children: React.ReactNode
 }) {
-  const router = useRouter()
   const pathname = usePathname()
   const [profile, setProfile] = useState<Profile | null>(null)
   const [loading, setLoading] = useState(true)
-  const [authError, setAuthError] = useState('')
+  const checkedRef = useRef(false)
 
   useEffect(() => {
+    if (checkedRef.current) return
+    checkedRef.current = true
+
     async function checkAuth() {
       try {
-        // Get session first
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+        const { data: { session } } = await supabase.auth.getSession()
         
-        if (sessionError) {
-          console.error('Session error:', sessionError)
-          setAuthError('Session error: ' + sessionError.message)
-          router.push('/login')
-          return
-        }
-        
-        if (!session) {
-          console.log('No session found')
-          setAuthError('No session - redirecting to login')
-          router.push('/login')
+        if (!session?.user) {
+          console.log('Admin: No session')
+          window.location.replace('/login')
           return
         }
 
-        console.log('Session found for user:', session.user.id)
-        
-        // Get user
-        const { data: { user }, error: userError } = await supabase.auth.getUser()
-        
-        if (userError || !user) {
-          console.error('User error:', userError)
-          setAuthError('User error - redirecting to login')
-          router.push('/login')
-          return
-        }
-
-        console.log('User found:', user.id)
-        
-        // Get profile with error handling
-        const { data: profileData, error: profileError } = await supabase
+        const { data: profile } = await supabase
           .from('profiles')
           .select('id, full_name, role, is_active')
-          .eq('id', user.id)
+          .eq('id', session.user.id)
           .single()
 
-        if (profileError) {
-          console.error('Profile error:', profileError)
-          setAuthError('Profile error: ' + profileError.message)
-          router.push('/login')
+        if (!profile) {
+          console.log('Admin: No profile')
+          window.location.replace('/login')
           return
         }
 
-        if (!profileData) {
-          console.error('No profile found')
-          setAuthError('No profile found')
-          router.push('/login')
+        if (!profile.is_active) {
+          console.log('Admin: Inactive')
+          window.location.replace('/login')
           return
         }
 
-        console.log('Profile found:', profileData.role)
-
-        // Check role
         const allowedRoles = ['super_admin', 'company_admin', 'supervisor', 'manager']
-        if (!allowedRoles.includes(profileData.role)) {
-          console.error('Role not allowed:', profileData.role)
-          setAuthError('Role not allowed: ' + profileData.role)
-          router.push('/login')
+        if (!allowedRoles.includes(profile.role)) {
+          console.log('Admin: Role not allowed:', profile.role)
+          window.location.replace('/login')
           return
         }
 
-        // Check if active
-        if (!profileData.is_active) {
-          console.error('Account inactive')
-          setAuthError('Account inactive')
-          router.push('/login')
-          return
-        }
-
-        setProfile(profileData)
+        setProfile(profile)
         setLoading(false)
-      } catch (err: any) {
-        console.error('Auth check error:', err)
-        setAuthError('Error: ' + err.message)
-        setLoading(false)
+      } catch (err) {
+        console.error('Admin auth error:', err)
+        window.location.replace('/login')
       }
     }
 
     checkAuth()
-  }, [router])
+  }, [])
 
   async function handleSignOut() {
     await supabase.auth.signOut()
-    router.push('/login')
+    window.location.replace('/login')
   }
 
   if (loading) {
     return (
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', backgroundColor: '#f9fafb', flexDirection: 'column', gap: '16px' }}>
-        <p style={{ color: '#6b7280' }}>Loading admin...</p>
-        {authError && <p style={{ color: '#dc2626', fontSize: '14px' }}>{authError}</p>}
+      <div style={{ 
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'center', 
+        height: '100vh', 
+        backgroundColor: '#f9fafb' 
+      }}>
+        <p>Loading admin...</p>
       </div>
     )
   }
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh' }}>
-      {/* Sidebar */}
       <aside style={{
         position: 'fixed',
         left: 0,
@@ -146,7 +113,6 @@ export default function AdminLayout({
         display: 'flex',
         flexDirection: 'column',
       }}>
-        {/* Header */}
         <div style={{ padding: '24px', borderBottom: '1px solid #374151' }}>
           <h1 style={{ fontSize: '20px', fontWeight: 'bold', margin: 0 }}>Admin</h1>
           {profile && (
@@ -157,7 +123,6 @@ export default function AdminLayout({
           )}
         </div>
 
-        {/* Navigation */}
         <nav style={{ flex: 1, padding: '16px 0' }}>
           {navItems.map((item) => {
             const isActive = pathname === item.href
@@ -185,7 +150,6 @@ export default function AdminLayout({
           })}
         </nav>
 
-        {/* Sign Out */}
         <div style={{ padding: '16px', borderTop: '1px solid #374151' }}>
           <button
             onClick={handleSignOut}
@@ -208,7 +172,6 @@ export default function AdminLayout({
         </div>
       </aside>
 
-      {/* Main Content */}
       <main style={{
         marginLeft: '256px',
         flex: 1,
