@@ -63,7 +63,7 @@ export default function AdminNav() {
             <div className="flex items-center justify-between p-4 border-b border-gray-200 h-14">
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold text-sm"
-003e
+                >
                   T
                 </div>
                 <span className="font-bold text-gray-900">Tour Ops</span>
