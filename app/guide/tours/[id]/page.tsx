@@ -30,7 +30,7 @@ const defaultChecklist: ChecklistItem[] = [
 
 export default function GuideTourPage() {
   const params = useParams()
-  const [tour, setTour] = useState<T | null>(null)
+  const [tour, setTour] = useState<Tour | null>(null)
   const [loading, setLoading] = useState(true)
   const [checklist, setChecklist] = useState<ChecklistItem[]>(defaultChecklist)
   const [notes, setNotes] = useState('')
