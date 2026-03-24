@@ -208,7 +208,7 @@ export default function IncidentDetailPage() {
 
       {/* Actions */}
       <div className="flex gap-3">
-        {incident.status === 'open' && incident.status !== 'resolved' && (
+        {incident.status === 'open' && (
           <button
             onClick={() => updateStatus('escalated')}
             disabled={updating}
