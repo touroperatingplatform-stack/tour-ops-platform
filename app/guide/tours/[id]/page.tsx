@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase/client'
+import IncidentReportForm from '@/components/IncidentReportForm'
 
 interface Tour {
   id: string
@@ -36,6 +37,7 @@ export default function TourDetailPage() {
   const [tour, setTour] = useState<Tour | null>(null)
   const [checklist, setChecklist] = useState<ChecklistItem[]>([])
   const [loading, setLoading] = useState(true)
+  const [showIncidentForm, setShowIncidentForm] = useState(false)
 
   useEffect(() => {
     async function loadTour() {
@@ -182,7 +184,7 @@ export default function TourDetailPage() {
           </div>
 
           {/* Status Actions */}
-          <div style={{ marginTop: '24px', display: 'flex', gap: '12px' }}>
+          <div style={{ marginTop: '24px', display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
             {tour.status === 'scheduled' && (
               <button
                 onClick={() => updateStatus('in_progress')}
@@ -215,8 +217,35 @@ export default function TourDetailPage() {
                 Complete Tour
               </button>
             )}
+            <button
+              onClick={() => setShowIncidentForm(true)}
+              style={{
+                backgroundColor: '#dc2626',
+                color: 'white',
+                padding: '12px 24px',
+                borderRadius: '8px',
+                border: 'none',
+                fontWeight: '500',
+                cursor: 'pointer',
+              }}
+            >
+              🚨 Report Incident
+            </button>
           </div>
         </div>
+
+        {/* Incident Form Modal */}
+        {showIncidentForm && tour && (
+          <IncidentReportForm
+            tourId={tour.id}
+            tourName={tour.name}
+            onClose={() => setShowIncidentForm(false)}
+            onSuccess={() => {
+              setShowIncidentForm(false)
+              alert('Incident reported! Supervisors have been notified.')
+            }}
+          />
+        )}
 
         {/* Checklist */}
         <div style={{

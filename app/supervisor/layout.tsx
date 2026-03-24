@@ -7,6 +7,7 @@ import NotificationsDropdown from '@/components/NotificationsDropdown'
 
 const bottomNavItems = [
   { href: '/supervisor', label: 'Live', icon: '📡' },
+  { href: '/supervisor/incidents', label: 'Incidents', icon: '🚨' },
   { href: '/supervisor/tours', label: 'Tours', icon: '🚌' },
   { href: '/supervisor/guides', label: 'Guides', icon: '👥' },
 ]
