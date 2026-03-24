@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { usePathname } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase/client'
+import NotificationsDropdown from '@/components/NotificationsDropdown'
 
 interface Profile {
   id: string
@@ -193,9 +194,27 @@ export default function AdminLayout({
         flex: 1,
         backgroundColor: '#f9fafb',
         minHeight: '100vh',
-        padding: '32px',
       }}>
-        {children}
+        {/* Header with notifications */}
+        <header style={{
+          backgroundColor: 'white',
+          borderBottom: '1px solid #e5e7eb',
+          padding: '16px 32px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+        }}>
+          <h2 style={{ fontSize: '20px', fontWeight: '600', color: '#111827', margin: 0 }}>
+            {navItems.find(item => item.href === pathname)?.label || 'Admin'}
+          </h2>
+          <div>
+            <NotificationsDropdown />
+          </div>
+        </header>
+
+        <div style={{ padding: '32px' }}>
+          {children}
+        </div>
       </main>
     </div>
   )
