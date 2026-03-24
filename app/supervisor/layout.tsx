@@ -26,7 +26,7 @@ export default function SupervisorLayout({
   return (
     <div className="min-h-screen bg-gray-100 py-4 px-4">
       {/* Centered Container with Border */}
-      <div className="max-w-md mx-auto bg-white border border-gray-300 rounded-2xl shadow-sm overflow-hidden flex flex-col min-h-[calc(100vh-2rem)]">
+      <div className="max-w-md lg:max-w-6xl mx-auto bg-white border border-gray-300 rounded-2xl shadow-sm overflow-hidden flex flex-col min-h-[calc(100vh-2rem)]">
         
         {/* Top Navigation - Above content, scrolls together */}
         <header className="bg-gray-900 text-white border-b border-gray-800">
@@ -49,8 +49,8 @@ export default function SupervisorLayout({
           {children}
         </main>
 
-        {/* Bottom Navigation */}
-        <nav className="bg-white border-t border-gray-200">
+        {/* Bottom Navigation - mobile only */}
+        <nav className="bg-white border-t border-gray-200 lg:hidden">
           <div className="flex justify-around items-center h-16">
             {navItems.map((item) => {
               const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`)
