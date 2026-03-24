@@ -48,14 +48,16 @@ export default function ActivityFeedPage() {
 
     loadActivities()
     
-    const subscription = supabase
+    const channel = supabase
       .channel('activity_feed')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'activity_feed' }, (payload) => {
         setActivities(prev => [payload.new as Activity, ...prev])
       })
       .subscribe()
 
-    return () => subscription.unsubscribe()
+    return () => {
+      channel.unsubscribe()
+    }
   }, [])
 
   async function loadActivities() {
