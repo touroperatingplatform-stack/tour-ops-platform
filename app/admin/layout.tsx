@@ -29,33 +29,50 @@ export default function AdminLayout({
   const pathname = usePathname()
   const [profile, setProfile] = useState<Profile | null>(null)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
 
   useEffect(() => {
-    let mounted = true
-
     async function loadProfile() {
-      const { data: { session } } = await supabase.auth.getSession()
+      console.log('Admin: Loading profile...')
       
-      if (!session?.user || !mounted) {
-        if (mounted) setLoading(false)
+      const { data: { session } } = await supabase.auth.getSession()
+      console.log('Admin: Session:', session ? 'found' : 'none')
+      
+      if (!session?.user) {
+        console.log('Admin: No session, showing error')
+        setError('Please log in')
+        setLoading(false)
         return
       }
 
-      const { data: profileData } = await supabase
+      console.log('Admin: User ID:', session.user.id)
+
+      const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .select('id, full_name, role')
         .eq('id', session.user.id)
         .single()
 
-      if (profileData && mounted) {
-        setProfile(profileData)
+      console.log('Admin: Profile result:', profileData, 'Error:', profileError)
+
+      if (profileError) {
+        setError('Error loading profile: ' + profileError.message)
         setLoading(false)
+        return
       }
+
+      if (!profileData) {
+        setError('Profile not found')
+        setLoading(false)
+        return
+      }
+
+      console.log('Admin: Profile loaded:', profileData.full_name)
+      setProfile(profileData)
+      setLoading(false)
     }
 
     loadProfile()
-    
-    return () => { mounted = false }
   }, [])
 
   async function handleSignOut() {
@@ -70,15 +87,29 @@ export default function AdminLayout({
         alignItems: 'center', 
         justifyContent: 'center', 
         height: '100vh', 
-        backgroundColor: '#f9fafb' 
+        backgroundColor: '#f9fafb',
+        flexDirection: 'column',
+        gap: '16px'
       }}>
-        <p>Loading...</p>
+        <p>Loading admin...</p>
+        <button 
+          onClick={() => window.location.reload()}
+          style={{
+            padding: '8px 16px',
+            backgroundColor: '#2563eb',
+            color: 'white',
+            border: 'none',
+            borderRadius: '4px',
+            cursor: 'pointer',
+          }}
+        >
+          Refresh
+        </button>
       </div>
     )
   }
 
-  // If no profile after loading, show error with login link
-  if (!profile) {
+  if (error || !profile) {
     return (
       <div style={{ 
         display: 'flex', 
@@ -89,7 +120,7 @@ export default function AdminLayout({
         flexDirection: 'column',
         gap: '16px'
       }}>
-        <p style={{ color: '#dc2626' }}>Please log in to access admin</p>
+        <p style={{ color: '#dc2626' }}>{error || 'Not logged in'}</p>
         <a 
           href="/login"
           style={{
