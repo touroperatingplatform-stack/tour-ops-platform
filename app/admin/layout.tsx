@@ -4,28 +4,14 @@ import { useEffect, useState } from 'react'
 import { usePathname } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase/client'
-import NotificationsDropdown from '@/components/NotificationsDropdown'
-import GlobalSearch from '@/components/GlobalSearch'
-
-interface Profile {
-  id: string
-  first_name: string
-  last_name: string
-  role: string
-}
 
 const navItems = [
-  { href: '/admin', label: 'Overview', icon: '📊' },
-  { href: '/admin/users', label: 'Users', icon: '👥' },
+  { href: '/admin', label: 'Dashboard', icon: '📊' },
   { href: '/admin/tours', label: 'Tours', icon: '🚌' },
-  { href: '/admin/templates', label: 'Templates', icon: '📋' },
-  { href: '/admin/guests', label: 'Guests', icon: '🎫' },
-  { href: '/admin/vehicles', label: 'Vehicles', icon: '🚐' },
- { href: '/admin/guides', label: 'Guides', icon: '👨‍🏫' },
+  { href: '/admin/guides', label: 'Guides', icon: '👨‍🏫' },
   { href: '/admin/expenses', label: 'Expenses', icon: '💵' },
-  { href: '/admin/checklists', label: 'Checklists', icon: '✅' },
-  { href: '/admin/brands', label: 'Brands', icon: '🏷️' },
-  { href: '/admin/settings', label: 'Settings', icon: '⚙️' },
+  { href: '/admin/vehicles', label: 'Fleet', icon: '🚐' },
+  { href: '/admin/users', label: 'Team', icon: '👥' },
 ]
 
 export default function AdminLayout({
@@ -34,39 +20,25 @@ export default function AdminLayout({
   children: React.ReactNode
 }) {
   const pathname = usePathname()
-  const [profile, setProfile] = useState<Profile | null>(null)
+  const [profile, setProfile] = useState<{ first_name: string; last_name: string; role: string } | null>(null)
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState('')
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
   useEffect(() => {
     async function loadProfile() {
       const { data: { session } } = await supabase.auth.getSession()
-      
       if (!session?.user) {
-        setError('Please log in')
-        setLoading(false)
+        window.location.href = '/login'
         return
       }
 
-      const { data: profileData, error: profileError } = await supabase
+      const { data } = await supabase
         .from('profiles')
-        .select('id, first_name, last_name, role')
+        .select('first_name, last_name, role')
         .eq('id', session.user.id)
         .single()
 
-      if (profileError) {
-        setError('Error: ' + profileError.message)
-        setLoading(false)
-        return
-      }
-
-      if (!profileData) {
-        setError('Profile not found')
-        setLoading(false)
-        return
-      }
-
-      setProfile(profileData)
+      if (data) setProfile(data)
       setLoading(false)
     }
 
@@ -80,113 +52,50 @@ export default function AdminLayout({
 
   if (loading) {
     return (
-      <div style={{ 
-        display: 'flex', 
-        alignItems: 'center', 
-        justifyContent: 'center', 
-        height: '100vh', 
-        backgroundColor: '#f9fafb' 
-      }}>
-        <p>Loading...</p>
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="animate-pulse">
+          <div className="w-12 h-12 bg-blue-600 rounded-2xl"></div>
+        </div>
       </div>
     )
   }
-
-  if (error || !profile) {
-    return (
-      <div style={{ 
-        display: 'flex', 
-        alignItems: 'center', 
-        justifyContent: 'center', 
-        height: '100vh', 
-        backgroundColor: '#f9fafb',
-        flexDirection: 'column',
-        gap: '16px'
-      }}>
-        <p style={{ color: '#dc2626' }}>{error || 'Not logged in'}</p>
-        <a 
-          href="/login"
-          style={{
-            backgroundColor: '#2563eb',
-            color: 'white',
-            padding: '12px 24px',
-            borderRadius: '8px',
-            textDecoration: 'none',
-          }}
-        >
-          Go to Login
-        </a>
-      </div>
-    )
-  }
-
-  const displayName = profile.first_name && profile.last_name 
-    ? `${profile.first_name} ${profile.last_name}`
-    : profile.first_name || profile.last_name || 'User'
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh' }}>
-      <aside style={{
-        position: 'fixed',
-        left: 0,
-        top: 0,
-        bottom: 0,
-        width: '256px',
-        backgroundColor: '#111827',
-        color: 'white',
-        display: 'flex',
-        flexDirection: 'column',
-      }}>
-        <div style={{ padding: '24px', borderBottom: '1px solid #374151' }}>
-          <h1 style={{ fontSize: '20px', fontWeight: 'bold', margin: 0 }}>Admin</h1>
-          <div style={{ marginTop: '8px' }}>
-            <p style={{ fontSize: '14px', margin: 0, fontWeight: '500' }}>{displayName}</p>
-            <p style={{ fontSize: '12px', margin: '4px 0 0 0', color: '#9ca3af' }}>{profile.role}</p>
+    <div className="min-h-screen bg-gray-50">
+      {/* Desktop Sidebar */}
+      <aside className="hidden lg:fixed lg:left-0 lg:top-0 lg:bottom-0 lg:w-64 lg:bg-white lg:border-r lg:border-gray-200 lg:flex lg:flex-col">
+        <div className="p-4 border-b border-gray-200">
+          <div className="w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center text-white text-xl font-bold mb-3">
+            T
           </div>
+          <p className="font-bold text-gray-900">Tour Ops</p>
+          <p className="text-sm text-gray-500">Admin</p>
         </div>
 
-        <nav style={{ flex: 1, padding: '16px 0' }}>
+        <nav className="flex-1 p-3">
           {navItems.map((item) => {
-            const isActive = pathname === item.href
+            const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`)
             return (
               <Link
                 key={item.href}
                 href={item.href}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '12px',
-                  padding: '12px 24px',
-                  color: isActive ? '#ffffff' : '#9ca3af',
-                  backgroundColor: isActive ? '#1f2937' : 'transparent',
-                  textDecoration: 'none',
-                  fontSize: '14px',
-                  fontWeight: isActive ? '600' : '400',
-                  borderLeft: isActive ? '3px solid #3b82f6' : '3px solid transparent',
-                }}
+                className={`flex items-center gap-3 px-4 py-3 rounded-xl mb-1 transition-colors ${
+                  isActive
+                    ? 'bg-blue-50 text-blue-600'
+                    : 'text-gray-600 hover:bg-gray-50'
+                }`}
               >
-                <span>{item.icon}</span>
-                <span>{item.label}</span>
+                <span className="text-xl">{item.icon}</span>
+                <span className="font-medium">{item.label}</span>
               </Link>
             )
           })}
         </nav>
 
-        <div style={{ padding: '16px', borderTop: '1px solid #374151' }}>
+        <div className="p-4 border-t border-gray-200">
           <button
             onClick={handleSignOut}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '12px',
-              width: '100%',
-              padding: '12px 24px',
-              color: '#9ca3af',
-              backgroundColor: 'transparent',
-              border: 'none',
-              cursor: 'pointer',
-              fontSize: '14px',
-            }}
+            className="flex items-center gap-3 text-gray-600 hover:text-gray-900 px-4 py-2"
           >
             <span>🚪</span>
             <span>Sign Out</span>
@@ -194,32 +103,74 @@ export default function AdminLayout({
         </div>
       </aside>
 
-      <main style={{
-        marginLeft: '256px',
-        flex: 1,
-        backgroundColor: '#f9fafb',
-        minHeight: '100vh',
-      }}>
-        {/* Header with notifications */}
-        <header style={{
-          backgroundColor: 'white',
-          borderBottom: '1px solid #e5e7eb',
-          padding: '16px 32px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-        }}>
-          <h2 style={{ fontSize: '20px', fontWeight: '600', color: '#111827', margin: 0 }}>
-            {navItems.find(item => item.href === pathname)?.label || 'Admin'}
-          </h2>
-          <div>
-            <NotificationsDropdown />
+      {/* Mobile Header */}
+      <header className="lg:hidden bg-white border-b border-gray-200 px-4 py-3 sticky top-0 z-50">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              className="p-2 -ml-2"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            </button>
+            <h1 className="font-bold text-lg">Tour Ops</h1>
           </div>
-        </header>
-
-        <div style={{ padding: '32px' }}>
-          {children}
+          <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-bold">
+            {profile?.first_name?.[0]}
+          </div>
         </div>
+      </header>
+
+      {/* Mobile Menu Overlay */}
+      {isMobileMenuOpen && (
+        <div className="lg:hidden fixed inset-0 bg-black bg-opacity-50 z-50"
+          onClick={() => setIsMobileMenuOpen(false)}
+        />
+      )}
+
+      {/* Mobile Menu */}
+      <aside className={`lg:hidden fixed left-0 top-0 bottom-0 w-64 bg-white z-50 transform transition-transform duration-200 ${
+        isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
+      }`}>
+        <div className="p-4 border-b border-gray-200 flex items-center justify-between">
+          <span className="font-bold text-lg">Menu</span>
+          <button onClick={() => setIsMobileMenuOpen(false)}>✕</button>
+        </div>
+
+        <nav className="p-3">
+          {navItems.map((item) => {
+            const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`)
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                onClick={() => setIsMobileMenuOpen(false)}
+                className={`flex items-center gap-3 px-4 py-3 rounded-xl mb-1 ${
+                  isActive
+                    ? 'bg-blue-50 text-blue-600'
+                    : 'text-gray-600'
+                }`}
+              >
+                <span className="text-xl">{item.icon}</span>
+                <span className="font-medium">{item.label}</span>
+              </Link>
+            )
+          })}
+          <button
+            onClick={handleSignOut}
+            className="flex items-center gap-3 px-4 py-3 text-gray-600 w-full"
+          >
+            <span>🚪</span>
+            <span>Sign Out</span>
+          </button>
+        </nav>
+      </aside>
+
+      {/* Main Content */}
+      <main className="lg:ml-64">
+        {children}
       </main>
     </div>
   )
