@@ -35,14 +35,38 @@ export default function SupervisorDashboard() {
       const { data: toursData } = await supabase
         .from('tours')
         .select(`
-          id, name, start_time, status, pickup_location,
-          guide:profiles(first_name, last_name),
-          vehicle:vehicles(plate_number)
+          id, name, start_time, status, pickup_location, guide_id, vehicle_id
         `)
         .eq('tour_date', today)
         .order('start_time')
 
-      setTours(toursData || [])
+      // Get guides and vehicles separately
+      const toursWithData = await Promise.all((toursData || []).map(async (tour: any) => {
+        let guide = null
+        let vehicle = null
+        
+        if (tour.guide_id) {
+          const { data: g } = await supabase
+            .from('profiles')
+            .select('first_name, last_name')
+            .eq('id', tour.guide_id)
+            .single()
+          guide = g
+        }
+        
+        if (tour.vehicle_id) {
+          const { data: v } = await supabase
+            .from('vehicles')
+            .select('plate_number')
+            .eq('id', tour.vehicle_id)
+            .single()
+          vehicle = v
+        }
+        
+        return { ...tour, guide, vehicle }
+      }))
+
+      setTours(toursWithData)
 
       // Get active guides
       const { data: guidesData } = await supabase

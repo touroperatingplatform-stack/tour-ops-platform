@@ -10,6 +10,7 @@ interface Tour {
   start_time: string
   status: 'scheduled' | 'in_progress' | 'completed' | 'cancelled'
   pickup_location: string
+  vehicle_id?: string
   vehicle: { plate_number: string; make: string; model: string } | null
 }
 
@@ -37,14 +38,26 @@ export default function GuideDashboard() {
       const { data: toursData } = await supabase
         .from('tours')
         .select(`
-          id, name, start_time, status, pickup_location,
-          vehicle:vehicles(plate_number, make, model)
+          id, name, start_time, status, pickup_location, vehicle_id
         `)
         .eq('guide_id', session.user.id)
         .eq('tour_date', today)
         .order('start_time')
 
-      setTours(toursData || [])
+      // Get vehicle data separately
+      const toursWithVehicles = await Promise.all((toursData || []).map(async (tour: any) => {
+        if (tour.vehicle_id) {
+          const { data: vehicle } = await supabase
+            .from('vehicles')
+            .select('plate_number, make, model')
+            .eq('id', tour.vehicle_id)
+            .single()
+          return { ...tour, vehicle }
+        }
+        return { ...tour, vehicle: null }
+      }))
+
+      setTours(toursWithVehicles)
       setLoading(false)
     }
 
