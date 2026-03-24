@@ -97,8 +97,8 @@ export default function SupervisorLayout({
             </div>
           </header>
 
-          {/* Page Content - 12px padding to match stat card gaps */}
-          <main className="flex-1 px-3 py-3 overflow-y-auto">
+          {/* Page Content - 12px padding on all sides for breathing room */}
+          <main className="flex-1 p-3 overflow-y-auto">
             {children}
           </main>
         </div>

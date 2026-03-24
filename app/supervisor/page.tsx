@@ -79,8 +79,8 @@ export default function SupervisorDashboard() {
       </div>
 
       {/* Live Tours */}
-      <section>
-        <h2 className="font-semibold text-gray-900 mb-3 px-1">Live Tours</h2>
+      <section className="mt-3">
+        <h2 className="font-semibold text-gray-900 mb-3">Live Tours</h2>
         
         {liveTours.length === 0 ? (
           <div className="bg-gray-50 rounded-2xl p-6 text-center border border-gray-200">
