@@ -266,9 +266,9 @@ export default function GuideDashboard() {
             <span className="text-xl">🚌</span>
             <span className="text-xs font-medium">Tours</span>
           </Link>
-          <Link href="/guide/tasks" className="flex flex-col items-center gap-1 p-2 text-gray-400">
-            <span className="text-xl">✅</span>
-            <span className="text-xs font-medium">Tasks</span>
+          <Link href="/guide/activity" className="flex flex-col items-center gap-1 p-2 text-gray-400">
+            <span className="text-xl">💬</span>
+            <span className="text-xs font-medium">Feed</span>
           </Link>
           <Link href="/profile" className="flex flex-col items-center gap-1 p-2 text-gray-400">
             <span className="text-xl">👤</span>
