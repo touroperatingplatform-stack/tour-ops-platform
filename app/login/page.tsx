@@ -1,23 +1,19 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase/client'
 
 export default function LoginPage() {
-  const router = useRouter()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [debug, setDebug] = useState('')
+  const [loading, setLoading] = useState(true)
 
   // Check if already logged in
   useEffect(() => {
     async function checkSession() {
       const { data: { session } } = await supabase.auth.getSession()
-      if (session) {
-        setDebug('Already logged in, checking profile...')
+      if (session?.user) {
         const { data: profile } = await supabase
           .from('profiles')
           .select('role')
@@ -33,9 +29,11 @@ export default function LoginPage() {
             operations: '/operations',
             guide: '/guide',
           }
-          window.location.href = redirects[profile.role] || '/admin'
+          window.location.replace(redirects[profile.role] || '/admin')
+          return
         }
       }
+      setLoading(false)
     }
     checkSession()
   }, [])
@@ -44,7 +42,6 @@ export default function LoginPage() {
     e.preventDefault()
     setLoading(true)
     setError('')
-    setDebug('Signing in...')
 
     try {
       const { data, error: signInError } = await supabase.auth.signInWithPassword({
@@ -53,49 +50,38 @@ export default function LoginPage() {
       })
 
       if (signInError) {
-        setError('Invalid email or password: ' + signInError.message)
+        setError('Invalid email or password')
         setLoading(false)
         return
       }
 
       if (!data.user) {
-        setError('No user returned from sign in')
+        setError('Login failed')
         setLoading(false)
         return
       }
 
-      setDebug('Got user: ' + data.user.email + ', getting profile...')
-      
-      // Add small delay to ensure session is persisted
+      // Wait for session to persist
       await new Promise(resolve => setTimeout(resolve, 500))
-      
-      const { data: profile, error: profileError } = await supabase
+
+      const { data: profile } = await supabase
         .from('profiles')
-        .select('*')
+        .select('role, is_active')
         .eq('id', data.user.id)
         .single()
 
-      if (profileError) {
-        setError('Profile error: ' + profileError.message)
-        setLoading(false)
-        return
-      }
-
       if (!profile) {
-        setError('No profile found. Contact your administrator.')
+        setError('Profile not found')
         setLoading(false)
         return
       }
 
       if (!profile.is_active) {
-        setError('Your account has been deactivated.')
+        setError('Account deactivated')
         setLoading(false)
         return
       }
 
-      setDebug('Profile loaded, role: ' + profile.role + ', redirecting...')
-      
-      // Role-based redirect
       const redirects: Record<string, string> = {
         super_admin: '/admin',
         company_admin: '/admin',
@@ -105,18 +91,16 @@ export default function LoginPage() {
         guide: '/guide',
       }
       
-      const redirectPath = redirects[profile.role] || '/admin'
-      
-      // Small delay to let session persist
-      setTimeout(() => {
-        window.location.href = redirectPath
-      }, 100)
+      window.location.replace(redirects[profile.role] || '/admin')
       
     } catch (err: any) {
-      console.error('Login error:', err)
-      setError('Error: ' + (err.message || 'Unknown error'))
+      setError('An error occurred')
       setLoading(false)
     }
+  }
+
+  if (loading) {
+    return <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>Loading...</div>
   }
 
   return (
@@ -129,6 +113,7 @@ export default function LoginPage() {
       padding: '16px',
     }}>
       <div style={{ width: '100%', maxWidth: '384px' }}>
+        
         <div style={{ textAlign: 'center', marginBottom: '32px' }}>
           <div style={{
             display: 'inline-flex',
@@ -205,12 +190,6 @@ export default function LoginPage() {
               marginBottom: '16px',
             }}>
               {error}
-            </p>
-          )}
-
-          {debug && (
-            <p style={{ color: '#2563eb', fontSize: '12px', marginBottom: '16px' }}>
-              {debug}
             </p>
           )}
 
