@@ -32,52 +32,57 @@ export default function AdminLayout({
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 py-4 px-4">
-      {/* Responsive Container - full width on desktop */}
-      <div className="max-w-md lg:max-w-6xl mx-auto bg-white border border-gray-300 rounded-2xl shadow-sm overflow-hidden">
-        
-        {/* Top Navigation */}
-        <header className="bg-white border-b border-gray-200">
-          <div className="px-4 h-14 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <button 
-                onClick={() => setIsMenuOpen(true)}
-                className="w-10 h-10 flex items-center justify-center -ml-2 rounded-lg hover:bg-gray-100 lg:hidden"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                </svg>
-              </button>
-              <span className="font-semibold text-gray-900">{currentPage}</span>
-            </div>
-            <div className="flex items-center gap-3">
-              <nav className="hidden lg:flex items-center gap-1">
-                {navItems.map((item) => {
-                  const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`)
-                  return (
-                    <Link
-                      key={item.href}
-                      href={item.href}
-                      className={`px-3 py-2 rounded-lg text-sm font-medium ${
-                        isActive ? 'bg-blue-50 text-blue-600' : 'text-gray-600 hover:bg-gray-50'
-                      }`}
-                    >
-                      {item.label}
-                    </Link>
-                  )
-                })}
-              </nav>
-              <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-bold text-sm">
-                T
+    <div className="min-h-screen bg-gray-100">
+      {/* Desktop: Full width with border. Mobile: Centered phone width */}
+      <div className="mx-auto w-full max-w-full lg:px-4 lg:py-4">
+        <div className="mx-auto w-full max-w-md lg:max-w-none bg-white lg:border lg:border-gray-300 lg:rounded-2xl lg:shadow-sm overflow-hidden">
+          
+          {/* Top Navigation */}
+          <header className="bg-white border-b border-gray-200">
+            <div className="px-4 h-14 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <button 
+                  onClick={() => setIsMenuOpen(true)}
+                  className="w-10 h-10 flex items-center justify-center -ml-2 rounded-lg hover:bg-gray-100 lg:hidden"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                  </svg>
+                </button>
+                <span className="font-semibold text-gray-900">{currentPage}</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <nav className="hidden lg:flex items-center gap-1">
+                  {navItems.map((item) => {
+                    const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`)
+                    return (
+                      <Link
+                        key={item.href}
+                        href={item.href}
+                        className={`px-3 py-2 rounded-lg text-sm font-medium ${
+                          isActive ? 'bg-blue-50 text-blue-600' : 'text-gray-600 hover:bg-gray-50'
+                        }`}
+                      >
+                        {item.label}
+                      </Link>
+                    )
+                  })}
+                </nav>
+                <button 
+                  onClick={handleSignOut}
+                  className="px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-100 rounded-lg"
+                >
+                  Sign Out
+                </button>
               </div>
             </div>
-          </div>
-        </header>
+          </header>
 
-        {/* Page Content */}
-        <main className="p-4">
-          {children}
-        </main>
+          {/* Page Content */}
+          <main className="p-4">
+            {children}
+          </main>
+        </div>
       </div>
 
       {/* Mobile Side Menu */}
