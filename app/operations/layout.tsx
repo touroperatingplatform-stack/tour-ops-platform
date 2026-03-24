@@ -25,10 +25,10 @@ export default function OperationsLayout({
 
   return (
     <div className="h-screen bg-gray-100 flex flex-col">
-      {/* Gray frame padding */}
+      {/* Gray frame padding - space from screen edges */}
       <div className="flex-1 p-4 pb-20 overflow-hidden">
-        {/* White bordered container - full width */}
-        <div className="mx-auto w-full h-full bg-white border border-gray-300 rounded-2xl shadow-sm overflow-hidden flex flex-col">
+        {/* White bordered container - full width with visible border line */}
+        <div className="mx-auto w-full h-full bg-white border-2 border-gray-300 rounded-2xl shadow-sm overflow-hidden flex flex-col">
           
           {/* Top Navigation */}
           <header className="bg-gray-900 text-white border-b border-gray-800 flex-shrink-0">
@@ -73,7 +73,7 @@ export default function OperationsLayout({
 
       {/* Bottom Navigation - Fixed outside container at very bottom */}
       <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50 h-16">
-        <div className="flex justify-around items-center h-full max-w-full mx-auto">
+        <div className="flex justify-around items-center h-full max-w-full mx-auto px-4">
           {navItems.map((item) => {
             const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`)
             return (
