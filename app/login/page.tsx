@@ -11,7 +11,6 @@ export default function LoginPage() {
   const [checked, setChecked] = useState(false)
   const checkingRef = useRef(false)
 
-  // Check session once on mount
   useEffect(() => {
     if (checkingRef.current) return
     checkingRef.current = true
@@ -19,12 +18,16 @@ export default function LoginPage() {
     async function checkSession() {
       try {
         const { data: { session } } = await supabase.auth.getSession()
+        console.log('Login page - Session check:', session ? 'found' : 'none')
+        
         if (session?.user) {
           const { data: profile } = await supabase
             .from('profiles')
             .select('role')
             .eq('id', session.user.id)
             .single()
+          
+          console.log('Login page - Profile:', profile?.role)
           
           if (profile) {
             const redirects: Record<string, string> = {
@@ -35,7 +38,8 @@ export default function LoginPage() {
               operations: '/operations',
               guide: '/guide',
             }
-            window.location.replace(redirects[profile.role] || '/admin')
+            console.log('Login page - Redirecting to:', redirects[profile.role])
+            window.location.href = redirects[profile.role] || '/admin'
             return
           }
         }
@@ -54,31 +58,37 @@ export default function LoginPage() {
     setError('')
 
     try {
+      console.log('Login - Attempting sign in...')
       const { data, error: signInError } = await supabase.auth.signInWithPassword({
         email,
         password,
       })
 
       if (signInError) {
+        console.log('Login - Sign in error:', signInError.message)
         setError('Invalid email or password')
         setLoading(false)
         return
       }
 
       if (!data.user) {
+        console.log('Login - No user returned')
         setError('Login failed')
         setLoading(false)
         return
       }
 
-      // Wait for session to persist
-      await new Promise(resolve => setTimeout(resolve, 500))
+      console.log('Login - User signed in:', data.user.email)
+      console.log('Login - Session:', data.session ? 'present' : 'missing')
 
+      // Get profile
       const { data: profile } = await supabase
         .from('profiles')
         .select('role, is_active')
         .eq('id', data.user.id)
         .single()
+
+      console.log('Login - Profile:', profile)
 
       if (!profile) {
         setError('Profile not found')
@@ -101,15 +111,19 @@ export default function LoginPage() {
         guide: '/guide',
       }
       
-      window.location.replace(redirects[profile.role] || '/admin')
+      const redirectPath = redirects[profile.role] || '/admin'
+      console.log('Login - Redirecting to:', redirectPath)
+      
+      // Use href for full page reload
+      window.location.href = redirectPath
       
     } catch (err: any) {
+      console.error('Login error:', err)
       setError('An error occurred')
       setLoading(false)
     }
   }
 
-  // Show loading while checking session
   if (!checked) {
     return (
       <div style={{
@@ -119,7 +133,7 @@ export default function LoginPage() {
         justifyContent: 'center',
         backgroundColor: '#f9fafb',
       }}>
-        <p>Loading...</p>
+        <p>Checking session...</p>
       </div>
     )
   }
@@ -134,7 +148,6 @@ export default function LoginPage() {
       padding: '16px',
     }}>
       <div style={{ width: '100%', maxWidth: '384px' }}>
-        
         <div style={{ textAlign: 'center', marginBottom: '32px' }}>
           <div style={{
             display: 'inline-flex',

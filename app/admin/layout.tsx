@@ -29,6 +29,7 @@ export default function AdminLayout({
   const pathname = usePathname()
   const [profile, setProfile] = useState<Profile | null>(null)
   const [loading, setLoading] = useState(true)
+  const [authError, setAuthError] = useState('')
   const checkedRef = useRef(false)
 
   useEffect(() => {
@@ -37,13 +38,18 @@ export default function AdminLayout({
 
     async function checkAuth() {
       try {
+        console.log('Admin layout - Checking session...')
         const { data: { session } } = await supabase.auth.getSession()
+        console.log('Admin layout - Session:', session ? 'found' : 'none')
         
         if (!session?.user) {
-          console.log('Admin: No session')
-          window.location.replace('/login')
+          console.log('Admin layout - No session, redirecting to login')
+          setAuthError('No session')
+          window.location.href = '/login'
           return
         }
+
+        console.log('Admin layout - User:', session.user.id)
 
         const { data: profile } = await supabase
           .from('profiles')
@@ -51,30 +57,37 @@ export default function AdminLayout({
           .eq('id', session.user.id)
           .single()
 
+        console.log('Admin layout - Profile:', profile)
+
         if (!profile) {
-          console.log('Admin: No profile')
-          window.location.replace('/login')
+          console.log('Admin layout - No profile')
+          setAuthError('No profile')
+          window.location.href = '/login'
           return
         }
 
         if (!profile.is_active) {
-          console.log('Admin: Inactive')
-          window.location.replace('/login')
+          console.log('Admin layout - Inactive')
+          setAuthError('Inactive')
+          window.location.href = '/login'
           return
         }
 
         const allowedRoles = ['super_admin', 'company_admin', 'supervisor', 'manager']
         if (!allowedRoles.includes(profile.role)) {
-          console.log('Admin: Role not allowed:', profile.role)
-          window.location.replace('/login')
+          console.log('Admin layout - Role not allowed:', profile.role)
+          setAuthError('Role not allowed: ' + profile.role)
+          window.location.href = '/login'
           return
         }
 
+        console.log('Admin layout - Auth OK')
         setProfile(profile)
         setLoading(false)
       } catch (err) {
         console.error('Admin auth error:', err)
-        window.location.replace('/login')
+        setAuthError('Error: ' + String(err))
+        setLoading(false)
       }
     }
 
@@ -83,7 +96,7 @@ export default function AdminLayout({
 
   async function handleSignOut() {
     await supabase.auth.signOut()
-    window.location.replace('/login')
+    window.location.href = '/login'
   }
 
   if (loading) {
@@ -93,9 +106,12 @@ export default function AdminLayout({
         alignItems: 'center', 
         justifyContent: 'center', 
         height: '100vh', 
-        backgroundColor: '#f9fafb' 
+        backgroundColor: '#f9fafb',
+        flexDirection: 'column',
+        gap: '16px'
       }}>
         <p>Loading admin...</p>
+        {authError && <p style={{ color: '#dc2626' }}>{authError}</p>}
       </div>
     )
   }
