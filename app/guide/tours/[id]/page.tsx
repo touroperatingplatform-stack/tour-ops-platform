@@ -186,20 +186,20 @@ export default function TourDetailPage() {
           {/* Status Actions */}
           <div style={{ marginTop: '24px', display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
             {tour.status === 'scheduled' && (
-              <button
-                onClick={() => updateStatus('in_progress')}
+              <Link
+                href={`/guide/tours/${tour.id}/checklist`}
                 style={{
                   backgroundColor: '#2563eb',
                   color: 'white',
                   padding: '12px 24px',
                   borderRadius: '8px',
-                  border: 'none',
+                  textDecoration: 'none',
                   fontWeight: '500',
-                  cursor: 'pointer',
+                  display: 'inline-block',
                 }}
               >
-                Start Tour
-              </button>
+                📋 Pre-tour Checklist
+              </Link>
             )}
             {tour.status === 'in_progress' && (
               <button

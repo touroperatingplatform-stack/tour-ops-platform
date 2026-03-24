@@ -1,181 +1,281 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { supabase } from '@/lib/supabase/client'
 import Link from 'next/link'
+import { supabase } from '@/lib/supabase/client'
+
+interface Profile {
+  id: string
+  first_name: string
+  last_name: string
+}
 
 interface Tour {
   id: string
   name: string
+  description: string
+  tour_date: string
   start_time: string
-  status: 'scheduled' | 'in_progress' | 'completed' | 'cancelled'
   pickup_location: string
-  vehicle_id?: string
-  vehicle: { plate_number: string; make: string; model: string } | null
+  status: 'scheduled' | 'in_progress' | 'completed' | 'cancelled'
+  guest_count: number
+  capacity: number
 }
 
 export default function GuideDashboard() {
-  const [tours, setTours] = useState<Tour[]>([])
   const [loading, setLoading] = useState(true)
-  const [profile, setProfile] = useState<any>(null)
+  const [profile, setProfile] = useState<Profile | null>(null)
+  const [todayTours, setTodayTours] = useState<Tour[]>([])
+  const [upcomingTours, setUpcomingTours] = useState<Tour[]>([])
+  const [isOnline, setIsOnline] = useState(true)
 
   useEffect(() => {
-    async function loadData() {
-      const { data: { session } } = await supabase.auth.getSession()
-      if (!session?.user) return
+    // Check online status
+    setIsOnline(navigator.onLine)
+    window.addEventListener('online', () => setIsOnline(true))
+    window.addEventListener('offline', () => setIsOnline(false))
 
-      // Get profile
-      const { data: profileData } = await supabase
-        .from('profiles')
-        .select('id, first_name, last_name')
-        .eq('id', session.user.id)
-        .single()
-      
-      setProfile(profileData)
-
-      // Get today's tours for this guide
-      const today = new Date().toISOString().split('T')[0]
-      const { data: toursData } = await supabase
-        .from('tours')
-        .select(`
-          id, name, start_time, status, pickup_location, vehicle_id
-        `)
-        .eq('guide_id', session.user.id)
-        .eq('tour_date', today)
-        .order('start_time')
-
-      // Get vehicle data separately
-      const toursWithVehicles = await Promise.all((toursData || []).map(async (tour: any) => {
-        if (tour.vehicle_id) {
-          const { data: vehicle } = await supabase
-            .from('vehicles')
-            .select('plate_number, make, model')
-            .eq('id', tour.vehicle_id)
-            .single()
-          return { ...tour, vehicle }
-        }
-        return { ...tour, vehicle: null }
-      }))
-
-      setTours(toursWithVehicles)
-      setLoading(false)
-    }
-
-    loadData()
+    loadDashboardData()
   }, [])
 
-  async function handleSignOut() {
-    await supabase.auth.signOut()
-    window.location.href = '/login'
+  async function loadDashboardData() {
+    setLoading(true)
+
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session?.user) {
+      setLoading(false)
+      return
+    }
+
+    // Load profile
+    const { data: profileData } = await supabase
+      .from('profiles')
+      .select('id, first_name, last_name')
+      .eq('id', session.user.id)
+      .single()
+
+    if (profileData) setProfile(profileData)
+
+    // Load today's tours
+    const today = new Date().toISOString().split('T')[0]
+    const { data: todayData } = await supabase
+      .from('tours')
+      .select('*')
+      .eq('tour_date', today)
+      .neq('status', 'cancelled')
+      .order('start_time')
+
+    if (todayData) setTodayTours(todayData)
+
+    // Load upcoming tours (next 7 days)
+    const nextWeek = new Date()
+    nextWeek.setDate(nextWeek.getDate() + 7)
+    const { data: upcomingData } = await supabase
+      .from('tours')
+      .select('*')
+      .gt('tour_date', today)
+      .lte('tour_date', nextWeek.toISOString().split('T')[0])
+      .neq('status', 'cancelled')
+      .order('tour_date')
+      .limit(5)
+
+    if (upcomingData) setUpcomingTours(upcomingData)
+
+    setLoading(false)
+  }
+
+  function getTimeUntilPickup(startTime: string) {
+    const now = new Date()
+    const [hours, minutes] = startTime.split(':').map(Number)
+    const pickupTime = new Date(now)
+    pickupTime.setHours(hours, minutes, 0)
+    
+    // Pickup is 20 min before start
+    const arrivalTime = new Date(pickupTime.getTime() - 20 * 60 * 1000)
+    const diffMs = arrivalTime.getTime() - now.getTime()
+    const diffMins = Math.floor(diffMs / 60000)
+    
+    if (diffMins < 0) return { text: 'LATE', urgent: true }
+    if (diffMins < 30) return { text: `${diffMins}m`, urgent: true }
+    return { text: `${Math.floor(diffMins / 60)}h ${diffMins % 60}m`, urgent: false }
+  }
+
+  function getStatusBadge(status: string) {
+    const styles: Record<string, string> = {
+      scheduled: 'bg-blue-100 text-blue-800',
+      in_progress: 'bg-green-100 text-green-800',
+      completed: 'bg-gray-100 text-gray-800',
+      cancelled: 'bg-red-100 text-red-800',
+    }
+    const labels: Record<string, string> = {
+      scheduled: 'Scheduled',
+      in_progress: 'Live',
+      completed: 'Done',
+      cancelled: 'Cancelled',
+    }
+    return (
+      <span className={`px-2 py-1 rounded-full text-xs font-medium ${styles[status]}`}>
+        {labels[status]}
+      </span>
+    )
   }
 
   if (loading) {
     return (
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', backgroundColor: '#f9fafb' }}>
-        <p>Loading...</p>
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="animate-pulse flex flex-col items-center gap-2">
+          <div className="w-12 h-12 bg-blue-600 rounded-xl"></div>
+          <p className="text-gray-500 text-sm">Loading...</p>
+        </div>
       </div>
     )
   }
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#f9fafb' }}>
-      {/* Header */}
-      <header style={{
-        backgroundColor: '#111827',
-        color: 'white',
-        padding: '16px 24px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-      }}>
-        <div>
-          <h1 style={{ fontSize: '20px', fontWeight: 'bold', margin: 0 }}>Guide Dashboard</h1>
-          {profile && (
-            <p style={{ fontSize: '14px', color: '#9ca3af', margin: '4px 0 0 0' }}>
-              {profile.first_name} {profile.last_name}
-            </p>
-          )}
+    <div className="min-h-screen bg-gray-50 pb-20">
+      {/* Offline indicator */}
+      {!isOnline && (
+        <div className="bg-amber-500 text-white text-center py-2 text-sm font-medium sticky top-0 z-50">
+          📡 Offline mode - changes will sync when online
         </div>
-        <button
-          onClick={handleSignOut}
-          style={{
-            backgroundColor: 'transparent',
-            color: '#9ca3af',
-            border: 'none',
-            cursor: 'pointer',
-            fontSize: '14px',
-          }}
-        >
-          Sign Out
-        </button>
+      )}
+
+      {/* Header */}
+      <header className="bg-white border-b border-gray-200 px-4 py-4 sticky top-0 z-40">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-lg font-bold text-gray-900">
+              Hi {profile?.first_name || 'Guide'} 👋
+            </h1>
+            <p className="text-sm text-gray-500">
+              {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
+            </p>
+          </div>
+          <Link href="/profile" className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-bold">
+            {profile?.first_name?.[0] || 'G'}
+          </Link>
+        </div>
       </header>
 
-      {/* Main Content */}
-      <div style={{ padding: '24px', maxWidth: '800px', margin: '0 auto' }}>
-        <h2 style={{ fontSize: '18px', fontWeight: '600', color: '#111827', marginBottom: '16px' }}>Today's Tours</h2>
-
-        {tours.length === 0 ? (
-          <div style={{
-            backgroundColor: 'white',
-            borderRadius: '12px',
-            padding: '32px',
-            textAlign: 'center',
-            color: '#6b7280',
-          }}>
-            <p>No tours scheduled for today</p>
-          </div>
-        ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            {tours.map((tour) => (
-              <Link
-                key={tour.id}
-                href={`/guide/tours/${tour.id}`}
-                style={{
-                  backgroundColor: 'white',
-                  borderRadius: '12px',
-                  padding: '20px',
-                  textDecoration: 'none',
-                  color: 'inherit',
-                  display: 'block',
-                  border: tour.status === 'in_progress' ? '2px solid #3b82f6' : '1px solid #e5e7eb',
-                }}
-              >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                  <div>
-                    <h3 style={{ fontSize: '18px', fontWeight: '600', color: '#111827', margin: '0 0 8px 0' }}>
-                      {tour.name}
-                    </h3>
-                    <p style={{ color: '#6b7280', fontSize: '14px', margin: '0 0 4px 0' }}>
-                      ⏰ {tour.start_time}
-                    </p>
-                    <p style={{ color: '#6b7280', fontSize: '14px', margin: '0 0 4px 0' }}>
-                      📍 {tour.pickup_location || 'Location TBD'}
-                    </p>
-                    {tour.vehicle && (
-                      <p style={{ color: '#6b7280', fontSize: '14px', margin: 0 }}>
-                        🚐 {tour.vehicle.plate_number} - {tour.vehicle.make} {tour.vehicle.model}
-                      </p>
+      <main className="p-4 space-y-4">
+        {/* Today's Tours */}
+        <section>
+          <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">
+            Today's Tours
+          </h2>
+          
+          {todayTours.length === 0 ? (
+            <div className="bg-white rounded-2xl p-8 text-center border border-gray-200">
+              <p className="text-4xl mb-2">🎉</p>
+              <p className="text-gray-500">No tours today</p>
+              <p className="text-sm text-gray-400 mt-1">Enjoy your day off!</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {todayTours.map((tour) => {
+                const timeInfo = getTimeUntilPickup(tour.start_time)
+                return (
+                  <Link
+                    key={tour.id}
+                    href={`/guide/tours/${tour.id}`}
+                    className="block bg-white rounded-2xl p-4 border border-gray-200 shadow-sm active:scale-99 transition-transform"
+                  >
+                    <div className="flex items-start justify-between mb-2">
+                      <div>
+                        <h3 className="font-bold text-gray-900">{tour.name}</h3>
+                        <p className="text-sm text-gray-500">{tour.pickup_location}</p>
+                      </div>
+                      {getStatusBadge(tour.status)}
+                    </div>
+                    
+                    <div className="flex items-center gap-4 mt-3">
+                      <div className="flex items-center gap-2 text-sm">
+                        <span className="text-2xl">👥</span>
+                        <span className="font-medium">{tour.guest_count}/{tour.capacity}</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm">
+                        <span className="text-2xl">🕐</span>
+                        <span className="font-medium">{tour.start_time.slice(0, 5)}</span>
+                      </div>
+                    </div>
+                    
+                    {tour.status === 'scheduled' && (
+                      <div className={`mt-3 p-2 rounded-lg text-center text-sm font-medium ${
+                        timeInfo.urgent ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'
+                      }`}>
+                        Arrive in {timeInfo.text}
+                      </div>
                     )}
-                  </div>
-                  <span style={{
-                    padding: '6px 12px',
-                    borderRadius: '20px',
-                    fontSize: '12px',
-                    fontWeight: '500',
-                    backgroundColor: tour.status === 'in_progress' ? '#dbeafe' : '#f3f4f6',
-                    color: tour.status === 'in_progress' ? '#1d4ed8' : '#6b7280',
-                  }}>
-                    {tour.status === 'scheduled' && 'Scheduled'}
-                    {tour.status === 'in_progress' && 'In Progress'}
-                    {tour.status === 'completed' && 'Completed'}
-                    {tour.status === 'cancelled' && 'Cancelled'}
-                  </span>
-                </div>
-              </Link>
-            ))}
+                  </Link>
+                )
+              })}
+            </div>
+          )}
+        </section>
+
+        {/* Quick Actions */}
+        <section>
+          <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">
+            Quick Actions
+          </h2>
+          <div className="grid grid-cols-2 gap-3">
+            <button className="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm text-left active:scale-95 transition-transform">
+              <span className="text-2xl block mb-2">📝</span>
+              <span className="font-medium text-gray-900">Report Issue</span>
+            </button>
+            <button className="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm text-left active:scale-95 transition-transform">
+              <span className="text-2xl block mb-2">💵</span>
+              <span className="font-medium text-gray-900">Add Expense</span>
+            </button>
           </div>
+        </section>
+
+        {/* Upcoming Tours */}
+        {upcomingTours.length > 0 && (
+          <section>
+            <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">
+              Upcoming
+            </h2>
+            <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+              {upcomingTours.map((tour, i) => (
+                <Link
+                  key={tour.id}
+                  href={`/guide/tours/${tour.id}`}
+                  className={`flex items-center justify-between p-4 ${i !== upcomingTours.length - 1 ? 'border-b border-gray-100' : ''}`}
+                >
+                  <div>
+                    <h3 className="font-medium text-gray-900">{tour.name}</h3>
+                    <p className="text-sm text-gray-500">
+                      {new Date(tour.tour_date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+                      {' • '}
+                      {tour.start_time.slice(0, 5)}
+                    </p>
+                  </div>
+                  <span className="text-gray-400">→</span>
+                </Link>
+              ))}
+            </div>
+          </section>
         )}
-      </div>
+      </main>
+
+      {/* Bottom Navigation */}
+      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-6 py-2 z-50">
+        <div className="flex justify-around items-center">
+          <Link href="/guide" className="flex flex-col items-center gap-1 p-2 text-blue-600">
+            <span className="text-xl">🚌</span>
+            <span className="text-xs font-medium">Tours</span>
+          </Link>
+          <Link href="/guide/tasks" className="flex flex-col items-center gap-1 p-2 text-gray-400">
+            <span className="text-xl">✅</span>
+            <span className="text-xs font-medium">Tasks</span>
+          </Link>
+          <Link href="/profile" className="flex flex-col items-center gap-1 p-2 text-gray-400">
+            <span className="text-xl">👤</span>
+            <span className="text-xs font-medium">Profile</span>
+          </Link>
+        </div>
+      </nav>
     </div>
   )
 }
