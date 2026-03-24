@@ -45,22 +45,28 @@ export default function AdminDashboard() {
 
   if (loading) {
     return (
-      <div className="animate-pulse space-y-4">
-        <div className="h-24 bg-gray-200 rounded-2xl"></div>
-        <div className="h-32 bg-gray-200 rounded-2xl"></div>
+      <div className="space-y-4">
+        <div className="h-24 bg-gray-200 rounded-2xl animate-pulse"></div>
+        <div className="h-32 bg-gray-200 rounded-2xl animate-pulse"></div>
       </div>
     )
   }
 
   return (
-    <div className="space-y-4 pt-4">
-      {/* Stats */}
+    <div className="space-y-6">
+      {/* Date */}
+      <p className="text-sm text-gray-500">
+        {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
+      </p>
+
+      {/* Stats Grid */}
       <div className="grid grid-cols-2 gap-3">
-        <div className="bg-blue-600 rounded-2xl p-4 text-white">
+        <Link href="/admin/tours" className="bg-blue-600 rounded-2xl p-4 text-white shadow-sm">
           <p className="text-3xl font-bold">{stats.tours}</p>
           <p className="text-blue-100 text-sm">Today's Tours</p>
-        </div>
-        <div className="bg-green-500 rounded-2xl p-4 text-white">
+        </Link>
+        
+        <div className="bg-green-500 rounded-2xl p-4 text-white shadow-sm">
           <p className="text-3xl font-bold">{stats.active}</p>
           <p className="text-green-100 text-sm">Active Now</p>
         </div>
@@ -69,38 +75,61 @@ export default function AdminDashboard() {
       {/* Today's Tours */}
       <section>
         <div className="flex items-center justify-between mb-3">
-          <h2 className="font-bold text-gray-900">Today's Tours</h2>
-          <Link href="/admin/tours" className="text-blue-600 text-sm">See All →</Link>
+          <h2 className="font-semibold text-gray-900">Tours Today</h2>
+          <Link href="/admin/tours" className="text-blue-600 text-sm font-medium">See All →</Link>
         </div>
 
         <div className="space-y-3">
           {todayTours.length === 0 ? (
             <div className="bg-white rounded-2xl p-6 text-center border border-gray-200">
-              <p className="text-gray-500">No tours today</p>
+              <p className="text-gray-500">No tours scheduled today</p>
             </div>
           ) : (
             todayTours.map((tour) => (
               <Link
                 key={tour.id}
                 href={`/admin/tours/${tour.id}`}
-                className="block bg-white rounded-2xl p-4 border border-gray-200"
+                className="block bg-white rounded-2xl p-4 border border-gray-200 shadow-sm"
               >
                 <div className="flex items-center justify-between">
-                  <h3 className="font-bold text-gray-900">{tour.name}</h3>
-                  <span className={`px-2 py-1 rounded-full text-xs ${
+                  <h3 className="font-semibold text-gray-900">{tour.name}</h3>
+                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                     tour.status === 'in_progress' 
                       ? 'bg-green-100 text-green-700' 
                       : 'bg-blue-100 text-blue-700'
                   }`}>
-                    {tour.status === 'in_progress' ? 'Live' : tour.status}
+                    {tour.status === 'in_progress' ? 'Live' : 'Scheduled'}
                   </span>
                 </div>
-                <p className="text-sm text-gray-500 mt-1">
-                  🕐 {tour.start_time?.slice(0, 5)} • 👥 {tour.guest_count}
-                </p>
+                <div className="flex items-center gap-4 mt-2 text-sm text-gray-500">
+                  <span>{tour.start_time?.slice(0, 5)}</span>
+                  <span>•</span>
+                  <span>{tour.guest_count} guests</span>
+                </div>
               </Link>
             ))
           )}
+        </div>
+      </section>
+
+      {/* Quick Actions */}
+      <section>
+        <h2 className="font-semibold text-gray-900 mb-3">Quick Actions</h2>
+        <div className="grid grid-cols-2 gap-3">
+          <Link 
+            href="/admin/tours/new"
+            className="bg-white p-4 rounded-2xl border border-gray-200 text-center hover:border-blue-300 transition-colors"
+          >
+            <span className="text-2xl block mb-1">➕</span>
+            <span className="font-medium text-gray-900 text-sm">New Tour</span>
+          </Link>
+          <Link 
+            href="/admin/users/new"
+            className="bg-white p-4 rounded-2xl border border-gray-200 text-center hover:border-blue-300 transition-colors"
+          >
+            <span className="text-2xl block mb-1">👤</span>
+            <span className="font-medium text-gray-900 text-sm">Add User</span>
+          </Link>
         </div>
       </section>
     </div>
