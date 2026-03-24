@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import Link from 'next/link'
 import { supabase } from '@/lib/supabase/client'
 
 export default function ProfilePage() {
@@ -77,7 +78,14 @@ export default function ProfilePage() {
     }
   }
 
-  if (loading) return <div className="p-4 text-center">Loading...</div>
+  if (loading) {
+    return (
+      <div className="space-y-4">
+        <div className="h-24 bg-gray-200 rounded-2xl animate-pulse"></div>
+        <div className="h-64 bg-gray-200 rounded-2xl animate-pulse"></div>
+      </div>
+    )
+  }
 
   const roleLabels: Record<string, string> = {
     super_admin: 'Super Admin',
@@ -89,25 +97,25 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-20">
-      <header className="bg-gray-900 text-white px-4 py-3">
-        <div className="flex items-center gap-2">
-          <button onClick={() => window.history.back()} className="text-white">←</button>
-          <span className="font-semibold">My Profile</span>
-        </div>
-      </header>
+    <div className="space-y-6">
+      {/* Back Button */}
+      <Link href="/guide" className="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900">
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+        </svg>
+        <span>Back</span>
+      </Link>
 
-      <div className="p-4">
-        <div className="bg-white rounded-lg p-4 border border-gray-200 mb-4">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center text-white text-2xl font-bold">
-              {formData.first_name?.[0]?.toUpperCase() || '?'}
-            </div>
-            <div>
-              <p className="font-semibold text-gray-900">{formData.first_name} {formData.last_name}</p>
-              <p className="text-sm text-gray-500">{roleLabels[profile?.role] || profile?.role}</p>
-              <p className="text-sm text-gray-400">{profile?.company?.name}</p>
-            </div>
+      {/* Profile Card */}
+      <div className="bg-white rounded-2xl p-6 border border-gray-200">
+        <div className="flex items-center gap-4 mb-6">
+          <div className="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center text-white text-2xl font-bold">
+            {formData.first_name?.[0]?.toUpperCase() || '?'}
+          </div>
+          <div>
+            <p className="font-semibold text-gray-900 text-lg">{formData.first_name} {formData.last_name}</p>
+            <p className="text-sm text-gray-500">{roleLabels[profile?.role] || profile?.role}</p>
+            <p className="text-sm text-gray-400">{profile?.company?.name}</p>
           </div>
         </div>
 
@@ -118,7 +126,7 @@ export default function ProfilePage() {
               type="text"
               value={formData.first_name}
               onChange={(e) => setFormData({ ...formData, first_name: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+              className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             />
           </div>
 
@@ -128,7 +136,7 @@ export default function ProfilePage() {
               type="text"
               value={formData.last_name}
               onChange={(e) => setFormData({ ...formData, last_name: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+              className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             />
           </div>
 
@@ -138,7 +146,7 @@ export default function ProfilePage() {
               type="email"
               value={formData.email}
               disabled
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-100 text-gray-500"
+              className="w-full px-4 py-3 border border-gray-200 rounded-xl bg-gray-50 text-gray-500"
             />
             <p className="text-xs text-gray-500 mt-1">Contact admin to change email</p>
           </div>
@@ -149,40 +157,40 @@ export default function ProfilePage() {
               type="tel"
               value={formData.phone}
               onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+              className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             />
           </div>
 
-          <div className="flex gap-3 pt-4">
-            <button
-              type="button"
-              onClick={handlePasswordChange}
-              className="flex-1 py-2 border border-gray-300 text-gray-700 rounded-lg"
-            >
-              Change Password
-            </button>
+          <div className="pt-4 space-y-3">
             <button
               type="submit"
               disabled={saving}
-              className="flex-1 py-2 bg-blue-600 text-white rounded-lg disabled:opacity-50"
+              className="w-full py-3 bg-blue-600 text-white rounded-xl font-medium disabled:opacity-50"
             >
               {saving ? 'Saving...' : 'Save Changes'}
             </button>
+            
+            <button
+              type="button"
+              onClick={handlePasswordChange}
+              className="w-full py-3 border border-gray-200 text-gray-700 rounded-xl font-medium hover:bg-gray-50"
+            >
+              Change Password
+            </button>
           </div>
         </form>
-
-        <div className="mt-8 pt-6 border-t border-gray-200">
-          <button
-            onClick={async () => {
-              await supabase.auth.signOut()
-              window.location.href = '/login'
-            }}
-            className="w-full py-3 bg-red-50 text-red-700 rounded-lg font-medium"
-          >
-            Sign Out
-          </button>
-        </div>
       </div>
+
+      {/* Sign Out */}
+      <button
+        onClick={async () => {
+          await supabase.auth.signOut()
+          window.location.href = '/login'
+        }}
+        className="w-full py-3 bg-red-50 text-red-700 rounded-xl font-medium"
+      >
+        Sign Out
+      </button>
     </div>
   )
 }

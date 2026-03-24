@@ -35,8 +35,6 @@ export default function SupervisorIncidentsPage() {
 
   useEffect(() => {
     loadIncidents()
-    
-    // Poll every 30 seconds for new incidents
     const interval = setInterval(loadIncidents, 30000)
     return () => clearInterval(interval)
   }, [])
@@ -56,10 +54,7 @@ export default function SupervisorIncidentsPage() {
     }
 
     const { data } = await query
-
-    if (data) {
-      setIncidents(data)
-    }
+    if (data) setIncidents(data)
     setLoading(false)
   }
 
@@ -83,53 +78,52 @@ export default function SupervisorIncidentsPage() {
 
   if (loading) {
     return (
-      <div className="p-4">
-        <p className="text-center text-gray-500">Loading incidents...</p>
+      <div className="space-y-4">
+        <div className="h-24 bg-gray-200 rounded-2xl animate-pulse"></div>
+        <div className="h-32 bg-gray-200 rounded-2xl animate-pulse"></div>
       </div>
     )
   }
 
   return (
-    <div className="p-4">
-      <div className="flex items-center justify-between mb-4">
-        <h1 className="text-xl font-bold text-gray-900">Incidents</h1>
-        <select
-          value={filter}
-          onChange={(e) => {
-            setFilter(e.target.value)
-            loadIncidents()
-          }}
-          className="px-3 py-2 border border-gray-300 rounded-lg text-sm"
-        >
-          <option value="all">All Status</option>
-          <option value="reported">Reported</option>
-          <option value="in_progress">In Progress</option>
-          <option value="resolved">Resolved</option>
-          <option value="closed">Closed</option>
-        </select>
+    <div className="space-y-4">
+      {/* Stats */}
+      <div className="grid grid-cols-2 gap-3">
+        <div className="bg-red-500 rounded-2xl p-4 text-white">
+          <p className="text-3xl font-bold">{openIncidents.length}</p>
+          <p className="text-red-100 text-sm">Open</p>
+        </div>
+        <div className="bg-green-500 rounded-2xl p-4 text-white">
+          <p className="text-3xl font-bold">{resolvedIncidents.length}</p>
+          <p className="text-green-100 text-sm">Resolved</p>
+        </div>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-2 gap-3 mb-4">
-        <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-          <p className="text-2xl font-bold text-red-700">{openIncidents.length}</p>
-          <p className="text-sm text-red-600">Open</p>
-        </div>
-        <div className="bg-green-50 border border-green-200 rounded-lg p-3">
-          <p className="text-2xl font-bold text-green-700">{resolvedIncidents.length}</p>
-          <p className="text-sm text-green-600">Resolved</p>
-        </div>
-      </div>
+      {/* Filter */}
+      <select
+        value={filter}
+        onChange={(e) => {
+          setFilter(e.target.value)
+          loadIncidents()
+        }}
+        className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm bg-white"
+      >
+        <option value="all">All Status</option>
+        <option value="reported">Reported</option>
+        <option value="in_progress">In Progress</option>
+        <option value="resolved">Resolved</option>
+        <option value="closed">Closed</option>
+      </select>
 
       {/* Incidents List */}
       <div className="space-y-3">
         {incidents.length === 0 ? (
-          <div className="text-center text-gray-500 py-8">
-            <p>No incidents reported</p>
+          <div className="bg-gray-50 rounded-2xl p-8 text-center border border-gray-200">
+            <p className="text-gray-500">No incidents reported</p>
           </div>
         ) : (
           incidents.map((incident) => (
-            <div key={incident.id} className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+            <div key={incident.id} className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
               <div className="p-4">
                 <div className="flex items-start justify-between mb-2">
                   <div className="flex items-center gap-2">
@@ -141,17 +135,15 @@ export default function SupervisorIncidentsPage() {
                       </p>
                     </div>
                   </div>
-                  <div className="flex gap-2">
-                    <span className={`px-2 py-1 rounded text-xs font-medium ${severityColors[incident.severity]}`}>
-                      {incident.severity}
-                    </span>
-                  </div>
+                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${severityColors[incident.severity]}`}>
+                    {incident.severity}
+                  </span>
                 </div>
 
                 <p className="text-gray-700 mb-3">{incident.description}</p>
 
                 <div className="flex items-center justify-between">
-                  <span className={`px-2 py-1 rounded text-xs font-medium ${statusColors[incident.status]}`}>
+                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${statusColors[incident.status]}`}>
                     {incident.status}
                   </span>
 
@@ -159,7 +151,7 @@ export default function SupervisorIncidentsPage() {
                     {incident.status === 'reported' && (
                       <button
                         onClick={() => updateStatus(incident.id, 'in_progress')}
-                        className="px-3 py-1 bg-blue-600 text-white text-sm rounded-lg"
+                        className="px-3 py-1.5 bg-blue-600 text-white text-sm rounded-lg"
                       >
                         Start
                       </button>
@@ -167,17 +159,9 @@ export default function SupervisorIncidentsPage() {
                     {(incident.status === 'reported' || incident.status === 'in_progress') && (
                       <button
                         onClick={() => updateStatus(incident.id, 'resolved')}
-                        className="px-3 py-1 bg-green-600 text-white text-sm rounded-lg"
+                        className="px-3 py-1.5 bg-green-600 text-white text-sm rounded-lg"
                       >
                         Resolve
-                      </button>
-                    )}
-                    {incident.status === 'resolved' && (
-                      <button
-                        onClick={() => updateStatus(incident.id, 'closed')}
-                        className="px-3 py-1 bg-gray-600 text-white text-sm rounded-lg"
-                      >
-                        Close
                       </button>
                     )}
                   </div>
