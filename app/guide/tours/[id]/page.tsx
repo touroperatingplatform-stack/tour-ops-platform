@@ -231,6 +231,20 @@ export default function TourDetailPage() {
             >
               👥 Guest List
             </Link>
+            <Link
+              href={`/guide/tours/${tour.id}/expenses`}
+              style={{
+                backgroundColor: '#ea580c',
+                color: 'white',
+                padding: '12px 24px',
+                borderRadius: '8px',
+                textDecoration: 'none',
+                fontWeight: '500',
+                display: 'inline-block',
+              }}
+            >
+              💵 Expenses
+            </Link>
             <button
               onClick={() => setShowIncidentForm(true)}
               style={{
