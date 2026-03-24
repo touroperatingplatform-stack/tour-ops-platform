@@ -1,40 +1,50 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { supabase } from '@/lib/supabase/client'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(false)
+  const [checked, setChecked] = useState(false)
+  const checkingRef = useRef(false)
 
-  // Check if already logged in
+  // Check session once on mount
   useEffect(() => {
+    if (checkingRef.current) return
+    checkingRef.current = true
+
     async function checkSession() {
-      const { data: { session } } = await supabase.auth.getSession()
-      if (session?.user) {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('role')
-          .eq('id', session.user.id)
-          .single()
-        
-        if (profile) {
-          const redirects: Record<string, string> = {
-            super_admin: '/admin',
-            company_admin: '/admin',
-            supervisor: '/supervisor',
-            manager: '/supervisor',
-            operations: '/operations',
-            guide: '/guide',
+      try {
+        const { data: { session } } = await supabase.auth.getSession()
+        if (session?.user) {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('role')
+            .eq('id', session.user.id)
+            .single()
+          
+          if (profile) {
+            const redirects: Record<string, string> = {
+              super_admin: '/admin',
+              company_admin: '/admin',
+              supervisor: '/supervisor',
+              manager: '/supervisor',
+              operations: '/operations',
+              guide: '/guide',
+            }
+            window.location.replace(redirects[profile.role] || '/admin')
+            return
           }
-          window.location.replace(redirects[profile.role] || '/admin')
-          return
         }
+      } catch (err) {
+        console.error('Session check error:', err)
       }
-      setLoading(false)
+      setChecked(true)
     }
+
     checkSession()
   }, [])
 
@@ -99,8 +109,19 @@ export default function LoginPage() {
     }
   }
 
-  if (loading) {
-    return <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>Loading...</div>
+  // Show loading while checking session
+  if (!checked) {
+    return (
+      <div style={{
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: '#f9fafb',
+      }}>
+        <p>Loading...</p>
+      </div>
+    )
   }
 
   return (
