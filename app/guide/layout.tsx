@@ -189,7 +189,7 @@ export default function GuideLayout({
 
             <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-200">
               <button 
-                onClick={() => { handleSignOut(); setIsMenuMenuOpen(false); }}
+                onClick={() => { handleSignOut(); setIsMenuOpen(false); }}
                 className="flex items-center gap-3 px-4 py-3 text-gray-600 w-full rounded-xl hover:bg-gray-50"
               >
                 <span>🚪</span>
