@@ -5,7 +5,6 @@ export const dynamic = 'force-dynamic'
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase/client'
-import { format } from 'date-fns'
 
 interface CompletedTour {
   id: string
@@ -91,7 +90,7 @@ export default function TourHistoryPage() {
           </button>
           <h1 className="text-2xl font-bold text-gray-900">{selectedTour.name}</h1>
           <p className="text-gray-500 text-sm">
-            {format(new Date(selectedTour.tour_date), 'MMM d, yyyy')} • {selectedTour.start_time?.slice(0, 5)}
+            {new Date(selectedTour.tour_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} • {selectedTour.start_time?.slice(0, 5)}
           </p>
         </div>
 
@@ -204,7 +203,7 @@ export default function TourHistoryPage() {
                 <div>
                   <h3 className="font-semibold text-gray-900">{tour.name}</h3>
                   <p className="text-sm text-gray-500 mt-1">
-                    {format(new Date(tour.tour_date), 'MMM d, yyyy')}
+                    {new Date(tour.tour_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                   </p>
                 </div>
                 <div className="text-right">
