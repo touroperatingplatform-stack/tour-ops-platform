@@ -1,0 +1,1 @@
+ALTER TABLE expenses ADD CONSTRAINT chk_expense_type CHECK (expense_type IN ('fuel', 'parking', 'toll', 'meal', 'maintenance', 'supplies', 'other'));

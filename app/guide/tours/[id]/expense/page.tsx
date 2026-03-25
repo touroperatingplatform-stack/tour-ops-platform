@@ -63,6 +63,7 @@ export default function LogExpensePage() {
         description: description,
         receipt_url: receiptUrl,
         status: 'pending',
+        date: new Date().toISOString().split('T')[0], // Today's date
       })
 
     if (error) {
