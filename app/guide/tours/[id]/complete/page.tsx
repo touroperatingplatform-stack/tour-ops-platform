@@ -243,6 +243,8 @@ export default function CompleteTourPage() {
           </form>
         </div>
       </div>
+      {/* Extra bottom padding for mobile nav bar */}
+      <div className="h-24"></div>
     </div>
   )
 }
