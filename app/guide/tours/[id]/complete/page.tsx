@@ -47,6 +47,16 @@ export default function CompleteTourPage() {
   const [issues, setIssues] = useState('')
   const [photos, setPhotos] = useState<string[]>([])
   const [uploading, setUploading] = useState(false)
+  
+  // Cash reconciliation
+  const [cashReceived, setCashReceived] = useState('')
+  const [cashSpent, setCashSpent] = useState('')
+  const [expenseReceipts, setExpenseReceipts] = useState<string[]>([])
+  const [ticketCount, setTicketCount] = useState('')
+  const [vehicleCheck, setVehicleCheck] = useState({
+    forgottenItems: false,
+    notes: ''
+  })
 
   async function handlePhotoUpload(file: File) {
     setUploading(true)
@@ -78,6 +88,15 @@ export default function CompleteTourPage() {
         report_highlights: highlights,
         report_issues: issues,
         report_photos: photos,
+        // Cash reconciliation
+        report_cash_received: cashReceived ? parseFloat(cashReceived) : null,
+        report_cash_spent: cashSpent ? parseFloat(cashSpent) : null,
+        report_cash_to_return: cashReceived && cashSpent ? parseFloat(cashReceived) - parseFloat(cashSpent) : null,
+        report_ticket_count: ticketCount ? parseInt(ticketCount) : null,
+        report_expense_receipts: expenseReceipts,
+        // Vehicle check
+        report_forgotten_items: vehicleCheck.forgottenItems,
+        report_forgotten_items_notes: vehicleCheck.notes,
       })
       .eq('id', params.id)
 
@@ -230,6 +249,123 @@ export default function CompleteTourPage() {
                 )}
               </div>
               <p className="text-xs text-gray-500">{photos.length}/6 photos added</p>
+            </div>
+
+            {/* Cash Reconciliation */}
+            <div className="bg-blue-50 rounded-xl p-6 space-y-4">
+              <h3 className="font-semibold text-gray-900">💵 Cash Reconciliation</h3>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Cash Received ($)</label>
+                  <input
+                    type="number"
+                    value={cashReceived}
+                    onChange={(e) => setCashReceived(e.target.value)}
+                    placeholder="0.00"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Cash Spent ($)</label>
+                  <input
+                    type="number"
+                    value={cashSpent}
+                    onChange={(e) => setCashSpent(e.target.value)}
+                    placeholder="0.00"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              </div>
+
+              {cashReceived && cashSpent && (
+                <div className="bg-white rounded-lg p-4 border border-blue-200">
+                  <p className="text-sm text-gray-600">Cash to Return:</p>
+                  <p className="text-2xl font-bold text-blue-600">
+                    ${(parseFloat(cashReceived) - parseFloat(cashSpent)).toFixed(2)}
+                  </p>
+                </div>
+              )}
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Ticket Count</label>
+                <input
+                  type="number"
+                  value={ticketCount}
+                  onChange={(e) => setTicketCount(e.target.value)}
+                  placeholder="Number of tickets collected"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Expense Receipts</label>
+                <div className="grid grid-cols-3 gap-2">
+                  {expenseReceipts.map((receipt, idx) => (
+                    <div key={idx} className="relative aspect-square">
+                      <img src={receipt} alt={`Receipt ${idx + 1}`} className="w-full h-full object-cover rounded-lg" />
+                      <button
+                        type="button"
+                        onClick={() => setExpenseReceipts(prev => prev.filter((_, i) => i !== idx))}
+                        className="absolute -top-1 -right-1 w-6 h-6 bg-red-500 text-white rounded-full text-xs"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
+                  {expenseReceipts.length < 3 && (
+                    <label className="aspect-square flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50"
+                    >
+                      <span className="text-2xl">🧾</span>
+                      <span className="text-xs text-gray-500 mt-1">Add</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        capture="environment"
+                        className="hidden"
+                        onChange={(e) => {
+                          if (e.target.files?.[0]) {
+                            setUploading(true)
+                            uploadToCloudinary(e.target.files[0]).then(url => {
+                              if (url) setExpenseReceipts(prev => [...prev, url])
+                              setUploading(false)
+                            })
+                          }
+                        }}
+                        disabled={uploading}
+                      />
+                    </label>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Vehicle Check */}
+            <div className="bg-gray-50 rounded-xl p-6 space-y-4">
+              <h3 className="font-semibold text-gray-900">🚐 Vehicle Check</h3>
+              
+              <label className="flex items-center gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={vehicleCheck.forgottenItems}
+                  onChange={(e) => setVehicleCheck(prev => ({ ...prev, forgottenItems: e.target.checked }))}
+                  className="w-5 h-5 rounded border-gray-300 text-blue-600"
+                />
+                <span className="text-gray-700">Forgotten items found in vehicle</span>
+              </label>
+
+              {vehicleCheck.forgottenItems && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Describe items:</label>
+                  <textarea
+                    value={vehicleCheck.notes}
+                    onChange={(e) => setVehicleCheck(prev => ({ ...prev, notes: e.target.value }))}
+                    placeholder="What was left behind?"
+                    rows={2}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              )}
             </div>
 
             {/* Submit */}
