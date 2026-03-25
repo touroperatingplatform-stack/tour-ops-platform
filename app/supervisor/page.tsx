@@ -150,6 +150,11 @@ export default function SupervisorDashboard() {
               )}
             </div>
           </Link>
+          
+          <Link href="/supervisor/guides" className="bg-white rounded-2xl p-5 border border-gray-200 hover:border-blue-300 transition-colors">
+            <p className="text-sm text-gray-500">Guides</p>
+            <p className="text-3xl font-bold text-blue-600">👥</p>
+          </Link>
         </div>
 
         {/* Tours Section */}
