@@ -6,269 +6,240 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase/client'
 
-interface Tour {
+interface TourWithGuide {
   id: string
   name: string
+  tour_date: string
   start_time: string
   status: 'scheduled' | 'in_progress' | 'completed' | 'cancelled'
+  guide: {
+    id: string
+    first_name: string
+    last_name: string
+    email: string
+  }
   pickup_location: string
-  guide: { first_name: string; last_name: string } | null
-  tour_date: string
-  started_at: string | null
+  guest_count: number
+  started_at?: string
+  completed_at?: string
 }
 
-interface Incident {
-  id: string
-  type: string
-  severity: string
-  status: string
-  created_at: string
+interface PendingItem {
+  type: 'expense' | 'incident'
+  count: number
 }
 
 export default function SupervisorDashboard() {
-  const [tours, setTours] = useState<Tour[]>([])
-  const [incidents, setIncidents] = useState<Incident[]>([])
+  const [todayTours, setTodayTours] = useState<TourWithGuide[]>([])
+  const [pendingExpenses, setPendingExpenses] = useState(0)
+  const [pendingIncidents, setPendingIncidents] = useState(0)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    loadData()
+    loadDashboardData()
   }, [])
 
-  async function loadData() {
+  async function loadDashboardData() {
     const today = new Date().toISOString().split('T')[0]
     
-    // Load tours
+    // Load today's tours with guide info
     const { data: toursData } = await supabase
       .from('tours')
-      .select('id, name, start_time, status, pickup_location, guide_id, tour_date, started_at')
+      .select(`
+        id, name, tour_date, start_time, status, pickup_location, guest_count, started_at, completed_at,
+        guide:guide_id (id, first_name, last_name, email)
+      `)
       .eq('tour_date', today)
+      .neq('status', 'cancelled')
       .order('start_time')
 
-    const toursWithGuide = await Promise.all((toursData || []).map(async (tour: any) => {
-      let guide = null
-      if (tour.guide_id) {
-        const { data: g } = await supabase
-          .from('profiles')
-          .select('first_name, last_name')
-          .eq('id', tour.guide_id)
-          .single()
-        guide = g
-      }
-      return { ...tour, guide }
-    }))
+    if (toursData) {
+      setTodayTours(toursData as TourWithGuide[])
+    }
 
-    // Load active incidents
-    const { data: incidentsData } = await supabase
+    // Count pending expenses
+    const { count: expensesCount } = await supabase
+      .from('expenses')
+      .select('*', { count: 'exact' })
+      .eq('status', 'pending')
+
+    setPendingExpenses(expensesCount || 0)
+
+    // Count open incidents
+    const { count: incidentsCount } = await supabase
       .from('incidents')
-      .select('id, type, severity, status, created_at')
-      .eq('status', 'open')
-      .order('created_at', { ascending: false })
+      .select('*', { count: 'exact' })
+      .in('status', ['reported', 'acknowledged', 'in_progress'])
 
-    setTours(toursWithGuide)
-    setIncidents(incidentsData || [])
+    setPendingIncidents(incidentsCount || 0)
     setLoading(false)
   }
 
-  const liveTours = tours.filter(t => t.status === 'in_progress')
-  const todayTours = tours
-  const completedTours = tours.filter(t => t.status === 'completed')
-  const scheduledTours = tours.filter(t => t.status === 'scheduled')
+  function getStatusColor(status: string) {
+    switch (status) {
+      case 'in_progress': return 'bg-green-100 text-green-700 border-green-200'
+      case 'completed': return 'bg-gray-100 text-gray-600 border-gray-200'
+      case 'scheduled': return 'bg-blue-100 text-blue-700 border-blue-200'
+      default: return 'bg-gray-100 text-gray-600'
+    }
+  }
 
-  // Find late tours (scheduled but past start time by 15+ minutes)
-  const now = new Date()
-  const lateTours = scheduledTours.filter(tour => {
-    const [hours, minutes] = tour.start_time.split(':').map(Number)
-    const startTime = new Date()
-    startTime.setHours(hours, minutes, 0)
-    const diffMs = now.getTime() - startTime.getTime()
-    return diffMs > 15 * 60 * 1000 // 15 minutes late
-  })
-
-  // Find tours starting soon (within 30 minutes)
-  const upcomingTours = scheduledTours.filter(tour => {
-    const [hours, minutes] = tour.start_time.split(':').map(Number)
-    const startTime = new Date()
-    startTime.setHours(hours, minutes, 0)
-    const diffMs = startTime.getTime() - now.getTime()
-    return diffMs > 0 && diffMs < 30 * 60 * 1000
-  })
+  function getStatusLabel(status: string) {
+    switch (status) {
+      case 'in_progress': return '🟢 Active'
+      case 'completed': return '✅ Done'
+      case 'scheduled': return '⏳ Scheduled'
+      default: return status
+    }
+  }
 
   if (loading) {
     return (
-      <div className="px-4 py-4 space-y-4">
-        <div className="h-24 bg-gray-200 rounded-2xl animate-pulse"></div>
-        <div className="h-32 bg-gray-200 rounded-2xl animate-pulse"></div>
+      <div className="min-h-screen bg-gray-50 p-4">
+        <div className="max-w-6xl mx-auto">
+          <div className="h-32 bg-gray-200 rounded-2xl animate-pulse mb-4"></div>
+          <div className="h-64 bg-gray-200 rounded-2xl animate-pulse"></div>
+        </div>
       </div>
     )
   }
 
+  const activeTours = todayTours.filter(t => t.status === 'in_progress')
+  const completedTours = todayTours.filter(t => t.status === 'completed')
+  const scheduledTours = todayTours.filter(t => t.status === 'scheduled')
+
   return (
-    <div className="px-4 py-4 space-y-4">
-      {/* ALERTS SECTION */}
-      {(lateTours.length > 0 || incidents.length > 0 || upcomingTours.length > 0) && (
-        <div className="space-y-2">
-          {/* Late Tours Alert */}
-          {lateTours.map((tour) => (
-            <div key={`late-${tour.id}`} className="bg-red-50 border-l-4 border-red-500 p-4 rounded-r-lg">
-              <div className="flex items-center gap-2">
-                <span className="text-xl">⚠️</span>
-                <div>
-                  <p className="font-semibold text-red-800">Late Tour: {tour.name}</p>
-                  <p className="text-sm text-red-600">
-                    Started at {tour.start_time?.slice(0, 5)} • Guide: {tour.guide?.first_name || 'Unassigned'}
-                  </p>
-                </div>
-              </div>
-            </div>
-          ))}
-
-          {/* Upcoming Tours Alert */}
-          {upcomingTours.slice(0, 2).map((tour) => (
-            <div key={`upcoming-${tour.id}`} className="bg-yellow-50 border-l-4 border-yellow-500 p-4 rounded-r-lg">
-              <div className="flex items-center gap-2">
-                <span className="text-xl">⏰</span>
-                <div>
-                  <p className="font-semibold text-yellow-800">Starting Soon: {tour.name}</p>
-                  <p className="text-sm text-yellow-600">
-                    {tour.start_time?.slice(0, 5)} • {tour.guide?.first_name || 'No guide assigned'}
-                  </p>
-                </div>
-              </div>
-            </div>
-          ))}
-
-          {/* Active Incidents Alert */}
-          {incidents.slice(0, 2).map((incident) => (
-            <Link 
-              key={`incident-${incident.id}`} 
-              href="/supervisor/incidents"
-              className="block bg-orange-50 border-l-4 border-orange-500 p-4 rounded-r-lg hover:bg-orange-100"
-            >
-              <div className="flex items-center gap-2">
-                <span className="text-xl">🚨</span>
-                <div>
-                  <p className="font-semibold text-orange-800 capitalize">{incident.severity} Priority: {incident.type}</p>
-                  <p className="text-sm text-orange-600">
-                    Reported {new Date(incident.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
-                  </p>
-                </div>
-              </div>
-            </Link>
-          ))}
+    <div className="min-h-screen bg-gray-50 p-4 pb-24">
+      <div className="max-w-6xl mx-auto">
+        {/* Header */}
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold text-gray-900">Supervisor Dashboard</h1>
+          <p className="text-gray-500 text-sm mt-1">
+            {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
+          </p>
         </div>
-      )}
 
-      {/* Stats */}
-      <div className="grid grid-cols-3 gap-3">
-        <div className="bg-blue-600 rounded-2xl p-4 text-white text-center">
-          <p className="text-3xl font-bold">{liveTours.length}</p>
-          <p className="text-blue-100 text-sm">Live</p>
-        </div>
-        <div className="bg-gray-700 rounded-2xl p-4 text-white text-center">
-          <p className="text-3xl font-bold">{todayTours.length}</p>
-          <p className="text-gray-300 text-sm">Today</p>
-        </div>
-        <div className="bg-green-500 rounded-2xl p-4 text-white text-center">
-          <p className="text-3xl font-bold">{completedTours.length}</p>
-          <p className="text-green-100 text-sm">Done</p>
-        </div>
-      </div>
-
-      {/* Live Tours */}
-      <section>
-        <h2 className="font-semibold text-gray-900 mb-3 text-lg">Live Tours</h2>
-        
-        {liveTours.length === 0 ? (
-          <div className="bg-gray-50 rounded-2xl p-6 text-center border border-gray-200">
-            <p className="text-gray-500">No tours currently in progress</p>
+        {/* Quick Stats */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+          <div className="bg-white rounded-2xl p-5 border border-gray-200">
+            <p className="text-sm text-gray-500">Total Tours</p>
+            <p className="text-3xl font-bold text-gray-900">{todayTours.length}</p>
           </div>
-        ) : (
-          <div className="space-y-3">
-            {liveTours.map((tour) => (
-              <Link
-                key={tour.id}
-                href={`/supervisor/tours/${tour.id}`}
-                className="block bg-blue-50 rounded-2xl p-4 border-2 border-blue-200 hover:border-blue-300 transition-colors"
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <h3 className="font-semibold text-gray-900">{tour.name}</h3>
-                  <span className="px-3 py-1 bg-blue-600 text-white rounded-full text-xs font-medium">
-                    LIVE
-                  </span>
-                </div>
-                <p className="text-sm text-gray-600">
-                  {tour.guide?.first_name} {tour.guide?.last_name} • {tour.pickup_location}
-                </p>
-              </Link>
-            ))}
+          
+          <div className="bg-white rounded-2xl p-5 border border-gray-200">
+            <p className="text-sm text-gray-500">Active Now</p>
+            <p className="text-3xl font-bold text-green-600">{activeTours.length}</p>
           </div>
-        )}
-      </section>
-
-      {/* Today's Schedule */}
-      <section>
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="font-semibold text-gray-900 text-lg">Today's Schedule</h2>
-          <Link href="/supervisor/tours" className="text-blue-600 text-sm font-medium">See All →</Link>
+          
+          <Link href="/supervisor/expenses" className="bg-white rounded-2xl p-5 border border-gray-200 hover:border-blue-300 transition-colors">
+            <p className="text-sm text-gray-500">Pending Expenses</p>
+            <div className="flex items-center gap-2">
+              <p className="text-3xl font-bold text-orange-600">{pendingExpenses}</p>
+              {pendingExpenses > 0 && (
+                <span className="bg-orange-100 text-orange-700 text-xs px-2 py-1 rounded-full">needs review</span>
+              )}
+            </div>
+          </Link>
+          
+          <Link href="/supervisor/incidents" className="bg-white rounded-2xl p-5 border border-gray-200 hover:border-red-300 transition-colors">
+            <p className="text-sm text-gray-500">Open Incidents</p>
+            <div className="flex items-center gap-2">
+              <p className="text-3xl font-bold text-red-600">{pendingIncidents}</p>
+              {pendingIncidents > 0 && (
+                <span className="bg-red-100 text-red-700 text-xs px-2 py-1 rounded-full">needs attention</span>
+              )}
+            </div>
+          </Link>
         </div>
 
-        <div className="space-y-3">
-          {todayTours.slice(0, 5).map((tour) => (
-            <div 
-              key={tour.id}
-              className="bg-white rounded-2xl p-4 border border-gray-200"
-            >
-              <div className="flex items-center justify-between">
-                <div className="flex-1">
-                  <p className="font-medium text-gray-900">{tour.name}</p>
-                  <p className="text-sm text-gray-500">
-                    {tour.start_time?.slice(0, 5)} • {tour.guide?.first_name || 'No guide'} • {tour.pickup_location}
-                  </p>
-                </div>
-                <span className={`px-3 py-1 rounded-full text-xs font-medium ml-2 ${
-                  tour.status === 'completed' ? 'bg-green-100 text-green-700' : 
-                  tour.status === 'in_progress' ? 'bg-blue-100 text-blue-700' :
-                  lateTours.find(t => t.id === tour.id) ? 'bg-red-100 text-red-700' :
-                  'bg-gray-100 text-gray-700'
-                }`}>
-                  {lateTours.find(t => t.id === tour.id) ? 'LATE' : tour.status.replace('_', ' ')}
-                </span>
+        {/* Tours Section */}
+        <div className="space-y-6">
+          {/* Active Tours */}
+          {activeTours.length > 0 && (
+            <section>
+              <h2 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                Active Tours ({activeTours.length})
+              </h2>
+              <div className="space-y-3">
+                {activeTours.map(tour => (
+                  <div key={tour.id} className="bg-white rounded-2xl border border-gray-200 p-5">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <h3 className="font-semibold text-gray-900">{tour.name}</h3>
+                        <p className="text-sm text-gray-500 mt-1">
+                          {tour.start_time?.slice(0, 5)} • {tour.pickup_location}
+                        </p>
+                        <div className="flex items-center gap-2 mt-2">
+                          <span className="text-sm font-medium text-gray-700">
+                            👤 {tour.guide.first_name} {tour.guide.last_name}
+                          </span>
+                          <span className="text-gray-400">•</span>
+                          <span className="text-sm text-gray-600">
+                            {tour.guest_count} guests
+                          </span>
+                        </div>
+                      </div>
+                      <span className={`px-3 py-1 rounded-full text-sm font-medium border ${getStatusColor(tour.status)}`}>
+                        {getStatusLabel(tour.status)}
+                      </span>
+                    </div>
+                  </div>
+                ))}
               </div>
-            </div>
-          ))}
-          {todayTours.length === 0 && (
-            <div className="bg-gray-50 rounded-2xl p-6 text-center border border-gray-200">
-              <p className="text-gray-500">No tours scheduled today</p>
-            </div>
+            </section>
+          )}
+
+          {/* Scheduled Tours */}
+          {scheduledTours.length > 0 && (
+            <section>
+              <h2 className="font-semibold text-gray-900 mb-3">Scheduled ({scheduledTours.length})</h2>
+              <div className="space-y-3">
+                {scheduledTours.map(tour => (
+                  <div key={tour.id} className="bg-white rounded-2xl border border-gray-200 p-5">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <h3 className="font-semibold text-gray-900">{tour.name}</h3>
+                        <p className="text-sm text-gray-500 mt-1">
+                          {tour.start_time?.slice(0, 5)} • {tour.pickup_location}
+                        </p>
+                        <p className="text-sm text-gray-600 mt-2">
+                          👤 {tour.guide.first_name} {tour.guide.last_name}
+                        </p>
+                      </div>
+                      <span className={`px-3 py-1 rounded-full text-sm font-medium border ${getStatusColor(tour.status)}`}>
+                        {getStatusLabel(tour.status)}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* Completed Tours */}
+          {completedTours.length > 0 && (
+            <section>
+              <h2 className="font-semibold text-gray-900 mb-3 text-gray-500">Completed Today ({completedTours.length})</h2>
+              <div className="space-y-3">
+                {completedTours.slice(0, 3).map(tour => (
+                  <div key={tour.id} className="bg-gray-50 rounded-2xl border border-gray-200 p-5">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <h3 className="font-medium text-gray-700">{tour.name}</h3>
+                        <p className="text-sm text-gray-500 mt-1">
+                          {tour.start_time?.slice(0, 5)} • {tour.guide.first_name} {tour.guide.last_name}
+                        </p>
+                      </div>
+                      <span className="text-sm text-gray-500">✓ Done</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
           )}
         </div>
-      </section>
-
-      {/* Quick Actions */}
-      <section>
-        <h2 className="font-semibold text-gray-900 mb-3 text-lg">Quick Actions</h2>
-        <div className="grid grid-cols-2 gap-3">
-          <Link 
-            href="/supervisor/incidents"
-            className="bg-white rounded-2xl p-4 border border-gray-200 text-center hover:bg-gray-50 transition-colors"
-          >
-            <span className="text-2xl block mb-2">🚨</span>
-            <span className="font-medium text-gray-900">Incidents</span>
-            {incidents.length > 0 && (
-              <span className="ml-2 px-2 py-0.5 bg-red-500 text-white text-xs rounded-full">
-                {incidents.length}
-              </span>
-            )}
-          </Link>
-          <Link 
-            href="/supervisor/guides"
-            className="bg-white rounded-2xl p-4 border border-gray-200 text-center hover:bg-gray-50 transition-colors"
-          >
-            <span className="text-2xl block mb-2">👥</span>
-            <span className="font-medium text-gray-900">Guides</span>
-          </Link>
-        </div>
-      </section>
+      </div>
     </div>
   )
 }

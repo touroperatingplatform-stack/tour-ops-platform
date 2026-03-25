@@ -1,194 +1,207 @@
 'use client'
 
-export const dynamic = 'force-dynamic'
-
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase/client'
 
-interface Incident {
+interface IncidentWithDetails {
   id: string
-  type: string
-  severity: string
+  incident_type: string
+  severity: 'low' | 'medium' | 'high' | 'critical'
+  title: string
   description: string
   status: string
-  tour_id: string | null
-  reported_by: string | null
-  created_at: string
-  reporter: { first_name: string; last_name: string } | null
+  reported_at: string
+  photo_urls: string[]
+  tour: {
+    name: string
+    tour_date: string
+  }
+  guide: {
+    first_name: string
+    last_name: string
+  }
+}
+
+const incidentTypeLabels: Record<string, string> = {
+  medical_emergency: '🏥 Medical Emergency',
+  vehicle_breakdown: '🚐 Vehicle Breakdown',
+  vehicle_accident: '💥 Vehicle Accident',
+  guest_injury: '🤕 Guest Injury',
+  guest_complaint: '😤 Guest Complaint',
+  guest_dispute: '🗣️ Guest Dispute',
+  weather_delay: '🌧️ Weather Delay',
+  traffic_delay: '🚦 Traffic Delay',
+  lost_item: '🔑 Lost Item',
+  theft: '⚠️ Theft',
+  other: '📝 Other',
 }
 
 const severityColors: Record<string, string> = {
-  low: 'bg-green-100 text-green-700',
+  low: 'bg-gray-100 text-gray-700',
   medium: 'bg-yellow-100 text-yellow-700',
   high: 'bg-orange-100 text-orange-700',
   critical: 'bg-red-100 text-red-700',
 }
 
-const typeIcons: Record<string, string> = {
-  medical: '🏥',
-  accident: '💥',
-  vehicle: '🚐',
-  guest: '😤',
-  weather: '⛈️',
-  other: '📝',
-}
-
-export default function IncidentsPage() {
-  const [incidents, setIncidents] = useState<Incident[]>([])
+export default function SupervisorIncidentsPage() {
+  const [incidents, setIncidents] = useState<IncidentWithDetails[]>([])
   const [loading, setLoading] = useState(true)
-  const [filter, setFilter] = useState('open')
+  const [processing, setProcessing] = useState<string | null>(null)
 
   useEffect(() => {
     loadIncidents()
   }, [])
 
   async function loadIncidents() {
-    let query = supabase
+    const { data } = await supabase
       .from('incidents')
-      .select('*, reporter:profiles!reported_by(first_name, last_name)')
-      .order('created_at', { ascending: false })
+      .select(`
+        id, incident_type, severity, title, description, status, reported_at, photo_urls,
+        tour:tour_id (name, tour_date),
+        guide:guide_id (first_name, last_name)
+      `)
+      .order('reported_at', { ascending: false })
 
-    if (filter === 'open') {
-      query = query.eq('status', 'open')
-    } else if (filter === 'resolved') {
-      query = query.eq('status', 'resolved')
-    }
-
-    const { data, error } = await query
-
-    if (error) {
-      console.error('Error loading incidents:', error)
-    } else {
-      setIncidents(data || [])
-    }
+    if (data) setIncidents(data as IncidentWithDetails[])
     setLoading(false)
   }
 
-  async function updateStatus(id: string, status: string) {
-    const { error } = await supabase
+  async function acknowledgeIncident(incidentId: string) {
+    setProcessing(incidentId)
+    await supabase
       .from('incidents')
-      .update({ status })
-      .eq('id', id)
-
-    if (error) {
-      alert('Failed to update status')
-    } else {
-      setIncidents(prev => prev.map(i => i.id === id ? { ...i, status } : i))
-    }
+      .update({ status: 'acknowledged', acknowledged_at: new Date().toISOString() })
+      .eq('id', incidentId)
+    await loadIncidents()
+    setProcessing(null)
   }
+
+  async function resolveIncident(incidentId: string) {
+    setProcessing(incidentId)
+    await supabase
+      .from('incidents')
+      .update({ status: 'resolved', resolved_at: new Date().toISOString() })
+      .eq('id', incidentId)
+    await loadIncidents()
+    setProcessing(null)
+  }
+
+  const openIncidents = incidents.filter(i => i.status === 'reported')
+  const acknowledgedIncidents = incidents.filter(i => i.status === 'acknowledged' || i.status === 'in_progress')
+  const resolvedIncidents = incidents.filter(i => i.status === 'resolved' || i.status === 'closed')
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-gray-500">Loading incidents...</div>
+      <div className="min-h-screen bg-gray-50 p-4">
+        <div className="h-8 w-32 bg-gray-200 rounded animate-pulse mb-4"></div>
+        <div className="h-64 bg-gray-200 rounded-2xl animate-pulse"></div>
       </div>
     )
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Incidents</h1>
-          <p className="text-gray-500 mt-1">Track and manage reported issues</p>
+    <div className="min-h-screen bg-gray-50 p-4 pb-24">
+      <div className="max-w-4xl mx-auto">
+        {/* Header */}
+        <div className="mb-6">
+          <Link href="/supervisor" className="text-blue-600 text-sm mb-2 inline-block">
+            ← Back to Dashboard
+          </Link>
+          <h1 className="text-2xl font-bold text-gray-900">Incident Management</h1>
+          <p className="text-gray-500 text-sm mt-1">Review and manage tour incidents</p>
         </div>
-        <Link
-          href="/supervisor/incidents/new"
-          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-        >
-          + New Incident
-        </Link>
-      </div>
 
-      {/* Filter Tabs */}
-      <div className="flex gap-2">
-        <button
-          onClick={() => setFilter('open')}
-          className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-            filter === 'open'
-              ? 'bg-blue-600 text-white'
-              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-          }`}
-        >
-          Open ({incidents.filter(i => i.status === 'open').length})
-        </button>
-        <button
-          onClick={() => setFilter('resolved')}
-          className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-            filter === 'resolved'
-              ? 'bg-blue-600 text-white'
-              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-          }`}
-        >
-          Resolved ({incidents.filter(i => i.status === 'resolved').length})
-        </button>
-        <button
-          onClick={() => setFilter('all')}
-          className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-            filter === 'all'
-              ? 'bg-blue-600 text-white'
-              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-          }`}
-        >
-          All ({incidents.length})
-        </button>
-      </div>
-
-      {/* Incidents List */}
-      <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
-        {incidents.length === 0 ? (
-          <div className="p-8 text-center text-gray-500">
-            <p className="text-lg mb-2">No incidents found</p>
-            <p className="text-sm">No {filter} incidents at the moment.</p>
+        {/* Stats */}
+        <div className="grid grid-cols-3 gap-4 mb-6">
+          <div className="bg-white rounded-2xl p-4 border border-gray-200">
+            <p className="text-sm text-gray-500">New Reports</p>
+            <p className="text-2xl font-bold text-red-600">{openIncidents.length}</p>
           </div>
-        ) : (
-          <div className="divide-y divide-gray-200">
-            {incidents.map((incident) => (
-              <div key={incident.id} className="p-4 hover:bg-gray-50">
-                <div className="flex items-start justify-between mb-2">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xl">{typeIcons[incident.type] || '📝'}</span>
-                    <h3 className="font-semibold text-gray-900">{incident.type.replace('_', ' ')}</h3>
+          <div className="bg-white rounded-2xl p-4 border border-gray-200">
+            <p className="text-sm text-gray-500">In Progress</p>
+            <p className="text-2xl font-bold text-orange-600">{acknowledgedIncidents.length}</p>
+          </div>
+          <div className="bg-white rounded-2xl p-4 border border-gray-200">
+            <p className="text-sm text-gray-500">Resolved</p>
+            <p className="text-2xl font-bold text-green-600">{resolvedIncidents.length}</p>
+          </div>
+        </div>
+
+        {/* New/Critical Incidents */}
+        {openIncidents.length > 0 && (
+          <section className="mb-6">
+            <h2 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+              <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
+              New Reports ({openIncidents.length})
+            </h2>
+            <div className="space-y-4">
+              {openIncidents.map(incident => (
+                <div key={incident.id} className={`bg-white rounded-2xl border-2 p-5 ${
+                  incident.severity === 'critical' ? 'border-red-300 bg-red-50' : 'border-gray-200'
+                }`}>
+                  <div className="flex items-start justify-between mb-4">
+                    <div>
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-lg">{incidentTypeLabels[incident.incident_type]}</span>
+                      </div>
+                      <p className="font-semibold text-gray-900">{incident.title}</p>
+                      <p className="text-sm text-gray-500 mt-1">
+                        {incident.tour.name} • {new Date(incident.tour.tour_date).toLocaleDateString()}
+                      </p>
+                      <p className="text-sm text-gray-600 mt-1">
+                        👤 {incident.guide.first_name} {incident.guide.last_name}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <span className={`px-3 py-1 rounded-full text-sm font-medium ${severityColors[incident.severity]}`}>
+                        {incident.severity}
+                      </span>
+                      <p className="text-xs text-gray-500 mt-1">
+                        {new Date(incident.reported_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                      </p>
+                    </div>
                   </div>
-                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                    severityColors[incident.severity] || 'bg-gray-100'
-                  }`}>
-                    {incident.severity}
-                  </span>
-                </div>
-                <p className="text-sm text-gray-600 mb-2">{incident.description}</p>
-                <div className="flex items-center gap-4 text-xs text-gray-500">
-                  <span>Reported by: {incident.reporter?.first_name || 'Unknown'}</span>
-                  <span>{new Date(incident.created_at).toLocaleDateString()}</span>
-                </div>
-                <div className="flex gap-2 mt-3">
-                  {incident.status === 'open' && (
-                    <button
-                      onClick={() => updateStatus(incident.id, 'resolved')}
-                      className="text-green-600 hover:text-green-800 text-sm font-medium"
-                    >
-                      Mark Resolved
-                    </button>
+                  
+                  <p className="text-gray-700 text-sm mb-4 bg-white p-3 rounded-lg">
+                    {incident.description}
+                  </p>
+                  
+                  {incident.photo_urls && incident.photo_urls.length > 0 && (
+                    <div className="grid grid-cols-3 gap-2 mb-4">
+                      {incident.photo_urls.map((url, idx) => (
+                        <a key={idx} href={url} target="_blank" rel="noopener noreferrer">
+                          <img src={url} alt={`Incident ${idx + 1}`} className="w-full h-24 object-cover rounded-lg" />
+                        </a>
+                      ))}
+                    </div>
                   )}
-                  {incident.status === 'resolved' && (
+                  
+                  <div className="flex gap-3">
                     <button
-                      onClick={() => updateStatus(incident.id, 'open')}
-                      className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                      onClick={() => acknowledgeIncident(incident.id)}
+                      disabled={processing === incident.id}
+                      className="flex-1 bg-blue-600 text-white py-3 rounded-xl font-semibold hover:bg-blue-700 transition-colors disabled:bg-gray-400"
                     >
-                      Reopen
+                      {processing === incident.id ? 'Processing...' : '👁️ Acknowledge'}
                     </button>
-                  )}
-                  <Link
-                    href={`/supervisor/incidents/${incident.id}`}
-                    className="text-gray-600 hover:text-gray-800 text-sm font-medium"
-                  >
-                    View Details →
-                  </Link>
+                    <button
+                      onClick={() => resolveIncident(incident.id)}
+                      disabled={processing === incident.id}
+                      className="flex-1 bg-green-600 text-white py-3 rounded-xl font-semibold hover:bg-green-700 transition-colors disabled:bg-gray-400"
+                    >
+                      ✓ Resolve
+                    </button>
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
+          </section>
+        )}
+
+        {openIncidents.length === 0 && acknowledgedIncidents.length === 0 && (
+          <div className="text-center py-12 bg-white rounded-2xl border border-gray-200">
+            <p className="text-gray-500">✅ No open incidents!</p>
           </div>
         )}
       </div>
