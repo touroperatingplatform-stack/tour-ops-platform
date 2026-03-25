@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { supabase } from '@/lib/supabase/client'
@@ -24,10 +24,39 @@ export default function GuideLayout({ children }: { children: React.ReactNode })
   const pathname = usePathname()
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
+  const [hasNotifications, setHasNotifications] = useState(false)
+  const [notificationCount, setNotificationCount] = useState(0)
 
   const currentPage = navItems.find(item => 
     pathname === item.href || pathname.startsWith(`${item.href}/`)
   )?.label || 'Tours'
+
+  useEffect(() => {
+    checkNotifications()
+    // Check every 30 seconds
+    const interval = setInterval(checkNotifications, 30000)
+    return () => clearInterval(interval)
+  }, [])
+
+  async function checkNotifications() {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+
+    // Check for unread incidents assigned to this guide
+    const { count } = await supabase
+      .from('incidents')
+      .select('*', { count: 'exact', head: true })
+      .eq('reported_by', user.id)
+      .eq('status', 'open')
+
+    if (count && count > 0) {
+      setHasNotifications(true)
+      setNotificationCount(count)
+    } else {
+      setHasNotifications(false)
+      setNotificationCount(0)
+    }
+  }
 
   async function handleSignOut() {
     await supabase.auth.signOut()
@@ -39,7 +68,7 @@ export default function GuideLayout({ children }: { children: React.ReactNode })
       <div className="flex-1 p-4 pb-20 overflow-hidden">
         <div className="mx-auto w-full h-full bg-white border-2 border-gray-300 rounded-2xl shadow-sm overflow-hidden flex flex-col">
           <header className="bg-white border-b border-gray-200 shadow-sm flex-shrink-0 z-10">
-            <div className="px-4 h-14 flex items-center justify-between">
+            <div className="px-6 h-14 flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <button 
                   onClick={() => setIsMenuOpen(true)}
@@ -49,17 +78,26 @@ export default function GuideLayout({ children }: { children: React.ReactNode })
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
                   </svg>
                 </button>
-                <span className="font-semibold text-gray-900">{currentPage}</span>
+                <span className="font-semibold text-gray-900 text-lg">{currentPage}</span>
               </div>
 
-              <div className="flex items-center gap-2">
-                <button className="w-10 h-10 flex items-center justify-center rounded-lg hover:bg-gray-100 relative">
+              <div className="flex items-center gap-3">
+                {/* Notifications - Conditional */}
+                <button 
+                  onClick={() => {/* Open notifications panel */}}
+                  className="w-10 h-10 flex items-center justify-center rounded-lg hover:bg-gray-100 relative"
+                >
                   <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
                   </svg>
-                  <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full"></span>
+                  {hasNotifications && (
+                    <span className="absolute top-1 right-1 w-5 h-5 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center">
+                      {notificationCount > 9 ? '9+' : notificationCount}
+                    </span>
+                  )}
                 </button>
 
+                {/* User Avatar */}
                 <div className="relative">
                   <button 
                     onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
@@ -90,7 +128,7 @@ export default function GuideLayout({ children }: { children: React.ReactNode })
           </header>
 
           <main className="flex-1 overflow-y-auto">
-            <div className="p-3">{children}</div>
+            <div className="p-4">{children}</div>
           </main>
         </div>
       </div>

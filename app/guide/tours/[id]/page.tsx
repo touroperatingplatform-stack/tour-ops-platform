@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { useParams } from 'next/navigation'
+import { useParams, useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase/client'
+import { uploadToCloudinary } from '@/lib/cloudinary/upload'
 
 interface Tour {
   id: string
@@ -30,10 +31,14 @@ const defaultChecklist: ChecklistItem[] = [
 
 export default function GuideTourPage() {
   const params = useParams()
+  const router = useRouter()
   const [tour, setTour] = useState<Tour | null>(null)
   const [loading, setLoading] = useState(true)
   const [checklist, setChecklist] = useState<ChecklistItem[]>(defaultChecklist)
   const [notes, setNotes] = useState('')
+  const [uploading, setUploading] = useState(false)
+  const [equipmentPhoto, setEquipmentPhoto] = useState<string | null>(null)
+  const [vanPhoto, setVanPhoto] = useState<string | null>(null)
 
   useEffect(() => {
     loadTour()
@@ -42,7 +47,7 @@ export default function GuideTourPage() {
   async function loadTour() {
     const { data: tourData } = await supabase
       .from('tours')
-      .select('id, name, start_time, status, pickup_location, guide_id')
+      .select('id, name, start_time, status, pickup_location, guide_id, equipment_photo_url, van_photo_url')
       .eq('id', params.id)
       .single()
 
@@ -53,6 +58,8 @@ export default function GuideTourPage() {
         .eq('id', tourData.guide_id)
         .single()
       setTour({ ...tourData, guide })
+      if (tourData.equipment_photo_url) setEquipmentPhoto(tourData.equipment_photo_url)
+      if (tourData.van_photo_url) setVanPhoto(tourData.van_photo_url)
     } else {
       setTour(tourData as any)
     }
@@ -65,6 +72,27 @@ export default function GuideTourPage() {
     ))
   }
 
+  async function handlePhotoUpload(type: 'equipment' | 'van', file: File) {
+    setUploading(true)
+    try {
+      const url = await uploadToCloudinary(file)
+      if (type === 'equipment') {
+        setEquipmentPhoto(url)
+      } else {
+        setVanPhoto(url)
+      }
+      // Save to tour record
+      await supabase
+        .from('tours')
+        .update({ [type === 'equipment' ? 'equipment_photo_url' : 'van_photo_url']: url })
+        .eq('id', params.id)
+    } catch (err) {
+      alert('Failed to upload photo')
+    } finally {
+      setUploading(false)
+    }
+  }
+
   async function startTour() {
     const allChecked = checklist.every(i => i.checked)
     if (!allChecked) {
@@ -74,7 +102,7 @@ export default function GuideTourPage() {
 
     const { error } = await supabase
       .from('tours')
-      .update({ status: 'in_progress' })
+      .update({ status: 'in_progress', started_at: new Date().toISOString() })
       .eq('id', params.id)
 
     if (error) {
@@ -85,16 +113,7 @@ export default function GuideTourPage() {
   }
 
   async function completeTour() {
-    const { error } = await supabase
-      .from('tours')
-      .update({ status: 'completed' })
-      .eq('id', params.id)
-
-    if (error) {
-      alert('Failed to complete tour')
-    } else {
-      setTour(prev => prev ? { ...prev, status: 'completed' } : null)
-    }
+    router.push(`/guide/tours/${params.id}/complete`)
   }
 
   if (loading) {
@@ -117,7 +136,7 @@ export default function GuideTourPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 px-4 py-4">
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold text-gray-900">{tour.name}</h1>
@@ -151,6 +170,71 @@ export default function GuideTourPage() {
         </div>
       </div>
 
+      {/* Photo Uploads - Only show when starting or in progress */}
+      {(tour.status === 'scheduled' || tour.status === 'in_progress') && (
+        <div className="bg-white rounded-2xl border border-gray-200 p-6 space-y-4">
+          <h2 className="font-semibold text-gray-900">Required Photos</h2>
+          
+          {/* Equipment Photo */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Equipment Check Photo</label>
+            {equipmentPhoto ? (
+              <div className="relative">
+                <img src={equipmentPhoto} alt="Equipment" className="w-full h-48 object-cover rounded-lg" />
+                <button 
+                  onClick={() => setEquipmentPhoto(null)}
+                  className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full text-xs"
+                >
+                  Retake
+                </button>
+              </div>
+            ) : (
+              <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50">
+                <span className="text-3xl mb-2">📷</span>
+                <span className="text-sm text-gray-500">Tap to take photo</span>
+                <input 
+                  type="file" 
+                  accept="image/*" 
+                  capture="environment"
+                  className="hidden" 
+                  onChange={(e) => e.target.files?.[0] && handlePhotoUpload('equipment', e.target.files[0])}
+                  disabled={uploading}
+                />
+              </label>
+            )}
+          </div>
+
+          {/* Van Photo */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Vehicle Photo</label>
+            {vanPhoto ? (
+              <div className="relative">
+                <img src={vanPhoto} alt="Van" className="w-full h-48 object-cover rounded-lg" />
+                <button 
+                  onClick={() => setVanPhoto(null)}
+                  className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full text-xs"
+                >
+                  Retake
+                </button>
+              </div>
+            ) : (
+              <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50">
+                <span className="text-3xl mb-2">🚐</span>
+                <span className="text-sm text-gray-500">Tap to take photo</span>
+                <input 
+                  type="file" 
+                  accept="image/*" 
+                  capture="environment"
+                  className="hidden" 
+                  onChange={(e) => e.target.files?.[0] && handlePhotoUpload('van', e.target.files[0])}
+                  disabled={uploading}
+                />
+              </label>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Notes */}
       <div className="bg-white rounded-2xl border border-gray-200 p-6">
         <h2 className="font-semibold text-gray-900 mb-4">Tour Notes</h2>
@@ -159,7 +243,7 @@ export default function GuideTourPage() {
           onChange={(e) => setNotes(e.target.value)}
           placeholder="Add any notes about this tour..."
           rows={4}
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
       </div>
 
@@ -168,21 +252,22 @@ export default function GuideTourPage() {
         {tour.status === 'scheduled' && (
           <button
             onClick={startTour}
-            className="flex-1 bg-blue-600 text-white px-4 py-3 rounded-lg hover:bg-blue-700 transition-colors"
+            disabled={uploading || !equipmentPhoto || !vanPhoto}
+            className="flex-1 bg-blue-600 text-white px-6 py-4 rounded-xl hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed text-lg font-semibold"
           >
-            Start Tour
+            {uploading ? 'Uploading...' : 'Start Tour'}
           </button>
         )}
         {tour.status === 'in_progress' && (
           <button
             onClick={completeTour}
-            className="flex-1 bg-green-600 text-white px-4 py-3 rounded-lg hover:bg-green-700 transition-colors"
+            className="flex-1 bg-green-600 text-white px-6 py-4 rounded-xl hover:bg-green-700 transition-colors text-lg font-semibold"
           >
             Complete Tour
           </button>
         )}
         {['completed', 'cancelled'].includes(tour.status) && (
-          <div className="flex-1 text-center text-gray-500 py-3">
+          <div className="flex-1 text-center text-gray-500 py-4">
             Tour {tour.status}
           </div>
         )}
@@ -190,7 +275,7 @@ export default function GuideTourPage() {
 
       <Link
         href="/guide"
-        className="block text-center text-gray-600 hover:text-gray-900 text-sm"
+        className="block text-center text-gray-600 hover:text-gray-900 text-sm py-4"
       >
         ← Back to My Tours
       </Link>

@@ -1,0 +1,244 @@
+'use client'
+
+import { useState } from 'react'
+import { useParams, useRouter } from 'next/navigation'
+import { supabase } from '@/lib/supabase/client'
+import { uploadToCloudinary } from '@/lib/cloudinary/upload'
+
+const weatherOptions = [
+  { value: 'sunny', label: '☀️ Sunny', icon: '☀️' },
+  { value: 'partly_cloudy', label: '⛅ Partly Cloudy', icon: '⛅' },
+  { value: 'cloudy', label: '☁️ Cloudy', icon: '☁️' },
+  { value: 'rain', label: '🌧️ Rain', icon: '🌧️' },
+  { value: 'storm', label: '⛈️ Storm', icon: '⛈️' },
+]
+
+const guestSatisfactionOptions = [
+  { value: 'excellent', label: '😍 Excellent - Guests loved it!', color: 'bg-green-100 text-green-700' },
+  { value: 'good', label: '🙂 Good - Happy guests', color: 'bg-blue-100 text-blue-700' },
+  { value: 'average', label: '😐 Average - It was okay', color: 'bg-yellow-100 text-yellow-700' },
+  { value: 'poor', label: '😕 Poor - Issues occurred', color: 'bg-orange-100 text-orange-700' },
+  { value: 'terrible', label: '😡 Terrible - Complaints', color: 'bg-red-100 text-red-700' },
+]
+
+const incidentOptions = [
+  { value: 'none', label: '✅ No incidents' },
+  { value: 'minor_delay', label: '⏱️ Minor delay' },
+  { value: 'vehicle_issue', label: '🚐 Vehicle issue' },
+  { value: 'guest_issue', label: '👥 Guest issue' },
+  { value: 'medical', label: '🏥 Medical incident' },
+  { value: 'weather', label: '🌧️ Weather related' },
+  { value: 'other', label: '📝 Other' },
+]
+
+export default function CompleteTourPage() {
+  const params = useParams()
+  const router = useRouter()
+  const [submitting, setSubmitting] = useState(false)
+  
+  // Form state
+  const [weather, setWeather] = useState('sunny')
+  const [guestSatisfaction, setGuestSatisfaction] = useState('excellent')
+  const [incident, setIncident] = useState('none')
+  const [guestCount, setGuestCount] = useState('')
+  const [highlights, setHighlights] = useState('')
+  const [issues, setIssues] = useState('')
+  const [photos, setPhotos] = useState<string[]>([])
+  const [uploading, setUploading] = useState(false)
+
+  async function handlePhotoUpload(file: File) {
+    setUploading(true)
+    try {
+      const url = await uploadToCloudinary(file)
+      setPhotos(prev => [...prev, url])
+    } catch (err) {
+      alert('Failed to upload photo')
+    } finally {
+      setUploading(false)
+    }
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    setSubmitting(true)
+
+    const { error } = await supabase
+      .from('tours')
+      .update({
+        status: 'completed',
+        completed_at: new Date().toISOString(),
+        report_weather: weather,
+        report_guest_satisfaction: guestSatisfaction,
+        report_incident: incident,
+        report_guest_count: guestCount ? parseInt(guestCount) : null,
+        report_highlights: highlights,
+        report_issues: issues,
+        report_photos: photos,
+      })
+      .eq('id', params.id)
+
+    if (error) {
+      alert('Failed to complete tour: ' + error.message)
+    } else {
+      router.push('/guide')
+    }
+    setSubmitting(false)
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-100">
+      <div className="p-4 pb-24">
+        <div className="bg-white rounded-2xl border-2 border-gray-300 shadow-sm overflow-hidden">
+          {/* Header */}
+          <div className="bg-blue-600 px-6 py-4">
+            <h1 className="text-xl font-bold text-white">End of Tour Report</h1>
+            <p className="text-blue-100 text-sm mt-1">Quickly document how the tour went</p>
+          </div>
+
+          <form onSubmit={handleSubmit} className="p-6 space-y-6">
+            {/* Weather */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-3">How was the weather?</label>
+              <div className="grid grid-cols-2 gap-2">
+                {weatherOptions.map((opt) => (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => setWeather(opt.value)}
+                    className={`p-3 rounded-xl border-2 text-left transition-all ${
+                      weather === opt.value 
+                        ? 'border-blue-500 bg-blue-50' 
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                  >
+                    <span className="text-2xl mr-2">{opt.icon}</span>
+                    <span className="text-sm font-medium">{opt.label.split(' ')[1]}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Guest Satisfaction */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-3">How satisfied were the guests?</label>
+              <div className="space-y-2">
+                {guestSatisfactionOptions.map((opt) => (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => setGuestSatisfaction(opt.value)}
+                    className={`w-full p-3 rounded-xl border-2 text-left transition-all ${
+                      guestSatisfaction === opt.value 
+                        ? 'border-blue-500 bg-blue-50' 
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                  >
+                    <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium mr-2 ${opt.color}`}>
+                      {opt.label.split(' ')[0]}
+                    </span>
+                    <span className="text-sm text-gray-700">{opt.label.split(' - ')[1]}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Guest Count */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">How many guests attended?</label>
+              <input
+                type="number"
+                value={guestCount}
+                onChange={(e) => setGuestCount(e.target.value)}
+                placeholder="Enter number"
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-lg"
+              />
+            </div>
+
+            {/* Incidents */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-3">Any incidents?</label>
+              <select
+                value={incident}
+                onChange={(e) => setIncident(e.target.value)}
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-lg"
+              >
+                {incidentOptions.map((opt) => (
+                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Highlights */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Tour Highlights / Summary</label>
+              <textarea
+                value={highlights}
+                onChange={(e) => setHighlights(e.target.value)}
+                placeholder="What made the tour special? Any memorable moments?"
+                rows={3}
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+
+            {/* Issues */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Any issues or concerns?</label>
+              <textarea
+                value={issues}
+                onChange={(e) => setIssues(e.target.value)}
+                placeholder="Describe any problems that occurred..."
+                rows={3}
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+
+            {/* Photo Uploads */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-3">Add photos from the tour (optional)</label>
+              
+              <div className="grid grid-cols-3 gap-2 mb-3">
+                {photos.map((photo, idx) => (
+                  <div key={idx} className="relative aspect-square">
+                    <img src={photo} alt={`Tour photo ${idx + 1}`} className="w-full h-full object-cover rounded-lg" />
+                    <button
+                      type="button"
+                      onClick={() => setPhotos(prev => prev.filter((_, i) => i !== idx))}
+                      className="absolute -top-1 -right-1 w-6 h-6 bg-red-500 text-white rounded-full text-xs flex items-center justify-center"
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+                {photos.length < 6 && (
+                  <label className="aspect-square flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50"
+                  >
+                    <span className="text-2xl">📷</span>
+                    <span className="text-xs text-gray-500 mt-1">Add</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      capture="environment"
+                      className="hidden"
+                      onChange={(e) => e.target.files?.[0] && handlePhotoUpload(e.target.files[0])}
+                      disabled={uploading}
+                    />
+                  </label>
+                )}
+              </div>
+              <p className="text-xs text-gray-500">{photos.length}/6 photos added</p>
+            </div>
+
+            {/* Submit */}
+            <button
+              type="submit"
+              disabled={submitting || uploading}
+              className="w-full bg-green-600 text-white py-4 rounded-xl font-semibold text-lg hover:bg-green-700 transition-colors disabled:bg-gray-400"
+            >
+              {submitting ? 'Saving...' : 'Submit Report & Complete Tour'}
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  )
+}

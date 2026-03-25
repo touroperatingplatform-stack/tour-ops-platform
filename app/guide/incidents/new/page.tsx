@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase/client'
@@ -22,17 +22,53 @@ const severities = [
   { value: 'critical', label: 'Critical', color: 'bg-red-100 text-red-700' },
 ]
 
+interface Tour {
+  id: string
+  name: string
+  start_time: string
+  tour_date: string
+}
+
 export default function NewIncidentPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [uploading, setUploading] = useState(false)
   const [photoUrl, setPhotoUrl] = useState<string | null>(null)
+  const [myTours, setMyTours] = useState<Tour[]>([])
+  const [toursLoading, setToursLoading] = useState(true)
+  
   const [formData, setFormData] = useState({
     type: 'other',
     severity: 'medium',
     tour_id: '',
     description: '',
   })
+
+  useEffect(() => {
+    loadMyTours()
+  }, [])
+
+  async function loadMyTours() {
+    const today = new Date().toISOString().split('T')[0]
+    const { data: userData } = await supabase.auth.getUser()
+    
+    if (!userData.user) {
+      setToursLoading(false)
+      return
+    }
+
+    const { data } = await supabase
+      .from('tours')
+      .select('id, name, start_time, tour_date')
+      .eq('guide_id', userData.user.id)
+      .gte('tour_date', today)
+      .order('tour_date', { ascending: true })
+      .order('start_time', { ascending: true })
+      .limit(10)
+
+    if (data) setMyTours(data)
+    setToursLoading(false)
+  }
 
   function handleChange(field: string, value: string) {
     setFormData(prev => ({ ...prev, [field]: value }))
@@ -90,7 +126,7 @@ export default function NewIncidentPage() {
   }
 
   return (
-    <div className="max-w-2xl mx-auto">
+    <div className="px-4 py-4">
       {/* Header */}
       <div className="mb-6">
         <Link href="/guide" className="text-gray-600 hover:text-gray-900 text-sm flex items-center gap-2 mb-3">
@@ -148,6 +184,34 @@ export default function NewIncidentPage() {
           </div>
         </div>
 
+        {/* Related Tour - DROPDOWN */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Related Tour</label>
+          {toursLoading ? (
+            <div className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-500">
+              Loading your tours...
+            </div>
+          ) : myTours.length > 0 ? (
+            <select
+              value={formData.tour_id}
+              onChange={(e) => handleChange('tour_id', e.target.value)}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-base"
+            >
+              <option value="">-- Select a tour --</option>
+              {myTours.map((tour) => (
+                <option key={tour.id} value={tour.id}>
+                  {tour.name} - {new Date(tour.tour_date).toLocaleDateString()} {tour.start_time?.slice(0, 5)}
+                </option>
+              ))}
+            </select>
+          ) : (
+            <div className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-500">
+              No upcoming tours assigned to you
+            </div>
+          )}
+          <p className="text-xs text-gray-500 mt-1">Select the tour this incident relates to (optional)</p>
+        </div>
+
         {/* Photo Upload */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">Photo (Optional)</label>
@@ -173,6 +237,7 @@ export default function NewIncidentPage() {
                 <input
                   type="file"
                   accept="image/*"
+                  capture="environment"
                   onChange={(e) => {
                     const file = e.target.files?.[0]
                     if (file) handlePhotoUpload(file)
@@ -194,20 +259,8 @@ export default function NewIncidentPage() {
             value={formData.description}
             onChange={(e) => handleChange('description', e.target.value)}
             rows={4}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             placeholder="Describe what happened..."
-          />
-        </div>
-
-        {/* Tour ID (optional) */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Related Tour ID</label>
-          <input
-            type="text"
-            value={formData.tour_id}
-            onChange={(e) => handleChange('tour_id', e.target.value)}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="Leave blank if not tour-related"
           />
         </div>
 
@@ -215,14 +268,14 @@ export default function NewIncidentPage() {
         <div className="flex gap-3 pt-4 border-t border-gray-200">
           <Link
             href="/guide"
-            className="flex-1 bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 transition-colors text-center"
+            className="flex-1 bg-gray-100 text-gray-700 px-4 py-3 rounded-lg hover:bg-gray-200 transition-colors text-center font-medium"
           >
             Cancel
           </Link>
           <button
             type="submit"
             disabled={loading || uploading}
-            className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+            className="flex-1 bg-blue-600 text-white px-4 py-3 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 font-medium"
           >
             {loading ? 'Reporting...' : 'Report Incident'}
           </button>
