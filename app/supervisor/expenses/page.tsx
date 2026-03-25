@@ -52,8 +52,15 @@ export default function SupervisorExpensesPage() {
       `)
       .order('created_at', { ascending: false })
 
-    if (data) setExpenses(data as ExpenseWithDetails[])
-    setLoading(false)
+    if (data) {
+      // Handle Supabase nested query format
+      const formattedExpenses = data.map((item: any) => ({
+        ...item,
+        tour: item.tour?.[0] || { name: '', tour_date: '' },
+        guide: item.guide?.[0] || { first_name: '', last_name: '' },
+      })) as ExpenseWithDetails[]
+      setExpenses(formattedExpenses)
+    }
   }
 
   async function approveExpense(expenseId: string) {

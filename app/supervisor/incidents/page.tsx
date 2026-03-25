@@ -63,7 +63,14 @@ export default function SupervisorIncidentsPage() {
       `)
       .order('reported_at', { ascending: false })
 
-    if (data) setIncidents(data as IncidentWithDetails[])
+    if (data) {
+      const formattedIncidents = data.map((item: any) => ({
+        ...item,
+        tour: item.tour?.[0] || { name: '', tour_date: '' },
+        guide: item.guide?.[0] || { first_name: '', last_name: '' },
+      })) as IncidentWithDetails[]
+      setIncidents(formattedIncidents)
+    }
     setLoading(false)
   }
 
