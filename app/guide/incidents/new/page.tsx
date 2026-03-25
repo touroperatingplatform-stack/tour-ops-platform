@@ -284,8 +284,8 @@ export default function NewIncidentPage() {
           </button>
         </div>
       </form>
+      {/* Extra bottom padding for mobile nav bar */}
+      <div className="h-24"></div>
     </div>
-    {/* Extra bottom padding for mobile nav bar */}
-    <div className="h-24"></div>
   )
 }
