@@ -68,7 +68,13 @@ export default function SupervisorDashboard() {
       .neq('status', 'cancelled')
       .order('start_time')
 
-    if (toursData) setTodayTours(toursData as TourWithGuide[])
+    if (toursData) {
+      const formattedTours = toursData.map((item: any) => ({
+        ...item,
+        guide: item.guide?.[0] || { id: '', first_name: '', last_name: '', email: '' },
+      })) as TourWithGuide[]
+      setTodayTours(formattedTours)
+    }
 
     // Active guides (on tour today)
     const { count: activeCount } = await supabase
