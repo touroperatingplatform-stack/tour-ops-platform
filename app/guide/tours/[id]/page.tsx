@@ -474,12 +474,21 @@ export default function GuideTourPage() {
 
       {/* Report Incident - Available during tour */}
       {tour?.status !== 'completed' && tour?.status !== 'cancelled' && (
-        <Link
-          href={`/guide/tours/${tour?.id}/incident`}
-          className="block w-full bg-red-50 border-2 border-red-200 text-red-700 px-6 py-4 rounded-xl hover:bg-red-100 transition-colors text-lg font-semibold text-center"
-        >
-          🚨 Report Incident
-        </Link>
+        <div className="space-y-3">
+          <Link
+            href={`/guide/tours/${tour?.id}/incident`}
+            className="block w-full bg-red-50 border-2 border-red-200 text-red-700 px-6 py-4 rounded-xl hover:bg-red-100 transition-colors text-lg font-semibold text-center"
+          >
+            🚨 Report Incident
+          </Link>
+          
+          <Link
+            href={`/guide/tours/${tour?.id}/expense`}
+            className="block w-full bg-blue-50 border-2 border-blue-200 text-blue-700 px-6 py-4 rounded-xl hover:bg-blue-100 transition-colors text-lg font-semibold text-center"
+          >
+            💵 Log Expense
+          </Link>
+        </div>
       )}
 
       <Link
