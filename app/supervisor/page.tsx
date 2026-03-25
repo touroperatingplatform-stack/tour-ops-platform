@@ -49,7 +49,9 @@ export default function SupervisorDashboard() {
       })
       .subscribe()
     
-    return () => subscription.unsubscribe()
+    return () => {
+      subscription.unsubscribe()
+    }
   }, [])
 
   async function loadDashboardData() {
