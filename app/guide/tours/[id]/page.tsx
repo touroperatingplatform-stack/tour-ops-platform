@@ -41,6 +41,7 @@ export default function GuideTourPage() {
   const [uploading, setUploading] = useState(false)
   const [equipmentPhoto, setEquipmentPhoto] = useState<string | null>(null)
   const [vanPhoto, setVanPhoto] = useState<string | null>(null)
+  const [hasCheckedIn, setHasCheckedIn] = useState(false)
 
   useEffect(() => {
     loadTour()
@@ -65,6 +66,16 @@ export default function GuideTourPage() {
     } else {
       setTour(tourData as any)
     }
+
+    // Check for existing pre_pickup check-ins
+    const { data: checkins } = await supabase
+      .from('guide_checkins')
+      .select('id')
+      .eq('tour_id', params.id)
+      .eq('checkin_type', 'pre_pickup')
+      .limit(1)
+    
+    setHasCheckedIn(!!checkins && checkins.length > 0)
     setLoading(false)
   }
 
@@ -262,7 +273,7 @@ export default function GuideTourPage() {
         )}
         {tour.status === 'in_progress' && (
           <div className="flex-1">
-            {!tour.pickup_checked_in_at ? (
+            {!hasCheckedIn ? (
               <Link
                 href={`/guide/tours/${tour.id}/checkin`}
                 className="block w-full bg-blue-600 text-white px-6 py-4 rounded-xl hover:bg-blue-700 transition-colors text-lg font-semibold text-center"
