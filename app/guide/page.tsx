@@ -82,7 +82,7 @@ export default function GuideDashboard() {
   }
 
   return (
-    <div className="px-4 py-4 pb-32 space-y-6">
+    <div className="px-4 py-4 pb-48 space-y-6">
       {/* Date Header */}
       <section>
         <p className="text-sm text-gray-500 mb-4">
