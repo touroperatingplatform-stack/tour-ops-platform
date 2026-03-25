@@ -47,7 +47,7 @@ export default function SupervisorLayout({ children }: { children: React.ReactNo
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-gray-500">Loading...</div>
       </div>
     )
@@ -56,9 +56,37 @@ export default function SupervisorLayout({ children }: { children: React.ReactNo
   if (!authorized) return null
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Mobile Navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50 md:hidden">
+    <div className="min-h-screen bg-gray-50 pb-20">
+      {/* Top Navigation - Same as Guide */}
+      <header className="bg-white border-b border-gray-200 sticky top-0 z-40">
+        <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold text-sm">
+              S
+            </div>
+            <div>
+              <h1 className="font-bold text-gray-900">Supervisor</h1>
+              <p className="text-xs text-gray-500">Operations Dashboard</p>
+            </div>
+          </div>
+          
+          {/* User menu */}
+          <Link 
+            href="/guide" 
+            className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+          >
+            Switch to Guide →
+          </Link>
+        </div>
+      </header>
+
+      {/* Main Content */}
+      <main className="p-4">
+        {children}
+      </main>
+
+      {/* Bottom Navigation - Same as Guide */}
+      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50">
         <div className="flex justify-around py-2">
           {navItems.map((item) => {
             const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`)
@@ -66,69 +94,17 @@ export default function SupervisorLayout({ children }: { children: React.ReactNo
               <Link
                 key={item.href}
                 href={item.href}
-                className={`flex flex-col items-center py-2 px-4 ${
+                className={`flex flex-col items-center py-2 px-4 min-w-[64px] ${
                   isActive ? 'text-blue-600' : 'text-gray-500'
                 }`}
               >
-                <span className="text-xl">{item.icon}</span>
-                <span className="text-xs mt-1">{item.label}</span>
+                <span className="text-xl mb-1">{item.icon}</span>
+                <span className="text-xs">{item.label}</span>
               </Link>
             )
           })}
         </div>
       </nav>
-
-      {/* Desktop Sidebar */}
-      <aside className="hidden md:flex fixed left-0 top-0 bottom-0 w-64 bg-white border-r border-gray-200">
-        <div className="flex flex-col h-full">
-          {/* Logo */}
-          <div className="p-4 border-b border-gray-200">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold">
-                S
-              </div>
-              <span className="font-bold text-gray-900">Supervisor</span>
-            </div>
-          </div>
-
-          {/* Navigation */}
-          <nav className="flex-1 p-4">
-            {navItems.map((item) => {
-              const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`)
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={`flex items-center gap-3 px-4 py-3 rounded-xl mb-2 ${
-                    isActive 
-                      ? 'bg-blue-50 text-blue-600' 
-                      : 'text-gray-600 hover:bg-gray-50'
-                  }`}
-                >
-                  <span className="text-xl">{item.icon}</span>
-                  <span className="font-medium">{item.label}</span>
-                </Link>
-              )
-            })}
-          </nav>
-
-          {/* Footer */}
-          <div className="p-4 border-t border-gray-200">
-            <Link 
-              href="/guide" 
-              className="flex items-center gap-3 px-4 py-3 text-gray-600 hover:bg-gray-50 rounded-xl"
-            >
-              <span>🔄</span>
-              <span>Switch to Guide</span>
-            </Link>
-          </div>
-        </div>
-      </aside>
-
-      {/* Main Content */}
-      <main className="pb-20 md:pl-64">
-        {children}
-      </main>
     </div>
   )
 }
