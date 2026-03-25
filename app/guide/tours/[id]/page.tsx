@@ -261,12 +261,23 @@ export default function GuideTourPage() {
           </button>
         )}
         {tour.status === 'in_progress' && (
-          <button
-            onClick={completeTour}
-            className="flex-1 bg-green-600 text-white px-6 py-4 rounded-xl hover:bg-green-700 transition-colors text-lg font-semibold"
-          >
-            Complete Tour
-          </button>
+          <div className="flex-1">
+            {!tour.pickup_checked_in_at ? (
+              <Link
+                href={`/guide/tours/${tour.id}/checkin`}
+                className="block w-full bg-blue-600 text-white px-6 py-4 rounded-xl hover:bg-blue-700 transition-colors text-lg font-semibold text-center"
+              >
+                📍 Check In at Pickup
+              </Link>
+            ) : (
+              <button
+                onClick={completeTour}
+                className="w-full bg-green-600 text-white px-6 py-4 rounded-xl hover:bg-green-700 transition-colors text-lg font-semibold"
+              >
+                Complete Tour
+              </button>
+            )}
+          </div>
         )}
         {['completed', 'cancelled'].includes(tour.status) && (
           <div className="flex-1 text-center text-gray-500 py-4">
