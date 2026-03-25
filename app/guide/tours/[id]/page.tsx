@@ -17,6 +17,16 @@ interface Tour {
   guide: { first_name: string; last_name: string } | null
 }
 
+interface Guest {
+  id: string
+  guest_name: string
+  dietary_restrictions: string[]
+  accessibility_needs: string[]
+  special_requests: string | null
+  checked_in: boolean
+  no_show: boolean
+}
+
 interface ChecklistItem {
   id: string
   label: string
@@ -42,10 +52,53 @@ export default function GuideTourPage() {
   const [equipmentPhoto, setEquipmentPhoto] = useState<string | null>(null)
   const [vanPhoto, setVanPhoto] = useState<string | null>(null)
   const [hasCheckedIn, setHasCheckedIn] = useState(false)
+  const [guests, setGuests] = useState<Guest[]>([])
+  const [guestsLoading, setGuestsLoading] = useState(true)
 
   useEffect(() => {
     loadTour()
+    loadGuests()
   }, [])
+
+  async function loadGuests() {
+    const { data } = await supabase
+      .from('guest_manifest')
+      .select('id, guest_name, dietary_restrictions, accessibility_needs, special_requests, checked_in, no_show')
+      .eq('tour_id', params.id)
+      .order('guest_name')
+    
+    if (data) setGuests(data)
+    setGuestsLoading(false)
+  }
+
+  async function toggleGuestCheckin(guestId: string, checked: boolean) {
+    const { error } = await supabase
+      .from('guest_manifest')
+      .update({ 
+        checked_in: checked,
+        checked_in_at: checked ? new Date().toISOString() : null
+      })
+      .eq('id', guestId)
+    
+    if (!error) {
+      setGuests(prev => prev.map(g => 
+        g.id === guestId ? { ...g, checked_in: checked } : g
+      ))
+    }
+  }
+
+  async function markNoShow(guestId: string) {
+    const { error } = await supabase
+      .from('guest_manifest')
+      .update({ no_show: true })
+      .eq('id', guestId)
+    
+    if (!error) {
+      setGuests(prev => prev.map(g => 
+        g.id === guestId ? { ...g, no_show: true } : g
+      ))
+    }
+  }
 
   async function loadTour() {
     const { data: tourData } = await supabase
@@ -246,6 +299,86 @@ export default function GuideTourPage() {
                 />
               </label>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Guest Manifest */}
+      {guests.length > 0 && (
+        <div className="bg-white rounded-2xl border border-gray-200 p-6">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h2 className="font-semibold text-gray-900">Guest Manifest</h2>
+              <p className="text-sm text-gray-500">
+                {guests.filter(g => g.checked_in).length}/{guests.length} checked in
+              </p>
+            </div>
+            <div className="text-sm font-medium text-blue-600">
+              {Math.round((guests.filter(g => g.checked_in).length / guests.length) * 100)}%
+            </div>
+          </div>
+          
+          <div className="space-y-3">
+            {guests.map((guest) => (
+              <div 
+                key={guest.id}
+                className={`p-4 rounded-xl border-2 transition-all ${
+                  guest.no_show 
+                    ? 'bg-red-50 border-red-200' 
+                    : guest.checked_in 
+                      ? 'bg-green-50 border-green-200' 
+                      : 'bg-white border-gray-200'
+                }`}
+              >
+                <div className="flex items-start gap-3">
+                  <label className="flex items-center gap-3 flex-1">
+                    <input
+                      type="checkbox"
+                      checked={guest.checked_in}
+                      onChange={(e) => toggleGuestCheckin(guest.id, e.target.checked)}
+                      disabled={guest.no_show}
+                      className="w-5 h-5 rounded border-gray-300 text-blue-600"
+                    />
+                    <div className="flex-1">
+                      <p className={`font-medium ${guest.no_show ? 'line-through text-gray-400' : 'text-gray-900'}`}>
+                        {guest.guest_name}
+                      </p>
+                      
+                      {guest.dietary_restrictions?.length > 0 && (
+                        <p className="text-xs text-orange-600 mt-1">
+                          🍽️ {guest.dietary_restrictions.join(', ')}
+                        </p>
+                      )}
+                      
+                      {guest.accessibility_needs?.length > 0 && (
+                        <p className="text-xs text-purple-600 mt-1">
+                          ♿ {guest.accessibility_needs.join(', ')}
+                        </p>
+                      )}
+                      
+                      {guest.special_requests && (
+                        <p className="text-xs text-gray-500 mt-1">
+                          📝 {guest.special_requests}
+                        </p>
+                      )}
+                    </div>
+                  </label>
+                  
+                  {!guest.checked_in && !guest.no_show && tour?.status !== 'completed' && (
+                    <button
+                      onClick={() => markNoShow(guest.id)}
+                      className="text-xs text-red-500 hover:text-red-700 px-2 py-1"
+                    >
+                      No show
+                    </button>
+                  )}
+                  
+                  {guest.no_show && (
+                    <span className="text-xs font-medium text-red-600 px-2 py-1">No show</span>
+                  )}
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       )}
