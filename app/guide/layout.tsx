@@ -64,9 +64,9 @@ export default function GuideLayout({ children }: { children: React.ReactNode })
   }
 
   return (
-    <div className="h-screen bg-gray-100 flex flex-col">
-      <div className="flex-1 p-4 pb-20 overflow-hidden">
-        <div className="mx-auto w-full h-full bg-white border-2 border-gray-300 rounded-2xl shadow-sm overflow-hidden flex flex-col">
+    <div className="min-h-screen bg-gray-100 flex flex-col">
+      <div className="flex-1 p-4 pb-24">
+        <div className="mx-auto w-full bg-white border-2 border-gray-300 rounded-2xl shadow-sm flex flex-col min-h-[calc(100vh-8rem)]">
           <header className="bg-white border-b border-gray-200 shadow-sm flex-shrink-0 z-10">
             <div className="px-6 h-14 flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -127,8 +127,8 @@ export default function GuideLayout({ children }: { children: React.ReactNode })
             </div>
           </header>
 
-          <main className="flex-1 overflow-y-auto">
-            <div className="p-4">{children}</div>
+          <main className="flex-1">
+            <div className="p-4 pb-20">{children}</div>
           </main>
         </div>
       </div>

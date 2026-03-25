@@ -40,11 +40,11 @@ export default function AdminLayout({
   }
 
   return (
-    <div className="h-screen bg-gray-100 flex flex-col">
+    <div className="min-h-screen bg-gray-100 flex flex-col">
       {/* Gray frame padding */}
-      <div className="flex-1 p-4 pb-20 overflow-hidden">
+      <div className="flex-1 p-4 pb-24">
         {/* White bordered container */}
-        <div className="mx-auto w-full h-full bg-white border-2 border-gray-300 rounded-2xl shadow-sm overflow-hidden flex flex-col">
+        <div className="mx-auto w-full bg-white border-2 border-gray-300 rounded-2xl shadow-sm flex flex-col min-h-[calc(100vh-8rem)]">
           
           {/* Top Navigation */}
           
@@ -124,8 +124,8 @@ export default function AdminLayout({
           </header>
 
           {/* Page Content - padding inside scroll area */}
-          <main className="flex-1 overflow-y-auto">
-            <div className="p-3">{children}</div>
+          <main className="flex-1">
+            <div className="p-3 pb-20">{children}</div>
           </main>
         </div>
       </div>
