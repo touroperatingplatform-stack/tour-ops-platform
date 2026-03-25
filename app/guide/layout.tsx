@@ -64,77 +64,54 @@ export default function GuideLayout({ children }: { children: React.ReactNode })
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 flex flex-col">
-      <div className="flex-1 p-4 pb-24">
-        <div className="mx-auto w-full bg-white border-2 border-gray-300 rounded-2xl shadow-sm flex flex-col min-h-[calc(100vh-8rem)]">
-          <header className="bg-white border-b border-gray-200 shadow-sm flex-shrink-0 z-10">
-            <div className="px-6 h-14 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <button 
-                  onClick={() => setIsMenuOpen(true)}
-                  className="w-10 h-10 flex items-center justify-center -ml-2 rounded-lg hover:bg-gray-100"
-                >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                  </svg>
-                </button>
-                <span className="font-semibold text-gray-900 text-lg">{currentPage}</span>
-              </div>
+    <div className="h-screen flex flex-col bg-gray-100">
+      {/* Top Nav - Fixed height */}
+      <header className="bg-white border-b border-gray-200 shadow-sm flex-shrink-0 z-10">
+        <div className="px-4 h-14 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <button 
+              onClick={() => setIsMenuOpen(true)}
+              className="w-10 h-10 flex items-center justify-center -ml-2 rounded-lg hover:bg-gray-100"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            </button>
+            <span className="font-semibold text-gray-900 text-lg">{currentPage}</span>
+          </div>
 
-              <div className="flex items-center gap-3">
-                {/* Notifications - Conditional */}
-                <button 
-                  onClick={() => {/* Open notifications panel */}}
-                  className="w-10 h-10 flex items-center justify-center rounded-lg hover:bg-gray-100 relative"
-                >
-                  <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-                  </svg>
-                  {hasNotifications && (
-                    <span className="absolute top-1 right-1 w-5 h-5 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center">
-                      {notificationCount > 9 ? '9+' : notificationCount}
-                    </span>
-                  )}
-                </button>
+          <div className="flex items-center gap-2">
+            {/* Notifications */}
+            <button className="w-10 h-10 flex items-center justify-center rounded-lg hover:bg-gray-100 relative">
+              <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+              </svg>
+              {hasNotifications && (
+                <span className="absolute top-1 right-1 w-5 h-5 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center">
+                  {notificationCount > 9 ? '9+' : notificationCount}
+                </span>
+              )}
+            </button>
 
-                {/* User Avatar */}
-                <div className="relative">
-                  <button 
-                    onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-                    className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-bold text-sm hover:bg-blue-200"
-                  >
-                    T
-                  </button>
-
-                  {isUserMenuOpen && (
-                    <>
-                      <div className="fixed inset-0 z-40" onClick={() => setIsUserMenuOpen(false)} />
-                      <div className="absolute right-0 top-12 w-48 bg-white rounded-xl shadow-lg border border-gray-200 py-2 z-50">
-                        <Link href="/profile" onClick={() => setIsUserMenuOpen(false)} className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50">
-                          <span>👤</span>
-                          <span className="text-sm">Profile</span>
-                        </Link>
-                        <div className="border-t border-gray-200 my-1"></div>
-                        <button onClick={() => { handleSignOut(); setIsUserMenuOpen(false); }} className="flex items-center gap-3 px-4 py-3 w-full hover:bg-gray-50 text-left">
-                          <span>🚪</span>
-                          <span className="text-sm">Logout</span>
-                        </button>
-                      </div>
-                    </>
-                  )}
-                </div>
-              </div>
-            </div>
-          </header>
-
-          <main className="flex-1">
-            <div className="p-4 pb-20">{children}</div>
-          </main>
+            {/* User Avatar */}
+            <button 
+              onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+              className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-bold text-sm hover:bg-blue-200"
+            >
+              T
+            </button>
+          </div>
         </div>
-      </div>
+      </header>
 
-      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50 h-16">
-        <div className="flex justify-around items-center h-full max-w-full mx-auto px-4">
+      {/* Main Content - Scrollable, accounts for top + bottom nav */}
+      <main className="flex-1 overflow-y-auto">
+        {children}
+      </main>
+
+      {/* Bottom Nav - Fixed height */}
+      <nav className="bg-white border-t border-gray-200 flex-shrink-0 h-16">
+        <div className="flex justify-around items-center h-full">
           {bottomNavItems.map((item) => {
             const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`)
             return (
