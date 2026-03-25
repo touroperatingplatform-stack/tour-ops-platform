@@ -35,7 +35,7 @@ export default function NewIncidentPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [uploading, setUploading] = useState(false)
-  const [photoUrl, setPhotoUrl] = useState<string | null>(null)
+  const [photos, setPhotos] = useState<string[]>([])
   const [myTours, setMyTours] = useState<Tour[]>([])
   const [toursLoading, setToursLoading] = useState(true)
   
@@ -81,7 +81,7 @@ export default function NewIncidentPage() {
     try {
       const url = await uploadToCloudinary(file, 'tour-ops/incidents')
       if (url) {
-        setPhotoUrl(url)
+        setPhotos(prev => [...prev, url])
       } else {
         alert('Upload failed')
       }
@@ -108,9 +108,10 @@ export default function NewIncidentPage() {
         status: 'open',
       }
 
-      // Add photo URL if uploaded
-      if (photoUrl) {
-        incidentData.description += `\n\n📸 Photo: ${photoUrl}`
+      // Add photo URLs if uploaded
+      if (photos.length > 0) {
+        incidentData.photo_urls = photos
+        incidentData.description += `\n\n📸 Photos: ${photos.length} uploaded`
       }
 
       const { error } = await supabase
@@ -216,42 +217,38 @@ export default function NewIncidentPage() {
 
         {/* Photo Upload */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Photo (Optional)</label>
-          <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
-            {photoUrl ? (
-              <div className="space-y-2">
-                <img src={photoUrl} alt="Uploaded" className="max-h-48 mx-auto rounded-lg" />
-                <p className="text-sm text-green-600">✓ Photo uploaded</p>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Photos (Optional)</label>
+          
+          <div className="grid grid-cols-3 gap-2 mb-3">
+            {photos.map((photo, idx) => (
+              <div key={idx} className="relative aspect-square">
+                <img src={photo} alt={`Incident photo ${idx + 1}`} className="w-full h-full object-cover rounded-lg" />
                 <button
                   type="button"
-                  onClick={() => setPhotoUrl(null)}
-                  className="text-sm text-red-600 hover:underline"
+                  onClick={() => setPhotos(prev => prev.filter((_, i) => i !== idx))}
+                  className="absolute -top-1 -right-1 w-6 h-6 bg-red-500 text-white rounded-full text-xs flex items-center justify-center"
                 >
-                  Remove
+                  ×
                 </button>
               </div>
-            ) : (
-              <label className="block cursor-pointer hover:bg-gray-50 transition-colors">
-                <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
-                <p className="text-sm text-gray-600 mt-2 font-medium">Click to upload photo</p>
-                <p className="text-xs text-gray-500 mt-1">or take a photo with camera</p>
+            ))}
+            {photos.length < 4 && (
+              <label className="aspect-square flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50">
+                <span className="text-2xl">📷</span>
+                <span className="text-xs text-gray-500 mt-1">Add</span>
                 <input
                   type="file"
                   accept="image/*"
                   capture="environment"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0]
-                    if (file) handlePhotoUpload(file)
-                  }}
                   className="hidden"
+                  onChange={(e) => e.target.files?.[0] && handlePhotoUpload(e.target.files[0])}
                   disabled={uploading}
                 />
-                {uploading && <p className="text-sm text-blue-600 mt-2">⏳ Uploading...</p>}
               </label>
             )}
           </div>
+          <p className="text-xs text-gray-500">{photos.length}/4 photos added</p>
+          {uploading && <p className="text-sm text-blue-600 mt-2">⏳ Uploading...</p>}
         </div>
 
         {/* Description */}
