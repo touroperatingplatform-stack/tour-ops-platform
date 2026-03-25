@@ -111,7 +111,6 @@ export default function NewIncidentPage() {
       // Add photo URLs if uploaded
       if (photos.length > 0) {
         incidentData.photo_urls = photos
-        incidentData.description += `\n\n📸 Photos: ${photos.length} uploaded`
       }
 
       const { error } = await supabase
