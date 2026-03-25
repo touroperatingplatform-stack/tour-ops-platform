@@ -165,23 +165,25 @@ export default function GuideTourPage() {
         {tour.status.replace('_', ' ')}
       </div>
 
-      {/* Pre-Trip Checklist */}
-      <div className="bg-white rounded-2xl border border-gray-200 p-6">
-        <h2 className="font-semibold text-gray-900 mb-4">Pre-Trip Checklist</h2>
-        <div className="space-y-3">
-          {checklist.map((item) => (
-            <label key={item.id} className="flex items-center gap-3">
-              <input
-                type="checkbox"
-                checked={item.checked}
-                onChange={() => toggleChecklist(item.id)}
-                className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-              />
-              <span className="text-gray-700">{item.label}</span>
-            </label>
-          ))}
+      {/* Pre-Trip Checklist - Only show before tour starts */}
+      {tour.status === 'scheduled' && (
+        <div className="bg-white rounded-2xl border border-gray-200 p-6">
+          <h2 className="font-semibold text-gray-900 mb-4">Pre-Trip Checklist</h2>
+          <div className="space-y-3">
+            {checklist.map((item) => (
+              <label key={item.id} className="flex items-center gap-3">
+                <input
+                  type="checkbox"
+                  checked={item.checked}
+                  onChange={() => toggleChecklist(item.id)}
+                  className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                />
+                <span className="text-gray-700">{item.label}</span>
+              </label>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Photo Uploads - Only show when starting or in progress */}
       {(tour.status === 'scheduled' || tour.status === 'in_progress') && (
