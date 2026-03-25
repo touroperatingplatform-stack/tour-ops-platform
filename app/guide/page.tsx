@@ -28,9 +28,19 @@ export default function GuideDashboard() {
   async function loadTours() {
     const today = new Date().toISOString().split('T')[0]
     
+    // Get current user
+    const { data: { user } } = await supabase.auth.getUser()
+    
+    if (!user) {
+      setLoading(false)
+      return
+    }
+
+    // Load only MY tours (assigned to this guide)
     const { data } = await supabase
       .from('tours')
       .select('*')
+      .eq('guide_id', user.id)  // Filter by current guide
       .eq('tour_date', today)
       .neq('status', 'cancelled')
       .order('start_time')
