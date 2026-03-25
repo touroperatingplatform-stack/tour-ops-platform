@@ -149,7 +149,7 @@ export default function GuideTourPage() {
   }
 
   return (
-    <div className="space-y-6 px-4 py-4 pb-32">
+    <div className="space-y-6 px-4 py-4 pb-40">
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold text-gray-900">{tour.name}</h1>
