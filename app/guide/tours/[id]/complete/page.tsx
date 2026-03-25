@@ -50,7 +50,9 @@ export default function CompleteTourPage() {
     setUploading(true)
     try {
       const url = await uploadToCloudinary(file)
-      setPhotos(prev => [...prev, url])
+      if (url) {
+        setPhotos((prev: string[]) => [...prev, url as string])
+      }
     } catch (err) {
       alert('Failed to upload photo')
     } finally {
