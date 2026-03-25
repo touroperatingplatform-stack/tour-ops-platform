@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { supabase } from '@/lib/supabase/client'
+import OfflineIndicator from './components/OfflineIndicator'
 
 const navItems = [
   { href: '/guide', label: 'Tours', icon: '🚌' },
@@ -179,6 +180,7 @@ export default function GuideLayout({ children }: { children: React.ReactNode })
           </aside>
         </>
       )}
+      <OfflineIndicator />
     </div>
   )
 }
