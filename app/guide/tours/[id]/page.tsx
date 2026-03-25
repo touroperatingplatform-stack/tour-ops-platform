@@ -17,14 +17,23 @@ interface Tour {
   guide: { first_name: string; last_name: string } | null
 }
 
-interface Guest {
+interface Reservation {
   id: string
-  guest_name: string
+  booking_reference: string
+  booking_platform: string
+  adult_pax: number
+  child_pax: number
+  infant_pax: number
+  total_pax: number
+  primary_contact_name: string
   dietary_restrictions: string[]
   accessibility_needs: string[]
   special_requests: string | null
   checked_in: boolean
   no_show: boolean
+  actual_adult_pax: number | null
+  actual_child_pax: number | null
+  actual_infant_pax: number | null
 }
 
 interface ChecklistItem {
@@ -52,50 +61,58 @@ export default function GuideTourPage() {
   const [equipmentPhoto, setEquipmentPhoto] = useState<string | null>(null)
   const [vanPhoto, setVanPhoto] = useState<string | null>(null)
   const [hasCheckedIn, setHasCheckedIn] = useState(false)
-  const [guests, setGuests] = useState<Guest[]>([])
-  const [guestsLoading, setGuestsLoading] = useState(true)
+  const [reservations, setReservations] = useState<Reservation[]>([])
+  const [reservationsLoading, setReservationsLoading] = useState(true)
 
   useEffect(() => {
     loadTour()
-    loadGuests()
+    loadReservations()
   }, [])
 
-  async function loadGuests() {
+  async function loadReservations() {
     const { data } = await supabase
-      .from('guest_manifest')
-      .select('id, guest_name, dietary_restrictions, accessibility_needs, special_requests, checked_in, no_show')
+      .from('reservation_manifest')
+      .select('id, booking_reference, booking_platform, adult_pax, child_pax, infant_pax, total_pax, primary_contact_name, dietary_restrictions, accessibility_needs, special_requests, checked_in, no_show, actual_adult_pax, actual_child_pax, actual_infant_pax')
       .eq('tour_id', params.id)
-      .order('guest_name')
+      .order('booking_reference')
     
-    if (data) setGuests(data)
-    setGuestsLoading(false)
+    if (data) setReservations(data)
+    setReservationsLoading(false)
   }
 
-  async function toggleGuestCheckin(guestId: string, checked: boolean) {
+  async function toggleReservationCheckin(reservationId: string, checked: boolean) {
+    const reservation = reservations.find(r => r.id === reservationId)
+    if (!reservation) return
+
     const { error } = await supabase
-      .from('guest_manifest')
+      .from('reservation_manifest')
       .update({ 
         checked_in: checked,
-        checked_in_at: checked ? new Date().toISOString() : null
+        checked_in_at: checked ? new Date().toISOString() : null,
+        actual_adult_pax: checked ? reservation.adult_pax : null,
+        actual_child_pax: checked ? reservation.child_pax : null,
+        actual_infant_pax: checked ? reservation.infant_pax : null
       })
-      .eq('id', guestId)
+      .eq('id', reservationId)
     
     if (!error) {
-      setGuests(prev => prev.map(g => 
-        g.id === guestId ? { ...g, checked_in: checked } : g
+      setReservations(prev => prev.map(r => 
+        r.id === reservationId 
+          ? { ...r, checked_in: checked } 
+          : r
       ))
     }
   }
 
-  async function markNoShow(guestId: string) {
+  async function markNoShow(reservationId: string) {
     const { error } = await supabase
-      .from('guest_manifest')
+      .from('reservation_manifest')
       .update({ no_show: true })
-      .eq('id', guestId)
+      .eq('id', reservationId)
     
     if (!error) {
-      setGuests(prev => prev.map(g => 
-        g.id === guestId ? { ...g, no_show: true } : g
+      setReservations(prev => prev.map(r => 
+        r.id === reservationId ? { ...r, no_show: true } : r
       ))
     }
   }
@@ -303,29 +320,38 @@ export default function GuideTourPage() {
         </div>
       )}
 
-      {/* Guest Manifest */}
-      {guests.length > 0 && (
+      {/* Reservation Manifest */}
+      {reservations.length > 0 && (
         <div className="bg-white rounded-2xl border border-gray-200 p-6">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h2 className="font-semibold text-gray-900">Guest Manifest</h2>
-              <p className="text-sm text-gray-500">
-                {guests.filter(g => g.checked_in).length}/{guests.length} checked in
-              </p>
+              <h2 className="font-semibold text-gray-900">Reservations</h2>
+              <div className="text-sm text-gray-500 mt-1">
+                <span className="font-medium">
+                  {reservations.filter(r => r.checked_in).length}/{reservations.length} 
+                </span>
+                reservations checked in
+              </div>
+              <div className="text-xs text-gray-400 mt-1">
+                Total PAX: {reservations.filter(r => r.checked_in).reduce((sum, r) => sum + r.total_pax, 0)}/
+                {reservations.reduce((sum, r) => sum + r.total_pax, 0)} boarded
+              </div>
             </div>
-            <div className="text-sm font-medium text-blue-600">
-              {Math.round((guests.filter(g => g.checked_in).length / guests.length) * 100)}%
+            <div className="text-right">
+              <div className="text-sm font-medium text-blue-600">
+                {Math.round((reservations.filter(r => r.checked_in).length / reservations.length) * 100)}%
+              </div>
             </div>
           </div>
           
           <div className="space-y-3">
-            {guests.map((guest) => (
+            {reservations.map((reservation) => (
               <div 
-                key={guest.id}
+                key={reservation.id}
                 className={`p-4 rounded-xl border-2 transition-all ${
-                  guest.no_show 
+                  reservation.no_show 
                     ? 'bg-red-50 border-red-200' 
-                    : guest.checked_in 
+                    : reservation.checked_in 
                       ? 'bg-green-50 border-green-200' 
                       : 'bg-white border-gray-200'
                 }`}
@@ -334,46 +360,60 @@ export default function GuideTourPage() {
                   <label className="flex items-center gap-3 flex-1">
                     <input
                       type="checkbox"
-                      checked={guest.checked_in}
-                      onChange={(e) => toggleGuestCheckin(guest.id, e.target.checked)}
-                      disabled={guest.no_show}
+                      checked={reservation.checked_in}
+                      onChange={(e) => toggleReservationCheckin(reservation.id, e.target.checked)}
+                      disabled={reservation.no_show}
                       className="w-5 h-5 rounded border-gray-300 text-blue-600"
                     />
                     <div className="flex-1">
-                      <p className={`font-medium ${guest.no_show ? 'line-through text-gray-400' : 'text-gray-900'}`}>
-                        {guest.guest_name}
-                      </p>
+                      <div className="flex items-center gap-2">
+                        <span className={`font-medium ${reservation.no_show ? 'line-through text-gray-400' : 'text-gray-900'}`}>
+                          {reservation.primary_contact_name || 'Guest'}
+                        </span>
+                        <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-600">
+                          {reservation.booking_reference}
+                        </span>
+                      </div>
                       
-                      {guest.dietary_restrictions?.length > 0 && (
+                      <div className="flex items-center gap-2 mt-1">
+                        <span className="text-sm font-semibold text-blue-600">
+                          {reservation.adult_pax}.{reservation.child_pax} PAX
+                        </span>
+                        {reservation.infant_pax > 0 && (
+                          <span className="text-xs text-gray-500">+{reservation.infant_pax} infant</span>
+                        )}
+                      </div>
+                      
+                      {reservation.dietary_restrictions?.length > 0 && (
                         <p className="text-xs text-orange-600 mt-1">
-                          🍽️ {guest.dietary_restrictions.join(', ')}
+                          🍽️ {reservation.dietary_restrictions.join(', ')}
                         </p>
                       )}
                       
-                      {guest.accessibility_needs?.length > 0 && (
+                      {reservation.accessibility_needs?.length > 0 && (
                         <p className="text-xs text-purple-600 mt-1">
-                          ♿ {guest.accessibility_needs.join(', ')}
+                          ♿ {reservation.accessibility_needs.join(', ')}
                         </p>
                       )}
                       
-                      {guest.special_requests && (
+                      {reservation.special_requests && (
                         <p className="text-xs text-gray-500 mt-1">
-                          📝 {guest.special_requests}
+                          📝 {reservation.special_requests}
                         </p>
                       )}
                     </div>
                   </label>
                   
-                  {!guest.checked_in && !guest.no_show && tour?.status !== 'completed' && (
+                  {!reservation.checked_in && !reservation.no_show && tour?.status !== 'completed' && (
                     <button
-                      onClick={() => markNoShow(guest.id)}
+                      onClick={() => markNoShow(reservation.id)}
                       className="text-xs text-red-500 hover:text-red-700 px-2 py-1"
                     >
                       No show
                     </button>
                   )}
                   
-                  {guest.no_show && (
+                  {reservation.no_show && (
                     <span className="text-xs font-medium text-red-600 px-2 py-1">No show</span>
                   )}
                 </div>
