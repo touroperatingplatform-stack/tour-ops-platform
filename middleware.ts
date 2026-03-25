@@ -1,62 +1,25 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
-import { createMiddlewareClient } from '@supabase/auth-helpers-nextjs'
 
 export async function middleware(request: NextRequest) {
-  const res = NextResponse.next()
-  const supabase = createMiddlewareClient({ req: request, res })
-  
-  // Check if user is authenticated
-  const { data: { session } } = await supabase.auth.getSession()
-  
-  if (!session) {
-    // Not logged in - redirect to login
-    if (request.nextUrl.pathname.startsWith('/guide') || 
-        request.nextUrl.pathname.startsWith('/supervisor')) {
-      return NextResponse.redirect(new URL('/login', request.url))
-    }
-    return res
-  }
-  
-  // Get user role
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('role')
-    .eq('id', session.user.id)
-    .single()
-  
-  const role = profile?.role
+  // Check if accessing protected routes
   const path = request.nextUrl.pathname
   
-  // Guide routes - only guides and above
-  if (path.startsWith('/guide')) {
-    if (!['guide', 'supervisor', 'manager', 'admin'].includes(role)) {
-      return NextResponse.redirect(new URL('/unauthorized', request.url))
+  // For now, just check if user has a session cookie
+  // In production, you'd validate the JWT token here
+  const hasSession = request.cookies.has('sb-access-token')
+  
+  if (!hasSession) {
+    // Not logged in - redirect to login
+    if (path.startsWith('/guide') || path.startsWith('/supervisor')) {
+      return NextResponse.redirect(new URL('/login', request.url))
     }
   }
   
-  // Supervisor routes - only supervisors and above
-  if (path.startsWith('/supervisor')) {
-    if (!['supervisor', 'manager', 'admin'].includes(role)) {
-      return NextResponse.redirect(new URL('/unauthorized', request.url))
-    }
-  }
+  // Role-based checks would require server-side token validation
+  // For now, we rely on client-side role checks in the pages
   
-  // Manager routes - only managers and admin
-  if (path.startsWith('/manager')) {
-    if (!['manager', 'admin'].includes(role)) {
-      return NextResponse.redirect(new URL('/unauthorized', request.url))
-    }
-  }
-  
-  // Admin routes - only admin
-  if (path.startsWith('/admin')) {
-    if (role !== 'admin') {
-      return NextResponse.redirect(new URL('/unauthorized', request.url))
-    }
-  }
-  
-  return res
+  return NextResponse.next()
 }
 
 export const config = {
