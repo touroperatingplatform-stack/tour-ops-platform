@@ -31,27 +31,55 @@ export default function LiveMap() {
     const today = new Date().toISOString().split('T')[0]
     console.log('Loading map for date:', today)
     
-    // Get active tours
+    // Get tours with pickup check-in data
     const { data: tours } = await supabase
       .from('tours')
-      .select('id, name, start_time, status, guide_id')
+      .select('id, name, start_time, status, guide_id, pickup_checkin_lat, pickup_checkin_lng, pickup_checkin_status, pickup_checked_in_at')
       .eq('tour_date', today)
       .in('status', ['in_progress', 'scheduled'])
+      .not('pickup_checkin_lat', 'is', null)
 
-    console.log('Tours found:', tours?.length || 0)
-    if (!tours || tours.length === 0) return
+    console.log('Tours with pickup data:', tours?.length || 0)
+    if (!tours || tours.length === 0) {
+      setLocations([])
+      return
+    }
 
-    // Get latest checkins for these tours
-    const tourIds = tours.map((t: any) => t.id)
-    console.log('Tour IDs:', tourIds)
+    // Get guide names
+    const guideIds = [...new Set(tours.map((t: any) => t.guide_id).filter(Boolean))]
+    const { data: guides } = await supabase
+      .from('profiles')
+      .select('id, first_name, last_name')
+      .in('id', guideIds.length > 0 ? guideIds : ['00000000-0000-0000-0000-000000000000'])
     
-    const { data: checkins } = await supabase
-      .from('guide_checkins')
-      .select('tour_id, latitude, longitude, checked_in_at, scheduled_time, minutes_early_or_late')
-      .in('tour_id', tourIds)
-      .order('checked_in_at', { ascending: false })
+    const guideMap = new Map(guides?.map((g: any) => [g.id, g]) || [])
 
-    console.log('Checkins found:', checkins?.length || 0)
+    const guideLocations: GuideLocation[] = tours.map((tour: any) => {
+      const guide = guideMap.get(tour.guide_id)
+      const pickupTime = new Date(`${today}T${tour.start_time}`)
+      const now = new Date()
+      const minutesToPickup = Math.floor((pickupTime.getTime() - now.getTime()) / 60000)
+      
+      let status: 'on_time' | 'close' | 'late' = tour.pickup_checkin_status || 'on_time'
+      if (minutesToPickup < 0 && status === 'on_time') status = 'late'
+      else if (minutesToPickup < 20 && status === 'on_time') status = 'close'
+      
+      return {
+        id: tour.guide_id,
+        guide_name: guide ? `${guide.first_name} ${guide.last_name}` : 'Unknown',
+        tour_name: tour.name,
+        lat: tour.pickup_checkin_lat,
+        lng: tour.pickup_checkin_lng,
+        status,
+        pickup_time: tour.start_time?.slice(0, 5),
+        minutes_to_pickup: minutesToPickup,
+        checked_in_at: tour.pickup_checked_in_at,
+      }
+    })
+
+    console.log('Locations:', guideLocations.length)
+    setLocations(guideLocations)
+  }
 
     // Get guide info
     const guideIds = [...new Set(tours.map((t: any) => t.guide_id).filter(Boolean))]
