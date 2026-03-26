@@ -15,11 +15,6 @@ interface TourWithDetails {
     first_name: string
     last_name: string
   }
-  vehicle?: {
-    id: string
-    name: string
-    plate_number: string
-  }
 }
 
 interface Vehicle {
@@ -57,13 +52,12 @@ export default function OperationsDashboard() {
   async function loadOperationsData() {
     const today = new Date().toISOString().split('T')[0]
 
-    // Load tours with vehicles
+    // Load tours
     const { data: toursData } = await supabase
       .from('tours')
       .select(`
         id, name, start_time, status, guest_count,
-        guide:guide_id (first_name, last_name),
-        vehicle:vehicle_id (id, make, model, plate_number)
+        guide:guide_id (first_name, last_name)
       `)
       .eq('tour_date', today)
       .neq('status', 'cancelled')
@@ -72,8 +66,7 @@ export default function OperationsDashboard() {
     if (toursData) {
       const formattedTours = toursData.map((t: any) => ({
         ...t,
-        guide: t.guide?.[0] || { first_name: 'Unknown', last_name: '' },
-        vehicle: t.vehicle?.[0] || null
+        guide: t.guide?.[0] || { first_name: 'Unknown', last_name: '' }
       })) as TourWithDetails[]
       
       setTours(formattedTours)
@@ -302,7 +295,6 @@ export default function OperationsDashboard() {
                   <tr>
                     <th className="px-3 py-2 font-medium">Tour</th>
                     <th className="px-3 py-2 font-medium">Guide</th>
-                    <th className="px-3 py-2 font-medium">Vehicle</th>
                     <th className="px-3 py-2 font-medium">Status</th>
                   </tr>
                 </thead>
@@ -311,13 +303,12 @@ export default function OperationsDashboard() {
                     <tr key={tour.id} className="hover:bg-gray-50">
                       <td className="px-3 py-2 font-medium text-gray-900">{tour.name}</td>
                       <td className="px-3 py-2 text-gray-600">{tour.guide.first_name} {tour.guide.last_name}</td>
-                      <td className="px-3 py-2 text-gray-600">{tour.vehicle ? `${tour.vehicle.make} ${tour.vehicle.model}` : 'Unassigned'}</td>
                       <td className="px-3 py-2">{getStatusBadge(tour.status)}</td>
                     </tr>
                   ))}
                   {tours.filter(t => t.status === 'in_progress').length === 0 && (
                     <tr>
-                      <td colSpan={4} className="px-3 py-4 text-center text-gray-500 text-sm">
+                      <td colSpan={3} className="px-3 py-4 text-center text-gray-500 text-sm">
                         No active tours.
                       </td>
                     </tr>
