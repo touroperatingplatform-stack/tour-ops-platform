@@ -25,7 +25,8 @@ interface IncidentWithDetails {
   tour_name: string
   severity: string
   status: string
-  type: string
+  incident_type: string
+  title: string
   guide_id: string
   guide_name: string
 }
@@ -142,7 +143,8 @@ export default function SupervisorDashboard() {
         return {
           ...i,
           tour_name: tourMap.get(i.tour_id) || 'Unknown',
-          guide_name: guide ? `${guide.first_name} ${guide.last_name}` : 'Unknown'
+          guide_name: guide ? `${guide.first_name} ${guide.last_name}` : 'Unknown',
+          title: i.title || i.incident_type || 'Unknown'
         }
       }) as IncidentWithDetails[]
       
