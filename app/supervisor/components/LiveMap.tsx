@@ -15,29 +15,22 @@ interface GuideLocation {
   checked_in_at: string
 }
 
-// Fixed bounds: Chichen Itza to Tulum area
-const TOUR_AREA_BOUNDS = {
-  minLat: 20.0,    // South (Tulum)
-  maxLat: 21.0,    // North
+// Fixed bounds: Chichen Itza to Cancun area
+const MAP_BOUNDS = {
+  minLat: 20.0,    // South (Tulum area)
+  maxLat: 21.2,    // North (Cancun/Isla Mujeres)
   minLng: -88.7,   // West (Chichen Itza)
-  maxLng: -86.8,   // East (Cancun area)
+  maxLng: -86.7,   // East (Caribbean)
 }
 
-// Reference locations
-const REFERENCE_POINTS = [
-  { name: 'Cancun', lat: 21.1619, lng: -86.8515 },
-  { name: 'Playa del Carmen', lat: 20.6296, lng: -87.0739 },
-  { name: 'Tulum', lat: 20.2114, lng: -87.4654 },
-  { name: 'Chichen Itza', lat: 20.6843, lng: -88.5678 },
-  { name: 'Coba', lat: 20.4945, lng: -87.7337 },
-  { name: 'Isla Mujeres', lat: 21.2323, lng: -86.7315 },
-]
-
-// Convert lat/lng to SVG coordinates (0-100%) using fixed bounds
-function latLngToSvg(lat: number, lng: number) {
-  const x = ((lng - TOUR_AREA_BOUNDS.minLng) / (TOUR_AREA_BOUNDS.maxLng - TOUR_AREA_BOUNDS.minLng)) * 100
-  const y = 100 - ((lat - TOUR_AREA_BOUNDS.minLat) / (TOUR_AREA_BOUNDS.maxLat - TOUR_AREA_BOUNDS.minLat)) * 100
-  return { x: Math.max(0, Math.min(100, x)), y: Math.max(0, Math.min(100, y)) }
+// Convert lat/lng to percentage (0-100%)
+function latLngToPercent(lat: number, lng: number) {
+  const x = ((lng - MAP_BOUNDS.minLng) / (MAP_BOUNDS.maxLng - MAP_BOUNDS.minLng)) * 100
+  const y = 100 - ((lat - MAP_BOUNDS.minLat) / (MAP_BOUNDS.maxLat - MAP_BOUNDS.minLat)) * 100
+  return { 
+    x: Math.max(0, Math.min(100, x)), 
+    y: Math.max(0, Math.min(100, y)) 
+  }
 }
 
 export default function LiveMap() {
@@ -47,19 +40,21 @@ export default function LiveMap() {
 
   useEffect(() => {
     loadGuideLocations()
-    // Refresh every 2 minutes (not live tracking, just check-ins)
     const interval = setInterval(loadGuideLocations, 120000)
     return () => clearInterval(interval)
   }, [])
 
   async function loadGuideLocations() {
     const today = new Date().toISOString().split('T')[0]
+    console.log('[LiveMap] Loading for date:', today)
     
     const { data: tours } = await supabase
       .from('tours')
       .select('id, name, start_time, status, guide_id')
       .eq('tour_date', today)
       .in('status', ['in_progress', 'scheduled'])
+    
+    console.log('[LiveMap] Tours:', tours?.length || 0, tours)
     
     if (!tours || tours.length === 0) {
       setLocations([])
@@ -68,11 +63,14 @@ export default function LiveMap() {
 
     const tourIds = tours.map((t: any) => t.id)
     
-    const { data: checkins } = await supabase
+    const { data: checkins, error: checkinsError } = await supabase
       .from('guide_checkins')
       .select('tour_id, latitude, longitude, checked_in_at, minutes_early_or_late')
       .in('tour_id', tourIds)
       .order('checked_in_at', { ascending: false })
+
+    console.log('[LiveMap] Checkins:', checkins?.length || 0, checkins)
+    if (checkinsError) console.error('[LiveMap] Checkins error:', checkinsError)
 
     const latestCheckins = new Map()
     checkins?.forEach((c: any) => {
@@ -105,6 +103,9 @@ export default function LiveMap() {
       if (minutesToPickup < 0) status = 'late'
       else if (minutesToPickup < 20) status = 'close'
       
+      const pos = latLngToPercent(checkin.latitude, checkin.longitude)
+      console.log('[LiveMap] Guide:', guide?.first_name, 'Lat:', checkin.latitude, 'Lng:', checkin.longitude, '→ X:', pos.x.toFixed(1) + '%', 'Y:', pos.y.toFixed(1) + '%')
+      
       guideLocations.push({
         id: tour.guide_id,
         guide_name: guide ? `${guide.first_name} ${guide.last_name}` : 'Unknown',
@@ -118,6 +119,7 @@ export default function LiveMap() {
       })
     })
 
+    console.log('[LiveMap] Final locations:', guideLocations.length)
     setLocations(guideLocations)
     setLastUpdated(new Date())
   }
@@ -172,142 +174,100 @@ export default function LiveMap() {
         </button>
       </div>
       
-      <div className="flex-1 relative bg-blue-50 overflow-hidden">
-        {/* SVG Map */}
-        <svg 
-          viewBox="0 0 100 100" 
-          className="w-full h-full"
-          preserveAspectRatio="xMidYMid slice"
-        >
-          {/* Water background with subtle land indication */}
-          <rect width="100" height="100" fill="#e0f2fe" />
-          
-          {/* Subtle land/sea pattern */}
-          <defs>
-            <pattern id="water" patternUnits="userSpaceOnUse" width="10" height="10">
-              <rect width="10" height="10" fill="#dbeafe"/>
-              <circle cx="2" cy="2" r="0.5" fill="#93c5fd" opacity="0.3"/>
-              <circle cx="7" cy="6" r="0.3" fill="#93c5fd" opacity="0.2"/>
-            </pattern>
-          </defs>
-          <rect width="100" height="100" fill="url(#water)" />
-          
-          {/* Reference location labels */}
-          {REFERENCE_POINTS.map((point) => {
-            const pos = latLngToSvg(point.lat, point.lng)
-            // Only show if within current bounds
-            if (pos.x < 0 || pos.x > 100 || pos.y < 0 || pos.y > 100) return null
-            return (
-              <g key={point.name}>
-                <circle
-                  cx={pos.x}
-                  cy={pos.y}
-                  r="0.8"
-                  fill="#94a3b8"
-                />
-                <text
-                  x={pos.x}
-                  y={pos.y - 2}
-                  fontSize="2"
-                  fill="#64748b"
-                  textAnchor="middle"
-                  className="font-medium"
-                >
-                  {point.name}
-                </text>
-              </g>
-            )
-          })}
+      {/* Map container */}
+      <div className="flex-1 relative bg-blue-50 min-h-[300px]">
+        {/* Simple grid background */}
+        <div className="absolute inset-0 opacity-10" 
+          style={{ 
+            backgroundImage: 'linear-gradient(#3b82f6 1px, transparent 1px), linear-gradient(90deg, #3b82f6 1px, transparent 1px)',
+            backgroundSize: '20px 20px'
+          }} 
+        />
+        
+        {/* Map bounds indicator */}
+        <div className="absolute inset-4 border-2 border-blue-200 rounded-lg pointer-events-none" />
+        
+        {/* Compass / orientation */}
+        <div className="absolute top-2 right-2 text-xs text-blue-400 font-mono">
+          N
+        </div>
 
-          {/* Guide location pins */}
-          {locations.map((guide) => {
-            const pos = latLngToSvg(guide.lat, guide.lng)
-            return (
-              <g 
-                key={guide.id}
-                className="cursor-pointer"
-                onClick={() => setSelectedGuide(guide)}
-              >
-                {/* Pin circle */}
-                <circle
-                  cx={pos.x}
-                  cy={pos.y}
-                  r="3"
-                  fill={getStatusColor(guide.status)}
-                  stroke="white"
-                  strokeWidth="1"
-                  className="hover:r-4 transition-all"
-                />
-                {/* Pulse effect for active tours */}
-                <circle
-                  cx={pos.x}
-                  cy={pos.y}
-                  r="4"
-                  fill="none"
-                  stroke={getStatusColor(guide.status)}
-                  strokeWidth="0.5"
-                  opacity="0.5"
-                >
-                  <animate
-                    attributeName="r"
-                    values="4;6;4"
-                    dur="2s"
-                    repeatCount="indefinite"
-                  />
-                  <animate
-                    attributeName="opacity"
-                    values="0.5;0;0.5"
-                    dur="2s"
-                    repeatCount="indefinite"
-                  />
-                </circle>
-              </g>
-            )
-          })}
-        </svg>
+        {/* Pins */}
+        {locations.map((guide) => {
+          const pos = latLngToPercent(guide.lat, guide.lng)
+          return (
+            <button
+              key={guide.id}
+              onClick={() => setSelectedGuide(guide)}
+              className="absolute transform -translate-x-1/2 -translate-y-1/2 hover:scale-125 transition-transform"
+              style={{ 
+                left: `${pos.x}%`, 
+                top: `${pos.y}%`,
+                zIndex: selectedGuide?.id === guide.id ? 50 : 10
+              }}
+              title={`${guide.guide_name} - ${guide.tour_name}`}
+            >
+              {/* Pin dot */}
+              <div 
+                className="w-4 h-4 rounded-full border-2 border-white shadow-md"
+                style={{ backgroundColor: getStatusColor(guide.status) }}
+              />
+              {/* Pulse ring */}
+              <div 
+                className="absolute inset-0 rounded-full animate-ping opacity-50"
+                style={{ backgroundColor: getStatusColor(guide.status) }}
+              />
+            </button>
+          )
+        })}
 
         {/* Legend */}
-        <div className="absolute bottom-4 left-4 bg-white/90 backdrop-blur-sm rounded-lg p-2 shadow-lg border border-gray-200">
-          <div className="flex items-center gap-2 text-xs">
-            <span className="w-3 h-3 rounded-full bg-green-500 border-2 border-white"></span>
+        <div className="absolute bottom-3 left-3 bg-white/95 backdrop-blur-sm rounded-lg p-2 shadow-lg border border-gray-200 text-xs">
+          <div className="flex items-center gap-2">
+            <span className="w-2.5 h-2.5 rounded-full bg-green-500 border border-white"></span>
             <span>On time</span>
           </div>
-          <div className="flex items-center gap-2 text-xs mt-1">
-            <span className="w-3 h-3 rounded-full bg-yellow-500 border-2 border-white"></span>
+          <div className="flex items-center gap-2 mt-1">
+            <span className="w-2.5 h-2.5 rounded-full bg-yellow-500 border border-white"></span>
             <span>Close</span>
           </div>
-          <div className="flex items-center gap-2 text-xs mt-1">
-            <span className="w-3 h-3 rounded-full bg-red-500 border-2 border-white"></span>
+          <div className="flex items-center gap-2 mt-1">
+            <span className="w-2.5 h-2.5 rounded-full bg-red-500 border border-white"></span>
             <span>Late</span>
           </div>
         </div>
 
-        {/* Selected guide info popup */}
+        {/* Selected guide popup */}
         {selectedGuide && (
-          <div className="absolute top-4 right-4 bg-white rounded-lg shadow-lg border border-gray-200 p-3 max-w-xs">
-            <div className="flex items-center justify-between mb-2">
-              <h3 className="font-semibold text-sm">{selectedGuide.guide_name}</h3>
+          <div className="absolute top-3 right-3 bg-white rounded-lg shadow-xl border border-gray-200 p-3 max-w-xs z-50">
+            <div className="flex items-start justify-between gap-2">
+              <div className="flex-1 min-w-0">
+                <h3 className="font-semibold text-sm text-gray-900">{selectedGuide.guide_name}</h3>
+                <p className="text-xs text-gray-600 truncate">{selectedGuide.tour_name}</p>
+                <p className="text-xs text-gray-500 mt-1">Pickup: {selectedGuide.pickup_time}</p>
+                <p className={`text-xs mt-1 font-medium ${
+                  selectedGuide.status === 'late' ? 'text-red-600' :
+                  selectedGuide.status === 'close' ? 'text-yellow-600' : 'text-green-600'
+                }`}>
+                  {selectedGuide.minutes_to_pickup < 0 
+                    ? `${Math.abs(selectedGuide.minutes_to_pickup)} min late`
+                    : `${selectedGuide.minutes_to_pickup} min to pickup`
+                  }
+                </p>
+                <p className="text-xs text-gray-400 mt-1">
+                  📍 {selectedGuide.lat.toFixed(4)}, {selectedGuide.lng.toFixed(4)}
+                </p>
+                <p className="text-xs text-gray-400">
+                  Last check-in: {formatTimeAgo(selectedGuide.checked_in_at)}
+                </p>
+              </div>
               <button 
                 onClick={() => setSelectedGuide(null)}
-                className="text-gray-400 hover:text-gray-600"
+                className="text-gray-400 hover:text-gray-600 text-lg leading-none"
               >
                 ×
               </button>
             </div>
-            <p className="text-xs text-gray-600 mb-1">{selectedGuide.tour_name}</p>
-            <p className="text-xs text-gray-500">Pickup: {selectedGuide.pickup_time}</p>
-            <p className={`text-xs mt-2 ${
-              selectedGuide.status === 'late' ? 'text-red-600' :
-              selectedGuide.status === 'close' ? 'text-yellow-600' : 'text-green-600'
-            }`}>
-              {selectedGuide.minutes_to_pickup < 0 
-                ? `${Math.abs(selectedGuide.minutes_to_pickup)} min late`
-                : `${selectedGuide.minutes_to_pickup} min to pickup`
-              }
-            </p>
-            <p className="text-xs text-gray-400 mt-1">
-              Last check-in: {formatTimeAgo(selectedGuide.checked_in_at)}
-            </p>
           </div>
         )}
       </div>
@@ -322,7 +282,7 @@ export default function LiveMap() {
               onClick={() => setSelectedGuide(guide)}
             >
               <div 
-                className="w-3 h-3 rounded-full flex-shrink-0"
+                className="w-3 h-3 rounded-full flex-shrink-0 border border-white shadow"
                 style={{ backgroundColor: getStatusColor(guide.status) }}
               />
               <div className="flex-1 min-w-0">
