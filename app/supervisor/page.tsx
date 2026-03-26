@@ -194,7 +194,7 @@ export default function SupervisorDashboard() {
   }
 
   return (
-    <div className="h-full flex flex-col space-y-4">
+    <div className="h-full flex flex-col space-y-4 w-full">
       {/* Header */}
       <div className="space-y-3 shrink-0">
         <div>
@@ -266,7 +266,7 @@ export default function SupervisorDashboard() {
         <LiveMap />
       </div>
 
-      {/* Row 2: Incident Reports + Widgets Column */}
+      {/* Row 2: Incident Reports + Widgets Column - 50/50 split */}
       <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-4 min-h-0">
         <div className="bg-white rounded-lg border border-gray-200 overflow-hidden flex flex-col">
           <div className="px-3 py-2 border-b border-gray-200 bg-gray-50 flex items-center justify-between shrink-0">
@@ -359,17 +359,27 @@ export default function SupervisorDashboard() {
             </div>
           </div>
 
-          {/* Weather Widget */}
-          <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg p-4 text-white flex-1">
-            <h2 className="font-semibold text-sm mb-2">Weather - Cancun</h2>
-            <div className="flex items-center gap-4">
-              <span className="text-4xl">☀️</span>
-              <div>
-                <p className="text-2xl font-bold">28°C</p>
-                <p className="text-blue-100 text-sm">Sunny, Light winds</p>
-              </div>
+          {/* Weather Widget - Multi-location */}
+          <div className="bg-white rounded-lg border border-gray-200 p-4 flex-1 overflow-auto">
+            <h2 className="font-semibold text-gray-900 text-sm mb-3">Weather Conditions</h2>
+            <div className="grid grid-cols-2 gap-2">
+              {[
+                { loc: 'Isla Mujeres', temp: 29, icon: '☀️', cond: 'Sunny' },
+                { loc: 'Puerto Morelos', temp: 28, icon: '⛅', cond: 'Partly Cloudy' },
+                { loc: 'Playa del Carmen', temp: 30, icon: '☀️', cond: 'Sunny' },
+                { loc: 'Tulum', temp: 31, icon: '☀️', cond: 'Sunny' },
+                { loc: 'Coba', temp: 32, icon: '🌤️', cond: 'Hot' },
+                { loc: 'Chichen Itza', temp: 33, icon: '☀️', cond: 'Clear' },
+              ].map((w) => (
+                <div key={w.loc} className="flex items-center gap-2 bg-gray-50 rounded p-2">
+                  <span className="text-lg">{w.icon}</span>
+                  <div className="min-w-0">
+                    <p className="text-xs font-medium text-gray-900 truncate">{w.loc}</p>
+                    <p className="text-xs text-gray-500">{w.temp}°C</p>
+                  </div>
+                </div>
+              ))}
             </div>
-            <p className="text-xs text-blue-100 mt-2">All tours operating normally</p>
           </div>
         </div>
       </div>

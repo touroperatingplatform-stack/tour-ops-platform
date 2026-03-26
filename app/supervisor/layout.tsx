@@ -63,7 +63,7 @@ export default function SupervisorLayout({ children }: { children: React.ReactNo
 
       {/* Scrollable Content - Fills remaining space */}
       <main className="flex-1 overflow-y-auto p-4">
-        <div className="max-w-7xl mx-auto h-full">
+        <div className="w-full h-full">
           {children}
         </div>
       </main>
