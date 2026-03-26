@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase/client'
+import Link from 'next/link'
 
 interface Guide {
   id: string
@@ -13,17 +14,33 @@ interface Guide {
   current_tour?: string
 }
 
+interface Tour {
+  id: string
+  name: string
+  date: string
+  status: string
+  guest_count: number
+}
+
 export default function GuidesPage() {
   const [guides, setGuides] = useState<Guide[]>([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
+  const [selectedGuide, setSelectedGuide] = useState<Guide | null>(null)
+  const [guideTours, setGuideTours] = useState<Tour[]>([])
 
   useEffect(() => {
     loadGuides()
   }, [])
 
+  useEffect(() => {
+    if (selectedGuide) {
+      loadGuideTours(selectedGuide.id)
+    }
+  }, [selectedGuide])
+
   async function loadGuides() {
-    const { data, error } = await supabase
+    const { data } = await supabase
       .from('profiles')
       .select('id, first_name, last_name, email, phone, role, status')
       .eq('role', 'guide')
@@ -41,6 +58,21 @@ export default function GuidesPage() {
       setGuides(formattedGuides)
     }
     setLoading(false)
+  }
+
+  async function loadGuideTours(guideId: string) {
+    const today = new Date().toISOString().split('T')[0]
+    const { data } = await supabase
+      .from('tours')
+      .select('id, name, tour_date, status, guest_count')
+      .eq('guide_id', guideId)
+      .gte('tour_date', today)
+      .order('tour_date')
+      .limit(5)
+
+    if (data) {
+      setGuideTours(data as Tour[])
+    }
   }
 
   function getStatusBadge(status: string) {
@@ -118,7 +150,10 @@ export default function GuidesPage() {
                 <td className="px-4 py-3 text-gray-600">{guide.phone}</td>
                 <td className="px-4 py-3">{getStatusBadge(guide.status)}</td>
                 <td className="px-4 py-3 text-right">
-                  <button className="text-blue-600 hover:text-blue-800 text-sm font-medium">
+                  <button 
+                    onClick={() => setSelectedGuide(guide)}
+                    className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                  >
                     View
                   </button>
                 </td>
@@ -134,6 +169,64 @@ export default function GuidesPage() {
           </tbody>
         </table>
       </div>
+
+      {/* Guide Detail Panel */}
+      {selectedGuide && (
+        <div className="fixed inset-0 z-50 flex justify-end">
+          <div 
+            className="absolute inset-0 bg-black/50"
+            onClick={() => setSelectedGuide(null)}
+          />
+          <div className="relative w-full max-w-md bg-white h-full shadow-xl p-6 overflow-auto">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-lg font-bold text-gray-900">Guide Details</h2>
+              <button 
+                onClick={() => setSelectedGuide(null)}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="text-center mb-6">
+              <div className="w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-xl mx-auto mb-3">
+                {selectedGuide.first_name[0]}{selectedGuide.last_name[0]}
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900">
+                {selectedGuide.first_name} {selectedGuide.last_name}
+              </h3>
+              <p className="text-sm text-gray-500">{getStatusBadge(selectedGuide.status)}</p>
+            </div>
+
+            <div className="space-y-4 mb-6">
+              <div>
+                <p className="text-xs text-gray-500 uppercase">Email</p>
+                <p className="text-sm text-gray-900">{selectedGuide.email}</p>
+              </div>
+              <div>
+                <p className="text-xs text-gray-500 uppercase">Phone</p>
+                <p className="text-sm text-gray-900">{selectedGuide.phone}</p>
+              </div>
+            </div>
+
+            <div className="border-t pt-4">
+              <h4 className="text-sm font-semibold text-gray-900 mb-3">Upcoming Tours</h4>
+              {guideTours.length > 0 ? (
+                <div className="space-y-2">
+                  {guideTours.map((tour) => (
+                    <div key={tour.id} className="bg-gray-50 rounded p-3">
+                      <p className="text-sm font-medium text-gray-900">{tour.name}</p>
+                      <p className="text-xs text-gray-500">{tour.date} • {tour.guest_count} guests</p>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-gray-500">No upcoming tours scheduled</p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
