@@ -127,7 +127,7 @@ export default function GuidesPage() {
           <thead className="bg-gray-50 text-left text-xs uppercase text-gray-500 sticky top-0">
             <tr>
               <th className="px-4 py-3 font-medium">Name</th>
-              <th className="px-4 py-3 font-medium">Contact</th>
+              <th className="px-4 py-3 font-medium hidden md:table-cell">Email</th>
               <th className="px-4 py-3 font-medium">Phone</th>
               <th className="px-4 py-3 font-medium">Status</th>
               <th className="px-4 py-3 font-medium text-right">Actions</th>
@@ -144,16 +144,27 @@ export default function GuidesPage() {
                     <span className="font-medium text-gray-900">{guide.first_name} {guide.last_name}</span>
                   </div>
                 </td>
-                <td className="px-4 py-3 text-gray-600">{guide.email}</td>
+                <td className="px-4 py-3 hidden md:table-cell text-gray-600">{guide.email}</td>
                 <td className="px-4 py-3 text-gray-600">{guide.phone}</td>
                 <td className="px-4 py-3">{getStatusBadge(guide.status)}</td>
                 <td className="px-4 py-3 text-right">
-                  <button 
-                    onClick={() => setSelectedGuide(guide)}
-                    className="text-blue-600 hover:text-blue-800 text-sm font-medium"
-                  >
-                    View
-                  </button>
+                  <div className="flex items-center justify-end gap-2">
+                    <a 
+                      href={`https://wa.me/${guide.phone.replace(/\D/g, '')}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-green-600 hover:text-green-800 text-lg"
+                      title="WhatsApp"
+                    >
+                      📱
+                    </a>
+                    <button 
+                      onClick={() => setSelectedGuide(guide)}
+                      className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                    >
+                      View
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}
@@ -202,9 +213,19 @@ export default function GuidesPage() {
                   <p className="text-xs text-gray-500 uppercase">Email</p>
                   <p className="text-sm text-gray-900">{selectedGuide.email}</p>
                 </div>
-                <div>
-                  <p className="text-xs text-gray-500 uppercase">Phone</p>
-                  <p className="text-sm text-gray-900">{selectedGuide.phone}</p>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-xs text-gray-500 uppercase">Phone</p>
+                    <p className="text-sm text-gray-900">{selectedGuide.phone}</p>
+                  </div>
+                  <a 
+                    href={`https://wa.me/${selectedGuide.phone.replace(/\D/g, '')}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2"
+                  >
+                    📱 WhatsApp
+                  </a>
                 </div>
               </div>
 
