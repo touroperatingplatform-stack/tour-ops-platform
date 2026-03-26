@@ -1,0 +1,12 @@
+tour_id,guide_id,company_id,category,description,amount,currency,receipt_url,has_receipt,status,notes
+TOUR-001,GUIDE-001,COMPANY-001,fuel,"Van fuel for Tulum round trip",45.50,MXN,"https://cloudinary.com/receipt1.jpg",true,pending,"Regular gas"
+TOUR-001,GUIDE-001,COMPANY-001,parking,"Tulum ruins parking fee",150.00,MXN,"https://cloudinary.com/receipt2.jpg",true,pending,"Official parking"
+TOUR-001,GUIDE-001,COMPANY-001,meals,"Guide lunch",180.00,MXN,"https://cloudinary.com/receipt3.jpg",true,pending,"Local restaurant"
+TOUR-002,GUIDE-002,COMPANY-001,fuel,"Van fuel for Coba trip",62.00,MXN,"https://cloudinary.com/receipt4.jpg",true,pending,"Longer route"
+TOUR-002,GUIDE-002,COMPANY-001,tolls,"Highway tolls",85.00,MXN,"https://cloudinary.com/receipt5.jpg",true,pending,"Cuota highway"
+TOUR-002,GUIDE-002,COMPANY-001,meals,"Guide lunch + drinks",200.00,MXN,"https://cloudinary.com/receipt6.jpg",true,pending,"Valladolid"
+TOUR-003,GUIDE-003,COMPANY-001,fuel,"Van fuel Chichen Itza",78.00,MXN,"https://cloudinary.com/receipt7.jpg",true,pending,"Long distance"
+TOUR-003,GUIDE-003,COMPANY-001,tolls,"Multiple tolls",140.00,MXN,"https://cloudinary.com/receipt8.jpg",true,pending,"Round trip tolls"
+TOUR-004,GUIDE-004,COMPANY-001,supplies,"Bottled water for guests",95.00,MXN,"https://cloudinary.com/receipt9.jpg",true,pending,"24 bottles"
+TOUR-004,GUIDE-004,COMPANY-001,meals,"VIP lunch at beach club",450.00,MXN,"https://cloudinary.com/receipt10.jpg",true,pending,"Guest lunch included"
+TOUR-005,GUIDE-005,COMPANY-001,fuel,"Local cenote route fuel",35.00,MXN,"",false,pending,"Small local station, no receipt"

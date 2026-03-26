@@ -1,0 +1,11 @@
+name,description,tour_date,start_time,duration_minutes,capacity,pickup_location,dropoff_location,guide_id,vehicle_id,brand_id,template_id,price,status,guest_count,tour_type
+"Tulum Ruins + Cenote Classic","Explore ancient Mayan ruins and swim in sacred cenote",2026-03-27,08:00,480,15,"Hotel Zone Pickup","Hotel Zone Dropoff",GUIDE-001,VEH-001,BRAND-001,TMPL-001,89.00,scheduled,12,private
+"Coba Adventure + 4 Cenotes","Climb Nohoch Mul pyramid and visit 4 cenotes",2026-03-27,07:30,540,20,"Playa del Carmen","Playa del Carmen",GUIDE-002,VEH-002,BRAND-001,TMPL-002,109.00,scheduled,18,shared
+"Chichen Itza Express","Full day at Wonder of the World",2026-03-27,06:00,720,30,"Cancun Hotel Zone","Cancun Hotel Zone",GUIDE-003,VEH-003,BRAND-002,TMPL-003,129.00,scheduled,25,shared
+"Tulum Private VIP","Private luxury tour with personal guide",2026-03-27,09:00,360,8,"Grand Velas","Grand Velas",GUIDE-004,VEH-004,BRAND-003,TMPL-004,299.00,scheduled,2,private
+"Cenote Route Adventure","Visit 3 hidden cenotes off the beaten path",2026-03-27,08:30,420,12,"Tulum Town","Tulum Town",GUIDE-005,VEH-005,BRAND-001,TMPL-005,79.00,scheduled,8,private
+"Coba + Valladolid","Archaeology and colonial culture",2026-03-28,07:00,600,25,"Cancun","Cancun",GUIDE-001,VEH-001,BRAND-002,TMPL-006,99.00,scheduled,20,shared
+"Tulum + Akumal Snorkeling","Ruins and sea turtles",2026-03-28,08:00,480,18,"Playa del Carmen","Playa del Carmen",GUIDE-002,VEH-002,BRAND-001,TMPL-007,95.00,scheduled,15,shared
+"Chichen Itza + Cenote Ik Kil","Wonder of the World + sacred cenote",2026-03-28,06:30,660,35,"Riviera Maya","Riviera Maya",GUIDE-003,VEH-003,BRAND-002,TMPL-003,119.00,scheduled,30,shared
+"Private Cenote Tour","Exclusive cenote experience",2026-03-28,09:00,360,6,"Any Hotel","Any Hotel",GUIDE-004,VEH-004,BRAND-003,TMPL-008,249.00,scheduled,4,private
+"Sunset Tulum","Evening tour with sunset views",2026-03-28,14:00,300,15,"Tulum Hotels","Tulum Hotels",GUIDE-005,VEH-005,BRAND-001,TMPL-009,69.00,scheduled,10,private

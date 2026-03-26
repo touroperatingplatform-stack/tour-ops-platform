@@ -1,0 +1,7 @@
+tour_id,guest_id,rating,review_title,review_text,review_date,responded,response_text
+TOUR-001,GUEST-001,5,"Absolutely Amazing!","Best tour of our vacation! Guide was knowledgeable and cenote was breathtaking. Highly recommend!",2026-03-25,false,""
+TOUR-001,GUEST-002,5,"Perfect Day","Everything was perfect. Small group, great guide, beautiful locations. Worth every penny!",2026-03-25,false,""
+TOUR-002,GUEST-003,4,"Great Adventure","Loved climbing the pyramid! Cenotes were beautiful. Only issue was it was very hot.",2026-03-25,false,""
+TOUR-002,GUEST-004,5,"Unforgettable Experience","This was the highlight of our trip! Coba was incredible and cenotes were refreshing. Guide was excellent!",2026-03-25,false,""
+TOUR-003,GUEST-005,5,"Bucket List Item Checked!","Chichen Itza was on my bucket list. This tour exceeded expectations. Early start worth it!",2026-03-24,false,""
+TOUR-003,GUEST-006,4,"Wonderful Tour","Chichen Itza amazing, cenote beautiful. Tour was long (12 hours) but worth it.",2026-03-24,false,""

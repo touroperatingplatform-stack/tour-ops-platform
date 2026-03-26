@@ -1,0 +1,8 @@
+tour_id,brand_id,sort_order,location_name,address,latitude,longitude,scheduled_time,guest_count,notes
+TOUR-002,BRAND-001,1,"Grand Sunset Resort","Carretera Cancun-Tulum Km 240",20.6897,-87.0739,07:30,3,"Main lobby pickup"
+TOUR-002,BRAND-001,2,"Vidanta Riviera Maya","Carretera Federal Cancun-Playa Km 293",20.6234,-87.0812,07:45,5,"Near main entrance"
+TOUR-002,BRAND-001,3,"Playa del Carmen Center","5ta Avenida & Constituyentes",20.6296,-87.0739,08:00,6,"Corner of 5th Ave"
+TOUR-002,BRAND-001,4,"Maroma Beach Resort","Carretera Cancun-Playa Km 51",20.7234,-86.9812,08:15,4,"Beach club entrance"
+TOUR-003,BRAND-002,1,"Cancun Airport Meeting Point","Terminal 3, Exit B",21.0365,-86.8770,06:00,8,"Look for guide with sign"
+TOUR-003,BRAND-002,2,"Hotel Zone - Zone 1","Blvd. Kukulcan Km 9",21.1333,-86.7667,06:30,10,"Near Kukulcan Plaza"
+TOUR-003,BRAND-002,3,"Hotel Zone - Zone 2","Blvd. Kukulcan Km 12.5",21.1089,-86.7594,06:45,7,"In front of La Isla Mall"
