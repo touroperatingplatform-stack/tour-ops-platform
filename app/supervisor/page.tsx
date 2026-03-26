@@ -123,7 +123,7 @@ export default function SupervisorDashboard() {
 
     const { data: incidentsData } = await supabase
       .from('incidents')
-      .select('id, reported_at, severity, status, type, tour_id, guide_id')
+      .select('id, reported_at, severity, status, incident_type, title, tour_id, guide_id')
       .gte('reported_at', `${today}T00:00:00`)
       .order('reported_at', { ascending: false })
 

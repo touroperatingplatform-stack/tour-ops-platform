@@ -45,29 +45,41 @@ export default function IncidentsPage() {
   }, [selectedIncident])
 
   async function loadIncidents() {
-    const { data } = await supabase
+    // Get incidents first
+    const { data: incidentsData } = await supabase
       .from('incidents')
-      .select(`
-        id, title, description, severity, status, location, reported_at, resolved_at, assigned_to,
-        tour:tour_id (name),
-        guide:guide_id (first_name, last_name)
-      `)
+      .select('id, title, description, severity, status, location, reported_at, resolved_at, assigned_to, tour_id, guide_id')
       .order('reported_at', { ascending: false })
 
-    if (data) {
-      const formatted: Incident[] = data.map((i: any) => ({
-        id: i.id,
-        title: i.title,
-        description: i.description,
-        severity: i.severity,
-        status: i.status,
-        tour_name: i.tour?.name || 'Unknown',
-        guide_name: `${i.guide?.first_name || ''} ${i.guide?.last_name || ''}`.trim() || 'Unknown',
-        location: i.location,
-        reported_at: i.reported_at,
-        resolved_at: i.resolved_at,
-        assigned_to: i.assigned_to
-      }))
+    if (incidentsData) {
+      // Get tour names and guide names
+      const tourIds = [...new Set(incidentsData.map((i: any) => i.tour_id).filter(Boolean))]
+      const guideIds = [...new Set(incidentsData.map((i: any) => i.guide_id).filter(Boolean))]
+      
+      const [{ data: toursData }, { data: guidesData }] = await Promise.all([
+        supabase.from('tours').select('id, name').in('id', tourIds.length > 0 ? tourIds : ['00000000-0000-0000-0000-000000000000']),
+        supabase.from('profiles').select('id, first_name, last_name').in('id', guideIds.length > 0 ? guideIds : ['00000000-0000-0000-0000-000000000000'])
+      ])
+      
+      const tourMap = new Map(toursData?.map((t: any) => [t.id, t.name]) || [])
+      const guideMap = new Map(guidesData?.map((g: any) => [g.id, g]) || [])
+
+      const formatted: Incident[] = incidentsData.map((i: any) => {
+        const guide = guideMap.get(i.guide_id)
+        return {
+          id: i.id,
+          title: i.title,
+          description: i.description,
+          severity: i.severity,
+          status: i.status,
+          tour_name: tourMap.get(i.tour_id) || 'Unknown',
+          guide_name: guide ? `${guide.first_name} ${guide.last_name}` : 'Unknown',
+          location: i.location,
+          reported_at: i.reported_at,
+          resolved_at: i.resolved_at,
+          assigned_to: i.assigned_to
+        }
+      })
       setIncidents(formatted)
     }
     setLoading(false)
@@ -76,17 +88,29 @@ export default function IncidentsPage() {
   async function loadComments(incidentId: string) {
     const { data } = await supabase
       .from('incident_comments')
-      .select('id, content, created_at, author:author_id (first_name, last_name)')
+      .select('id, content, created_at, author_id')
       .eq('incident_id', incidentId)
       .order('created_at', { ascending: true })
 
     if (data) {
-      setComments(data.map((c: any) => ({
-        id: c.id,
-        author_name: `${c.author?.first_name || ''} ${c.author?.last_name || ''}`.trim() || 'Unknown',
-        content: c.content,
-        created_at: c.created_at
-      })))
+      // Get author names
+      const authorIds = [...new Set(data.map((c: any) => c.author_id).filter(Boolean))]
+      const { data: authorsData } = await supabase
+        .from('profiles')
+        .select('id, first_name, last_name')
+        .in('id', authorIds.length > 0 ? authorIds : ['00000000-0000-0000-0000-000000000000'])
+      
+      const authorMap = new Map(authorsData?.map((a: any) => [a.id, a]) || [])
+
+      setComments(data.map((c: any) => {
+        const author = authorMap.get(c.author_id)
+        return {
+          id: c.id,
+          author_name: author ? `${author.first_name} ${author.last_name}` : 'Unknown',
+          content: c.content,
+          created_at: c.created_at
+        }
+      }))
     }
   }
 

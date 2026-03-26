@@ -151,11 +151,11 @@ BEGIN
   SELECT id INTO v_tour1_id FROM tours WHERE name = '[TEST] Chichen Itza Sunrise' LIMIT 1;
   SELECT id INTO v_tour2_id FROM tours WHERE name = '[TEST] Tulum Express' LIMIT 1;
 
-  INSERT INTO incidents (tour_id, guide_id, reported_by, type, severity, description, status, created_at, updated_at)
+  INSERT INTO incidents (tour_id, guide_id, reported_by, incident_type, severity, title, description, status, created_at, updated_at)
   VALUES
-    (v_tour1_id, v_carlos_id, v_carlos_id, 'guest_complaint', 'low', '[TEST] Guest feeling unwell. One guest reports motion sickness on van to Chichen Itza. Provided water and medication.', 'reported', now(), now()),
-    (v_tour2_id, v_maria_id, v_maria_id, 'traffic_delay', 'medium', '[TEST] Delayed departure - traffic. Heavy traffic from Playa del Carmen, departed 15 min late.', 'acknowledged', now(), now()),
-    (v_tour1_id, v_carlos_id, v_carlos_id, 'other', 'low', '[TEST] Lost sunglasses. Guest left sunglasses at pickup location. Retrieved by guide.', 'closed', now(), now());
+    (v_tour1_id, v_carlos_id, v_carlos_id, 'guest_complaint', 'low', 'Guest feeling unwell', '[TEST] Guest feeling unwell. One guest reports motion sickness on van to Chichen Itza. Provided water and medication.', 'reported', now(), now()),
+    (v_tour2_id, v_maria_id, v_maria_id, 'traffic_delay', 'medium', 'Delayed departure - traffic', '[TEST] Delayed departure - traffic. Heavy traffic from Playa del Carmen, departed 15 min late.', 'acknowledged', now(), now()),
+    (v_tour1_id, v_carlos_id, v_carlos_id, 'other', 'low', 'Lost sunglasses', '[TEST] Lost sunglasses. Guest left sunglasses at pickup location. Retrieved by guide.', 'closed', now(), now());
 END $$;
 
 -- ==========================================
