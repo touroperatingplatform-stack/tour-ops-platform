@@ -27,6 +27,14 @@ interface IncidentWithDetails {
   guide_name: string
 }
 
+interface ActiveGuide {
+  id: string
+  name: string
+  tour: string
+  lastCheckIn: string
+  status: 'active' | 'idle' | 'offline'
+}
+
 interface DashboardStats {
   total_tours: number
   total_guests: number
@@ -39,6 +47,8 @@ interface DashboardStats {
 export default function SupervisorDashboard() {
   const [tours, setTours] = useState<TourWithDetails[]>([])
   const [incidents, setIncidents] = useState<IncidentWithDetails[]>([])
+  const [activeGuides, setActiveGuides] = useState<ActiveGuide[]>([])
+  const [alerts, setAlerts] = useState<string[]>([])
   const [stats, setStats] = useState<DashboardStats>({
     total_tours: 0,
     total_guests: 0,
@@ -58,6 +68,7 @@ export default function SupervisorDashboard() {
   async function loadDashboardData() {
     const today = new Date().toISOString().split('T')[0]
 
+    // Load tours
     const { data: toursData } = await supabase
       .from('tours')
       .select(`
@@ -87,8 +98,21 @@ export default function SupervisorDashboard() {
         in_progress: inProgress,
         pending_checkins: scheduled
       }))
+
+      // Build active guides list from tours
+      const guides = formattedTours
+        .filter(t => t.status === 'in_progress')
+        .map(t => ({
+          id: t.id,
+          name: `${t.guide.first_name} ${t.guide.last_name}`,
+          tour: t.name,
+          lastCheckIn: '5 min ago',
+          status: 'active' as const
+        }))
+      setActiveGuides(guides)
     }
 
+    // Load incidents
     const { data: incidentsData } = await supabase
       .from('incidents')
       .select(`
@@ -113,6 +137,12 @@ export default function SupervisorDashboard() {
       ).length
       
       setStats(prev => ({ ...prev, open_incidents: openCount }))
+
+      // Generate alerts
+      const newAlerts: string[] = []
+      if (openCount > 0) newAlerts.push(`${openCount} open incidents require attention`)
+      if (stats.pending_checkins > 3) newAlerts.push(`${stats.pending_checkins} tours awaiting guide check-in`)
+      setAlerts(newAlerts)
     }
 
     setLoading(false)
@@ -174,28 +204,28 @@ export default function SupervisorDashboard() {
           </p>
         </div>
 
-        {/* Summary Metrics - Fixed colors */}
+        {/* Summary Metrics - Color coded */}
         <div className="grid grid-cols-4 gap-3">
           <div className="bg-white rounded-lg border border-gray-200 p-3 text-center">
             <p className="text-xs text-gray-500 uppercase font-medium">Total Tours</p>
             <p className="text-2xl font-bold text-gray-900">{stats.total_tours}</p>
           </div>
           <div className="bg-white rounded-lg border border-gray-200 p-3 text-center">
-            <p className="text-xs text-blue-600 uppercase font-medium">Expected Guests</p>
+            <p className="text-xs text-blue-600 uppercase font-medium">Total Guests</p>
             <p className="text-2xl font-bold text-blue-600">{stats.total_guests}</p>
           </div>
           <div className="bg-white rounded-lg border border-gray-200 p-3 text-center">
-            <p className="text-xs text-red-600 uppercase font-medium">No Shows</p>
-            <p className="text-2xl font-bold text-red-600">{stats.no_shows}</p>
+            <p className="text-xs text-green-600 uppercase font-medium">In Progress</p>
+            <p className="text-2xl font-bold text-green-600">{stats.in_progress}</p>
           </div>
           <div className="bg-white rounded-lg border border-gray-200 p-3 text-center">
-            <p className="text-xs text-yellow-600 uppercase font-medium">Pending Check-In</p>
-            <p className="text-2xl font-bold text-yellow-600">{stats.pending_checkins}</p>
+            <p className="text-xs text-red-600 uppercase font-medium">Open Incidents</p>
+            <p className="text-2xl font-bold text-red-600">{stats.open_incidents}</p>
           </div>
         </div>
       </div>
 
-      {/* Row 1: Today's Tours + Live Map - Fills remaining space */}
+      {/* Row 1: Today's Tours + Live Map */}
       <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-4 min-h-0">
         <div className="bg-white rounded-lg border border-gray-200 overflow-hidden flex flex-col">
           <div className="px-3 py-2 border-b border-gray-200 bg-gray-50 shrink-0">
@@ -236,7 +266,7 @@ export default function SupervisorDashboard() {
         <LiveMap />
       </div>
 
-      {/* Row 2: Incident Reports + Compliance - Fills remaining space */}
+      {/* Row 2: Incident Reports + Widgets Column */}
       <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-4 min-h-0">
         <div className="bg-white rounded-lg border border-gray-200 overflow-hidden flex flex-col">
           <div className="px-3 py-2 border-b border-gray-200 bg-gray-50 flex items-center justify-between shrink-0">
@@ -286,47 +316,70 @@ export default function SupervisorDashboard() {
           </div>
         </div>
 
+        {/* Widgets Column */}
         <div className="flex flex-col gap-4">
+          {/* Active Guides Widget */}
           <div className="bg-white rounded-lg border border-gray-200 p-4 flex-1 overflow-auto">
-            <h2 className="font-semibold text-gray-900 text-sm mb-3">Compliance Checklist</h2>
-            <div className="space-y-2">
-              {[
-                { label: 'Vehicle check', status: 'completed' },
-                { label: 'Safety gear verified', status: 'completed' },
-                { label: 'Itinerary reviewed', status: 'pending' },
-                { label: 'Cash counted', status: 'pending' },
-                { label: 'Guide check-in', status: 'in_progress' },
-              ].map((item, i) => (
-                <div key={i} className="flex items-center gap-2">
-                  <span className={`w-4 h-4 rounded-full flex items-center justify-center text-xs ${
-                    item.status === 'completed' ? 'bg-green-500 text-white' :
-                    item.status === 'in_progress' ? 'bg-blue-500 text-white' :
-                    'bg-gray-200 text-gray-500'
-                  }`}>
-                    {item.status === 'completed' ? '✓' : item.status === 'in_progress' ? '◐' : '○'}
-                  </span>
-                  <span className={`text-sm ${item.status === 'completed' ? 'text-gray-500 line-through' : 'text-gray-900'}`}>{item.label}</span>
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="font-semibold text-gray-900 text-sm">Active Guides</h2>
+              <span className="bg-green-100 text-green-700 text-xs px-2 py-0.5 rounded-full">{activeGuides.length} on tour</span>
+            </div>
+            <div className="space-y-3">
+              {activeGuides.map((guide) => (
+                <div key={guide.id} className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-900">{guide.name}</p>
+                      <p className="text-xs text-gray-500">{guide.tour}</p>
+                    </div>
+                  </div>
+                  <span className="text-xs text-gray-400">{guide.lastCheckIn}</span>
                 </div>
               ))}
+              {activeGuides.length === 0 && (
+                <p className="text-sm text-gray-500 text-center py-4">No guides currently on tour</p>
+              )}
             </div>
           </div>
 
+          {/* Alerts Widget */}
           <div className="bg-white rounded-lg border border-gray-200 p-4 flex-1 overflow-auto">
-            <h2 className="font-semibold text-gray-900 text-sm mb-3">Guest Feedback</h2>
-            <div className="space-y-3">
-              <div>
-                <p className="text-xs text-gray-500">Overall Rating</p>
-                <div className="flex items-baseline gap-2">
-                  <p className="text-2xl font-bold text-gray-900">92%</p>
-                  <span className="text-xs text-green-600">↑ 3%</span>
+            <h2 className="font-semibold text-gray-900 text-sm mb-3">Alerts</h2>
+            <div className="space-y-2">
+              {alerts.map((alert, i) => (
+                <div key={i} className="flex items-center gap-2 text-sm">
+                  <span className="text-orange-500">⚠️</span>
+                  <span className="text-gray-700">{alert}</span>
                 </div>
-              </div>
-              <div className="border-t border-gray-100 pt-2">
-                <p className="text-xs text-gray-500 mb-1">Recent Comment</p>
-                <blockquote className="text-xs text-gray-600 italic bg-gray-50 p-2 rounded">"Amazing tour! Guide was very knowledgeable."</blockquote>
-              </div>
+              ))}
+              {alerts.length === 0 && (
+                <p className="text-sm text-gray-500 text-center py-4">No active alerts</p>
+              )}
             </div>
           </div>
+
+          {/* Weather Widget */}
+          <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg p-4 text-white flex-1">
+            <h2 className="font-semibold text-sm mb-2">Weather - Cancun</h2>
+            <div className="flex items-center gap-4">
+              <span className="text-4xl">☀️</span>
+              <div>
+                <p className="text-2xl font-bold">28°C</p>
+                <p className="text-blue-100 text-sm">Sunny, Light winds</p>
+              </div>
+            </div>
+            <p className="text-xs text-blue-100 mt-2">All tours operating normally</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Footer Summary Bar - White with colored text */}
+      <div className="bg-white border border-gray-200 rounded-lg p-4 shrink-0">
+        <div className="grid grid-cols-3 gap-4 text-center">
+          <div><p className="text-gray-500 text-xs">Expected Guests</p><p className="text-2xl font-bold text-blue-600">{stats.total_guests}</p></div>
+          <div><p className="text-gray-500 text-xs">No Shows</p><p className="text-2xl font-bold text-red-600">{stats.no_shows}</p></div>
+          <div><p className="text-gray-500 text-xs">Pending Check-In</p><p className="text-2xl font-bold text-yellow-600">{stats.pending_checkins}</p></div>
         </div>
       </div>
     </div>
