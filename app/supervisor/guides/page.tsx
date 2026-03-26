@@ -17,7 +17,7 @@ interface Guide {
 interface Tour {
   id: string
   name: string
-  date: string
+  tour_date: string
   status: string
   guest_count: number
 }
@@ -216,7 +216,7 @@ export default function GuidesPage() {
                   {guideTours.map((tour) => (
                     <div key={tour.id} className="bg-gray-50 rounded p-3">
                       <p className="text-sm font-medium text-gray-900">{tour.name}</p>
-                      <p className="text-xs text-gray-500">{tour.date} • {tour.guest_count} guests</p>
+                      <p className="text-xs text-gray-500">{tour.tour_date} • {tour.guest_count} guests</p>
                     </div>
                   ))}
                 </div>
