@@ -66,36 +66,19 @@ export default function DataPage() {
     setMessage('')
 
     try {
-      // Delete data in order (respecting foreign keys)
-      const tables = [
-        'guide_checkins',
-        'expenses', 
-        'incidents',
-        'tours',
-        'vehicles'
-      ]
+      // Call server API to clear data (bypasses RLS)
+      const response = await fetch('/api/admin/reset', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      })
 
-      let deleted = 0
-      let errors: string[] = []
+      const result = await response.json()
 
-      for (const table of tables) {
-        const { error } = await supabase
-          .from(table)
-          .delete()
-          .neq('id', '00000000-0000-0000-0000-000000000000')
-        
-        if (error) {
-          errors.push(`${table}: ${error.message}`)
-        } else {
-          deleted++
-        }
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to reset data')
       }
 
-      if (errors.length > 0) {
-        setMessage(`⚠️ Cleared ${deleted} tables, errors: ${errors.join(', ')}`)
-      } else {
-        setMessage(`✅ Demo data cleared! Deleted from ${deleted} tables. Users preserved.`)
-      }
+      setMessage(`✅ Demo data cleared! ${result.deleted || 0} tables cleared. Users preserved.`)
     } catch (err: any) {
       setMessage(`❌ Error: ${err.message}`)
     }
@@ -116,63 +99,29 @@ export default function DataPage() {
     try {
       const data = JSON.parse(importData)
       
-      let imported = 0
-      let errors: string[] = []
+      // Use server API to import (bypasses RLS)
+      const response = await fetch('/api/admin/import', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tours: data.tours || [],
+          incidents: data.incidents || [],
+          expenses: data.expenses || [],
+          vehicles: data.vehicles || [],
+          guide_checkins: data.guide_checkins || []
+        })
+      })
 
-      if (data.tours?.length > 0) {
-        for (const tour of data.tours) {
-          const { error } = await supabase
-            .from('tours')
-            .upsert(tour, { onConflict: 'id' })
-          if (error) errors.push(`Tour ${tour.id}: ${error.message}`)
-          else imported++
-        }
+      const result = await response.json()
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to import')
       }
 
-      if (data.incidents?.length > 0) {
-        for (const incident of data.incidents) {
-          const { error } = await supabase
-            .from('incidents')
-            .upsert(incident, { onConflict: 'id' })
-          if (error) errors.push(`Incident ${incident.id}: ${error.message}`)
-          else imported++
-        }
-      }
-
-      if (data.expenses?.length > 0) {
-        for (const expense of data.expenses) {
-          const { error } = await supabase
-            .from('expenses')
-            .upsert(expense, { onConflict: 'id' })
-          if (error) errors.push(`Expense ${expense.id}: ${error.message}`)
-          else imported++
-        }
-      }
-
-      if (data.vehicles?.length > 0) {
-        for (const vehicle of data.vehicles) {
-          const { error } = await supabase
-            .from('vehicles')
-            .upsert(vehicle, { onConflict: 'id' })
-          if (error) errors.push(`Vehicle ${vehicle.id}: ${error.message}`)
-          else imported++
-        }
-      }
-
-      if (data.guide_checkins?.length > 0) {
-        for (const checkin of data.guide_checkins) {
-          const { error } = await supabase
-            .from('guide_checkins')
-            .upsert(checkin, { onConflict: 'id' })
-          if (error) errors.push(`Checkin ${checkin.id}: ${error.message}`)
-          else imported++
-        }
-      }
-
-      if (errors.length > 0) {
-        setMessage(`⚠️ Imported ${imported} items, ${errors.length} errors. First: ${errors[0]}`)
+      if (result.errors && result.errors.length > 0) {
+        setMessage(`⚠️ Imported ${result.imported} items. Errors: ${result.errors.slice(0, 3).join(', ')}`)
       } else {
-        setMessage(`✅ Successfully imported ${imported} items`)
+        setMessage(`✅ Successfully imported ${result.imported} items`)
       }
     } catch (err: any) {
       setMessage(`❌ Error: ${err.message}`)
@@ -236,7 +185,7 @@ export default function DataPage() {
       <section className="bg-white rounded-2xl border border-gray-200 p-6">
         <h2 className="font-semibold text-gray-900 mb-2">📤 Import Demo Data</h2>
         <p className="text-sm text-gray-500 mb-4">
-          Paste JSON data to import fresh demo data. Uses upsert (updates existing, creates new).
+          Paste JSON data to import. Server-side import bypasses RLS policies.
         </p>
         
         <textarea
@@ -276,7 +225,7 @@ export default function DataPage() {
         <ol className="text-sm text-gray-600 space-y-2 list-decimal list-inside">
           <li>Click <strong>Reset Demo Data</strong> to clear old data (keeps users)</li>
           <li>Paste updated JSON and click <strong>Import Data</strong></li>
-          <li>Done! Fresh demo data is ready</li>
+          <li>Done! Fresh demo data is ready (including checkins)</li>
         </ol>
       </section>
     </div>
