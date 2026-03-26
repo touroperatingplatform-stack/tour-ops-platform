@@ -120,7 +120,7 @@ export default function SuperAdminPage() {
   }
 
   async function handleClearDemoData() {
-    if (!confirm('⚠️ DANGER: This will delete ALL demo data!\n\nThis will remove:\n- All guests\n- All guide check-ins\n- All pickup stops\n- All incidents\n- All tour expenses\n- All checklist completions\n- All guest feedback\n- All activity feed entries\n\nUsers/auth, tours, vehicles, brands will be preserved.\n\nContinue?')) {
+    if (!confirm('⚠️ DANGER: This will delete ALL demo data!\n\nThis will remove:\n- All tours created today\n- All guests\n- All guide check-ins\n- All pickup stops\n- All incidents\n- All tour expenses\n- All checklist completions\n- All guest feedback\n- All activity feed entries\n\nUsers/auth, vehicles, brands will be preserved.\n\nContinue?')) {
       return
     }
 
@@ -128,6 +128,16 @@ export default function SuperAdminPage() {
     setDemoMessage(null)
 
     try {
+      const today = new Date().toISOString().split('T')[0]
+      
+      // First get today's tour IDs to delete related data
+      const { data: todaysTours } = await supabase
+        .from('tours')
+        .select('id')
+        .eq('tour_date', today)
+      
+      const todayTourIds = todaysTours?.map(t => t.id) || []
+
       const tables = [
         'guest_feedback',
         'cash_confirmations',
@@ -141,48 +151,39 @@ export default function SuperAdminPage() {
         'guests',
         'external_bookings',
         'activity_feed',
-        'notifications'
+        'push_notifications'
       ]
 
       let deleted = 0
       for (const table of tables) {
-        const { data, error } = await supabase.from(table).delete().neq('id', '00000000-0000-0000-0000-000000000000')
-        const recordCount = (data as unknown as any[])?.length || 0
-        deleted += recordCount
-        if (error) {
-          console.error(`Failed to clear ${table}:`, error)
+        try {
+          const { data, error } = await supabase.from(table).delete().neq('id', '00000000-0000-0000-0000-000000000000')
+          const recordCount = (data as unknown as any[])?.length || 0
+          deleted += recordCount
+          if (error) {
+            console.error(`Failed to clear ${table}:`, error)
+          }
+        } catch (tableError) {
+          console.error(`Error clearing ${table}:`, tableError)
         }
       }
 
-      // Reset tour reports
-      const { error: tourError } = await supabase.from('tours').update({
-        status: 'scheduled',
-        started_at: null,
-        completed_at: null,
-        report_weather: null,
-        report_guest_satisfaction: null,
-        report_incident: null,
-        report_guest_count: null,
-        report_highlights: null,
-        report_issues: null,
-        report_photos: null,
-        report_cash_received: null,
-        report_cash_spent: null,
-        report_cash_to_return: null,
-        report_ticket_count: null,
-        report_expense_receipts: null,
-        report_forgotten_items: false,
-        report_forgotten_items_notes: null,
-        equipment_photo_url: null,
-        van_photo_url: null
-      }).neq('id', '00000000-0000-0000-0000-000000000000')
-
-      if (tourError) {
-        console.error('Failed to reset tours:', tourError)
+      // Delete today's tours
+      if (todayTourIds.length > 0) {
+        const { data: tourData, error: tourError } = await supabase
+          .from('tours')
+          .delete()
+          .in('id', todayTourIds)
+        
+        const tourCount = (tourData as unknown as any[])?.length || 0
+        deleted += tourCount
+        if (tourError) {
+          console.error('Failed to delete tours:', tourError)
+        }
       }
 
-      setDemoMessage({ type: 'success', text: `✅ Cleared ${deleted} demo records. Tours reset to scheduled status.` })
-      loadDemoStats()
+      setDemoMessage({ type: 'success', text: `✅ Cleared ${deleted} demo records.` })
+      setTimeout(() => loadDemoStats(), 1000) // Wait for commits
     } catch (err) {
       setDemoMessage({ type: 'error', text: '❌ Error clearing demo data: ' + (err as Error).message })
     } finally {
@@ -468,32 +469,29 @@ export default function SuperAdminPage() {
       setDemoProgress(`✅ Added ${expenseCount} expenses`)
       await new Promise(resolve => setTimeout(resolve, 500))
 
-      // Step 7: Create guest feedback
+      // Step 7: Create guest feedback (skip guest_id to avoid FK issues)
       setDemoProgress('⭐ Generating guest feedback...')
       let feedbackCount = 0
-      for (const tourId of createdTourIds.slice(0, Math.min(createdTourIds.length, 3))) {
-        const { data: guests } = await supabase.from('guests').select('id').eq('tour_id', tourId).limit(1)
-        if (guests && guests.length > 0) {
-          const ratings = [5, 5, 4, 5, 5]
-          const titles = ['Absolutely Amazing!', 'Great Experience', 'Wonderful Tour', 'Highly Recommend!', 'Perfect Day!']
-          const reviews = [
-            'Best tour of our vacation! Guide was knowledgeable and locations were breathtaking.',
-            'Loved every moment. Well organized and great value for money.',
-            'Amazing experience! Would definitely book again.',
-            'Guide was excellent. Tour exceeded our expectations.',
-            'Highlight of our trip! Everything was perfect.'
-          ]
-          
+      const feedbackRatings = [
+        { rating: 5, title: 'Absolutely Amazing!', text: 'Best tour of our vacation! Guide was knowledgeable and locations were breathtaking.' },
+        { rating: 5, title: 'Great Experience', text: 'Loved every moment. Well organized and great value for money.' },
+        { rating: 4, title: 'Wonderful Tour', text: 'Amazing experience! Would definitely book again.' }
+      ]
+      
+      for (let i = 0; i < Math.min(createdTourIds.length, 3); i++) {
+        const feedback = feedbackRatings[i % feedbackRatings.length]
+        try {
           await supabase.from('guest_feedback').insert({
-            tour_id: tourId,
-            guest_id: guests[0].id,
-            rating: ratings[feedbackCount % ratings.length],
-            review_title: titles[feedbackCount % titles.length],
-            review_text: reviews[feedbackCount % reviews.length],
+            tour_id: createdTourIds[i],
+            rating: feedback.rating,
+            review_title: feedback.title,
+            review_text: feedback.text,
             review_date: now.toISOString(),
             responded: false
           })
           feedbackCount++
+        } catch (fbError) {
+          console.error('Failed to create feedback:', fbError)
         }
       }
 
@@ -532,7 +530,8 @@ export default function SuperAdminPage() {
         type: 'success', 
         text: `✅ Demo data generated successfully!\n\n${createdTourIds.length} tours, ${guestCount} guests, ${stopCount} pickups, ${checkinCount} check-ins, ${incidentCount} incidents, ${expenseCount} expenses, ${feedbackCount} reviews, ${activityCount} activities`
       })
-      loadDemoStats()
+      // Wait for all commits to complete before refreshing stats
+      setTimeout(() => loadDemoStats(), 2000)
 
     } catch (err) {
       setDemoMessage({ type: 'error', text: '❌ Error generating demo data: ' + (err as Error).message })
