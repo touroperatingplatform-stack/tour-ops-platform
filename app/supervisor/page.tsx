@@ -68,7 +68,6 @@ export default function SupervisorDashboard() {
   async function loadDashboardData() {
     const today = new Date().toISOString().split('T')[0]
 
-    // Load tours
     const { data: toursData } = await supabase
       .from('tours')
       .select(`
@@ -99,7 +98,6 @@ export default function SupervisorDashboard() {
         pending_checkins: scheduled
       }))
 
-      // Build active guides list from tours
       const guides = formattedTours
         .filter(t => t.status === 'in_progress')
         .map(t => ({
@@ -112,7 +110,6 @@ export default function SupervisorDashboard() {
       setActiveGuides(guides)
     }
 
-    // Load incidents
     const { data: incidentsData } = await supabase
       .from('incidents')
       .select(`
@@ -138,7 +135,6 @@ export default function SupervisorDashboard() {
       
       setStats(prev => ({ ...prev, open_incidents: openCount }))
 
-      // Generate alerts
       const newAlerts: string[] = []
       if (openCount > 0) newAlerts.push(`${openCount} open incidents require attention`)
       if (stats.pending_checkins > 3) newAlerts.push(`${stats.pending_checkins} tours awaiting guide check-in`)
@@ -194,17 +190,17 @@ export default function SupervisorDashboard() {
   }
 
   return (
-    <div className="h-full flex flex-col space-y-4 w-full">
-      {/* Header */}
-      <div className="space-y-3 shrink-0">
-        <div>
+    <div className="h-full flex flex-col space-y-4 w-full overflow-hidden">
+      {/* Header - Fixed height */}
+      <div className="shrink-0">
+        <div className="mb-2">
           <h1 className="text-xl font-bold text-gray-900">Operations Dashboard</h1>
           <p className="text-sm text-gray-500">
             {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
           </p>
         </div>
 
-        {/* Summary Metrics - Color coded */}
+        {/* Summary Metrics */}
         <div className="grid grid-cols-4 gap-3">
           <div className="bg-white rounded-lg border border-gray-200 p-3 text-center">
             <p className="text-xs text-gray-500 uppercase font-medium">Total Tours</p>
@@ -225,169 +221,172 @@ export default function SupervisorDashboard() {
         </div>
       </div>
 
-      {/* Row 1: Today's Tours + Live Map */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <div className="bg-white rounded-lg border border-gray-200 overflow-hidden flex flex-col">
-          <div className="px-3 py-2 border-b border-gray-200 bg-gray-50 shrink-0">
-            <h2 className="font-semibold text-gray-900 text-sm">Today's Tours</h2>
-          </div>
-          
-          <div className="flex-1 overflow-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-gray-50 text-left text-xs uppercase text-gray-500 sticky top-0">
-                <tr>
-                  <th className="px-3 py-2 font-medium">Time</th>
-                  <th className="px-3 py-2 font-medium">Tour Name</th>
-                  <th className="px-3 py-2 font-medium">Guide</th>
-                  <th className="px-3 py-2 font-medium">Status</th>
-                  <th className="px-3 py-2 font-medium text-right">Guests</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {tours.map((tour) => (
-                  <tr key={tour.id} className="hover:bg-gray-50">
-                    <td className="px-3 py-2">{tour.start_time?.slice(0, 5)}</td>
-                    <td className="px-3 py-2 font-medium text-gray-900">{tour.name}</td>
-                    <td className="px-3 py-2 text-gray-600">{tour.guide.first_name} {tour.guide.last_name}</td>
-                    <td className="px-3 py-2">{getStatusBadge(tour.status)}</td>
-                    <td className="px-3 py-2 text-right">{tour.guest_count || '-'}</td>
-                  </tr>
-                ))}
-                {tours.length === 0 && (
-                  <tr>
-                    <td colSpan={5} className="px-3 py-4 text-center text-gray-500 text-sm">No tours scheduled today.</td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        <LiveMap />
-      </div>
-
-      {/* Row 2: Incident Reports + Widgets Column - 50/50 split */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <div className="bg-white rounded-lg border border-gray-200 overflow-hidden flex flex-col">
-          <div className="px-3 py-2 border-b border-gray-200 bg-gray-50 flex items-center justify-between shrink-0">
-            <h2 className="font-semibold text-gray-900 text-sm">Incident Reports</h2>
-            {stats.open_incidents > 0 && (
-              <span className="bg-red-100 text-red-700 text-xs px-2 py-0.5 rounded-full">{stats.open_incidents} open</span>
-            )}
-          </div>
-          
-          <div className="flex-1 overflow-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-gray-50 text-left text-xs uppercase text-gray-500 sticky top-0">
-                <tr>
-                  <th className="px-3 py-2 font-medium">Time</th>
-                  <th className="px-3 py-2 font-medium">Tour</th>
-                  <th className="px-3 py-2 font-medium">Severity</th>
-                  <th className="px-3 py-2 font-medium">Issue</th>
-                  <th className="px-3 py-2 font-medium text-right">Action</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {incidents.slice(0, 5).map((incident) => (
-                  <tr key={incident.id} className="hover:bg-gray-50">
-                    <td className="px-3 py-2">
-                      {new Date(incident.reported_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                    </td>
-                    <td className="px-3 py-2 font-medium text-gray-900">{incident.tour_name}</td>
-                    <td className="px-3 py-2">{getSeverityBadge(incident.severity)}</td>
-                    <td className="px-3 py-2 text-gray-600 max-w-[120px] truncate">{incident.title}</td>
-                    <td className="px-3 py-2 text-right">
-                      <Link
-                        href="/supervisor/incidents"
-                        className="text-xs bg-blue-50 text-blue-600 px-2 py-1 rounded hover:bg-blue-100 font-medium"
-                      >
-                        Review →
-                      </Link>
-                    </td>
-                  </tr>
-                ))}
-                {incidents.length === 0 && (
-                  <tr>
-                    <td colSpan={5} className="px-3 py-4 text-center text-gray-500 text-sm">No incidents reported.</td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        {/* Widgets Column */}
-        <div className="flex flex-col gap-4">
-          {/* Active Guides Widget */}
-          <div className="bg-white rounded-lg border border-gray-200 p-4 flex-1 overflow-auto">
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="font-semibold text-gray-900 text-sm">Active Guides</h2>
-              <span className="bg-green-100 text-green-700 text-xs px-2 py-0.5 rounded-full">{activeGuides.length} on tour</span>
+      {/* Main Content - Fills remaining space */}
+      <div className="flex-1 flex flex-col gap-4 min-h-0">
+        {/* Row 1: Today's Tours + Live Map */}
+        <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-4 min-h-0">
+          <div className="bg-white rounded-lg border border-gray-200 overflow-hidden flex flex-col">
+            <div className="px-3 py-2 border-b border-gray-200 bg-gray-50 shrink-0">
+              <h2 className="font-semibold text-gray-900 text-sm">Today's Tours</h2>
             </div>
-            <div className="space-y-3">
-              {activeGuides.map((guide) => (
-                <div key={guide.id} className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 rounded-full bg-green-500"></div>
-                    <div>
-                      <p className="text-sm font-medium text-gray-900">{guide.name}</p>
-                      <p className="text-xs text-gray-500">{guide.tour}</p>
+            
+            <div className="flex-1 overflow-auto">
+              <table className="w-full text-sm">
+                <thead className="bg-gray-50 text-left text-xs uppercase text-gray-500 sticky top-0">
+                  <tr>
+                    <th className="px-3 py-2 font-medium">Time</th>
+                    <th className="px-3 py-2 font-medium">Tour Name</th>
+                    <th className="px-3 py-2 font-medium">Guide</th>
+                    <th className="px-3 py-2 font-medium">Status</th>
+                    <th className="px-3 py-2 font-medium text-right">Guests</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {tours.map((tour) => (
+                    <tr key={tour.id} className="hover:bg-gray-50">
+                      <td className="px-3 py-2">{tour.start_time?.slice(0, 5)}</td>
+                      <td className="px-3 py-2 font-medium text-gray-900">{tour.name}</td>
+                      <td className="px-3 py-2 text-gray-600">{tour.guide.first_name} {tour.guide.last_name}</td>
+                      <td className="px-3 py-2">{getStatusBadge(tour.status)}</td>
+                      <td className="px-3 py-2 text-right">{tour.guest_count || '-'}</td>
+                    </tr>
+                  ))}
+                  {tours.length === 0 && (
+                    <tr>
+                      <td colSpan={5} className="px-3 py-4 text-center text-gray-500 text-sm">No tours scheduled today.</td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <LiveMap />
+        </div>
+
+        {/* Row 2: Incident Reports + Widgets Column */}
+        <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-4 min-h-0">
+          <div className="bg-white rounded-lg border border-gray-200 overflow-hidden flex flex-col">
+            <div className="px-3 py-2 border-b border-gray-200 bg-gray-50 flex items-center justify-between shrink-0">
+              <h2 className="font-semibold text-gray-900 text-sm">Incident Reports</h2>
+              {stats.open_incidents > 0 && (
+                <span className="bg-red-100 text-red-700 text-xs px-2 py-0.5 rounded-full">{stats.open_incidents} open</span>
+              )}
+            </div>
+            
+            <div className="flex-1 overflow-auto">
+              <table className="w-full text-sm">
+                <thead className="bg-gray-50 text-left text-xs uppercase text-gray-500 sticky top-0">
+                  <tr>
+                    <th className="px-3 py-2 font-medium">Time</th>
+                    <th className="px-3 py-2 font-medium">Tour</th>
+                    <th className="px-3 py-2 font-medium">Severity</th>
+                    <th className="px-3 py-2 font-medium">Issue</th>
+                    <th className="px-3 py-2 font-medium text-right">Action</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {incidents.slice(0, 5).map((incident) => (
+                    <tr key={incident.id} className="hover:bg-gray-50">
+                      <td className="px-3 py-2">
+                        {new Date(incident.reported_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </td>
+                      <td className="px-3 py-2 font-medium text-gray-900">{incident.tour_name}</td>
+                      <td className="px-3 py-2">{getSeverityBadge(incident.severity)}</td>
+                      <td className="px-3 py-2 text-gray-600 max-w-[120px] truncate">{incident.title}</td>
+                      <td className="px-3 py-2 text-right">
+                        <Link
+                          href="/supervisor/incidents"
+                          className="text-xs bg-blue-50 text-blue-600 px-2 py-1 rounded hover:bg-blue-100 font-medium"
+                        >
+                          Review →
+                        </Link>
+                      </td>
+                    </tr>
+                  ))}
+                  {incidents.length === 0 && (
+                    <tr>
+                      <td colSpan={5} className="px-3 py-4 text-center text-gray-500 text-sm">No incidents reported.</td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Widgets Column */}
+          <div className="flex flex-col gap-4">
+            {/* Active Guides Widget */}
+            <div className="bg-white rounded-lg border border-gray-200 p-3 flex-1 overflow-hidden">
+              <div className="flex items-center justify-between mb-2">
+                <h2 className="font-semibold text-gray-900 text-sm">Active Guides</h2>
+                <span className="bg-green-100 text-green-700 text-xs px-2 py-0.5 rounded-full">{activeGuides.length} on tour</span>
+              </div>
+              <div className="space-y-2">
+                {activeGuides.map((guide) => (
+                  <div key={guide.id} className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                      <div>
+                        <p className="text-sm font-medium text-gray-900">{guide.name}</p>
+                        <p className="text-xs text-gray-500 truncate">{guide.tour}</p>
+                      </div>
                     </div>
+                    <span className="text-xs text-gray-400">{guide.lastCheckIn}</span>
                   </div>
-                  <span className="text-xs text-gray-400">{guide.lastCheckIn}</span>
-                </div>
-              ))}
-              {activeGuides.length === 0 && (
-                <p className="text-sm text-gray-500 text-center py-4">No guides currently on tour</p>
-              )}
+                ))}
+                {activeGuides.length === 0 && (
+                  <p className="text-sm text-gray-500 text-center py-2">No guides on tour</p>
+                )}
+              </div>
             </div>
-          </div>
 
-          {/* Alerts Widget */}
-          <div className="bg-white rounded-lg border border-gray-200 p-4 flex-1 overflow-auto">
-            <h2 className="font-semibold text-gray-900 text-sm mb-3">Alerts</h2>
-            <div className="space-y-2">
-              {alerts.map((alert, i) => (
-                <div key={i} className="flex items-center gap-2 text-sm">
-                  <span className="text-orange-500">⚠️</span>
-                  <span className="text-gray-700">{alert}</span>
-                </div>
-              ))}
-              {alerts.length === 0 && (
-                <p className="text-sm text-gray-500 text-center py-4">No active alerts</p>
-              )}
+            {/* Alerts Widget */}
+            <div className="bg-white rounded-lg border border-gray-200 p-3 flex-1 overflow-hidden">
+              <h2 className="font-semibold text-gray-900 text-sm mb-2">Alerts</h2>
+              <div className="space-y-1">
+                {alerts.map((alert, i) => (
+                  <div key={i} className="flex items-center gap-2 text-sm">
+                    <span className="text-orange-500">⚠️</span>
+                    <span className="text-gray-700 text-xs">{alert}</span>
+                  </div>
+                ))}
+                {alerts.length === 0 && (
+                  <p className="text-sm text-gray-500 text-center py-2">No active alerts</p>
+                )}
+              </div>
             </div>
-          </div>
 
-          {/* Weather Widget - Multi-location */}
-          <div className="bg-white rounded-lg border border-gray-200 p-4 flex-1 flex flex-col overflow-hidden">
-            <h2 className="font-semibold text-gray-900 text-sm mb-3">Weather Conditions</h2>
-            <div className="flex-1 grid grid-cols-3 grid-rows-2 gap-3">
-              {[
-                { loc: 'Isla Mujeres', temp: 29, icon: '☀️', cond: 'Sunny' },
-                { loc: 'Puerto Morelos', temp: 28, icon: '⛅', cond: 'Partly Cloudy' },
-                { loc: 'Playa del Carmen', temp: 30, icon: '☀️', cond: 'Sunny' },
-                { loc: 'Tulum', temp: 31, icon: '☀️', cond: 'Sunny' },
-                { loc: 'Coba', temp: 32, icon: '🌤️', cond: 'Hot' },
-                { loc: 'Chichen Itza', temp: 33, icon: '☀️', cond: 'Clear' },
-              ].map((w) => (
-                <div key={w.loc} className="flex flex-col items-center justify-center gap-1 bg-gray-50 rounded-lg p-3">
-                  <span className="text-2xl">{w.icon}</span>
-                  <p className="text-xs font-medium text-gray-900 text-center">{w.loc}</p>
-                  <p className="text-sm font-bold text-gray-700">{w.temp}°C</p>
-                </div>
-              ))}
+            {/* Weather Widget - 3x2 Grid, no scroll */}
+            <div className="bg-white rounded-lg border border-gray-200 p-3 flex-1 overflow-hidden">
+              <h2 className="font-semibold text-gray-900 text-sm mb-2">Weather Conditions</h2>
+              <div className="grid grid-cols-3 grid-rows-2 gap-2 h-[calc(100%-28px)]">
+                {[
+                  { loc: 'Isla Mujeres', temp: 29, icon: '☀️' },
+                  { loc: 'Puerto Morelos', temp: 28, icon: '⛅' },
+                  { loc: 'Playa del Carmen', temp: 30, icon: '☀️' },
+                  { loc: 'Tulum', temp: 31, icon: '☀️' },
+                  { loc: 'Coba', temp: 32, icon: '🌤️' },
+                  { loc: 'Chichen Itza', temp: 33, icon: '☀️' },
+                ].map((w) => (
+                  <div key={w.loc} className="flex flex-col items-center justify-center bg-gray-50 rounded">
+                    <span className="text-lg">{w.icon}</span>
+                    <p className="text-[10px] font-medium text-gray-900 text-center leading-tight">{w.loc}</p>
+                    <p className="text-xs font-bold text-gray-700">{w.temp}°</p>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Footer Summary Bar - White with colored text */}
-      <div className="bg-white border border-gray-200 rounded-lg p-4 shrink-0">
+      {/* Footer Summary Bar */}
+      <div className="bg-white border border-gray-200 rounded-lg p-3 shrink-0">
         <div className="grid grid-cols-3 gap-4 text-center">
-          <div><p className="text-gray-500 text-xs">Expected Guests</p><p className="text-2xl font-bold text-blue-600">{stats.total_guests}</p></div>
-          <div><p className="text-gray-500 text-xs">No Shows</p><p className="text-2xl font-bold text-red-600">{stats.no_shows}</p></div>
-          <div><p className="text-gray-500 text-xs">Pending Check-In</p><p className="text-2xl font-bold text-yellow-600">{stats.pending_checkins}</p></div>
+          <div><p className="text-gray-500 text-xs">Expected Guests</p><p className="text-xl font-bold text-blue-600">{stats.total_guests}</p></div>
+          <div><p className="text-gray-500 text-xs">No Shows</p><p className="text-xl font-bold text-red-600">{stats.no_shows}</p></div>
+          <div><p className="text-gray-500 text-xs">Pending Check-In</p><p className="text-xl font-bold text-yellow-600">{stats.pending_checkins}</p></div>
         </div>
       </div>
     </div>
