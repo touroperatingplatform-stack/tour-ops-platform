@@ -15,15 +15,15 @@ interface GuideLocation {
   checked_in_at: string
 }
 
-// Riviera Maya bounds (approximate)
-const MAP_BOUNDS = {
-  minLat: 20.0,   // South (Tulum area)
-  maxLat: 21.5,   // North (Cancun area)
-  minLng: -88.0,  // West
-  maxLng: -86.5,  // East
+// Default Riviera Maya bounds
+const DEFAULT_BOUNDS = {
+  minLat: 20.0,
+  maxLat: 21.5,
+  minLng: -88.0,
+  maxLng: -86.5,
 }
 
-// Key locations for reference
+// Reference locations
 const REFERENCE_POINTS = [
   { name: 'Cancun', lat: 21.1619, lng: -86.8515 },
   { name: 'Playa del Carmen', lat: 20.6296, lng: -87.0739 },
@@ -33,15 +33,35 @@ const REFERENCE_POINTS = [
   { name: 'Isla Mujeres', lat: 21.2323, lng: -86.7315 },
 ]
 
+// Calculate bounds from pins with padding
+function calculateBounds(locations: GuideLocation[]) {
+  if (locations.length === 0) return DEFAULT_BOUNDS
+  
+  const lats = locations.map(l => l.lat)
+  const lngs = locations.map(l => l.lng)
+  
+  // Add 10% padding around pins
+  const latPadding = (Math.max(...lats) - Math.min(...lats)) * 0.1 || 0.2
+  const lngPadding = (Math.max(...lngs) - Math.min(...lngs)) * 0.1 || 0.2
+  
+  return {
+    minLat: Math.min(...lats) - latPadding,
+    maxLat: Math.max(...lats) + latPadding,
+    minLng: Math.min(...lngs) - lngPadding,
+    maxLng: Math.max(...lngs) + lngPadding,
+  }
+}
+
 // Convert lat/lng to SVG coordinates (0-100%)
-function latLngToSvg(lat: number, lng: number) {
-  const x = ((lng - MAP_BOUNDS.minLng) / (MAP_BOUNDS.maxLng - MAP_BOUNDS.minLng)) * 100
-  const y = 100 - ((lat - MAP_BOUNDS.minLat) / (MAP_BOUNDS.maxLat - MAP_BOUNDS.minLat)) * 100
+function latLngToSvg(lat: number, lng: number, bounds: typeof DEFAULT_BOUNDS) {
+  const x = ((lng - bounds.minLng) / (bounds.maxLng - bounds.minLng)) * 100
+  const y = 100 - ((lat - bounds.minLat) / (bounds.maxLat - bounds.minLat)) * 100
   return { x: Math.max(0, Math.min(100, x)), y: Math.max(0, Math.min(100, y)) }
 }
 
 export default function LiveMap() {
   const [locations, setLocations] = useState<GuideLocation[]>([])
+  const [bounds, setBounds] = useState(DEFAULT_BOUNDS)
   const [selectedGuide, setSelectedGuide] = useState<GuideLocation | null>(null)
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date())
 
@@ -118,6 +138,8 @@ export default function LiveMap() {
       })
     })
 
+    // Auto-fit bounds to show all pins
+    setBounds(calculateBounds(guideLocations))
     setLocations(guideLocations)
     setLastUpdated(new Date())
   }
@@ -192,7 +214,9 @@ export default function LiveMap() {
           
           {/* Reference location labels */}
           {REFERENCE_POINTS.map((point) => {
-            const pos = latLngToSvg(point.lat, point.lng)
+            const pos = latLngToSvg(point.lat, point.lng, bounds)
+            // Only show if within current bounds
+            if (pos.x < 0 || pos.x > 100 || pos.y < 0 || pos.y > 100) return null
             return (
               <g key={point.name}>
                 <circle
@@ -217,7 +241,7 @@ export default function LiveMap() {
 
           {/* Guide location pins */}
           {locations.map((guide) => {
-            const pos = latLngToSvg(guide.lat, guide.lng)
+            const pos = latLngToSvg(guide.lat, guide.lng, bounds)
             return (
               <g 
                 key={guide.id}
