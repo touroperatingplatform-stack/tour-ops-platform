@@ -1,42 +1,24 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import Link from 'next/link'
 import { supabase } from '@/lib/supabase/client'
 
-interface ExpenseWithDetails {
+interface Expense {
   id: string
-  expense_type: string
+  guide_name: string
+  tour_name: string
   amount: number
-  currency: string
+  category: string
   description: string
-  receipt_url: string
+  receipt_url: string | null
   status: 'pending' | 'approved' | 'rejected'
-  created_at: string
-  tour: {
-    name: string
-    tour_date: string
-  }
-  guide: {
-    first_name: string
-    last_name: string
-  }
+  submitted_at: string
 }
 
-const expenseTypeLabels: Record<string, string> = {
-  fuel: '⛽ Fuel',
-  parking: '🅿️ Parking',
-  toll: '🛣️ Toll',
-  meal: '🍽️ Meal',
-  maintenance: '🔧 Maintenance',
-  supplies: '📦 Supplies',
-  other: '📝 Other',
-}
-
-export default function SupervisorExpensesPage() {
-  const [expenses, setExpenses] = useState<ExpenseWithDetails[]>([])
+export default function ExpensesPage() {
+  const [expenses, setExpenses] = useState<Expense[]>([])
   const [loading, setLoading] = useState(true)
-  const [processing, setProcessing] = useState<string | null>(null)
+  const [filter, setFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('pending')
 
   useEffect(() => {
     loadExpenses()
@@ -46,172 +28,155 @@ export default function SupervisorExpensesPage() {
     const { data } = await supabase
       .from('expenses')
       .select(`
-        id, expense_type, amount, currency, description, receipt_url, status, created_at,
-        tour:tour_id (name, tour_date),
-        guide:guide_id (first_name, last_name)
+        id, amount, category, description, receipt_url, status, submitted_at,
+        guide:guide_id (first_name, last_name),
+        tour:tour_id (name)
       `)
-      .order('created_at', { ascending: false })
+      .order('submitted_at', { ascending: false })
 
     if (data) {
-      // Handle Supabase nested query format
-      const formattedExpenses = data.map((item: any) => ({
-        ...item,
-        tour: item.tour?.[0] || { name: '', tour_date: '' },
-        guide: item.guide?.[0] || { first_name: '', last_name: '' },
-      })) as ExpenseWithDetails[]
-      setExpenses(formattedExpenses)
+      const formatted: Expense[] = data.map((e: any) => ({
+        id: e.id,
+        guide_name: `${e.guide?.first_name || ''} ${e.guide?.last_name || ''}`.trim() || 'Unknown',
+        tour_name: e.tour?.name || 'Unknown',
+        amount: e.amount,
+        category: e.category,
+        description: e.description,
+        receipt_url: e.receipt_url,
+        status: e.status,
+        submitted_at: e.submitted_at
+      }))
+      setExpenses(formatted)
     }
+    setLoading(false)
   }
 
-  async function approveExpense(expenseId: string) {
-    setProcessing(expenseId)
-    const { data: { user } } = await supabase.auth.getUser()
-    
+  async function updateStatus(id: string, newStatus: 'approved' | 'rejected') {
     await supabase
       .from('expenses')
-      .update({
-        status: 'approved',
-        approved_by: user?.id,
-        approved_at: new Date().toISOString(),
-      })
-      .eq('id', expenseId)
+      .update({ status: newStatus })
+      .eq('id', id)
     
-    await loadExpenses()
-    setProcessing(null)
+    setExpenses(expenses.map(e => 
+      e.id === id ? { ...e, status: newStatus } : e
+    ))
   }
 
-  async function rejectExpense(expenseId: string, reason: string) {
-    setProcessing(expenseId)
-    
-    await supabase
-      .from('expenses')
-      .update({
-        status: 'rejected',
-        rejection_reason: reason,
-      })
-      .eq('id', expenseId)
-    
-    await loadExpenses()
-    setProcessing(null)
+  const filteredExpenses = expenses.filter(e => 
+    filter === 'all' ? true : e.status === filter
+  )
+
+  const pendingCount = expenses.filter(e => e.status === 'pending').length
+
+  function formatCurrency(amount: number) {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD'
+    }).format(amount)
   }
 
-  const pendingExpenses = expenses.filter(e => e.status === 'pending')
-  const approvedExpenses = expenses.filter(e => e.status === 'approved')
-  const rejectedExpenses = expenses.filter(e => e.status === 'rejected')
+  function getStatusBadge(status: string) {
+    const styles: Record<string, string> = {
+      pending: 'bg-yellow-100 text-yellow-700',
+      approved: 'bg-green-100 text-green-700',
+      rejected: 'bg-red-100 text-red-700'
+    }
+    return (
+      <span className={`px-2 py-1 rounded-full text-xs font-medium ${styles[status]}`}>
+        {status.charAt(0).toUpperCase() + status.slice(1)}
+      </span>
+    )
+  }
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 p-4">
-        <div className="h-8 w-32 bg-gray-200 rounded animate-pulse mb-4"></div>
-        <div className="h-64 bg-gray-200 rounded-2xl animate-pulse"></div>
+      <div className="h-full flex items-center justify-center">
+        <div className="text-gray-500">Loading expenses...</div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4 pb-24">
-      <div className="max-w-4xl mx-auto">
-        {/* Header */}
-        <div className="mb-6">
-          <Link href="/supervisor" className="text-blue-600 text-sm mb-2 inline-block">
-            ← Back to Dashboard
-          </Link>
-          <h1 className="text-2xl font-bold text-gray-900">Expense Approvals</h1>
-          <p className="text-gray-500 text-sm mt-1">Review and approve guide expenses</p>
+    <div className="h-full flex flex-col space-y-4">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-xl font-bold text-gray-900">Expense Approvals</h1>
+          <p className="text-sm text-gray-500">
+            {pendingCount} pending approval{pendingCount !== 1 ? 's' : ''}
+          </p>
         </div>
-
-        {/* Stats */}
-        <div className="grid grid-cols-3 gap-4 mb-6">
-          <div className="bg-white rounded-2xl p-4 border border-gray-200">
-            <p className="text-sm text-gray-500">Pending</p>
-            <p className="text-2xl font-bold text-orange-600">{pendingExpenses.length}</p>
-          </div>
-          <div className="bg-white rounded-2xl p-4 border border-gray-200">
-            <p className="text-sm text-gray-500">Approved</p>
-            <p className="text-2xl font-bold text-green-600">{approvedExpenses.length}</p>
-          </div>
-          <div className="bg-white rounded-2xl p-4 border border-gray-200">
-            <p className="text-sm text-gray-500">Rejected</p>
-            <p className="text-2xl font-bold text-red-600">{rejectedExpenses.length}</p>
-          </div>
+        <div className="flex gap-2">
+          {(['pending', 'approved', 'rejected', 'all'] as const).map((f) => (
+            <button
+              key={f}
+              onClick={() => setFilter(f)}
+              className={`px-3 py-1.5 rounded-lg text-sm font-medium ${
+                filter === f
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
+              }`}
+            >
+              {f.charAt(0).toUpperCase() + f.slice(1)}
+            </button>
+          ))}
         </div>
+      </div>
 
-        {/* Pending Expenses */}
-        {pendingExpenses.length > 0 && (
-          <section className="mb-6">
-            <h2 className="font-semibold text-gray-900 mb-3">Pending Approval</h2>
-            <div className="space-y-4">
-              {pendingExpenses.map(expense => (
-                <div key={expense.id} className="bg-white rounded-2xl border border-gray-200 p-5">
-                  <div className="flex items-start justify-between mb-4">
-                    <div>
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="text-lg">{expenseTypeLabels[expense.expense_type] || expense.expense_type}</span>
-                      </div>
-                      <p className="text-2xl font-bold text-gray-900">
-                        ${expense.amount.toFixed(2)} {expense.currency}
-                      </p>
-                      <p className="text-sm text-gray-500 mt-1">
-                        {expense.tour.name} • {new Date(expense.tour.tour_date).toLocaleDateString()}
-                      </p>
-                      <p className="text-sm text-gray-600 mt-1">
-                        👤 {expense.guide.first_name} {expense.guide.last_name}
-                      </p>
-                    </div>
-                    <span className="bg-orange-100 text-orange-700 px-3 py-1 rounded-full text-sm font-medium">
-                      Pending
-                    </span>
-                  </div>
-                  
-                  {expense.description && (
-                    <p className="text-gray-600 text-sm mb-4 bg-gray-50 p-3 rounded-lg">
-                      {expense.description}
-                    </p>
-                  )}
-                  
-                  {expense.receipt_url && (
-                    <div className="mb-4">
-                      <a 
-                        href={expense.receipt_url} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="text-blue-600 text-sm hover:underline flex items-center gap-1"
+      {/* Expenses List */}
+      <div className="bg-white rounded-lg border border-gray-200 flex-1 overflow-auto">
+        <table className="w-full text-sm">
+          <thead className="bg-gray-50 text-left text-xs uppercase text-gray-500 sticky top-0">
+            <tr>
+              <th className="px-4 py-3 font-medium">Guide</th>
+              <th className="px-4 py-3 font-medium">Tour</th>
+              <th className="px-4 py-3 font-medium">Category</th>
+              <th className="px-4 py-3 font-medium">Amount</th>
+              <th className="px-4 py-3 font-medium">Status</th>
+              <th className="px-4 py-3 font-medium text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-100">
+            {filteredExpenses.map((expense) => (
+              <tr key={expense.id} className="hover:bg-gray-50">
+                <td className="px-4 py-3 font-medium text-gray-900">{expense.guide_name}</td>
+                <td className="px-4 py-3 text-gray-600">{expense.tour_name}</td>
+                <td className="px-4 py-3">
+                  <span className="capitalize">{expense.category}</span>
+                </td>
+                <td className="px-4 py-3 font-medium">{formatCurrency(expense.amount)}</td>
+                <td className="px-4 py-3">{getStatusBadge(expense.status)}</td>
+                <td className="px-4 py-3 text-right">
+                  {expense.status === 'pending' ? (
+                    <div className="flex items-center justify-end gap-2">
+                      <button
+                        onClick={() => updateStatus(expense.id, 'approved')}
+                        className="bg-green-500 hover:bg-green-600 text-white px-3 py-1.5 rounded text-xs font-medium"
                       >
-                        📄 View Receipt
-                      </a>
+                        Approve
+                      </button>
+                      <button
+                        onClick={() => updateStatus(expense.id, 'rejected')}
+                        className="bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 rounded text-xs font-medium"
+                      >
+                        Reject
+                      </button>
                     </div>
+                  ) : (
+                    <span className="text-gray-400 text-xs">{expense.status}</span>
                   )}
-                  
-                  <div className="flex gap-3">
-                    <button
-                      onClick={() => approveExpense(expense.id)}
-                      disabled={processing === expense.id}
-                      className="flex-1 bg-green-600 text-white py-3 rounded-xl font-semibold hover:bg-green-700 transition-colors disabled:bg-gray-400"
-                    >
-                      {processing === expense.id ? 'Processing...' : '✓ Approve'}
-                    </button>
-                    <button
-                      onClick={() => {
-                        const reason = prompt('Rejection reason:')
-                        if (reason) rejectExpense(expense.id, reason)
-                      }}
-                      disabled={processing === expense.id}
-                      className="flex-1 bg-red-100 text-red-700 border-2 border-red-200 py-3 rounded-xl font-semibold hover:bg-red-200 transition-colors"
-                    >
-                      ✕ Reject
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </section>
-        )}
-
-        {pendingExpenses.length === 0 && (
-          <div className="text-center py-12 bg-white rounded-2xl border border-gray-200">
-            <p className="text-gray-500">✅ All expenses reviewed!</p>
-          </div>
-        )}
+                </td>
+              </tr>
+            ))}
+            {filteredExpenses.length === 0 && (
+              <tr>
+                <td colSpan={6} className="px-4 py-8 text-center text-gray-500">
+                  No {filter !== 'all' ? filter : ''} expenses found.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
       </div>
     </div>
   )
