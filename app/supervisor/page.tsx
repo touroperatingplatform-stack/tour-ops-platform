@@ -11,6 +11,7 @@ interface TourWithDetails {
   start_time: string
   status: string
   guest_count: number
+  guide_id: string
   guide: {
     first_name: string
     last_name: string
@@ -20,10 +21,12 @@ interface TourWithDetails {
 interface IncidentWithDetails {
   id: string
   reported_at: string
+  tour_id: string
   tour_name: string
   severity: string
   status: string
   title: string
+  guide_id: string
   guide_name: string
 }
 
@@ -68,21 +71,29 @@ export default function SupervisorDashboard() {
   async function loadDashboardData() {
     const today = new Date().toISOString().split('T')[0]
 
+    // Get all guides first for lookup
+    const { data: guidesData } = await supabase
+      .from('profiles')
+      .select('id, first_name, last_name')
+      .eq('role', 'guide')
+
+    const guideMap = new Map(guidesData?.map((g: any) => [g.id, g]) || [])
+
     const { data: toursData } = await supabase
       .from('tours')
-      .select(`
-        id, name, start_time, status, guest_count,
-        guide:guide_id (first_name, last_name)
-      `)
+      .select('id, name, start_time, status, guest_count, guide_id')
       .eq('tour_date', today)
       .neq('status', 'cancelled')
       .order('start_time')
 
     if (toursData) {
-      const formattedTours = toursData.map((t: any) => ({
-        ...t,
-        guide: t.guide?.[0] || { first_name: 'Unknown', last_name: '' }
-      })) as TourWithDetails[]
+      const formattedTours = toursData.map((t: any) => {
+        const guide = guideMap.get(t.guide_id)
+        return {
+          ...t,
+          guide: guide || { first_name: 'Unknown', last_name: '' }
+        }
+      }) as TourWithDetails[]
       
       setTours(formattedTours)
       
@@ -98,7 +109,7 @@ export default function SupervisorDashboard() {
         pending_checkins: scheduled
       }))
 
-      const guides = formattedTours
+      const activeGuidesList = formattedTours
         .filter(t => t.status === 'in_progress')
         .map(t => ({
           id: t.id,
@@ -107,25 +118,33 @@ export default function SupervisorDashboard() {
           lastCheckIn: '5 min ago',
           status: 'active' as const
         }))
-      setActiveGuides(guides)
+      setActiveGuides(activeGuidesList)
     }
 
     const { data: incidentsData } = await supabase
       .from('incidents')
-      .select(`
-        id, reported_at, severity, status, title,
-        tour:tour_id (name),
-        guide:guide_id (first_name, last_name)
-      `)
+      .select('id, reported_at, severity, status, title, tour_id, guide_id')
       .gte('reported_at', `${today}T00:00:00`)
       .order('reported_at', { ascending: false })
 
     if (incidentsData) {
-      const formattedIncidents = incidentsData.map((i: any) => ({
-        ...i,
-        tour_name: i.tour?.[0]?.name || 'Unknown',
-        guide_name: `${i.guide?.[0]?.first_name || ''} ${i.guide?.[0]?.last_name || ''}`.trim() || 'Unknown'
-      })) as IncidentWithDetails[]
+      // Get tour names
+      const tourIds = [...new Set(incidentsData.map((i: any) => i.tour_id).filter(Boolean))]
+      const { data: toursInfo } = await supabase
+        .from('tours')
+        .select('id, name')
+        .in('id', tourIds)
+      
+      const tourMap = new Map(toursInfo?.map((t: any) => [t.id, t.name]) || [])
+
+      const formattedIncidents = incidentsData.map((i: any) => {
+        const guide = guideMap.get(i.guide_id)
+        return {
+          ...i,
+          tour_name: tourMap.get(i.tour_id) || 'Unknown',
+          guide_name: guide ? `${guide.first_name} ${guide.last_name}` : 'Unknown'
+        }
+      }) as IncidentWithDetails[]
       
       setIncidents(formattedIncidents)
       
