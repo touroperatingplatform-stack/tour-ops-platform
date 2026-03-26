@@ -218,20 +218,56 @@ export default function LiveMap() {
       </div>
       
       {/* Map container */}
-      <div className="flex-1 relative bg-blue-50 min-h-[300px]">
-        {/* Simple grid background */}
-        <div className="absolute inset-0 opacity-10" 
-          style={{ 
-            backgroundImage: 'linear-gradient(#3b82f6 1px, transparent 1px), linear-gradient(90deg, #3b82f6 1px, transparent 1px)',
-            backgroundSize: '20px 20px'
-          }} 
-        />
-        
-        {/* Map bounds indicator */}
-        <div className="absolute inset-4 border-2 border-blue-200 rounded-lg pointer-events-none" />
-        
+      <div className="flex-1 relative bg-[#a5d8ff] min-h-[300px] overflow-hidden">
+        {/* SVG Map Background - Yucatan Peninsula */}
+        <svg viewBox="0 0 100 100" className="absolute inset-0 w-full h-full" preserveAspectRatio="none">
+          {/* Ocean */}
+          <rect width="100" height="100" fill="#a5d8ff" />
+          
+          {/* Yucatan Peninsula - simplified coastline */}
+          <path
+            d="M 0,35 
+               Q 5,32 10,30 
+               L 15,28 L 20,25 L 25,22 L 30,20 
+               Q 35,18 40,17 L 45,16 L 50,15
+               L 55,14 L 60,13 L 65,12 L 70,11
+               L 75,10 L 80,9 L 85,8 L 90,7
+               L 95,6 L 100,5
+               L 100,0 L 0,0 Z
+               M 0,40
+               Q 10,42 20,45 Q 30,50 40,55
+               Q 50,60 60,65 Q 70,70 80,75
+               L 85,78 L 90,80 L 95,82 L 100,85
+               L 100,100 L 0,100 Z"
+            fill="#86c26d"
+            opacity="0.6"
+          />
+          
+          {/* Coastline border */}
+          <path
+            d="M 0,35 Q 5,32 10,30 L 15,28 L 20,25 L 25,22 L 30,20 Q 35,18 40,17 L 45,16 L 50,15 L 55,14 L 60,13 L 65,12 L 70,11 L 75,10 L 80,9 L 85,8 L 90,7 L 95,6 L 100,5"
+            fill="none"
+            stroke="#6da856"
+            strokeWidth="0.5"
+            opacity="0.8"
+          />
+          <path
+            d="M 0,40 Q 10,42 20,45 Q 30,50 40,55 Q 50,60 60,65 Q 70,70 80,75 L 85,78 L 90,80 L 95,82 L 100,85"
+            fill="none"
+            stroke="#6da856"
+            strokeWidth="0.5"
+            opacity="0.8"
+          />
+          
+          {/* Major cenotes/dots for visual interest */}
+          <circle cx="15" cy="50" r="1" fill="#5ba3d0" opacity="0.4" />
+          <circle cx="30" cy="55" r="0.8" fill="#5ba3d0" opacity="0.4" />
+          <circle cx="50" cy="60" r="1" fill="#5ba3d0" opacity="0.4" />
+          <circle cx="70" cy="70" r="0.8" fill="#5ba3d0" opacity="0.4" />
+        </svg>
+
         {/* Compass / orientation */}
-        <div className="absolute top-2 right-2 text-xs text-blue-400 font-mono">
+        <div className="absolute top-2 right-2 text-xs text-white font-bold drop-shadow-md bg-black/20 px-2 py-1 rounded">
           N
         </div>
 
