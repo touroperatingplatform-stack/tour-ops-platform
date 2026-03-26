@@ -58,7 +58,6 @@ export default function SupervisorDashboard() {
   async function loadDashboardData() {
     const today = new Date().toISOString().split('T')[0]
 
-    // Load tours
     const { data: toursData } = await supabase
       .from('tours')
       .select(`
@@ -90,7 +89,6 @@ export default function SupervisorDashboard() {
       }))
     }
 
-    // Load incidents
     const { data: incidentsData } = await supabase
       .from('incidents')
       .select(`
@@ -134,7 +132,7 @@ export default function SupervisorDashboard() {
       delayed: 'Delayed'
     }
     return (
-      <span className={`px-2 py-1 rounded-full text-xs font-medium ${styles[status] || styles.scheduled}`}>
+      <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${styles[status] || styles.scheduled}`}>
         {labels[status] || status}
       </span>
     )
@@ -148,7 +146,7 @@ export default function SupervisorDashboard() {
       critical: 'bg-red-100 text-red-700'
     }
     return (
-      <span className={`px-2 py-1 rounded-full text-xs font-medium ${styles[severity] || styles.low}`}>
+      <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${styles[severity] || styles.low}`}>
         {severity}
       </span>
     )
@@ -156,84 +154,81 @@ export default function SupervisorDashboard() {
 
   if (loading) {
     return (
-      <div className="p-4 space-y-4">
-        <div className="h-8 w-48 bg-gray-200 rounded animate-pulse" />
-        <div className="grid grid-cols-4 gap-4">
-          {[...Array(4)].map((_, i) => <div key={i} className="h-24 bg-gray-200 rounded-xl animate-pulse" />)}
+      <div className="p-4 space-y-4 max-w-7xl mx-auto">
+        <div className="h-6 w-48 bg-gray-200 rounded animate-pulse" />
+        <div className="grid grid-cols-4 gap-3">
+          {[...Array(4)].map((_, i) => <div key={i} className="h-20 bg-gray-200 rounded-lg animate-pulse" />)}
         </div>
         <div className="grid grid-cols-2 gap-4">
-          {[...Array(4)].map((_, i) => <div key={i} className="h-64 bg-gray-200 rounded-xl animate-pulse" />)}
+          {[...Array(4)].map((_, i) => <div key={i} className="h-40 bg-gray-200 rounded-lg animate-pulse" />)}
         </div>
       </div>
     )
   }
 
   return (
-    <div className="p-4 space-y-6">
-      {/* Header Section */}
-      <div className="space-y-4">
+    <div className="p-4 space-y-4 max-w-7xl mx-auto pb-24">
+      {/* Header */}
+      <div className="space-y-3">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Operations Dashboard</h1>
-          <p className="text-gray-500">
+          <h1 className="text-xl font-bold text-gray-900">Operations Dashboard</h1>
+          <p className="text-sm text-gray-500">
             {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
           </p>
         </div>
 
-        {/* Summary Metrics */}
-        <div className="grid grid-cols-4 gap-4">
-          <div className="bg-white rounded-xl border border-gray-200 p-4 text-center">
+        {/* Summary Metrics - Compact */}
+        <div className="grid grid-cols-4 gap-3">
+          <div className="bg-white rounded-lg border border-gray-200 p-3 text-center">
             <p className="text-xs text-gray-500 uppercase font-medium">Total Tours</p>
-            <p className="text-3xl font-bold text-gray-900 mt-1">{stats.total_tours}</p>
+            <p className="text-2xl font-bold text-gray-900">{stats.total_tours}</p>
           </div>
-          <div className="bg-white rounded-xl border border-gray-200 p-4 text-center">
+          <div className="bg-white rounded-lg border border-gray-200 p-3 text-center">
             <p className="text-xs text-gray-500 uppercase font-medium">Total Guests</p>
-            <p className="text-3xl font-bold text-blue-600 mt-1">{stats.total_guests}</p>
-            <p className="text-xs text-gray-400">expected</p>
+            <p className="text-2xl font-bold text-blue-600">{stats.total_guests}</p>
           </div>
-          <div className="bg-white rounded-xl border border-gray-200 p-4 text-center">
+          <div className="bg-white rounded-lg border border-gray-200 p-3 text-center">
             <p className="text-xs text-gray-500 uppercase font-medium">In Progress</p>
-            <p className="text-3xl font-bold text-green-600 mt-1">{stats.in_progress}</p>
+            <p className="text-2xl font-bold text-green-600">{stats.in_progress}</p>
           </div>
-          <div className="bg-white rounded-xl border border-gray-200 p-4 text-center">
+          <div className="bg-white rounded-lg border border-gray-200 p-3 text-center">
             <p className="text-xs text-gray-500 uppercase font-medium">Open Incidents</p>
-            <p className="text-3xl font-bold text-red-600 mt-1">{stats.open_incidents}</p>
-            {stats.open_incidents > 0 && <p className="text-xs text-red-500">needs attention</p>}
+            <p className="text-2xl font-bold text-red-600">{stats.open_incidents}</p>
           </div>
         </div>
       </div>
 
       {/* Row 1: Today's Tours + Live Map */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Left: Today's Tours Table */}
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-          <div className="px-4 py-3 border-b border-gray-200 bg-gray-50">
-            <h2 className="font-semibold text-gray-900">Today's Tours</h2>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+          <div className="px-3 py-2 border-b border-gray-200 bg-gray-50">
+            <h2 className="font-semibold text-gray-900 text-sm">Today's Tours</h2>
           </div>
           
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50 text-left text-xs uppercase text-gray-500">
+          <div className="overflow-x-auto max-h-40 overflow-y-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-gray-50 text-left text-xs uppercase text-gray-500 sticky top-0">
                 <tr>
-                  <th className="px-4 py-3 font-medium">Time</th>
-                  <th className="px-4 py-3 font-medium">Tour Name</th>
-                  <th className="px-4 py-3 font-medium">Guide</th>
-                  <th className="px-4 py-3 font-medium">Status</th>
-                  <th className="px-4 py-3 font-medium text-right">Guests</th>
+                  <th className="px-3 py-2 font-medium">Time</th>
+                  <th className="px-3 py-2 font-medium">Tour Name</th>
+                  <th className="px-3 py-2 font-medium">Guide</th>
+                  <th className="px-3 py-2 font-medium">Status</th>
+                  <th className="px-3 py-2 font-medium text-right">Guests</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {tours.map((tour) => (
                   <tr key={tour.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-3 text-sm">{tour.start_time?.slice(0, 5)}</td>
-                    <td className="px-4 py-3 font-medium text-gray-900">{tour.name}</td>
-                    <td className="px-4 py-3 text-sm text-gray-600">{tour.guide.first_name} {tour.guide.last_name}</td>
-                    <td className="px-4 py-3">{getStatusBadge(tour.status)}</td>
-                    <td className="px-4 py-3 text-sm text-right">{tour.guest_count || '-'}</td>
+                    <td className="px-3 py-2">{tour.start_time?.slice(0, 5)}</td>
+                    <td className="px-3 py-2 font-medium text-gray-900">{tour.name}</td>
+                    <td className="px-3 py-2 text-gray-600">{tour.guide.first_name} {tour.guide.last_name}</td>
+                    <td className="px-3 py-2">{getStatusBadge(tour.status)}</td>
+                    <td className="px-3 py-2 text-right">{tour.guest_count || '-'}</td>
                   </tr>
                 ))}
                 {tours.length === 0 && (
                   <tr>
-                    <td colSpan={5} className="px-4 py-8 text-center text-gray-500">No tours scheduled today.</td>
+                    <td colSpan={5} className="px-3 py-4 text-center text-gray-500 text-sm">No tours scheduled today.</td>
                   </tr>
                 )}
               </tbody>
@@ -241,47 +236,43 @@ export default function SupervisorDashboard() {
           </div>
         </div>
 
-        {/* Right: Live Map */}
         <LiveMap />
       </div>
 
       {/* Row 2: Incident Reports + Compliance */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Left: Incident Reports Table */}
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-          <div className="px-4 py-3 border-b border-gray-200 bg-gray-50 flex items-center justify-between">
-            <h2 className="font-semibold text-gray-900">Incident Reports</h2>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+          <div className="px-3 py-2 border-b border-gray-200 bg-gray-50 flex items-center justify-between">
+            <h2 className="font-semibold text-gray-900 text-sm">Incident Reports</h2>
             {stats.open_incidents > 0 && (
-              <span className="bg-red-100 text-red-700 text-xs px-2 py-1 rounded-full">{stats.open_incidents} open</span>
+              <span className="bg-red-100 text-red-700 text-xs px-2 py-0.5 rounded-full">{stats.open_incidents} open</span>
             )}
           </div>
           
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50 text-left text-xs uppercase text-gray-500">
+          <div className="overflow-x-auto max-h-40 overflow-y-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-gray-50 text-left text-xs uppercase text-gray-500 sticky top-0">
                 <tr>
-                  <th className="px-4 py-3 font-medium">Time</th>
-                  <th className="px-4 py-3 font-medium">Tour</th>
-                  <th className="px-4 py-3 font-medium">Severity</th>
-                  <th className="px-4 py-3 font-medium">Issue</th>
-                  <th className="px-4 py-3 font-medium">Reported By</th>
-                  <th className="px-4 py-3 font-medium text-right">Action</th>
+                  <th className="px-3 py-2 font-medium">Time</th>
+                  <th className="px-3 py-2 font-medium">Tour</th>
+                  <th className="px-3 py-2 font-medium">Severity</th>
+                  <th className="px-3 py-2 font-medium">Issue</th>
+                  <th className="px-3 py-2 font-medium text-right">Action</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {incidents.slice(0, 5).map((incident) => (
                   <tr key={incident.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-3 text-sm">
+                    <td className="px-3 py-2">
                       {new Date(incident.reported_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </td>
-                    <td className="px-4 py-3 text-sm font-medium text-gray-900">{incident.tour_name}</td>
-                    <td className="px-4 py-3">{getSeverityBadge(incident.severity)}</td>
-                    <td className="px-4 py-3 text-sm text-gray-600 max-w-[150px] truncate">{incident.title}</td>
-                    <td className="px-4 py-3 text-sm text-gray-600">{incident.guide_name}</td>
-                    <td className="px-4 py-3 text-right">
+                    <td className="px-3 py-2 font-medium text-gray-900">{incident.tour_name}</td>
+                    <td className="px-3 py-2">{getSeverityBadge(incident.severity)}</td>
+                    <td className="px-3 py-2 text-gray-600 max-w-[120px] truncate">{incident.title}</td>
+                    <td className="px-3 py-2 text-right">
                       <Link
                         href="/supervisor/incidents"
-                        className="text-xs bg-blue-50 text-blue-600 px-3 py-1.5 rounded-lg hover:bg-blue-100 font-medium"
+                        className="text-xs bg-blue-50 text-blue-600 px-2 py-1 rounded hover:bg-blue-100 font-medium"
                       >
                         Review →
                       </Link>
@@ -290,28 +281,18 @@ export default function SupervisorDashboard() {
                 ))}
                 {incidents.length === 0 && (
                   <tr>
-                    <td colSpan={6} className="px-4 py-8 text-center text-gray-500">No incidents reported.</td>
+                    <td colSpan={5} className="px-3 py-4 text-center text-gray-500 text-sm">No incidents reported.</td>
                   </tr>
                 )}
               </tbody>
             </table>
           </div>
-          
-          {incidents.length > 5 && (
-            <div className="px-4 py-3 border-t border-gray-200 text-center">
-              <Link href="/supervisor/incidents" className="text-sm text-blue-600 hover:text-blue-700 font-medium">
-                View all {incidents.length} incidents →
-              </Link>
-            </div>
-          )}
         </div>
 
-        {/* Right: Compliance + Guest Feedback */}
-        <div className="space-y-6">
-          {/* Compliance Checklist */}
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <h2 className="font-semibold text-gray-900 mb-4">Compliance Checklist</h2>
-            <div className="space-y-3">
+        <div className="grid grid-cols-1 gap-4">
+          <div className="bg-white rounded-lg border border-gray-200 p-4">
+            <h2 className="font-semibold text-gray-900 text-sm mb-3">Compliance Checklist</h2>
+            <div className="space-y-2">
               {[
                 { label: 'Vehicle check', status: 'completed' },
                 { label: 'Safety gear verified', status: 'completed' },
@@ -319,46 +300,33 @@ export default function SupervisorDashboard() {
                 { label: 'Cash counted', status: 'pending' },
                 { label: 'Guide check-in', status: 'in_progress' },
               ].map((item, i) => (
-                <div key={i} className="flex items-center gap-3">
-                  <span className={`w-5 h-5 rounded-full flex items-center justify-center text-xs ${
+                <div key={i} className="flex items-center gap-2">
+                  <span className={`w-4 h-4 rounded-full flex items-center justify-center text-xs ${
                     item.status === 'completed' ? 'bg-green-500 text-white' :
                     item.status === 'in_progress' ? 'bg-blue-500 text-white' :
                     'bg-gray-200 text-gray-500'
                   }`}>
                     {item.status === 'completed' ? '✓' : item.status === 'in_progress' ? '◐' : '○'}
                   </span>
-                  <span className={`text-sm ${
-                    item.status === 'completed' ? 'text-gray-700 line-through' : 'text-gray-900'
-                  }`}>
-                    {item.label}
-                  </span>
+                  <span className={`text-sm ${item.status === 'completed' ? 'text-gray-500 line-through' : 'text-gray-900'}`}>{item.label}</span>
                 </div>
               ))}
             </div>
           </div>
 
-          {/* Guest Feedback */}
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <h2 className="font-semibold text-gray-900 mb-4">Guest Feedback</h2>
-            <div className="space-y-4">
+          <div className="bg-white rounded-lg border border-gray-200 p-4">
+            <h2 className="font-semibold text-gray-900 text-sm mb-3">Guest Feedback</h2>
+            <div className="space-y-3">
               <div>
-                <p className="text-sm text-gray-500">Overall Rating</p>
+                <p className="text-xs text-gray-500">Overall Rating</p>
                 <div className="flex items-baseline gap-2">
-                  <p className="text-3xl font-bold text-gray-900">92%</p>
-                  <span className="text-sm text-green-600">↑ 3%</span>
+                  <p className="text-2xl font-bold text-gray-900">92%</p>
+                  <span className="text-xs text-green-600">↑ 3%</span>
                 </div>
               </div>
-              
-              <div className="border-t border-gray-100 pt-4">
-                <p className="text-sm text-gray-500 mb-2">Recent Comment</p>
-                <blockquote className="text-sm text-gray-700 italic bg-gray-50 p-3 rounded-lg">
-                  "Amazing tour! Guide was very knowledgeable and friendly."
-                </blockquote>
-              </div>
-              
-              <div className="border-t border-gray-100 pt-4 flex items-center justify-between">
-                <span className="text-sm text-gray-500">Pending Reviews</span>
-                <span className="text-lg font-semibold text-orange-600">3</span>
+              <div className="border-t border-gray-100 pt-2">
+                <p className="text-xs text-gray-500 mb-1">Recent Comment</p>
+                <blockquote className="text-xs text-gray-600 italic bg-gray-50 p-2 rounded">"Amazing tour! Guide was very knowledgeable."</blockquote>
               </div>
             </div>
           </div>
@@ -366,20 +334,11 @@ export default function SupervisorDashboard() {
       </div>
 
       {/* Footer Summary Bar */}
-      <div className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-xl p-6 text-white">
-        <div className="grid grid-cols-3 gap-6 text-center">
-          <div>
-            <p className="text-blue-100 text-sm">Expected Guests</p>
-            <p className="text-3xl font-bold">{stats.total_guests}</p>
-          </div>
-          <div>
-            <p className="text-blue-100 text-sm">No Shows</p>
-            <p className="text-3xl font-bold">{stats.no_shows}</p>
-          </div>
-          <div>
-            <p className="text-blue-100 text-sm">Pending Check-In</p>
-            <p className="text-3xl font-bold">{stats.pending_checkins}</p>
-          </div>
+      <div className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-lg p-4 text-white">
+        <div className="grid grid-cols-3 gap-4 text-center">
+          <div><p className="text-blue-100 text-xs">Expected Guests</p><p className="text-2xl font-bold">{stats.total_guests}</p></div>
+          <div><p className="text-blue-100 text-xs">No Shows</p><p className="text-2xl font-bold">{stats.no_shows}</p></div>
+          <div><p className="text-blue-100 text-xs">Pending Check-In</p><p className="text-2xl font-bold">{stats.pending_checkins}</p></div>
         </div>
       </div>
     </div>
