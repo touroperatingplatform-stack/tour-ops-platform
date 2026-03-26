@@ -20,17 +20,14 @@ interface TourWithDetails {
 
 interface IncidentWithDetails {
   id: string
-  reported_at: string
-  resolved_at: string | null
-  assigned_to: string | null
-  location: string
-  tour_id: string
-  tour_name: string
+  created_at: string
+  type: string
+  description: string
   severity: string
   status: string
-  title: string
-  description: string
-  guide_id: string
+  tour_id: string
+  tour_name: string
+  reported_by: string
   guide_name: string
 }
 
@@ -127,8 +124,8 @@ export default function SupervisorDashboard() {
 
     const { data: incidentsData, error: incidentsError } = await supabase
       .from('incidents')
-      .select('id, title, description, severity, status, location, reported_at, resolved_at, assigned_to, tour_id, guide_id')
-      .order('reported_at', { ascending: false })
+      .select('id, type, severity, status, tour_id, reported_by, created_at, description')
+      .order('created_at', { ascending: false })
       .limit(20)
 
     if (incidentsError) console.error('Incidents error:', incidentsError)
@@ -137,19 +134,22 @@ export default function SupervisorDashboard() {
     if (incidentsData && incidentsData.length > 0) {
       // Get tour names
       const tourIds = [...new Set(incidentsData.map((i: any) => i.tour_id).filter(Boolean))]
-      const { data: toursInfo } = await supabase
-        .from('tours')
-        .select('id, name')
-        .in('id', tourIds)
+      const reporterIds = [...new Set(incidentsData.map((i: any) => i.reported_by).filter(Boolean))]
+      
+      const [{ data: toursInfo }, { data: reportersData }] = await Promise.all([
+        supabase.from('tours').select('id, name').in('id', tourIds.length > 0 ? tourIds : ['00000000-0000-0000-0000-000000000000']),
+        supabase.from('profiles').select('id, first_name, last_name').in('id', reporterIds.length > 0 ? reporterIds : ['00000000-0000-0000-0000-000000000000'])
+      ])
       
       const tourMap = new Map(toursInfo?.map((t: any) => [t.id, t.name]) || [])
+      const reporterMap = new Map(reportersData?.map((g: any) => [g.id, g]) || [])
 
       const formattedIncidents = incidentsData.map((i: any) => {
-        const guide = guideMap.get(i.guide_id)
+        const reporter = reporterMap.get(i.reported_by)
         return {
           ...i,
           tour_name: tourMap.get(i.tour_id) || 'Unknown',
-          guide_name: guide ? `${guide.first_name} ${guide.last_name}` : 'Unknown'
+          guide_name: reporter ? `${reporter.first_name} ${reporter.last_name}` : 'Unknown'
         }
       }) as IncidentWithDetails[]
       
@@ -315,11 +315,11 @@ export default function SupervisorDashboard() {
                   {incidents.slice(0, 5).map((incident) => (
                     <tr key={incident.id} className="hover:bg-gray-50">
                       <td className="px-3 py-2">
-                        {new Date(incident.reported_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        {new Date(incident.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       </td>
                       <td className="px-3 py-2 font-medium text-gray-900">{incident.tour_name}</td>
                       <td className="px-3 py-2">{getSeverityBadge(incident.severity)}</td>
-                      <td className="px-3 py-2 text-gray-600 max-w-[120px] truncate">{incident.title}</td>
+                      <td className="px-3 py-2 text-gray-600 max-w-[120px] truncate">{incident.type}</td>
                       <td className="px-3 py-2 text-right">
                         <Link
                           href="/supervisor/incidents"
