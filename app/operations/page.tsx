@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase/client'
-import LiveMap from './components/LiveMap'
+import LiveMap from '../supervisor/components/LiveMap'
 
 interface TourWithDetails {
   id: string
