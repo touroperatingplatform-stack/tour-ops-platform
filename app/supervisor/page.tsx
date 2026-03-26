@@ -122,13 +122,15 @@ export default function SupervisorDashboard() {
       setActiveGuides(activeGuidesList)
     }
 
-    const { data: incidentsData } = await supabase
+    const { data: incidentsData, error: incidentsError } = await supabase
       .from('incidents')
       .select('id, reported_at, severity, status, incident_type, title, tour_id, guide_id')
       .order('reported_at', { ascending: false })
       .limit(20)
 
-    if (incidentsData) {
+    console.log('Incidents query:', { data: incidentsData?.length, error: incidentsError })
+
+    if (incidentsData && incidentsData.length > 0) {
       // Get tour names
       const tourIds = [...new Set(incidentsData.map((i: any) => i.tour_id).filter(Boolean))]
       const { data: toursInfo } = await supabase
