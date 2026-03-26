@@ -172,12 +172,13 @@ export default function GuidesPage() {
 
       {/* Guide Detail Panel */}
       {selectedGuide && (
-        <div className="fixed inset-0 z-50 flex justify-end">
+        <div className="fixed inset-0 z-50 flex justify-end p-4">
           <div 
             className="absolute inset-0 bg-black/50"
             onClick={() => setSelectedGuide(null)}
           />
-          <div className="relative w-full max-w-md bg-white h-full shadow-xl p-6 overflow-auto">
+          <div className="relative w-full max-w-md bg-white h-full shadow-xl rounded-lg overflow-hidden border-4 border-transparent">
+            <div className="h-full overflow-auto p-6">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-lg font-bold text-gray-900">Guide Details</h2>
               <button 
