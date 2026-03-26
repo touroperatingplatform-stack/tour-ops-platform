@@ -131,40 +131,55 @@ export default function SuperAdminPage() {
       const today = new Date().toISOString().split('T')[0]
       
       // First get today's tour IDs to delete related data
-      const { data: todaysTours } = await supabase
+      const { data: todaysTours, error: toursFetchError } = await supabase
         .from('tours')
         .select('id')
         .eq('tour_date', today)
       
+      if (toursFetchError) {
+        console.error('Failed to fetch tours:', toursFetchError)
+      }
+      
       const todayTourIds = todaysTours?.map(t => t.id) || []
+      console.log(`Found ${todayTourIds.length} tours from today to delete`)
 
       const tables = [
+        'activity_feed',
         'guest_feedback',
-        'cash_confirmations',
-        'payments',
-        'checklist_completions',
-        'tour_expenses',
+        'push_notifications',
+        'external_bookings',
+        'guests',
+        'pickup_stops',
+        'guide_checkins',
         'incident_comments',
         'incidents',
-        'guide_checkins',
-        'pickup_stops',
-        'guests',
-        'external_bookings',
-        'activity_feed',
-        'push_notifications'
+        'tour_expenses',
+        'checklist_completions',
+        'payments',
+        'cash_confirmations'
       ]
 
       let deleted = 0
+      const errors: string[] = []
+      
       for (const table of tables) {
         try {
-          const { data, error } = await supabase.from(table).delete().neq('id', '00000000-0000-0000-0000-000000000000')
-          const recordCount = (data as unknown as any[])?.length || 0
-          deleted += recordCount
+          // Delete ALL records (no filter - RLS will handle permissions)
+          const { data, error } = await supabase
+            .from(table)
+            .delete()
+          
           if (error) {
             console.error(`Failed to clear ${table}:`, error)
+            errors.push(`${table}: ${error.message}`)
+          } else {
+            // Supabase doesn't return deleted rows count, so we'll estimate
+            deleted++ // Count tables cleared
+            console.log(`Cleared table: ${table}`)
           }
         } catch (tableError) {
           console.error(`Error clearing ${table}:`, tableError)
+          errors.push(`${table}: ${(tableError as Error).message}`)
         }
       }
 
@@ -175,15 +190,26 @@ export default function SuperAdminPage() {
           .delete()
           .in('id', todayTourIds)
         
-        const tourCount = (tourData as unknown as any[])?.length || 0
-        deleted += tourCount
         if (tourError) {
           console.error('Failed to delete tours:', tourError)
+          errors.push(`tours: ${tourError.message}`)
+        } else {
+          deleted += todayTourIds.length
+          console.log(`Deleted ${todayTourIds.length} tours`)
         }
       }
 
-      setDemoMessage({ type: 'success', text: `✅ Cleared ${deleted} demo records.` })
-      setTimeout(() => loadDemoStats(), 1000) // Wait for commits
+      // Wait for all deletes to propagate
+      await new Promise(resolve => setTimeout(resolve, 2000))
+      
+      // Refresh stats
+      await loadDemoStats()
+
+      const errorMsg = errors.length > 0 ? `\n\n⚠️ Some tables had errors:\n${errors.join('\n')}` : ''
+      setDemoMessage({ 
+        type: errors.length > 0 ? 'error' : 'success', 
+        text: `✅ Cleared demo data.${errorMsg}` 
+      })
     } catch (err) {
       setDemoMessage({ type: 'error', text: '❌ Error clearing demo data: ' + (err as Error).message })
     } finally {
@@ -469,27 +495,62 @@ export default function SuperAdminPage() {
       setDemoProgress(`✅ Added ${expenseCount} expenses`)
       await new Promise(resolve => setTimeout(resolve, 500))
 
-      // Step 7: Create guest feedback (skip guest_id to avoid FK issues)
+      // Step 7: Create guest feedback
       setDemoProgress('⭐ Generating guest feedback...')
       let feedbackCount = 0
-      const feedbackRatings = [
+      const feedbackData = [
         { rating: 5, title: 'Absolutely Amazing!', text: 'Best tour of our vacation! Guide was knowledgeable and locations were breathtaking.' },
         { rating: 5, title: 'Great Experience', text: 'Loved every moment. Well organized and great value for money.' },
         { rating: 4, title: 'Wonderful Tour', text: 'Amazing experience! Would definitely book again.' }
       ]
       
       for (let i = 0; i < Math.min(createdTourIds.length, 3); i++) {
-        const feedback = feedbackRatings[i % feedbackRatings.length]
+        const feedback = feedbackData[i % feedbackData.length]
         try {
-          await supabase.from('guest_feedback').insert({
+          // First, get a guest from this tour
+          const { data: tourGuests } = await supabase
+            .from('guests')
+            .select('id')
+            .eq('tour_id', createdTourIds[i])
+            .limit(1)
+          
+          const guestId = tourGuests && tourGuests.length > 0 ? tourGuests[0].id : null
+          
+          // Insert feedback with or without guest_id depending on schema
+          const feedbackInsert: any = {
             tour_id: createdTourIds[i],
             rating: feedback.rating,
             review_title: feedback.title,
             review_text: feedback.text,
             review_date: now.toISOString(),
             responded: false
-          })
-          feedbackCount++
+          }
+          
+          // Only add guest_id if we have one and the column exists
+          if (guestId) {
+            feedbackInsert.guest_id = guestId
+          }
+          
+          const { error: fbError } = await supabase
+            .from('guest_feedback')
+            .insert(feedbackInsert)
+          
+          if (fbError) {
+            // If it fails due to guest_id FK, try without it
+            if (fbError.code === '23503') {
+              delete feedbackInsert.guest_id
+              const { error: retryError } = await supabase
+                .from('guest_feedback')
+                .insert(feedbackInsert)
+              
+              if (!retryError) feedbackCount++
+              else console.error('Feedback insert failed:', retryError)
+            } else {
+              console.error('Feedback insert failed:', fbError)
+            }
+          } else {
+            feedbackCount++
+          }
         } catch (fbError) {
           console.error('Failed to create feedback:', fbError)
         }
