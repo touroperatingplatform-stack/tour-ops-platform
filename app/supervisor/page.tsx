@@ -20,13 +20,16 @@ interface TourWithDetails {
 
 interface IncidentWithDetails {
   id: string
-  created_at: string
+  reported_at: string
+  resolved_at: string | null
+  assigned_to: string | null
+  location: string
   tour_id: string
   tour_name: string
   severity: string
   status: string
-  incident_type: string
   title: string
+  description: string
   guide_id: string
   guide_name: string
 }
@@ -124,7 +127,8 @@ export default function SupervisorDashboard() {
 
     const { data: incidentsData, error: incidentsError } = await supabase
       .from('incidents')
-      .select('id, incident_type, title, description, severity, status, tour_id, guide_id, created_at')
+      .select('id, title, description, severity, status, location, reported_at, resolved_at, assigned_to, tour_id, guide_id')
+      .order('reported_at', { ascending: false })
       .limit(20)
 
     if (incidentsError) console.error('Incidents error:', incidentsError)
@@ -145,8 +149,7 @@ export default function SupervisorDashboard() {
         return {
           ...i,
           tour_name: tourMap.get(i.tour_id) || 'Unknown',
-          guide_name: guide ? `${guide.first_name} ${guide.last_name}` : 'Unknown',
-          title: i.title || i.incident_type || 'Unknown'
+          guide_name: guide ? `${guide.first_name} ${guide.last_name}` : 'Unknown'
         }
       }) as IncidentWithDetails[]
       
@@ -312,7 +315,7 @@ export default function SupervisorDashboard() {
                   {incidents.slice(0, 5).map((incident) => (
                     <tr key={incident.id} className="hover:bg-gray-50">
                       <td className="px-3 py-2">
-                        {new Date(incident.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        {new Date(incident.reported_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       </td>
                       <td className="px-3 py-2 font-medium text-gray-900">{incident.tour_name}</td>
                       <td className="px-3 py-2">{getSeverityBadge(incident.severity)}</td>
