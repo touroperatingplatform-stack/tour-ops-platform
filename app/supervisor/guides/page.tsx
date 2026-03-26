@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase/client'
-import Link from 'next/link'
 
 interface Guide {
   id: string
@@ -11,7 +10,6 @@ interface Guide {
   email: string
   phone: string
   status: 'active' | 'inactive' | 'on_tour'
-  current_tour?: string
 }
 
 interface Tour {
@@ -71,7 +69,7 @@ export default function GuidesPage() {
       .limit(5)
 
     if (data) {
-      setGuideTours(data as Tour[])
+      setGuideTours(data)
     }
   }
 
@@ -179,51 +177,52 @@ export default function GuidesPage() {
           />
           <div className="relative w-full max-w-md bg-white h-full shadow-xl rounded-lg overflow-hidden border-4 border-transparent">
             <div className="h-full overflow-auto p-6">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-lg font-bold text-gray-900">Guide Details</h2>
-              <button 
-                onClick={() => setSelectedGuide(null)}
-                className="text-gray-500 hover:text-gray-700"
-              >
-                ✕
-              </button>
-            </div>
-
-            <div className="text-center mb-6">
-              <div className="w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-xl mx-auto mb-3">
-                {selectedGuide.first_name[0]}{selectedGuide.last_name[0]}
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-lg font-bold text-gray-900">Guide Details</h2>
+                <button 
+                  onClick={() => setSelectedGuide(null)}
+                  className="text-gray-500 hover:text-gray-700"
+                >
+                  ✕
+                </button>
               </div>
-              <h3 className="text-lg font-semibold text-gray-900">
-                {selectedGuide.first_name} {selectedGuide.last_name}
-              </h3>
-              <p className="text-sm text-gray-500">{getStatusBadge(selectedGuide.status)}</p>
-            </div>
 
-            <div className="space-y-4 mb-6">
-              <div>
-                <p className="text-xs text-gray-500 uppercase">Email</p>
-                <p className="text-sm text-gray-900">{selectedGuide.email}</p>
-              </div>
-              <div>
-                <p className="text-xs text-gray-500 uppercase">Phone</p>
-                <p className="text-sm text-gray-900">{selectedGuide.phone}</p>
-              </div>
-            </div>
-
-            <div className="border-t pt-4">
-              <h4 className="text-sm font-semibold text-gray-900 mb-3">Upcoming Tours</h4>
-              {guideTours.length > 0 ? (
-                <div className="space-y-2">
-                  {guideTours.map((tour) => (
-                    <div key={tour.id} className="bg-gray-50 rounded p-3">
-                      <p className="text-sm font-medium text-gray-900">{tour.name}</p>
-                      <p className="text-xs text-gray-500">{tour.tour_date} • {tour.guest_count} guests</p>
-                    </div>
-                  ))}
+              <div className="text-center mb-6">
+                <div className="w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-xl mx-auto mb-3">
+                  {selectedGuide.first_name[0]}{selectedGuide.last_name[0]}
                 </div>
-              ) : (
-                <p className="text-sm text-gray-500">No upcoming tours scheduled</p>
-              )}
+                <h3 className="text-lg font-semibold text-gray-900">
+                  {selectedGuide.first_name} {selectedGuide.last_name}
+                </h3>
+                <p className="text-sm text-gray-500">{getStatusBadge(selectedGuide.status)}</p>
+              </div>
+
+              <div className="space-y-4 mb-6">
+                <div>
+                  <p className="text-xs text-gray-500 uppercase">Email</p>
+                  <p className="text-sm text-gray-900">{selectedGuide.email}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500 uppercase">Phone</p>
+                  <p className="text-sm text-gray-900">{selectedGuide.phone}</p>
+                </div>
+              </div>
+
+              <div className="border-t pt-4">
+                <h4 className="text-sm font-semibold text-gray-900 mb-3">Upcoming Tours</h4>
+                {guideTours.length > 0 ? (
+                  <div className="space-y-2">
+                    {guideTours.map((tour) => (
+                      <div key={tour.id} className="bg-gray-50 rounded p-3">
+                        <p className="text-sm font-medium text-gray-900">{tour.name}</p>
+                        <p className="text-xs text-gray-500">{tour.tour_date} • {tour.guest_count} guests</p>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-500">No upcoming tours scheduled</p>
+                )}
+              </div>
             </div>
           </div>
         </div>
