@@ -124,11 +124,12 @@ export default function SupervisorDashboard() {
 
     const { data: incidentsData, error: incidentsError } = await supabase
       .from('incidents')
-      .select('id, reported_at, severity, status, incident_type, title, tour_id, guide_id')
+      .select('*')
       .order('reported_at', { ascending: false })
       .limit(20)
 
-    console.log('Incidents query:', { data: incidentsData?.length, error: incidentsError })
+    if (incidentsError) console.error('Incidents error:', incidentsError)
+    console.log('Incidents query:', { count: incidentsData?.length, error: incidentsError?.message })
 
     if (incidentsData && incidentsData.length > 0) {
       // Get tour names
