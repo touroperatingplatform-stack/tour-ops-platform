@@ -302,8 +302,7 @@ export default function SupervisorDashboard() {
                     item.status === 'completed' ? 'bg-green-500 text-white' :
                     item.status === 'in_progress' ? 'bg-blue-500 text-white' :
                     'bg-gray-200 text-gray-500'
-                  }`}
-003e
+                  }`}>
                     {item.status === 'completed' ? '✓' : item.status === 'in_progress' ? '◐' : '○'}
                   </span>
                   <span className={`text-sm ${item.status === 'completed' ? 'text-gray-500 line-through' : 'text-gray-900'}`}>{item.label}</span>
