@@ -29,6 +29,7 @@ export default function LiveMap() {
 
   async function loadGuideLocations() {
     const today = new Date().toISOString().split('T')[0]
+    console.log('Loading map for date:', today)
     
     // Get active tours
     const { data: tours } = await supabase
@@ -37,15 +38,20 @@ export default function LiveMap() {
       .eq('tour_date', today)
       .in('status', ['in_progress', 'scheduled'])
 
+    console.log('Tours found:', tours?.length || 0)
     if (!tours || tours.length === 0) return
 
     // Get latest checkins for these tours
     const tourIds = tours.map((t: any) => t.id)
+    console.log('Tour IDs:', tourIds)
+    
     const { data: checkins } = await supabase
       .from('guide_checkins')
       .select('tour_id, latitude, longitude, checked_in_at, scheduled_time, minutes_early_or_late')
       .in('tour_id', tourIds)
       .order('checked_in_at', { ascending: false })
+
+    console.log('Checkins found:', checkins?.length || 0)
 
     // Get guide info
     const guideIds = [...new Set(tours.map((t: any) => t.guide_id).filter(Boolean))]
@@ -90,6 +96,7 @@ export default function LiveMap() {
         }
       })
 
+    console.log('Tours with checkins:', guideLocations.length)
     setLocations(guideLocations)
   }
 
