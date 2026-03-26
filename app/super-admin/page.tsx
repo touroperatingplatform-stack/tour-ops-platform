@@ -29,7 +29,6 @@ interface ImportPreview {
   room_number: string
   adults: number
   children: number
-  special_requirements: string
   notes: string
   valid: boolean
   error?: string
@@ -139,8 +138,7 @@ export default function SuperAdminPage() {
         room_number: row.room_number || '',
         adults,
         children,
-        special_requirements: row.special_requirements || row.notes || '',
-        notes: row.notes || '',
+        notes: row.notes || row.special_requirements || '',
         valid,
         error
       })
@@ -214,7 +212,6 @@ export default function SuperAdminPage() {
             room_number: record.room_number || null,
             adults: record.adults,
             children: record.children,
-            special_requirements: record.special_requirements || null,
             notes: record.notes || null,
             checked_in: false,
             no_show: false,
@@ -285,12 +282,12 @@ export default function SuperAdminPage() {
   }
 
   async function handleDownloadTemplate() {
-    const template = `tour_id,first_name,last_name,email,phone,hotel,room_number,adults,children,special_requirements,notes
-TOUR-001,John,Smith,john.smith@email.com,+1-555-0101,Grand Velas Riviera Maya,205,2,0,"Anniversary trip, vegetarian meals",""
-TOUR-001,Sarah,Johnson,sarah.j@email.com,+1-555-0102,Grand Velas Riviera Maya,205,2,0,"Traveling with John",""
-TOUR-002,Michael,Brown,m.brown@email.com,+1-555-0103,Beloved Playa Mujeres,312,2,1,"Family with 8yo child, need car seat",""
-TOUR-002,Lisa,Brown,lisa.b@email.com,+1-555-0104,Beloved Playa Mujeres,312,2,1,"Traveling with Michael",""
-TOUR-002,Emma,Brown,emma.b@email.com,+1-555-0105,Beloved Playa Mujeres,312,0,1,"Child (8 years old)",""
+    const template = `tour_id,first_name,last_name,email,phone,hotel,room_number,adults,children,notes
+TOUR-001,John,Smith,john.smith@email.com,+1-555-0101,Grand Velas Riviera Maya,205,2,0,"Anniversary trip, vegetarian meals"
+TOUR-001,Sarah,Johnson,sarah.j@email.com,+1-555-0102,Grand Velas Riviera Maya,205,2,0,"Traveling with John"
+TOUR-002,Michael,Brown,m.brown@email.com,+1-555-0103,Beloved Playa Mujeres,312,2,1,"Family with 8yo child, need car seat"
+TOUR-002,Lisa,Brown,lisa.b@email.com,+1-555-0104,Beloved Playa Mujeres,312,2,1,"Traveling with Michael"
+TOUR-002,Emma,Brown,emma.b@email.com,+1-555-0105,Beloved Playa Mujeres,312,0,1,"Child (8 years old)"
 `
     const blob = new Blob([template], { type: 'text/csv' })
     const url = URL.createObjectURL(blob)
@@ -626,12 +623,12 @@ TOUR-002,Emma,Brown,emma.b@email.com,+1-555-0105,Beloved Playa Mujeres,312,0,1,"
                   <h3 className="font-semibold text-gray-900 mb-3">CSV Format</h3>
                   <div className="text-sm text-gray-600 space-y-2">
                     <p><strong>Required columns:</strong> tour_id, first_name, last_name</p>
-                    <p><strong>Optional columns:</strong> email, phone, hotel, room_number, adults, children, special_requirements, notes</p>
+                    <p><strong>Optional columns:</strong> email, phone, hotel, room_number, adults, children, notes</p>
                     <p><strong>Example:</strong></p>
                     <code className="block bg-gray-100 p-3 rounded text-xs overflow-x-auto">
-                      tour_id,first_name,last_name,email,hotel,adults,children<br/>
-                      TOUR-001,John,Smith,john@email.com,Grand Velas,2,0<br/>
-                      TOUR-001,Jane,Smith,jane@email.com,Grand Velas,2,0
+                      tour_id,first_name,last_name,email,hotel,adults,children,notes<br/>
+                      TOUR-001,John,Smith,john@email.com,Grand Velas,2,0,"Anniversary trip"<br/>
+                      TOUR-001,Jane,Smith,jane@email.com,Grand Velas,2,0,"Traveling with John"
                     </code>
                   </div>
                 </div>
