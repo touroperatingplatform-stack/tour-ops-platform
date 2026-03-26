@@ -201,16 +201,18 @@ export default function LiveMap() {
           className="w-full h-full"
           preserveAspectRatio="xMidYMid slice"
         >
-          {/* Water background */}
-          <rect width="100" height="100" fill="#dbeafe" />
+          {/* Water background with subtle land indication */}
+          <rect width="100" height="100" fill="#e0f2fe" />
           
-          {/* Land mass (simplified Riviera Maya shape) */}
-          <path
-            d="M 0,30 Q 20,25 40,30 T 80,35 Q 90,40 100,45 L 100,100 L 0,100 Z"
-            fill="#dcfce7"
-            stroke="#86efac"
-            strokeWidth="0.5"
-          />
+          {/* Subtle land/sea pattern */}
+          <defs>
+            <pattern id="water" patternUnits="userSpaceOnUse" width="10" height="10">
+              <rect width="10" height="10" fill="#dbeafe"/>
+              <circle cx="2" cy="2" r="0.5" fill="#93c5fd" opacity="0.3"/>
+              <circle cx="7" cy="6" r="0.3" fill="#93c5fd" opacity="0.2"/>
+            </pattern>
+          </defs>
+          <rect width="100" height="100" fill="url(#water)" />
           
           {/* Reference location labels */}
           {REFERENCE_POINTS.map((point) => {
