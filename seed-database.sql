@@ -96,7 +96,7 @@ DELETE FROM guide_checkins WHERE notes LIKE '[TEST]%';
 DELETE FROM incidents WHERE description LIKE '[TEST]%';
 DELETE FROM expenses WHERE description LIKE '[TEST]%';
 DELETE FROM tours WHERE name LIKE '[TEST]%';
-DELETE FROM vehicles WHERE name LIKE '[TEST]%';
+DELETE FROM vehicles WHERE make LIKE '[TEST]%' OR model LIKE '[TEST]%';
 
 -- ==========================================
 -- STEP 4: CREATE VEHICLES
@@ -109,11 +109,11 @@ DECLARE
 BEGIN
   SELECT company_id, brand_id INTO v_company_id, v_brand_id FROM seed_refs;
 
-  INSERT INTO vehicles (id, company_id, brand_id, name, plate_number, status, capacity, created_at) VALUES
-    ('11111111-1111-1111-1111-111111111111', v_company_id, v_brand_id, '[TEST] Van 1', 'ABC-123', 'in_use', 12, now()),
-    ('22222222-2222-2222-2222-222222222222', v_company_id, v_brand_id, '[TEST] Van 2', 'DEF-456', 'available', 14, now()),
-    ('33333333-3333-3333-3333-333333333333', v_company_id, v_brand_id, '[TEST] Bus 1', 'GHI-789', 'in_use', 40, now()),
-    ('44444444-4444-4444-4444-444444444444', v_company_id, v_brand_id, '[TEST] Bus 2', 'JKL-012', 'maintenance', 40, now())
+  INSERT INTO vehicles (id, company_id, brand_id, make, model, plate_number, status, capacity, year, created_at) VALUES
+    ('11111111-1111-1111-1111-111111111111', v_company_id, v_brand_id, 'Mercedes', '[TEST] Sprinter Van 1', 'ABC-123', 'in_use', 12, 2022, now()),
+    ('22222222-2222-2222-2222-222222222222', v_company_id, v_brand_id, 'Ford', '[TEST] Transit Van 2', 'DEF-456', 'available', 14, 2023, now()),
+    ('33333333-3333-3333-3333-333333333333', v_company_id, v_brand_id, 'Volvo', '[TEST] Tour Bus 1', 'GHI-789', 'in_use', 40, 2021, now()),
+    ('44444444-4444-4444-4444-444444444444', v_company_id, v_brand_id, 'Scania', '[TEST] Tour Bus 2', 'JKL-012', 'maintenance', 40, 2020, now())
   ON CONFLICT (id) DO UPDATE SET 
     status = EXCLUDED.status,
     updated_at = now();
@@ -378,7 +378,7 @@ SELECT 'SEED COMPLETE' as status;
 SELECT 
   (SELECT COUNT(*) FROM profiles WHERE email LIKE '%@tour-ops.com' OR email LIKE '%@lifeoperations.com') as total_users,
   (SELECT COUNT(*) FROM tours WHERE name LIKE '[TEST]%') as test_tours,
-  (SELECT COUNT(*) FROM vehicles WHERE name LIKE '[TEST]%') as test_vehicles,
+  (SELECT COUNT(*) FROM vehicles WHERE make LIKE '[TEST]%' OR model LIKE '[TEST]%') as test_vehicles,
   (SELECT COUNT(*) FROM incidents WHERE description LIKE '[TEST]%') as test_incidents,
   (SELECT COUNT(*) FROM expenses WHERE description LIKE '[TEST]%') as test_expenses,
   (SELECT COUNT(*) FROM guide_checkins WHERE notes LIKE '[TEST]%') as test_checkins;

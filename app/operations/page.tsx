@@ -24,7 +24,8 @@ interface TourWithDetails {
 
 interface Vehicle {
   id: string
-  name: string
+  make: string
+  model: string
   plate_number: string
   status: 'available' | 'in_use' | 'maintenance'
   capacity: number
@@ -62,7 +63,7 @@ export default function OperationsDashboard() {
       .select(`
         id, name, start_time, status, guest_count,
         guide:guide_id (first_name, last_name),
-        vehicle:vehicle_id (id, name, plate_number)
+        vehicle:vehicle_id (id, make, model, plate_number)
       `)
       .eq('tour_date', today)
       .neq('status', 'cancelled')
@@ -228,7 +229,7 @@ export default function OperationsDashboard() {
                 <tbody className="divide-y divide-gray-100">
                   {vehicles.map((vehicle) => (
                     <tr key={vehicle.id} className="hover:bg-gray-50">
-                      <td className="px-3 py-2 font-medium text-gray-900">{vehicle.name}</td>
+                      <td className="px-3 py-2 font-medium text-gray-900">{vehicle.make} {vehicle.model}</td>
                       <td className="px-3 py-2 text-gray-600">{vehicle.plate_number}</td>
                       <td className="px-3 py-2">{getVehicleStatusBadge(vehicle.status)}</td>
                       <td className="px-3 py-2 text-right text-gray-600">{vehicle.capacity}</td>
@@ -310,7 +311,7 @@ export default function OperationsDashboard() {
                     <tr key={tour.id} className="hover:bg-gray-50">
                       <td className="px-3 py-2 font-medium text-gray-900">{tour.name}</td>
                       <td className="px-3 py-2 text-gray-600">{tour.guide.first_name} {tour.guide.last_name}</td>
-                      <td className="px-3 py-2 text-gray-600">{tour.vehicle?.name || 'Unassigned'}</td>
+                      <td className="px-3 py-2 text-gray-600">{tour.vehicle ? `${tour.vehicle.make} ${tour.vehicle.model}` : 'Unassigned'}</td>
                       <td className="px-3 py-2">{getStatusBadge(tour.status)}</td>
                     </tr>
                   ))}
