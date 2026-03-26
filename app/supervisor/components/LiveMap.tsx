@@ -26,13 +26,17 @@ export default function LiveMap() {
 
   async function loadGuideLocations() {
     const today = new Date().toISOString().split('T')[0]
+    console.log('[LiveMap] Loading for date:', today)
     
     // Get tours for today
-    const { data: tours } = await supabase
+    const { data: tours, error: toursError } = await supabase
       .from('tours')
       .select('id, name, start_time, status, guide_id')
       .eq('tour_date', today)
       .in('status', ['in_progress', 'scheduled'])
+    
+    if (toursError) console.error('[LiveMap] Tours error:', toursError)
+    console.log('[LiveMap] Tours found:', tours?.length || 0, tours)
 
     if (!tours || tours.length === 0) {
       setLocations([])
@@ -40,13 +44,17 @@ export default function LiveMap() {
     }
 
     const tourIds = tours.map((t: any) => t.id)
+    console.log('[LiveMap] Tour IDs:', tourIds)
     
     // Get latest checkins for these tours
-    const { data: checkins } = await supabase
+    const { data: checkins, error: checkinsError } = await supabase
       .from('guide_checkins')
       .select('tour_id, latitude, longitude, checked_in_at, minutes_early_or_late')
       .in('tour_id', tourIds)
       .order('checked_in_at', { ascending: false })
+    
+    if (checkinsError) console.error('[LiveMap] Checkins error:', checkinsError)
+    console.log('[LiveMap] Checkins found:', checkins?.length || 0, checkins)
 
     // Get latest checkin per tour
     const latestCheckins = new Map()
