@@ -1,0 +1,34 @@
+# Git Backup Information
+
+**Tag Name:** `backup-2026-03-26-pre-enhancements`
+
+## Restore Code to This Backup
+
+```bash
+# See the tag
+git tag -l
+
+# Checkout this backup (detached HEAD)
+git checkout backup-2026-03-26-pre-enhancements
+
+# Or create a branch from this backup
+git checkout -b restore-2026-03-26 backup-2026-03-26-pre-enhancements
+
+# Or reset current branch to this backup (WARNING: overwrites current code)
+git reset --hard backup-2026-03-26-pre-enhancements
+```
+
+## Push/Pull This Tag
+
+```bash
+# Push tag to remote
+git push origin backup-2026-03-26-pre-enhancements
+
+# Pull tag from remote
+git fetch origin --tags
+```
+
+## Backup Date
+- **Created:** 2026-03-26 14:11 CST
+- **Commit Hash:** See `git rev-parse backup-2026-03-26-pre-enhancements`
+- **Status:** Pre-enhancement (before guest import, feedback, cash advance features)
