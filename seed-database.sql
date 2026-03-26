@@ -147,7 +147,7 @@ BEGIN
     pickup_location, dropoff_location, price, created_by,
     created_at, updated_at
   ) VALUES (
-    'tour-001-1111-1111-1111-111111111111',
+    '11111111-1111-1111-1111-111111111111',
     v_company_id, v_brand_id,
     '[TEST] Chichen Itza Sunrise',
     CURRENT_DATE, '06:00', 480,
@@ -166,7 +166,7 @@ BEGIN
     pickup_location, dropoff_location, price, created_by,
     created_at, updated_at
   ) VALUES (
-    'tour-002-2222-2222-2222-222222222222',
+    '22222222-2222-2222-2222-222222222222',
     v_company_id, v_brand_id,
     '[TEST] Tulum Express',
     CURRENT_DATE, '09:00', 300,
@@ -185,7 +185,7 @@ BEGIN
     pickup_location, dropoff_location, price, created_by,
     created_at, updated_at
   ) VALUES (
-    'tour-003-3333-3333-3333-333333333333',
+    '33333333-3333-3333-3333-333333333333',
     v_company_id, v_brand_id,
     '[TEST] Isla Mujeres Catamaran',
     CURRENT_DATE, '13:00', 360,
@@ -204,7 +204,7 @@ BEGIN
     pickup_location, dropoff_location, price, created_by,
     created_at, updated_at
   ) VALUES (
-    'tour-004-4444-4444-4444-444444444444',
+    '44444444-4444-4444-4444-444444444444',
     v_company_id, v_brand_id,
     '[TEST] Cenote Snorkeling',
     CURRENT_DATE, '15:00', 240,
@@ -234,15 +234,15 @@ BEGIN
     notes, created_at
   ) VALUES 
     -- Carlos check-in (Chichen Itza route)
-    ('check-001-1111-1111-1111-111111111111',
-     'tour-001-1111-1111-1111-111111111111', v_brand_id, 'd2cda25c-35c2-49ac-949c-bc52486d27a0',
+    ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa1',
+     '11111111-1111-1111-1111-111111111111', v_brand_id, 'd2cda25c-35c2-49ac-949c-bc52486d27a0',
      'pickup', now() - interval '2 hours',
      20.6843, -88.5678, 15.5, '06:00:00', -5,
      '[TEST] Departed on time, smooth traffic', now()),
     
     -- Maria check-in (at Tulum)
-    ('check-002-2222-2222-2222-222222222222',
-     'tour-002-2222-2222-2222-222222222222', v_brand_id, 'cbbb22ba-178a-4a1d-ba49-d9f412f88b03',
+    ('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbb1',
+     '22222222-2222-2222-2222-222222222222', v_brand_id, 'cbbb22ba-178a-4a1d-ba49-d9f412f88b03',
      'arrival', now() - interval '1 hour',
      20.2150, -87.4290, 8.2, '09:00:00', 0,
      '[TEST] Arrived at Tulum, guests exploring', now())
@@ -266,22 +266,22 @@ BEGIN
     resolved_at, resolution_notes, photo_urls, created_at, updated_at
   ) VALUES 
     -- Open incident - Carlos
-    ('inc-001-1111-1111-1111-111111111111',
-     'tour-001-1111-1111-1111-111111111111', v_carlos_id, v_carlos_id,
+    ('cccccccc-cccc-cccc-cccc-ccccccccccc1',
+     '11111111-1111-1111-1111-111111111111', v_carlos_id, v_carlos_id,
      'guest_complaint', 'low', 
      '[TEST] Guest feeling unwell. One guest reports motion sickness on van to Chichen Itza. Provided water and medication.',
      'reported', NULL, NULL, ARRAY[]::text[], now(), now()),
 
     -- Acknowledged incident - Maria
-    ('inc-002-2222-2222-2222-222222222222',
-     'tour-002-2222-2222-2222-222222222222', v_maria_id, v_maria_id,
+    ('dddddddd-dddd-dddd-dddd-dddddddddddd2',
+     '22222222-2222-2222-2222-222222222222', v_maria_id, v_maria_id,
      'traffic_delay', 'medium',
      '[TEST] Delayed departure - traffic. Heavy traffic from Playa del Carmen, departed 15 min late.',
      'acknowledged', NULL, NULL, ARRAY[]::text[], now(), now()),
 
     -- Closed incident - Carlos
-    ('inc-003-3333-3333-3333-333333333333',
-     'tour-001-1111-1111-1111-111111111111', v_carlos_id, v_carlos_id,
+    ('eeeeeeee-eeee-eeee-eeee-eeeeeeeeeee3',
+     '11111111-1111-1111-1111-111111111111', v_carlos_id, v_carlos_id,
      'other', 'low',
      '[TEST] Lost sunglasses. Guest left sunglasses at pickup location. Retrieved by guide.',
      'closed', now() - interval '1 hour', 'Items recovered and returned', ARRAY[]::text[], now(), now())
@@ -309,32 +309,32 @@ BEGIN
     created_by, created_at
   ) VALUES 
     -- Carlos - Pending
-    ('exp-001-1111-1111-1111-111111111111',
-     v_carlos_id, 'tour-001-1111-1111-1111-111111111111',
+    ('ffffffff-ffff-ffff-ffff-fffffffffff1',
+     v_carlos_id, '11111111-1111-1111-1111-111111111111',
      450.00, 'fuel',
      '[TEST] Fuel refill for Chichen Itza trip',
      NULL, 'pending', CURRENT_DATE,
      v_carlos_id, now() - interval '30 minutes'),
 
     -- Maria - Pending
-    ('exp-002-2222-2222-2222-222222222222',
-     v_maria_id, 'tour-002-2222-2222-2222-222222222222',
+    ('00000000-0000-0000-0000-000000000002',
+     v_maria_id, '22222222-2222-2222-2222-222222222222',
      120.00, 'parking',
      '[TEST] Tulum ruins parking fee',
      NULL, 'pending', CURRENT_DATE,
      v_maria_id, now() - interval '1 hour'),
 
     -- Carlos - Approved
-    ('exp-003-3333-3333-3333-333333333333',
-     v_carlos_id, 'tour-001-1111-1111-1111-111111111111',
+    ('11111111-1111-1111-1111-111111111113',
+     v_carlos_id, '11111111-1111-1111-1111-111111111111',
      85.50, 'tolls',
      '[TEST] Highway tolls',
      NULL, 'approved', CURRENT_DATE,
      v_carlos_id, now() - interval '2 hours'),
 
     -- Maria - Rejected
-    ('exp-004-4444-4444-4444-444444444444',
-     v_maria_id, 'tour-002-2222-2222-2222-222222222222',
+    ('22222222-2222-2222-2222-222222222224',
+     v_maria_id, '22222222-2222-2222-2222-222222222222',
      250.00, 'other',
      '[TEST] Personal meal (not covered)',
      NULL, 'rejected', CURRENT_DATE,
@@ -348,12 +348,12 @@ BEGIN
   UPDATE expenses SET 
     approved_by = v_elena_id,
     approved_at = now() - interval '1 hour'
-  WHERE id = 'exp-003-3333-3333-3333-333333333333';
+  WHERE id = '11111111-1111-1111-1111-111111111113';
 
   UPDATE expenses SET 
     approved_by = v_elena_id,
     rejection_reason = 'Personal expenses not covered per policy'
-  WHERE id = 'exp-004-4444-4444-4444-444444444444';
+  WHERE id = '22222222-2222-2222-2222-222222222224';
 
 END $$;
 
