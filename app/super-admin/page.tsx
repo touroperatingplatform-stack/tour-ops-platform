@@ -518,7 +518,7 @@ export default function SuperAdminPage() {
       setDemoProgress(`✅ Added ${expenseCount} expenses`)
       await new Promise(resolve => setTimeout(resolve, 500))
 
-      // Step 7: Create guest feedback (no guest_id - table doesn't have that column)
+      // Step 7: Create guest feedback (minimal fields - table schema is limited)
       setDemoProgress('⭐ Generating guest feedback...')
       let feedbackCount = 0
       const feedbackData = [
@@ -530,16 +530,14 @@ export default function SuperAdminPage() {
       for (let i = 0; i < Math.min(createdTourIds.length, 3); i++) {
         const feedback = feedbackData[i % feedbackData.length]
         try {
-          // Insert feedback without guest_id (table schema doesn't have it)
+          // Insert only the core fields that definitely exist
           const { error: fbError } = await supabase
             .from('guest_feedback')
             .insert({
               tour_id: createdTourIds[i],
               rating: feedback.rating,
               review_title: feedback.title,
-              review_text: feedback.text,
-              review_date: now.toISOString(),
-              responded: false
+              review_text: feedback.text
             })
           
           if (!fbError) {
