@@ -25,7 +25,7 @@ interface IncidentWithDetails {
   tour_name: string
   severity: string
   status: string
-  title: string
+  type: string
   guide_id: string
   guide_name: string
 }
@@ -123,7 +123,7 @@ export default function SupervisorDashboard() {
 
     const { data: incidentsData } = await supabase
       .from('incidents')
-      .select('id, reported_at, severity, status, title, tour_id, guide_id')
+      .select('id, reported_at, severity, status, type, tour_id, guide_id')
       .gte('reported_at', `${today}T00:00:00`)
       .order('reported_at', { ascending: false })
 
@@ -312,7 +312,7 @@ export default function SupervisorDashboard() {
                       </td>
                       <td className="px-3 py-2 font-medium text-gray-900">{incident.tour_name}</td>
                       <td className="px-3 py-2">{getSeverityBadge(incident.severity)}</td>
-                      <td className="px-3 py-2 text-gray-600 max-w-[120px] truncate">{incident.title}</td>
+                      <td className="px-3 py-2 text-gray-600 max-w-[120px] truncate">{incident.type}</td>
                       <td className="px-3 py-2 text-right">
                         <Link
                           href="/supervisor/incidents"
