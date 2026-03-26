@@ -171,12 +171,12 @@ export default function SuperAdminPage() {
             .delete()
             .gte('created_at', '1970-01-01')
           
-          // If created_at doesn't exist, try using id
+          // If created_at doesn't exist, try using id with neq (not equal)
           if (error && error.message?.includes('column')) {
             const { data: dataById, error: errorById } = await supabase
               .from(table)
               .delete()
-              .not.is('id', 'null')
+              .neq('id', '00000000-0000-0000-0000-000000000000')
             
             data = dataById
             error = errorById
