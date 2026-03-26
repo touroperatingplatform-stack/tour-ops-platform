@@ -33,35 +33,15 @@ const REFERENCE_POINTS = [
   { name: 'Isla Mujeres', lat: 21.2323, lng: -86.7315 },
 ]
 
-// Calculate bounds from pins with padding
-function calculateBounds(locations: GuideLocation[]) {
-  if (locations.length === 0) return DEFAULT_BOUNDS
-  
-  const lats = locations.map(l => l.lat)
-  const lngs = locations.map(l => l.lng)
-  
-  // Add 10% padding around pins
-  const latPadding = (Math.max(...lats) - Math.min(...lats)) * 0.1 || 0.2
-  const lngPadding = (Math.max(...lngs) - Math.min(...lngs)) * 0.1 || 0.2
-  
-  return {
-    minLat: Math.min(...lats) - latPadding,
-    maxLat: Math.max(...lats) + latPadding,
-    minLng: Math.min(...lngs) - lngPadding,
-    maxLng: Math.max(...lngs) + lngPadding,
-  }
-}
-
-// Convert lat/lng to SVG coordinates (0-100%)
-function latLngToSvg(lat: number, lng: number, bounds: typeof DEFAULT_BOUNDS) {
-  const x = ((lng - bounds.minLng) / (bounds.maxLng - bounds.minLng)) * 100
-  const y = 100 - ((lat - bounds.minLat) / (bounds.maxLat - bounds.minLat)) * 100
+// Convert lat/lng to SVG coordinates (0-100%) using fixed bounds
+function latLngToSvg(lat: number, lng: number) {
+  const x = ((lng - TOUR_AREA_BOUNDS.minLng) / (TOUR_AREA_BOUNDS.maxLng - TOUR_AREA_BOUNDS.minLng)) * 100
+  const y = 100 - ((lat - TOUR_AREA_BOUNDS.minLat) / (TOUR_AREA_BOUNDS.maxLat - TOUR_AREA_BOUNDS.minLat)) * 100
   return { x: Math.max(0, Math.min(100, x)), y: Math.max(0, Math.min(100, y)) }
 }
 
 export default function LiveMap() {
   const [locations, setLocations] = useState<GuideLocation[]>([])
-  const [bounds] = useState(TOUR_AREA_BOUNDS) // Fixed bounds for tour area
   const [selectedGuide, setSelectedGuide] = useState<GuideLocation | null>(null)
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date())
 
@@ -214,7 +194,7 @@ export default function LiveMap() {
           
           {/* Reference location labels */}
           {REFERENCE_POINTS.map((point) => {
-            const pos = latLngToSvg(point.lat, point.lng, bounds)
+            const pos = latLngToSvg(point.lat, point.lng)
             // Only show if within current bounds
             if (pos.x < 0 || pos.x > 100 || pos.y < 0 || pos.y > 100) return null
             return (
@@ -241,7 +221,7 @@ export default function LiveMap() {
 
           {/* Guide location pins */}
           {locations.map((guide) => {
-            const pos = latLngToSvg(guide.lat, guide.lng, bounds)
+            const pos = latLngToSvg(guide.lat, guide.lng)
             return (
               <g 
                 key={guide.id}
