@@ -177,7 +177,7 @@ BEGIN
   VALUES
     (v_carlos_id, v_tour1_id, 450.00, 'fuel', '[TEST] Fuel refill for Chichen Itza trip', 'pending', CURRENT_DATE, v_carlos_id, now() - interval '30 minutes'),
     (v_maria_id, v_tour2_id, 120.00, 'parking', '[TEST] Tulum ruins parking fee', 'pending', CURRENT_DATE, v_maria_id, now() - interval '1 hour'),
-    (v_carlos_id, v_tour1_id, 85.50, 'tolls', '[TEST] Highway tolls', 'approved', CURRENT_DATE, v_carlos_id, now() - interval '2 hours'),
+    (v_carlos_id, v_tour1_id, 85.50, 'toll', '[TEST] Highway tolls', 'approved', CURRENT_DATE, v_carlos_id, now() - interval '2 hours'),
     (v_maria_id, v_tour2_id, 250.00, 'other', '[TEST] Personal meal (not covered)', 'rejected', CURRENT_DATE, v_maria_id, now() - interval '3 hours');
     
   -- Update approved/rejected with approver
