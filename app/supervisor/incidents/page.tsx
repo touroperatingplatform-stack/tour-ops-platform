@@ -45,39 +45,37 @@ export default function IncidentsPage() {
   }, [selectedIncident])
 
   async function loadIncidents() {
-    // Get incidents first
     const { data: incidentsData } = await supabase
       .from('incidents')
-      .select('id, title, description, severity, status, location, reported_at, resolved_at, assigned_to, tour_id, guide_id')
-      .order('reported_at', { ascending: false })
+      .select('id, type, description, severity, status, tour_id, reported_by, created_at')
+      .order('created_at', { ascending: false })
 
     if (incidentsData) {
-      // Get tour names and guide names
       const tourIds = [...new Set(incidentsData.map((i: any) => i.tour_id).filter(Boolean))]
-      const guideIds = [...new Set(incidentsData.map((i: any) => i.guide_id).filter(Boolean))]
+      const reporterIds = [...new Set(incidentsData.map((i: any) => i.reported_by).filter(Boolean))]
       
-      const [{ data: toursData }, { data: guidesData }] = await Promise.all([
+      const [{ data: toursData }, { data: reportersData }] = await Promise.all([
         supabase.from('tours').select('id, name').in('id', tourIds.length > 0 ? tourIds : ['00000000-0000-0000-0000-000000000000']),
-        supabase.from('profiles').select('id, first_name, last_name').in('id', guideIds.length > 0 ? guideIds : ['00000000-0000-0000-0000-000000000000'])
+        supabase.from('profiles').select('id, first_name, last_name').in('id', reporterIds.length > 0 ? reporterIds : ['00000000-0000-0000-0000-000000000000'])
       ])
       
       const tourMap = new Map(toursData?.map((t: any) => [t.id, t.name]) || [])
-      const guideMap = new Map(guidesData?.map((g: any) => [g.id, g]) || [])
+      const reporterMap = new Map(reportersData?.map((g: any) => [g.id, g]) || [])
 
       const formatted: Incident[] = incidentsData.map((i: any) => {
-        const guide = guideMap.get(i.guide_id)
+        const reporter = reporterMap.get(i.reported_by)
         return {
           id: i.id,
-          title: i.title,
+          title: i.type,
           description: i.description,
           severity: i.severity,
           status: i.status,
           tour_name: tourMap.get(i.tour_id) || 'Unknown',
-          guide_name: guide ? `${guide.first_name} ${guide.last_name}` : 'Unknown',
-          location: i.location,
-          reported_at: i.reported_at,
-          resolved_at: i.resolved_at,
-          assigned_to: i.assigned_to
+          guide_name: reporter ? `${reporter.first_name} ${reporter.last_name}` : 'Unknown',
+          location: '',
+          reported_at: i.created_at,
+          resolved_at: null,
+          assigned_to: null
         }
       })
       setIncidents(formatted)
