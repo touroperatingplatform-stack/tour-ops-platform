@@ -518,7 +518,7 @@ export default function SuperAdminPage() {
       setDemoProgress(`✅ Added ${expenseCount} expenses`)
       await new Promise(resolve => setTimeout(resolve, 500))
 
-      // Step 7: Create guest feedback
+      // Step 7: Create guest feedback (no guest_id - table doesn't have that column)
       setDemoProgress('⭐ Generating guest feedback...')
       let feedbackCount = 0
       const feedbackData = [
@@ -530,49 +530,22 @@ export default function SuperAdminPage() {
       for (let i = 0; i < Math.min(createdTourIds.length, 3); i++) {
         const feedback = feedbackData[i % feedbackData.length]
         try {
-          // First, get a guest from this tour
-          const { data: tourGuests } = await supabase
-            .from('guests')
-            .select('id')
-            .eq('tour_id', createdTourIds[i])
-            .limit(1)
-          
-          const guestId = tourGuests && tourGuests.length > 0 ? tourGuests[0].id : null
-          
-          // Insert feedback with or without guest_id depending on schema
-          const feedbackInsert: any = {
-            tour_id: createdTourIds[i],
-            rating: feedback.rating,
-            review_title: feedback.title,
-            review_text: feedback.text,
-            review_date: now.toISOString(),
-            responded: false
-          }
-          
-          // Only add guest_id if we have one and the column exists
-          if (guestId) {
-            feedbackInsert.guest_id = guestId
-          }
-          
+          // Insert feedback without guest_id (table schema doesn't have it)
           const { error: fbError } = await supabase
             .from('guest_feedback')
-            .insert(feedbackInsert)
+            .insert({
+              tour_id: createdTourIds[i],
+              rating: feedback.rating,
+              review_title: feedback.title,
+              review_text: feedback.text,
+              review_date: now.toISOString(),
+              responded: false
+            })
           
-          if (fbError) {
-            // If it fails due to guest_id FK, try without it
-            if (fbError.code === '23503') {
-              delete feedbackInsert.guest_id
-              const { error: retryError } = await supabase
-                .from('guest_feedback')
-                .insert(feedbackInsert)
-              
-              if (!retryError) feedbackCount++
-              else console.error('Feedback insert failed:', retryError)
-            } else {
-              console.error('Feedback insert failed:', fbError)
-            }
-          } else {
+          if (!fbError) {
             feedbackCount++
+          } else {
+            console.error('Feedback insert failed:', fbError)
           }
         } catch (fbError) {
           console.error('Failed to create feedback:', fbError)
