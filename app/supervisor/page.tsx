@@ -154,20 +154,17 @@ export default function SupervisorDashboard() {
 
   if (loading) {
     return (
-      <div className="p-4 space-y-4 max-w-7xl mx-auto">
+      <div className="p-4 space-y-4">
         <div className="h-6 w-48 bg-gray-200 rounded animate-pulse" />
         <div className="grid grid-cols-4 gap-3">
           {[...Array(4)].map((_, i) => <div key={i} className="h-20 bg-gray-200 rounded-lg animate-pulse" />)}
-        </div>
-        <div className="grid grid-cols-2 gap-4">
-          {[...Array(4)].map((_, i) => <div key={i} className="h-40 bg-gray-200 rounded-lg animate-pulse" />)}
         </div>
       </div>
     )
   }
 
   return (
-    <div className="p-4 space-y-4 max-w-7xl mx-auto pb-24">
+    <div className="space-y-4">
       {/* Header */}
       <div className="space-y-3">
         <div>
@@ -177,7 +174,7 @@ export default function SupervisorDashboard() {
           </p>
         </div>
 
-        {/* Summary Metrics - Compact */}
+        {/* Summary Metrics */}
         <div className="grid grid-cols-4 gap-3">
           <div className="bg-white rounded-lg border border-gray-200 p-3 text-center">
             <p className="text-xs text-gray-500 uppercase font-medium">Total Tours</p>
@@ -205,9 +202,9 @@ export default function SupervisorDashboard() {
             <h2 className="font-semibold text-gray-900 text-sm">Today's Tours</h2>
           </div>
           
-          <div className="overflow-x-auto max-h-40 overflow-y-auto">
+          <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="bg-gray-50 text-left text-xs uppercase text-gray-500 sticky top-0">
+              <thead className="bg-gray-50 text-left text-xs uppercase text-gray-500">
                 <tr>
                   <th className="px-3 py-2 font-medium">Time</th>
                   <th className="px-3 py-2 font-medium">Tour Name</th>
@@ -249,9 +246,9 @@ export default function SupervisorDashboard() {
             )}
           </div>
           
-          <div className="overflow-x-auto max-h-40 overflow-y-auto">
+          <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="bg-gray-50 text-left text-xs uppercase text-gray-500 sticky top-0">
+              <thead className="bg-gray-50 text-left text-xs uppercase text-gray-500">
                 <tr>
                   <th className="px-3 py-2 font-medium">Time</th>
                   <th className="px-3 py-2 font-medium">Tour</th>
@@ -305,7 +302,8 @@ export default function SupervisorDashboard() {
                     item.status === 'completed' ? 'bg-green-500 text-white' :
                     item.status === 'in_progress' ? 'bg-blue-500 text-white' :
                     'bg-gray-200 text-gray-500'
-                  }`}>
+                  }`}
+003e
                     {item.status === 'completed' ? '✓' : item.status === 'in_progress' ? '◐' : '○'}
                   </span>
                   <span className={`text-sm ${item.status === 'completed' ? 'text-gray-500 line-through' : 'text-gray-900'}`}>{item.label}</span>

@@ -57,25 +57,32 @@ export default function SupervisorLayout({ children }: { children: React.ReactNo
   if (!authorized) return null
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-20">
-      {/* Top Navigation */}
+    <div className="min-h-screen bg-gray-50">
+      {/* Fixed Top Navigation - Height: 56px (h-14) */}
       <TopNav />
 
-      {/* Main Content */}
-      <main className="pt-2">
-        {children}
+      {/* Scrollable Content Container */}
+      <main 
+        className="fixed top-14 left-0 right-0 overflow-y-auto"
+        style={{ 
+          bottom: '72px', // Height of bottom nav + safe area
+        }}
+      >
+        <div className="p-4 max-w-7xl mx-auto">
+          {children}
+        </div>
       </main>
 
-      {/* Bottom Navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50">
-        <div className="flex justify-around py-2">
+      {/* Fixed Bottom Navigation - Height: ~72px */}
+      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50 h-[72px]">
+        <div className="flex justify-around items-center h-full px-4">
           {navItems.map((item) => {
             const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`)
             return (
               <Link
                 key={item.href}
                 href={item.href}
-                className={`flex flex-col items-center py-2 px-4 min-w-[72px] ${
+                className={`flex flex-col items-center justify-center py-2 px-4 min-w-[64px] ${
                   isActive ? 'text-blue-600' : 'text-gray-500'
                 }`}
               >
