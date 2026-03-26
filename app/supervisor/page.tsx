@@ -190,7 +190,7 @@ export default function SupervisorDashboard() {
   }
 
   return (
-    <div className="h-full flex flex-col space-y-4 w-full overflow-hidden">
+    <div className="h-full flex flex-col space-y-4 w-full overflow-hidden px-4 sm:px-6 lg:px-12">
       {/* Header - Fixed height */}
       <div className="shrink-0">
         <div className="mb-2">
