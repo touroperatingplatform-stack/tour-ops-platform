@@ -164,10 +164,12 @@ export default function SuperAdminPage() {
       
       for (const table of tables) {
         try {
-          // Delete ALL records (no filter - RLS will handle permissions)
+          // Supabase requires a WHERE clause - use a filter that matches all records
+          // Using created_at >= 1970 which matches all records with a timestamp
           const { data, error } = await supabase
             .from(table)
             .delete()
+            .gte('created_at', '1970-01-01')
           
           if (error) {
             console.error(`Failed to clear ${table}:`, error)
