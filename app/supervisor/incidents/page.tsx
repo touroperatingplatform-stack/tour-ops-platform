@@ -27,7 +27,7 @@ interface Comment {
 export default function IncidentsPage() {
   const [incidents, setIncidents] = useState<Incident[]>([])
   const [loading, setLoading] = useState(true)
-  const [filter, setFilter] = useState<'all' | 'open' | 'closed'>('open')
+  const [filter, setFilter] = useState<'all' | 'open' | 'closed'>('all')
   const [selectedIncident, setSelectedIncident] = useState<Incident | null>(null)
   const [comments, setComments] = useState<Comment[]>([])
   const [newComment, setNewComment] = useState('')
@@ -49,6 +49,7 @@ export default function IncidentsPage() {
       .from('incidents')
       .select('id, type, description, severity, status, tour_id, reported_by, created_at')
       .order('created_at', { ascending: false })
+      .limit(50)
 
     if (incidentsData) {
       const tourIds = [...new Set(incidentsData.map((i: any) => i.tour_id).filter(Boolean))]
