@@ -20,7 +20,7 @@ interface TourWithDetails {
 
 interface IncidentWithDetails {
   id: string
-  reported_at: string
+  created_at: string
   tour_id: string
   tour_name: string
   severity: string
@@ -124,8 +124,7 @@ export default function SupervisorDashboard() {
 
     const { data: incidentsData, error: incidentsError } = await supabase
       .from('incidents')
-      .select('*')
-      .order('reported_at', { ascending: false })
+      .select('id, incident_type, title, description, severity, status, tour_id, guide_id, created_at')
       .limit(20)
 
     if (incidentsError) console.error('Incidents error:', incidentsError)
@@ -313,7 +312,7 @@ export default function SupervisorDashboard() {
                   {incidents.slice(0, 5).map((incident) => (
                     <tr key={incident.id} className="hover:bg-gray-50">
                       <td className="px-3 py-2">
-                        {new Date(incident.reported_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        {new Date(incident.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       </td>
                       <td className="px-3 py-2 font-medium text-gray-900">{incident.tour_name}</td>
                       <td className="px-3 py-2">{getSeverityBadge(incident.severity)}</td>
