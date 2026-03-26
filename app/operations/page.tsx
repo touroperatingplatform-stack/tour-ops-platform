@@ -109,12 +109,19 @@ export default function OperationsDashboard() {
     // Load vehicles
     const { data: vehiclesData } = await supabase
       .from('vehicles')
-      .select('id, name, plate_number, status, capacity')
-      .order('name')
+      .select('id, model, plate_number, status, capacity')
 
     if (vehiclesData) {
-      setVehicles(vehiclesData as Vehicle[])
-      const inUse = vehiclesData.filter((v: any) => v.status === 'in_use').length
+      const formattedVehicles = vehiclesData.map((v: any) => ({
+        id: v.id,
+        make: v.model.split(' ')[0] || '',
+        model: v.model,
+        plate_number: v.plate_number,
+        status: v.status === 'active' ? 'available' : v.status,
+        capacity: v.capacity
+      }))
+      setVehicles(formattedVehicles)
+      const inUse = formattedVehicles.filter((v: any) => v.status === 'in_use').length
       setStats(prev => ({ ...prev, vehicles_in_use: inUse }))
     }
 
