@@ -1,7 +1,22 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet'
 import { supabase } from '@/lib/supabase/client'
+import L from 'leaflet'
+import 'leaflet/dist/leaflet.css'
+
+// Fix Leaflet default marker icons in Next.js
+import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png'
+import markerIcon from 'leaflet/dist/images/marker-icon.png'
+import markerShadow from 'leaflet/dist/images/marker-shadow.png'
+
+delete (L.Icon.Default.prototype as any)._getIconUrl
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: markerIcon2x.src || markerIcon2x,
+  iconUrl: markerIcon.src || markerIcon,
+  shadowUrl: markerShadow.src || markerShadow,
+})
 
 interface GuideLocation {
   id: string
@@ -15,8 +30,29 @@ interface GuideLocation {
   checked_in_at: string
 }
 
+// Custom marker colors based on status
+const getMarkerIcon = (status: string) => {
+  const color = status === 'late' ? '#ef4444' : 
+                status === 'close' ? '#eab308' : '#22c55e'
+  
+  return L.divIcon({
+    className: 'custom-marker',
+    html: `<div style="
+      width: 24px;
+      height: 24px;
+      background-color: ${color};
+      border: 3px solid white;
+      border-radius: 50%;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+    "></div>`,
+    iconSize: [24, 24],
+    iconAnchor: [12, 12],
+  })
+}
+
 export default function LiveMap() {
   const [locations, setLocations] = useState<GuideLocation[]>([])
+  const [mapCenter, setMapCenter] = useState<[number, number]>([20.5, -87.0]) // Cancun area
 
   useEffect(() => {
     loadGuideLocations()
@@ -26,7 +62,6 @@ export default function LiveMap() {
 
   async function loadGuideLocations() {
     const today = new Date().toISOString().split('T')[0]
-    console.log('[LiveMap] Loading for date:', today)
     
     // Get tours for today
     const { data: tours, error: toursError } = await supabase
@@ -35,16 +70,12 @@ export default function LiveMap() {
       .eq('tour_date', today)
       .in('status', ['in_progress', 'scheduled'])
     
-    if (toursError) console.error('[LiveMap] Tours error:', toursError)
-    console.log('[LiveMap] Tours found:', tours?.length || 0, tours)
-
-    if (!tours || tours.length === 0) {
+    if (toursError || !tours || tours.length === 0) {
       setLocations([])
       return
     }
 
     const tourIds = tours.map((t: any) => t.id)
-    console.log('[LiveMap] Tour IDs:', tourIds)
     
     // Get latest checkins for these tours
     const { data: checkins, error: checkinsError } = await supabase
@@ -53,12 +84,14 @@ export default function LiveMap() {
       .in('tour_id', tourIds)
       .order('checked_in_at', { ascending: false })
     
-    if (checkinsError) console.error('[LiveMap] Checkins error:', checkinsError)
-    console.log('[LiveMap] Checkins found:', checkins?.length || 0, checkins)
+    if (checkinsError || !checkins) {
+      setLocations([])
+      return
+    }
 
     // Get latest checkin per tour
     const latestCheckins = new Map()
-    checkins?.forEach((c: any) => {
+    checkins.forEach((c: any) => {
       if (!latestCheckins.has(c.tour_id)) {
         latestCheckins.set(c.tour_id, c)
       }
@@ -75,6 +108,7 @@ export default function LiveMap() {
     const tourMap = new Map(tours.map((t: any) => [t.id, t]))
 
     const guideLocations: GuideLocation[] = []
+    let totalLat = 0, totalLng = 0, count = 0
     
     latestCheckins.forEach((checkin: any, tourId: string) => {
       const tour = tourMap.get(tourId)
@@ -100,14 +134,23 @@ export default function LiveMap() {
         minutes_to_pickup: minutesToPickup,
         checked_in_at: checkin.checked_in_at,
       })
+      
+      totalLat += checkin.latitude
+      totalLng += checkin.longitude
+      count++
     })
 
+    // Center map on average location of guides
+    if (count > 0) {
+      setMapCenter([totalLat / count, totalLng / count])
+    }
+    
     setLocations(guideLocations)
   }
 
   if (locations.length === 0) {
     return (
-      <div className="bg-gray-50 rounded-lg border border-gray-200 p-6 text-center">
+      <div className="bg-gray-50 rounded-lg border border-gray-200 p-6 text-center h-full flex flex-col justify-center">
         <p className="text-gray-500">No active guides with check-ins</p>
         <p className="text-sm text-gray-400 mt-1">Check-ins will appear here when guides update their location</p>
       </div>
@@ -115,33 +158,67 @@ export default function LiveMap() {
   }
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
-      <div className="p-4 border-b border-gray-200">
+    <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden flex flex-col h-full">
+      <div className="p-4 border-b border-gray-200 shrink-0">
         <h2 className="font-semibold text-gray-900">Live Guide Locations</h2>
         <p className="text-xs text-gray-500 mt-1">
           {locations.length} guides checked in
         </p>
       </div>
       
-      <div className="p-4">
-        {locations.map((guide) => (
-          <div key={guide.id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg mb-2">
-            <div 
-              className="w-3 h-3 rounded-full flex-shrink-0"
-              style={{ 
-                backgroundColor: guide.status === 'late' ? '#ef4444' : 
-                                guide.status === 'close' ? '#eab308' : '#22c55e'
-              }}
-            />
-            <div className="flex-1">
-              <p className="font-medium text-gray-900">{guide.guide_name}</p>
-              <p className="text-xs text-gray-500">{guide.tour_name} • Pickup: {guide.pickup_time}</p>
-              <p className="text-xs text-gray-400">
-                📍 {guide.lat.toFixed(4)}, {guide.lng.toFixed(4)}
-              </p>
-            </div>
+      <div className="flex-1 min-h-0 relative">
+        <MapContainer
+          center={mapCenter}
+          zoom={10}
+          scrollWheelZoom={true}
+          className="h-full w-full"
+          style={{ height: '100%', minHeight: '300px' }}
+        >
+          <TileLayer
+            attribution='© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          />
+          {locations.map((guide) => (
+            <Marker
+              key={guide.id}
+              position={[guide.lat, guide.lng]}
+              icon={getMarkerIcon(guide.status)}
+            >
+              <Popup>
+                <div className="p-2">
+                  <p className="font-semibold">{guide.guide_name}</p>
+                  <p className="text-sm text-gray-600">{guide.tour_name}</p>
+                  <p className="text-sm">Pickup: {guide.pickup_time}</p>
+                  <p className={`text-xs mt-1 ${
+                    guide.status === 'late' ? 'text-red-600' :
+                    guide.status === 'close' ? 'text-yellow-600' : 'text-green-600'
+                  }`}>
+                    {guide.minutes_to_pickup < 0 
+                      ? `${Math.abs(guide.minutes_to_pickup)} min late`
+                      : `${guide.minutes_to_pickup} min to pickup`
+                    }
+                  </p>
+                </div>
+              </Popup>
+            </Marker>
+          ))}
+        </MapContainer>
+        
+        {/* Legend */}
+        <div className="absolute bottom-4 right-4 bg-white/90 backdrop-blur-sm rounded-lg p-2 shadow-lg border border-gray-200 z-[1000]">
+          <div className="flex items-center gap-2 text-xs">
+            <span className="w-3 h-3 rounded-full bg-green-500 border-2 border-white"></span>
+            <span>On time</span>
           </div>
-        ))}
+          <div className="flex items-center gap-2 text-xs mt-1">
+            <span className="w-3 h-3 rounded-full bg-yellow-500 border-2 border-white"></span>
+            <span>Close</span>
+          </div>
+          <div className="flex items-center gap-2 text-xs mt-1">
+            <span className="w-3 h-3 rounded-full bg-red-500 border-2 border-white"></span>
+            <span>Late</span>
+          </div>
+        </div>
       </div>
     </div>
   )
