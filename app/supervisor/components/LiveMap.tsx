@@ -30,24 +30,45 @@ export default function LiveMap() {
   async function loadGuideLocations() {
     const today = new Date().toISOString().split('T')[0]
     
-    // Get active tours with latest check-in
+    // Get active tours
     const { data: tours } = await supabase
       .from('tours')
-      .select(`
-        id, name, start_time, status,
-        guide:guide_id (id, first_name, last_name),
-        checkins:guide_checkins (latitude, longitude, checked_in_at, scheduled_time, minutes_early_or_late)
-      `)
+      .select('id, name, start_time, status, guide_id')
       .eq('tour_date', today)
       .in('status', ['in_progress', 'scheduled'])
-      .order('created_at', { foreignTable: 'guide_checkins', ascending: false })
 
-    if (!tours) return
+    if (!tours || tours.length === 0) return
+
+    // Get latest checkins for these tours
+    const tourIds = tours.map((t: any) => t.id)
+    const { data: checkins } = await supabase
+      .from('guide_checkins')
+      .select('tour_id, latitude, longitude, checked_in_at, scheduled_time, minutes_early_or_late')
+      .in('tour_id', tourIds)
+      .order('checked_in_at', { ascending: false })
+
+    // Get guide info
+    const guideIds = [...new Set(tours.map((t: any) => t.guide_id).filter(Boolean))]
+    const { data: guides } = await supabase
+      .from('profiles')
+      .select('id, first_name, last_name')
+      .in('id', guideIds.length > 0 ? guideIds : ['00000000-0000-0000-0000-000000000000'])
+
+    const guideMap = new Map(guides?.map((g: any) => [g.id, g]) || [])
+    
+    // Get latest checkin per tour
+    const latestCheckins = new Map()
+    checkins?.forEach((c: any) => {
+      if (!latestCheckins.has(c.tour_id)) {
+        latestCheckins.set(c.tour_id, c)
+      }
+    })
 
     const guideLocations: GuideLocation[] = tours
-      .filter((tour: any) => tour.checkins?.length > 0)
+      .filter((tour: any) => latestCheckins.has(tour.id))
       .map((tour: any) => {
-        const checkin = tour.checkins[0]
+        const checkin = latestCheckins.get(tour.id)
+        const guide = guideMap.get(tour.guide_id)
         const pickupTime = new Date(`${today}T${tour.start_time}`)
         const now = new Date()
         const minutesToPickup = Math.floor((pickupTime.getTime() - now.getTime()) / 60000)
@@ -57,8 +78,8 @@ export default function LiveMap() {
         else if (minutesToPickup < 20) status = 'close'
         
         return {
-          id: tour.guide.id,
-          guide_name: `${tour.guide.first_name} ${tour.guide.last_name}`,
+          id: tour.guide_id,
+          guide_name: guide ? `${guide.first_name} ${guide.last_name}` : 'Unknown',
           tour_name: tour.name,
           lat: checkin?.latitude || 21.16,
           lng: checkin?.longitude || -86.82,
