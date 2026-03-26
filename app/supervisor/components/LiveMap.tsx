@@ -218,7 +218,7 @@ export default function LiveMap() {
       </div>
       
       {/* Map container */}
-      <div className="flex-1 relative bg-[#a5d8ff] min-h-[300px] overflow-hidden">
+      <div className="flex-1 relative bg-blue-200 min-h-[300px] overflow-hidden">
         {/* SVG Map Background - Yucatan Peninsula */}
         <svg viewBox="0 0 100 100" className="absolute inset-0 w-full h-full" preserveAspectRatio="none">
           {/* Ocean */}
