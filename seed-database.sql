@@ -96,17 +96,17 @@ DELETE FROM guide_checkins WHERE notes LIKE '[TEST]%';
 DELETE FROM incidents WHERE description LIKE '[TEST]%';
 DELETE FROM expenses WHERE description LIKE '[TEST]%';
 DELETE FROM tours WHERE name LIKE '[TEST]%';
-DELETE FROM vehicles WHERE model LIKE '[TEST]%';
+DELETE FROM vehicles WHERE model LIKE '[TEST]%' OR make LIKE '[TEST]%';
 
 -- ==========================================
 -- STEP 4: CREATE VEHICLES
 -- ==========================================
 
-INSERT INTO vehicles (id, model, plate_number, year, capacity, status, created_at, updated_at) VALUES
-  ('11111111-1111-1111-1111-111111111111', '[TEST] Sprinter Van 1', 'ABC-123', 2022, 12, 'active', now(), now()),
-  ('22222222-2222-2222-2222-222222222222', '[TEST] Transit Van 2', 'DEF-456', 2023, 14, 'active', now(), now()),
-  ('33333333-3333-3333-3333-333333333333', '[TEST] Tour Bus 1', 'GHI-789', 2021, 40, 'active', now(), now()),
-  ('44444444-4444-4444-4444-444444444444', '[TEST] Tour Bus 2', 'JKL-012', 2020, 40, 'maintenance', now(), now())
+INSERT INTO vehicles (id, make, model, plate_number, year, capacity, status, created_at, updated_at) VALUES
+  ('11111111-1111-1111-1111-111111111111', 'Mercedes', '[TEST] Sprinter Van 1', 'ABC-123', 2022, 12, 'active', now(), now()),
+  ('22222222-2222-2222-2222-222222222222', 'Ford', '[TEST] Transit Van 2', 'DEF-456', 2023, 14, 'active', now(), now()),
+  ('33333333-3333-3333-3333-333333333333', 'Volvo', '[TEST] Tour Bus 1', 'GHI-789', 2021, 40, 'active', now(), now()),
+  ('44444444-4444-4444-4444-444444444444', 'Scania', '[TEST] Tour Bus 2', 'JKL-012', 2020, 40, 'maintenance', now(), now())
 ON CONFLICT (id) DO UPDATE SET 
   status = EXCLUDED.status,
   updated_at = now();
