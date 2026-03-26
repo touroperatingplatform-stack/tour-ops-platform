@@ -117,7 +117,7 @@ export default function AdminDashboard() {
       {/* Quick Actions */}
       <section>
         <h2 className="font-semibold text-gray-900 mb-3">Quick Actions</h2>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-3 gap-3">
           <Link 
             href="/admin/tours/new"
             className="bg-white p-4 rounded-2xl border border-gray-200 text-center hover:border-blue-300 transition-colors"
@@ -131,6 +131,13 @@ export default function AdminDashboard() {
           >
             <span className="text-2xl block mb-1">👤</span>
             <span className="font-medium text-gray-900 text-sm">Add User</span>
+          </Link>
+          <Link 
+            href="/admin/data"
+            className="bg-white p-4 rounded-2xl border border-gray-200 text-center hover:border-blue-300 transition-colors"
+          >
+            <span className="text-2xl block mb-1">📊</span>
+            <span className="font-medium text-gray-900 text-sm">Export/Import</span>
           </Link>
         </div>
       </section>
