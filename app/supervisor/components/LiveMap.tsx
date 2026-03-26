@@ -5,7 +5,6 @@ import * as React from 'react'
 import { supabase } from '@/lib/supabase/client'
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet'
 import L from 'leaflet'
-import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 
 // Fix Leaflet default marker icons
