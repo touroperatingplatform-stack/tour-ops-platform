@@ -154,7 +154,7 @@ export default function SupervisorDashboard() {
 
   if (loading) {
     return (
-      <div className="p-4 space-y-4">
+      <div className="h-full flex flex-col space-y-4">
         <div className="h-6 w-48 bg-gray-200 rounded animate-pulse" />
         <div className="grid grid-cols-4 gap-3">
           {[...Array(4)].map((_, i) => <div key={i} className="h-20 bg-gray-200 rounded-lg animate-pulse" />)}
@@ -164,9 +164,9 @@ export default function SupervisorDashboard() {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="h-full flex flex-col space-y-4">
       {/* Header */}
-      <div className="space-y-3">
+      <div className="space-y-3 shrink-0">
         <div>
           <h1 className="text-xl font-bold text-gray-900">Operations Dashboard</h1>
           <p className="text-sm text-gray-500">
@@ -174,37 +174,37 @@ export default function SupervisorDashboard() {
           </p>
         </div>
 
-        {/* Summary Metrics */}
+        {/* Summary Metrics - Fixed colors */}
         <div className="grid grid-cols-4 gap-3">
           <div className="bg-white rounded-lg border border-gray-200 p-3 text-center">
             <p className="text-xs text-gray-500 uppercase font-medium">Total Tours</p>
             <p className="text-2xl font-bold text-gray-900">{stats.total_tours}</p>
           </div>
           <div className="bg-white rounded-lg border border-gray-200 p-3 text-center">
-            <p className="text-xs text-gray-500 uppercase font-medium">Total Guests</p>
+            <p className="text-xs text-blue-600 uppercase font-medium">Expected Guests</p>
             <p className="text-2xl font-bold text-blue-600">{stats.total_guests}</p>
           </div>
           <div className="bg-white rounded-lg border border-gray-200 p-3 text-center">
-            <p className="text-xs text-gray-500 uppercase font-medium">In Progress</p>
-            <p className="text-2xl font-bold text-green-600">{stats.in_progress}</p>
+            <p className="text-xs text-red-600 uppercase font-medium">No Shows</p>
+            <p className="text-2xl font-bold text-red-600">{stats.no_shows}</p>
           </div>
           <div className="bg-white rounded-lg border border-gray-200 p-3 text-center">
-            <p className="text-xs text-gray-500 uppercase font-medium">Open Incidents</p>
-            <p className="text-2xl font-bold text-red-600">{stats.open_incidents}</p>
+            <p className="text-xs text-yellow-600 uppercase font-medium">Pending Check-In</p>
+            <p className="text-2xl font-bold text-yellow-600">{stats.pending_checkins}</p>
           </div>
         </div>
       </div>
 
-      {/* Row 1: Today's Tours + Live Map */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-          <div className="px-3 py-2 border-b border-gray-200 bg-gray-50">
+      {/* Row 1: Today's Tours + Live Map - Fills remaining space */}
+      <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-4 min-h-0">
+        <div className="bg-white rounded-lg border border-gray-200 overflow-hidden flex flex-col">
+          <div className="px-3 py-2 border-b border-gray-200 bg-gray-50 shrink-0">
             <h2 className="font-semibold text-gray-900 text-sm">Today's Tours</h2>
           </div>
           
-          <div className="overflow-x-auto">
+          <div className="flex-1 overflow-auto">
             <table className="w-full text-sm">
-              <thead className="bg-gray-50 text-left text-xs uppercase text-gray-500">
+              <thead className="bg-gray-50 text-left text-xs uppercase text-gray-500 sticky top-0">
                 <tr>
                   <th className="px-3 py-2 font-medium">Time</th>
                   <th className="px-3 py-2 font-medium">Tour Name</th>
@@ -236,19 +236,19 @@ export default function SupervisorDashboard() {
         <LiveMap />
       </div>
 
-      {/* Row 2: Incident Reports + Compliance */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-          <div className="px-3 py-2 border-b border-gray-200 bg-gray-50 flex items-center justify-between">
+      {/* Row 2: Incident Reports + Compliance - Fills remaining space */}
+      <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-4 min-h-0">
+        <div className="bg-white rounded-lg border border-gray-200 overflow-hidden flex flex-col">
+          <div className="px-3 py-2 border-b border-gray-200 bg-gray-50 flex items-center justify-between shrink-0">
             <h2 className="font-semibold text-gray-900 text-sm">Incident Reports</h2>
             {stats.open_incidents > 0 && (
               <span className="bg-red-100 text-red-700 text-xs px-2 py-0.5 rounded-full">{stats.open_incidents} open</span>
             )}
           </div>
           
-          <div className="overflow-x-auto">
+          <div className="flex-1 overflow-auto">
             <table className="w-full text-sm">
-              <thead className="bg-gray-50 text-left text-xs uppercase text-gray-500">
+              <thead className="bg-gray-50 text-left text-xs uppercase text-gray-500 sticky top-0">
                 <tr>
                   <th className="px-3 py-2 font-medium">Time</th>
                   <th className="px-3 py-2 font-medium">Tour</th>
@@ -286,8 +286,8 @@ export default function SupervisorDashboard() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 gap-4">
-          <div className="bg-white rounded-lg border border-gray-200 p-4">
+        <div className="flex flex-col gap-4">
+          <div className="bg-white rounded-lg border border-gray-200 p-4 flex-1 overflow-auto">
             <h2 className="font-semibold text-gray-900 text-sm mb-3">Compliance Checklist</h2>
             <div className="space-y-2">
               {[
@@ -311,7 +311,7 @@ export default function SupervisorDashboard() {
             </div>
           </div>
 
-          <div className="bg-white rounded-lg border border-gray-200 p-4">
+          <div className="bg-white rounded-lg border border-gray-200 p-4 flex-1 overflow-auto">
             <h2 className="font-semibold text-gray-900 text-sm mb-3">Guest Feedback</h2>
             <div className="space-y-3">
               <div>
@@ -327,15 +327,6 @@ export default function SupervisorDashboard() {
               </div>
             </div>
           </div>
-        </div>
-      </div>
-
-      {/* Footer Summary Bar */}
-      <div className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-lg p-4 text-white">
-        <div className="grid grid-cols-3 gap-4 text-center">
-          <div><p className="text-blue-100 text-xs">Expected Guests</p><p className="text-2xl font-bold">{stats.total_guests}</p></div>
-          <div><p className="text-blue-100 text-xs">No Shows</p><p className="text-2xl font-bold">{stats.no_shows}</p></div>
-          <div><p className="text-blue-100 text-xs">Pending Check-In</p><p className="text-2xl font-bold">{stats.pending_checkins}</p></div>
         </div>
       </div>
     </div>
