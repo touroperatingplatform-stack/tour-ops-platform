@@ -164,19 +164,29 @@ export default function SuperAdminPage() {
       
       for (const table of tables) {
         try {
-          // Supabase requires a WHERE clause - use a filter that matches all records
-          // Using created_at >= 1970 which matches all records with a timestamp
-          const { data, error } = await supabase
+          // Supabase requires a WHERE clause
+          // Try created_at first, fall back to id if that fails
+          let { data, error } = await supabase
             .from(table)
             .delete()
             .gte('created_at', '1970-01-01')
+          
+          // If created_at doesn't exist, try using id
+          if (error && error.message?.includes('column')) {
+            const { data: dataById, error: errorById } = await supabase
+              .from(table)
+              .delete()
+              .not.is('id', 'null')
+            
+            data = dataById
+            error = errorById
+          }
           
           if (error) {
             console.error(`Failed to clear ${table}:`, error)
             errors.push(`${table}: ${error.message}`)
           } else {
-            // Supabase doesn't return deleted rows count, so we'll estimate
-            deleted++ // Count tables cleared
+            deleted++
             console.log(`Cleared table: ${table}`)
           }
         } catch (tableError) {
