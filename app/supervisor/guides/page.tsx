@@ -1,187 +1,138 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import Link from 'next/link'
 import { supabase } from '@/lib/supabase/client'
 
-interface GuideWithStats {
+interface Guide {
   id: string
   first_name: string
   last_name: string
   email: string
   phone: string
-  // Stats
-  total_tours: number
-  completed_tours: number
-  avg_satisfaction: number
-  on_time_rate: number
-  // Today's status
-  today_tour_status: string | null
-  today_tour_name: string | null
-  today_checkin_status: string | null
+  status: 'active' | 'inactive' | 'on_tour'
+  current_tour?: string
 }
 
-export default function SupervisorGuidesPage() {
-  const [guides, setGuides] = useState<GuideWithStats[]>([])
+export default function GuidesPage() {
+  const [guides, setGuides] = useState<Guide[]>([])
   const [loading, setLoading] = useState(true)
+  const [searchQuery, setSearchQuery] = useState('')
 
   useEffect(() => {
     loadGuides()
   }, [])
 
   async function loadGuides() {
-    const today = new Date().toISOString().split('T')[0]
-
-    // Get all guides
-    const { data: guidesData } = await supabase
+    const { data, error } = await supabase
       .from('profiles')
-      .select('id, first_name, last_name, email, phone')
+      .select('id, first_name, last_name, email, phone, role, status')
       .eq('role', 'guide')
-      .order('first_name')
+      .order('last_name')
 
-    if (!guidesData) {
-      setLoading(false)
-      return
+    if (data) {
+      const formattedGuides: Guide[] = data.map((g: any) => ({
+        id: g.id,
+        first_name: g.first_name,
+        last_name: g.last_name,
+        email: g.email || '-',
+        phone: g.phone || '-',
+        status: g.status || 'active'
+      }))
+      setGuides(formattedGuides)
     }
-
-    // Get stats for each guide
-    const guidesWithStats = await Promise.all(
-      guidesData.map(async (guide) => {
-        // Total tours
-        const { count: totalTours } = await supabase
-          .from('tours')
-          .select('*', { count: 'exact' })
-          .eq('guide_id', guide.id)
-
-        // Completed tours
-        const { count: completedTours } = await supabase
-          .from('tours')
-          .select('*', { count: 'exact' })
-          .eq('guide_id', guide.id)
-          .eq('status', 'completed')
-
-        // Today's tour
-        const { data: todayTour } = await supabase
-          .from('tours')
-          .select('id, name, status')
-          .eq('guide_id', guide.id)
-          .eq('tour_date', today)
-          .neq('status', 'cancelled')
-          .maybeSingle()
-
-        // Check if checked in
-        let checkinStatus = null
-        if (todayTour?.id) {
-          const { data: checkin } = await supabase
-            .from('guide_checkins')
-            .select('id')
-            .eq('tour_id', todayTour.id)
-            .eq('checkin_type', 'pre_pickup')
-            .maybeSingle()
-          checkinStatus = checkin ? 'checked_in' : 'not_checked_in'
-        }
-
-        return {
-          ...guide,
-          total_tours: totalTours || 0,
-          completed_tours: completedTours || 0,
-          avg_satisfaction: 0, // TODO: calculate from reports
-          on_time_rate: 0, // TODO: calculate from checkins
-          today_tour_status: todayTour?.status || null,
-          today_tour_name: todayTour?.name || null,
-          today_checkin_status: checkinStatus,
-        }
-      })
-    )
-
-    setGuides(guidesWithStats)
     setLoading(false)
   }
 
-  function getTodayStatusColor(status: string | null, checkinStatus: string | null) {
-    if (!status) return 'bg-gray-100 text-gray-500'
-    if (status === 'completed') return 'bg-green-100 text-green-700'
-    if (status === 'in_progress') return 'bg-blue-100 text-blue-700'
-    if (status === 'scheduled') {
-      if (checkinStatus === 'checked_in') return 'bg-yellow-100 text-yellow-700'
-      return 'bg-gray-100 text-gray-700'
+  function getStatusBadge(status: string) {
+    const styles: Record<string, string> = {
+      active: 'bg-green-100 text-green-700',
+      inactive: 'bg-gray-100 text-gray-500',
+      on_tour: 'bg-blue-100 text-blue-700'
     }
-    return 'bg-gray-100 text-gray-500'
+    const labels: Record<string, string> = {
+      active: 'Available',
+      inactive: 'Offline',
+      on_tour: 'On Tour'
+    }
+    return (
+      <span className={`px-2 py-1 rounded-full text-xs font-medium ${styles[status] || styles.active}`}>
+        {labels[status] || status}
+      </span>
+    )
   }
 
-  function getTodayStatusLabel(status: string | null, checkinStatus: string | null) {
-    if (!status) return 'No tour today'
-    if (status === 'completed') return '✓ Completed'
-    if (status === 'in_progress') return '🟢 In progress'
-    if (status === 'scheduled') {
-      if (checkinStatus === 'checked_in') return '⏳ Checked in'
-      return '⏰ Scheduled'
-    }
-    return status
-  }
+  const filteredGuides = guides.filter(g => 
+    `${g.first_name} ${g.last_name}`.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    g.email.toLowerCase().includes(searchQuery.toLowerCase())
+  )
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 p-4">
-        <div className="max-w-6xl mx-auto">
-          <div className="h-8 w-32 bg-gray-200 rounded animate-pulse mb-4"></div>
-          <div className="h-64 bg-gray-200 rounded-2xl animate-pulse"></div>
-        </div>
+      <div className="h-full flex items-center justify-center">
+        <div className="text-gray-500">Loading guides...</div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4 pb-24">
-      <div className="max-w-6xl mx-auto">
-        {/* Header */}
-        <div className="mb-6">
-          <Link href="/supervisor" className="text-blue-600 text-sm mb-2 inline-block">
-            ← Back to Dashboard
-          </Link>
-          <h1 className="text-2xl font-bold text-gray-900">Guides</h1>
-          <p className="text-gray-500 text-sm mt-1">
-            {guides.length} active guides
-          </p>
+    <div className="h-full flex flex-col space-y-4">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-xl font-bold text-gray-900">Guides</h1>
+          <p className="text-sm text-gray-500">{guides.length} total guides</p>
         </div>
+        <input
+          type="text"
+          placeholder="Search guides..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="px-4 py-2 border border-gray-300 rounded-lg text-sm w-64"
+        />
+      </div>
 
-        {/* Guides List */}
-        <div className="space-y-4">
-          {guides.map((guide) => (
-            <div key={guide.id} className="bg-white rounded-2xl border border-gray-200 p-5">
-              <div className="flex items-start justify-between">
-                <div>
-                  <h3 className="font-semibold text-gray-900 text-lg">
-                    {guide.first_name} {guide.last_name}
-                  </h3>
-                  <p className="text-sm text-gray-500">{guide.email}</p>
-                  
-                  {/* Stats */}
-                  <div className="flex items-center gap-4 mt-3 text-sm">
-                    <span className="text-gray-600">
-                      📊 {guide.completed_tours}/{guide.total_tours} tours completed
-                    </span>
+      {/* Guides List */}
+      <div className="bg-white rounded-lg border border-gray-200 flex-1 overflow-auto">
+        <table className="w-full text-sm">
+          <thead className="bg-gray-50 text-left text-xs uppercase text-gray-500 sticky top-0">
+            <tr>
+              <th className="px-4 py-3 font-medium">Name</th>
+              <th className="px-4 py-3 font-medium">Contact</th>
+              <th className="px-4 py-3 font-medium">Phone</th>
+              <th className="px-4 py-3 font-medium">Status</th>
+              <th className="px-4 py-3 font-medium text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-100">
+            {filteredGuides.map((guide) => (
+              <tr key={guide.id} className="hover:bg-gray-50">
+                <td className="px-4 py-3">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-medium text-xs">
+                      {guide.first_name[0]}{guide.last_name[0]}
+                    </div>
+                    <span className="font-medium text-gray-900">{guide.first_name} {guide.last_name}</span>
                   </div>
-                </div>
-                
-                {/* Today's Status */}
-                <div className={`px-4 py-2 rounded-xl text-sm font-medium ${
-                  getTodayStatusColor(guide.today_tour_status, guide.today_checkin_status)
-                }`}>
-                  {getTodayStatusLabel(guide.today_tour_status, guide.today_checkin_status)}
-                </div>
-              </div>
-
-              {/* Today's Tour Details */}
-              {guide.today_tour_name && guide.today_tour_status !== 'completed' && (
-                <div className="mt-4 p-3 bg-gray-50 rounded-lg">
-                  <p className="text-sm font-medium text-gray-700">Today's Tour:</p>
-                  <p className="text-sm text-gray-600">{guide.today_tour_name}</p>
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
+                </td>
+                <td className="px-4 py-3 text-gray-600">{guide.email}</td>
+                <td className="px-4 py-3 text-gray-600">{guide.phone}</td>
+                <td className="px-4 py-3">{getStatusBadge(guide.status)}</td>
+                <td className="px-4 py-3 text-right">
+                  <button className="text-blue-600 hover:text-blue-800 text-sm font-medium">
+                    View
+                  </button>
+                </td>
+              </tr>
+            ))}
+            {filteredGuides.length === 0 && (
+              <tr>
+                <td colSpan={5} className="px-4 py-8 text-center text-gray-500">
+                  No guides found.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
       </div>
     </div>
   )
