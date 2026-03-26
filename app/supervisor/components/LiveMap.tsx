@@ -222,48 +222,50 @@ export default function LiveMap() {
         {/* SVG Map Background - Yucatan Peninsula */}
         <svg viewBox="0 0 100 100" className="absolute inset-0 w-full h-full" preserveAspectRatio="none">
           {/* Ocean */}
-          <rect width="100" height="100" fill="#a5d8ff" />
+          <rect width="100" height="100" fill="#bfe3f5" />
           
-          {/* Yucatan Peninsula - simplified coastline */}
+          {/* Yucatan Peninsula - more accurate coastline */}
           <path
-            d="M 0,35 
-               Q 5,32 10,30 
-               L 15,28 L 20,25 L 25,22 L 30,20 
-               Q 35,18 40,17 L 45,16 L 50,15
-               L 55,14 L 60,13 L 65,12 L 70,11
-               L 75,10 L 80,9 L 85,8 L 90,7
-               L 95,6 L 100,5
-               L 100,0 L 0,0 Z
-               M 0,40
-               Q 10,42 20,45 Q 30,50 40,55
-               Q 50,60 60,65 Q 70,70 80,75
-               L 85,78 L 90,80 L 95,82 L 100,85
-               L 100,100 L 0,100 Z"
-            fill="#86c26d"
-            opacity="0.6"
+            d="M 5,45 
+               C 8,42 12,40 18,38
+               C 25,35 32,32 38,30
+               C 42,28 45,25 48,22
+               C 50,20 52,18 55,17
+               C 58,16 62,15 68,14
+               C 72,13 76,12 80,11
+               C 85,10 88,9 90,8
+               L 92,10 C 90,12 88,14 85,16
+               C 82,18 78,20 74,22
+               C 70,25 66,28 62,32
+               C 58,36 55,40 52,45
+               C 50,50 48,55 47,60
+               C 46,65 46,70 47,74
+               C 48,78 50,82 53,85
+               C 56,88 60,90 65,92
+               L 65,95 C 60,93 55,90 50,86
+               C 45,82 40,77 36,71
+               C 32,65 28,58 25,52
+               C 22,48 18,46 15,45
+               C 12,44 8,44 5,45 Z"
+            fill="#7cb86a"
+            stroke="#5a9a4a"
+            strokeWidth="0.3"
           />
           
-          {/* Coastline border */}
-          <path
-            d="M 0,35 Q 5,32 10,30 L 15,28 L 20,25 L 25,22 L 30,20 Q 35,18 40,17 L 45,16 L 50,15 L 55,14 L 60,13 L 65,12 L 70,11 L 75,10 L 80,9 L 85,8 L 90,7 L 95,6 L 100,5"
-            fill="none"
-            stroke="#6da856"
-            strokeWidth="0.5"
-            opacity="0.8"
-          />
-          <path
-            d="M 0,40 Q 10,42 20,45 Q 30,50 40,55 Q 50,60 60,65 Q 70,70 80,75 L 85,78 L 90,80 L 95,82 L 100,85"
-            fill="none"
-            stroke="#6da856"
-            strokeWidth="0.5"
-            opacity="0.8"
-          />
+          {/* Isla Mujeres (small island north-east) */}
+          <ellipse cx="78" cy="18" rx="1.5" ry="0.8" fill="#7cb86a" stroke="#5a9a4a" strokeWidth="0.2" />
           
-          {/* Major cenotes/dots for visual interest */}
-          <circle cx="15" cy="50" r="1" fill="#5ba3d0" opacity="0.4" />
-          <circle cx="30" cy="55" r="0.8" fill="#5ba3d0" opacity="0.4" />
-          <circle cx="50" cy="60" r="1" fill="#5ba3d0" opacity="0.4" />
-          <circle cx="70" cy="70" r="0.8" fill="#5ba3d0" opacity="0.4" />
+          {/* Cozumel (island east of Playa) */}
+          <ellipse cx="88" cy="55" rx="2" ry="1.5" fill="#7cb86a" stroke="#5a9a4a" strokeWidth="0.2" />
+          
+          {/* Cenotes (inland water features) */}
+          <circle cx="35" cy="50" r="0.8" fill="#4a90a4" opacity="0.5" />
+          <circle cx="42" cy="55" r="0.6" fill="#4a90a4" opacity="0.5" />
+          <circle cx="48" cy="60" r="0.7" fill="#4a90a4" opacity="0.5" />
+          <circle cx="55" cy="65" r="0.5" fill="#4a90a4" opacity="0.5" />
+          
+          {/* Chichen Itza marker area (inland west) */}
+          <circle cx="25" cy="48" r="1.5" fill="#c9a66b" opacity="0.4" />
         </svg>
 
         {/* Compass / orientation */}
