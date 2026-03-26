@@ -84,7 +84,6 @@ export default function SuperAdminPage() {
         room_number: '',
         adults: 0,
         children: 0,
-        special_requirements: '',
         notes: '',
         valid: false,
         error: `Missing required columns: ${missingHeaders.join(', ')}`
