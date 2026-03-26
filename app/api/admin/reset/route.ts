@@ -26,11 +26,12 @@ export async function POST(request: NextRequest) {
         .delete()
         .in('id', checkins.map((c: any) => c.id))
       results['guide_checkins'] = { success: !error, error: error?.message, count: checkins.length }
+      if (error) throw new Error(`guide_checkins: ${error.message}`)
     } else {
       results['guide_checkins'] = { success: true, count: 0 }
     }
 
-    // Step 2: Clear expenses
+    // Step 2: Clear expenses (must be before tours due to FK constraint)
     const { data: expenses, error: expensesErr } = await supabaseAdmin
       .from('expenses')
       .select('id')
@@ -40,11 +41,12 @@ export async function POST(request: NextRequest) {
         .delete()
         .in('id', expenses.map((e: any) => e.id))
       results['expenses'] = { success: !error, error: error?.message, count: expenses.length }
+      if (error) throw new Error(`expenses: ${error.message}`)
     } else {
       results['expenses'] = { success: true, count: 0 }
     }
 
-    // Step 3: Clear incidents  
+    // Step 3: Clear incidents (must be before tours)
     const { data: incidents, error: incidentsErr } = await supabaseAdmin
       .from('incidents')
       .select('id')
@@ -54,11 +56,12 @@ export async function POST(request: NextRequest) {
         .delete()
         .in('id', incidents.map((i: any) => i.id))
       results['incidents'] = { success: !error, error: error?.message, count: incidents.length }
+      if (error) throw new Error(`incidents: ${error.message}`)
     } else {
       results['incidents'] = { success: true, count: 0 }
     }
 
-    // Step 4: Clear tours (after children are gone)
+    // Step 4: Clear tours (after expenses and incidents are gone)
     const { data: tours, error: toursErr } = await supabaseAdmin
       .from('tours')
       .select('id')
@@ -68,6 +71,7 @@ export async function POST(request: NextRequest) {
         .delete()
         .in('id', tours.map((t: any) => t.id))
       results['tours'] = { success: !error, error: error?.message, count: tours.length }
+      if (error) throw new Error(`tours: ${error.message}`)
     } else {
       results['tours'] = { success: true, count: 0 }
     }
@@ -82,6 +86,7 @@ export async function POST(request: NextRequest) {
         .delete()
         .in('id', vehicles.map((v: any) => v.id))
       results['vehicles'] = { success: !error, error: error?.message, count: vehicles.length }
+      if (error) throw new Error(`vehicles: ${error.message}`)
     } else {
       results['vehicles'] = { success: true, count: 0 }
     }
