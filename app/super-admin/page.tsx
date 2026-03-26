@@ -267,7 +267,7 @@ export default function SuperAdminPage() {
       let deleted = 0
       for (const table of tables) {
         const { data, error } = await supabase.from(table).delete().neq('id', '00000000-0000-0000-0000-000000000000')
-        if (data) {
+        if (data && Array.isArray(data)) {
           deleted += data.length || 0
         }
         if (error) {
