@@ -17,12 +17,9 @@ interface GuideLocation {
 
 export default function LiveMap() {
   const [locations, setLocations] = useState<GuideLocation[]>([])
-  const [selectedGuide, setSelectedGuide] = useState<GuideLocation | null>(null)
 
   useEffect(() => {
     loadGuideLocations()
-    
-    // Refresh every 30 seconds
     const interval = setInterval(loadGuideLocations, 30000)
     return () => clearInterval(interval)
   }, [])
@@ -30,18 +27,34 @@ export default function LiveMap() {
   async function loadGuideLocations() {
     const today = new Date().toISOString().split('T')[0]
     
-    // Get tours with pickup check-in data
+    // Get tours for today
     const { data: tours } = await supabase
       .from('tours')
-      .select('id, name, start_time, status, guide_id, pickup_checkin_lat, pickup_checkin_lng, pickup_checkin_status, pickup_checked_in_at')
+      .select('id, name, start_time, status, guide_id')
       .eq('tour_date', today)
       .in('status', ['in_progress', 'scheduled'])
-      .not('pickup_checkin_lat', 'is', null)
 
     if (!tours || tours.length === 0) {
       setLocations([])
       return
     }
+
+    const tourIds = tours.map((t: any) => t.id)
+    
+    // Get latest checkins for these tours
+    const { data: checkins } = await supabase
+      .from('guide_checkins')
+      .select('tour_id, latitude, longitude, checked_in_at, minutes_early_or_late')
+      .in('tour_id', tourIds)
+      .order('checked_in_at', { ascending: false })
+
+    // Get latest checkin per tour
+    const latestCheckins = new Map()
+    checkins?.forEach((c: any) => {
+      if (!latestCheckins.has(c.tour_id)) {
+        latestCheckins.set(c.tour_id, c)
+      }
+    })
 
     // Get guide names
     const guideIds = [...new Set(tours.map((t: any) => t.guide_id).filter(Boolean))]
@@ -51,43 +64,37 @@ export default function LiveMap() {
       .in('id', guideIds.length > 0 ? guideIds : ['00000000-0000-0000-0000-000000000000'])
     
     const guideMap = new Map(guides?.map((g: any) => [g.id, g]) || [])
+    const tourMap = new Map(tours.map((t: any) => [t.id, t]))
 
-    const guideLocations: GuideLocation[] = tours.map((tour: any) => {
+    const guideLocations: GuideLocation[] = []
+    
+    latestCheckins.forEach((checkin: any, tourId: string) => {
+      const tour = tourMap.get(tourId)
+      if (!tour) return
+      
       const guide = guideMap.get(tour.guide_id)
       const pickupTime = new Date(`${today}T${tour.start_time}`)
       const now = new Date()
       const minutesToPickup = Math.floor((pickupTime.getTime() - now.getTime()) / 60000)
       
-      let status: 'on_time' | 'close' | 'late' = tour.pickup_checkin_status || 'on_time'
-      if (minutesToPickup < 0 && status === 'on_time') status = 'late'
-      else if (minutesToPickup < 20 && status === 'on_time') status = 'close'
+      let status: 'on_time' | 'close' | 'late' = 'on_time'
+      if (minutesToPickup < 0) status = 'late'
+      else if (minutesToPickup < 20) status = 'close'
       
-      return {
+      guideLocations.push({
         id: tour.guide_id,
         guide_name: guide ? `${guide.first_name} ${guide.last_name}` : 'Unknown',
         tour_name: tour.name,
-        lat: tour.pickup_checkin_lat,
-        lng: tour.pickup_checkin_lng,
+        lat: checkin.latitude,
+        lng: checkin.longitude,
         status,
         pickup_time: tour.start_time?.slice(0, 5),
         minutes_to_pickup: minutesToPickup,
-        checked_in_at: tour.pickup_checked_in_at,
-      }
+        checked_in_at: checkin.checked_in_at,
+      })
     })
 
     setLocations(guideLocations)
-  }
-
-  const statusColors = {
-    on_time: '#22c55e',
-    close: '#eab308', 
-    late: '#ef4444',
-  }
-
-  const statusLabels = {
-    on_time: 'On Time',
-    close: 'Close',
-    late: 'Late',
   }
 
   if (locations.length === 0) {
@@ -102,31 +109,21 @@ export default function LiveMap() {
   return (
     <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
       <div className="p-4 border-b border-gray-200">
-        <div className="flex items-center justify-between">
-          <h2 className="font-semibold text-gray-900 flex items-center gap-2">
-            <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
-            Live Guide Locations
-          </h2>
-          <div className="flex gap-4 text-sm">
-            {Object.entries(statusColors).map(([key, color]) => (
-              <span key={key} className="flex items-center gap-1">
-                <span className="w-3 h-3 rounded-full" style={{ backgroundColor: color }}></span>
-                {statusLabels[key as keyof typeof statusLabels]}
-              </span>
-            ))}
-          </div>
-        </div>
+        <h2 className="font-semibold text-gray-900">Live Guide Locations</h2>
         <p className="text-xs text-gray-500 mt-1">
-          Last check-in positions • Updates every 30s
+          {locations.length} guides checked in
         </p>
       </div>
       
       <div className="p-4">
         {locations.map((guide) => (
           <div key={guide.id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg mb-2">
-            <span 
+            <div 
               className="w-3 h-3 rounded-full flex-shrink-0"
-              style={{ backgroundColor: statusColors[guide.status] }}
+              style={{ 
+                backgroundColor: guide.status === 'late' ? '#ef4444' : 
+                                guide.status === 'close' ? '#eab308' : '#22c55e'
+              }}
             />
             <div className="flex-1">
               <p className="font-medium text-gray-900">{guide.guide_name}</p>
@@ -135,7 +132,6 @@ export default function LiveMap() {
                 📍 {guide.lat.toFixed(4)}, {guide.lng.toFixed(4)}
               </p>
             </div>
-            <span className="text-xs text-gray-400">{guide.pickup_time}</span>
           </div>
         ))}
       </div>
