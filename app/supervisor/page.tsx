@@ -226,7 +226,7 @@ export default function SupervisorDashboard() {
       </div>
 
       {/* Row 1: Today's Tours + Live Map */}
-      <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-4 min-h-0">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div className="bg-white rounded-lg border border-gray-200 overflow-hidden flex flex-col">
           <div className="px-3 py-2 border-b border-gray-200 bg-gray-50 shrink-0">
             <h2 className="font-semibold text-gray-900 text-sm">Today's Tours</h2>
@@ -267,7 +267,7 @@ export default function SupervisorDashboard() {
       </div>
 
       {/* Row 2: Incident Reports + Widgets Column - 50/50 split */}
-      <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-4 min-h-0">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div className="bg-white rounded-lg border border-gray-200 overflow-hidden flex flex-col">
           <div className="px-3 py-2 border-b border-gray-200 bg-gray-50 flex items-center justify-between shrink-0">
             <h2 className="font-semibold text-gray-900 text-sm">Incident Reports</h2>
