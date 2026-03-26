@@ -96,28 +96,20 @@ DELETE FROM guide_checkins WHERE notes LIKE '[TEST]%';
 DELETE FROM incidents WHERE description LIKE '[TEST]%';
 DELETE FROM expenses WHERE description LIKE '[TEST]%';
 DELETE FROM tours WHERE name LIKE '[TEST]%';
-DELETE FROM vehicles WHERE make LIKE '[TEST]%' OR model LIKE '[TEST]%';
+DELETE FROM vehicles WHERE model LIKE '[TEST]%';
 
 -- ==========================================
 -- STEP 4: CREATE VEHICLES
 -- ==========================================
 
-DO $$
-DECLARE
-  v_company_id uuid;
-  v_brand_id uuid;
-BEGIN
-  SELECT company_id, brand_id INTO v_company_id, v_brand_id FROM seed_refs;
-
-  INSERT INTO vehicles (id, company_id, brand_id, make, model, plate_number, status, capacity, year, created_at) VALUES
-    ('11111111-1111-1111-1111-111111111111', v_company_id, v_brand_id, 'Mercedes', '[TEST] Sprinter Van 1', 'ABC-123', 'in_use', 12, 2022, now()),
-    ('22222222-2222-2222-2222-222222222222', v_company_id, v_brand_id, 'Ford', '[TEST] Transit Van 2', 'DEF-456', 'available', 14, 2023, now()),
-    ('33333333-3333-3333-3333-333333333333', v_company_id, v_brand_id, 'Volvo', '[TEST] Tour Bus 1', 'GHI-789', 'in_use', 40, 2021, now()),
-    ('44444444-4444-4444-4444-444444444444', v_company_id, v_brand_id, 'Scania', '[TEST] Tour Bus 2', 'JKL-012', 'maintenance', 40, 2020, now())
-  ON CONFLICT (id) DO UPDATE SET 
-    status = EXCLUDED.status,
-    updated_at = now();
-END $$;
+INSERT INTO vehicles (id, model, plate_number, year, capacity, status, created_at, updated_at) VALUES
+  ('11111111-1111-1111-1111-111111111111', '[TEST] Sprinter Van 1', 'ABC-123', 2022, 12, 'active', now(), now()),
+  ('22222222-2222-2222-2222-222222222222', '[TEST] Transit Van 2', 'DEF-456', 2023, 14, 'active', now(), now()),
+  ('33333333-3333-3333-3333-333333333333', '[TEST] Tour Bus 1', 'GHI-789', 2021, 40, 'active', now(), now()),
+  ('44444444-4444-4444-4444-444444444444', '[TEST] Tour Bus 2', 'JKL-012', 2020, 40, 'maintenance', now(), now())
+ON CONFLICT (id) DO UPDATE SET 
+  status = EXCLUDED.status,
+  updated_at = now();
 
 -- ==========================================
 -- STEP 5: CREATE SETTINGS
@@ -151,7 +143,7 @@ BEGIN
   -- Tour 1: Carlos - Morning, In Progress
   INSERT INTO tours (
     id, company_id, brand_id, name, tour_date, start_time, duration_minutes,
-    status, guide_id, vehicle_id, guest_count, capacity,
+    status, guide_id, guest_count, capacity,
     pickup_location, dropoff_location, price, created_by,
     created_at, updated_at
   ) VALUES (
@@ -159,19 +151,18 @@ BEGIN
     v_company_id, v_brand_id,
     '[TEST] Chichen Itza Sunrise',
     CURRENT_DATE, '06:00', 480,
-    'in_progress', v_carlos_id, v_van1_id, 8, 12,
+    'in_progress', v_carlos_id, 8, 12,
     'Hotel Zone Cancun', 'Chichen Itza', 1250.00, v_carlos_id,
     now(), now()
   ) ON CONFLICT (id) DO UPDATE SET 
     status = EXCLUDED.status,
     guide_id = EXCLUDED.guide_id,
-    vehicle_id = EXCLUDED.vehicle_id,
     updated_at = now();
 
   -- Tour 2: Maria - Mid-day, In Progress
   INSERT INTO tours (
     id, company_id, brand_id, name, tour_date, start_time, duration_minutes,
-    status, guide_id, vehicle_id, guest_count, capacity,
+    status, guide_id, guest_count, capacity,
     pickup_location, dropoff_location, price, created_by,
     created_at, updated_at
   ) VALUES (
@@ -179,19 +170,18 @@ BEGIN
     v_company_id, v_brand_id,
     '[TEST] Tulum Express',
     CURRENT_DATE, '09:00', 300,
-    'in_progress', v_maria_id, v_bus1_id, 35, 40,
+    'in_progress', v_maria_id, 35, 40,
     'Playa del Carmen', 'Tulum Ruins', 950.00, v_maria_id,
     now(), now()
   ) ON CONFLICT (id) DO UPDATE SET 
     status = EXCLUDED.status,
     guide_id = EXCLUDED.guide_id,
-    vehicle_id = EXCLUDED.vehicle_id,
     updated_at = now();
 
   -- Tour 3: Carlos - Afternoon, Scheduled
   INSERT INTO tours (
     id, company_id, brand_id, name, tour_date, start_time, duration_minutes,
-    status, guide_id, vehicle_id, guest_count, capacity,
+    status, guide_id, guest_count, capacity,
     pickup_location, dropoff_location, price, created_by,
     created_at, updated_at
   ) VALUES (
@@ -199,19 +189,18 @@ BEGIN
     v_company_id, v_brand_id,
     '[TEST] Isla Mujeres Catamaran',
     CURRENT_DATE, '13:00', 360,
-    'scheduled', v_carlos_id, NULL, 20, 30,
+    'scheduled', v_carlos_id, 20, 30,
     'Puerto Juarez', 'Isla Mujeres', 1500.00, v_carlos_id,
     now(), now()
   ) ON CONFLICT (id) DO UPDATE SET 
     status = EXCLUDED.status,
     guide_id = EXCLUDED.guide_id,
-    vehicle_id = EXCLUDED.vehicle_id,
     updated_at = now();
 
   -- Tour 4: Juan - Evening, Scheduled
   INSERT INTO tours (
     id, company_id, brand_id, name, tour_date, start_time, duration_minutes,
-    status, guide_id, vehicle_id, guest_count, capacity,
+    status, guide_id, guest_count, capacity,
     pickup_location, dropoff_location, price, created_by,
     created_at, updated_at
   ) VALUES (
@@ -219,13 +208,12 @@ BEGIN
     v_company_id, v_brand_id,
     '[TEST] Cenote Snorkeling',
     CURRENT_DATE, '15:00', 240,
-    'scheduled', v_juan_id, NULL, 12, 20,
+    'scheduled', v_juan_id, 12, 20,
     'Cancun Center', 'Cenote Dos Ojos', 750.00, v_juan_id,
     now(), now()
   ) ON CONFLICT (id) DO UPDATE SET 
     status = EXCLUDED.status,
     guide_id = EXCLUDED.guide_id,
-    vehicle_id = EXCLUDED.vehicle_id,
     updated_at = now();
 
 END $$;
