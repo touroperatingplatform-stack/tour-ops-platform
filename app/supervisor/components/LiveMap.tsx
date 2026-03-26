@@ -138,9 +138,6 @@ export default function LiveMap() {
       if (minutesToPickup < 0) status = 'late'
       else if (minutesToPickup < 20) status = 'close'
       
-      const pos = latLngToPercent(checkin.latitude, checkin.longitude, bounds)
-      console.log('[LiveMap] Guide:', guide?.first_name, 'Lat:', checkin.latitude, 'Lng:', checkin.longitude, 'Bounds:', bounds, '→ X:', pos.x.toFixed(1) + '%', 'Y:', pos.y.toFixed(1) + '%')
-      
       guideLocations.push({
         id: tour.guide_id,
         guide_name: guide ? `${guide.first_name} ${guide.last_name}` : 'Unknown',
@@ -154,9 +151,19 @@ export default function LiveMap() {
       })
     })
 
+    // Calculate dynamic bounds based on pin locations
+    const newBounds = calculateBounds(guideLocations)
     console.log('[LiveMap] Final locations:', guideLocations.length)
+    console.log('[LiveMap] Dynamic bounds:', newBounds)
+    
+    // Log positions with new bounds
+    guideLocations.forEach(guide => {
+      const pos = latLngToPercent(guide.lat, guide.lng, newBounds)
+      console.log('[LiveMap] Guide:', guide.guide_name, '→ X:', pos.x.toFixed(1) + '%', 'Y:', pos.y.toFixed(1) + '%')
+    })
+    
     setLocations(guideLocations)
-    setBounds(calculateBounds(guideLocations))
+    setBounds(newBounds)
     setLastUpdated(new Date())
   }
 
