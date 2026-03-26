@@ -15,12 +15,12 @@ interface GuideLocation {
   checked_in_at: string
 }
 
-// Default Riviera Maya bounds
-const DEFAULT_BOUNDS = {
-  minLat: 20.0,
-  maxLat: 21.5,
-  minLng: -88.0,
-  maxLng: -86.5,
+// Fixed bounds: Chichen Itza to Tulum area
+const TOUR_AREA_BOUNDS = {
+  minLat: 20.0,    // South (Tulum)
+  maxLat: 21.0,    // North
+  minLng: -88.7,   // West (Chichen Itza)
+  maxLng: -86.8,   // East (Cancun area)
 }
 
 // Reference locations
@@ -61,7 +61,7 @@ function latLngToSvg(lat: number, lng: number, bounds: typeof DEFAULT_BOUNDS) {
 
 export default function LiveMap() {
   const [locations, setLocations] = useState<GuideLocation[]>([])
-  const [bounds, setBounds] = useState(DEFAULT_BOUNDS)
+  const [bounds] = useState(TOUR_AREA_BOUNDS) // Fixed bounds for tour area
   const [selectedGuide, setSelectedGuide] = useState<GuideLocation | null>(null)
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date())
 
@@ -138,8 +138,6 @@ export default function LiveMap() {
       })
     })
 
-    // Auto-fit bounds to show all pins
-    setBounds(calculateBounds(guideLocations))
     setLocations(guideLocations)
     setLastUpdated(new Date())
   }
