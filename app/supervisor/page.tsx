@@ -360,9 +360,9 @@ export default function SupervisorDashboard() {
           </div>
 
           {/* Weather Widget - Multi-location */}
-          <div className="bg-white rounded-lg border border-gray-200 p-4 flex-1 overflow-auto">
+          <div className="bg-white rounded-lg border border-gray-200 p-4 flex-1 overflow-hidden">
             <h2 className="font-semibold text-gray-900 text-sm mb-3">Weather Conditions</h2>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-3 gap-4 h-[calc(100%-28px)]">
               {[
                 { loc: 'Isla Mujeres', temp: 29, icon: '☀️', cond: 'Sunny' },
                 { loc: 'Puerto Morelos', temp: 28, icon: '⛅', cond: 'Partly Cloudy' },
@@ -371,12 +371,10 @@ export default function SupervisorDashboard() {
                 { loc: 'Coba', temp: 32, icon: '🌤️', cond: 'Hot' },
                 { loc: 'Chichen Itza', temp: 33, icon: '☀️', cond: 'Clear' },
               ].map((w) => (
-                <div key={w.loc} className="flex items-center gap-2 bg-gray-50 rounded p-2">
-                  <span className="text-lg">{w.icon}</span>
-                  <div className="min-w-0">
-                    <p className="text-xs font-medium text-gray-900 truncate">{w.loc}</p>
-                    <p className="text-xs text-gray-500">{w.temp}°C</p>
-                  </div>
+                <div key={w.loc} className="flex flex-col items-center justify-center gap-1 bg-gray-50 rounded-lg p-2">
+                  <span className="text-2xl">{w.icon}</span>
+                  <p className="text-xs font-medium text-gray-900 text-center">{w.loc}</p>
+                  <p className="text-sm font-bold text-gray-700">{w.temp}°C</p>
                 </div>
               ))}
             </div>
