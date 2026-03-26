@@ -14,42 +14,95 @@ const supabaseAdmin = createClient(
 
 export async function POST(request: NextRequest) {
   try {
-    // Delete data in reverse order (respecting foreign keys)
-    const tables = [
-      'guide_checkins',
-      'expenses', 
-      'incidents',
-      'tours',
-      'vehicles'
-    ]
+    const results: Record<string, { success: boolean; error?: string; count?: number }> = {}
 
-    let deleted = 0
-    const errors: string[] = []
-
-    for (const table of tables) {
+    // Step 1: Clear guide_checkins (no foreign key refs)
+    const { data: checkins, error: checkinsErr } = await supabaseAdmin
+      .from('guide_checkins')
+      .select('id')
+    if (checkins?.length) {
       const { error } = await supabaseAdmin
-        .from(table)
+        .from('guide_checkins')
         .delete()
-        .neq('id', '00000000-0000-0000-0000-000000000000')
-      
-      if (error) {
-        errors.push(`${table}: ${error.message}`)
-      } else {
-        deleted++
-      }
+        .in('id', checkins.map((c: any) => c.id))
+      results['guide_checkins'] = { success: !error, error: error?.message, count: checkins.length }
+    } else {
+      results['guide_checkins'] = { success: true, count: 0 }
     }
+
+    // Step 2: Clear expenses
+    const { data: expenses, error: expensesErr } = await supabaseAdmin
+      .from('expenses')
+      .select('id')
+    if (expenses?.length) {
+      const { error } = await supabaseAdmin
+        .from('expenses')
+        .delete()
+        .in('id', expenses.map((e: any) => e.id))
+      results['expenses'] = { success: !error, error: error?.message, count: expenses.length }
+    } else {
+      results['expenses'] = { success: true, count: 0 }
+    }
+
+    // Step 3: Clear incidents  
+    const { data: incidents, error: incidentsErr } = await supabaseAdmin
+      .from('incidents')
+      .select('id')
+    if (incidents?.length) {
+      const { error } = await supabaseAdmin
+        .from('incidents')
+        .delete()
+        .in('id', incidents.map((i: any) => i.id))
+      results['incidents'] = { success: !error, error: error?.message, count: incidents.length }
+    } else {
+      results['incidents'] = { success: true, count: 0 }
+    }
+
+    // Step 4: Clear tours (after children are gone)
+    const { data: tours, error: toursErr } = await supabaseAdmin
+      .from('tours')
+      .select('id')
+    if (tours?.length) {
+      const { error } = await supabaseAdmin
+        .from('tours')
+        .delete()
+        .in('id', tours.map((t: any) => t.id))
+      results['tours'] = { success: !error, error: error?.message, count: tours.length }
+    } else {
+      results['tours'] = { success: true, count: 0 }
+    }
+
+    // Step 5: Clear vehicles (last, no refs)
+    const { data: vehicles, error: vehiclesErr } = await supabaseAdmin
+      .from('vehicles')
+      .select('id')
+    if (vehicles?.length) {
+      const { error } = await supabaseAdmin
+        .from('vehicles')
+        .delete()
+        .in('id', vehicles.map((v: any) => v.id))
+      results['vehicles'] = { success: !error, error: error?.message, count: vehicles.length }
+    } else {
+      results['vehicles'] = { success: true, count: 0 }
+    }
+
+    const errors = Object.entries(results)
+      .filter(([, r]) => !r.success)
+      .map(([table, r]) => `${table}: ${r.error}`)
+
+    const totalCleared = Object.values(results).reduce((sum, r) => sum + (r.count || 0), 0)
 
     if (errors.length > 0) {
       return NextResponse.json(
-        { success: false, error: errors.join(', '), deleted },
+        { success: false, error: errors.join(', '), results },
         { status: 500 }
       )
     }
 
     return NextResponse.json({ 
       success: true, 
-      deleted,
-      message: 'Demo data cleared. Users preserved.'
+      message: `Demo data cleared (${totalCleared} records). Users preserved.`,
+      results
     })
 
   } catch (error: any) {
