@@ -61,8 +61,8 @@ export default function SupervisorLayout({ children }: { children: React.ReactNo
       {/* Fixed Top Navigation */}
       <TopNav />
 
-      {/* Scrollable Content - Fills remaining space */}
-      <main className="flex-1 overflow-hidden p-4">
+      {/* Scrollable Content - Bounded container with responsive padding */}
+      <main className="flex-1 overflow-hidden px-4 sm:px-6 lg:px-8 py-4">
         <div className="w-full h-full overflow-auto">
           {children}
         </div>
