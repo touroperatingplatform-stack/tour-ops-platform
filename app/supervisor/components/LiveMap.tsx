@@ -15,18 +15,52 @@ interface GuideLocation {
   checked_in_at: string
 }
 
-// Fixed bounds: Chichen Itza to Cancun area
-const MAP_BOUNDS = {
-  minLat: 20.0,    // South (Tulum area)
-  maxLat: 21.2,    // North (Cancun/Isla Mujeres)
-  minLng: -88.7,   // West (Chichen Itza)
-  maxLng: -86.7,   // East (Caribbean)
+// Default bounds if no pins (full tour area)
+const DEFAULT_BOUNDS = {
+  minLat: 20.0,
+  maxLat: 21.2,
+  minLng: -88.7,
+  maxLng: -86.7,
 }
 
-// Convert lat/lng to percentage (0-100%)
-function latLngToPercent(lat: number, lng: number) {
-  const x = ((lng - MAP_BOUNDS.minLng) / (MAP_BOUNDS.maxLng - MAP_BOUNDS.minLng)) * 100
-  const y = 100 - ((lat - MAP_BOUNDS.minLat) / (MAP_BOUNDS.maxLat - MAP_BOUNDS.minLat)) * 100
+// Calculate bounds from pins with 20% padding
+function calculateBounds(locations: GuideLocation[]) {
+  if (locations.length === 0) return DEFAULT_BOUNDS
+  if (locations.length === 1) {
+    // Single pin: show small area around it
+    const pad = 0.05
+    return {
+      minLat: locations[0].lat - pad,
+      maxLat: locations[0].lat + pad,
+      minLng: locations[0].lng - pad,
+      maxLng: locations[0].lng + pad,
+    }
+  }
+  
+  const lats = locations.map(l => l.lat)
+  const lngs = locations.map(l => l.lng)
+  
+  const minLat = Math.min(...lats)
+  const maxLat = Math.max(...lats)
+  const minLng = Math.min(...lngs)
+  const maxLng = Math.max(...lngs)
+  
+  // Add 20% padding
+  const latPad = (maxLat - minLat) * 0.2 || 0.1
+  const lngPad = (maxLng - minLng) * 0.2 || 0.1
+  
+  return {
+    minLat: minLat - latPad,
+    maxLat: maxLat + latPad,
+    minLng: minLng - lngPad,
+    maxLng: maxLng + lngPad,
+  }
+}
+
+// Convert lat/lng to percentage (0-100%) using dynamic bounds
+function latLngToPercent(lat: number, lng: number, bounds: typeof DEFAULT_BOUNDS) {
+  const x = ((lng - bounds.minLng) / (bounds.maxLng - bounds.minLng)) * 100
+  const y = 100 - ((lat - bounds.minLat) / (bounds.maxLat - bounds.minLat)) * 100
   return { 
     x: Math.max(0, Math.min(100, x)), 
     y: Math.max(0, Math.min(100, y)) 
@@ -35,6 +69,7 @@ function latLngToPercent(lat: number, lng: number) {
 
 export default function LiveMap() {
   const [locations, setLocations] = useState<GuideLocation[]>([])
+  const [bounds, setBounds] = useState(DEFAULT_BOUNDS)
   const [selectedGuide, setSelectedGuide] = useState<GuideLocation | null>(null)
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date())
 
@@ -103,8 +138,8 @@ export default function LiveMap() {
       if (minutesToPickup < 0) status = 'late'
       else if (minutesToPickup < 20) status = 'close'
       
-      const pos = latLngToPercent(checkin.latitude, checkin.longitude)
-      console.log('[LiveMap] Guide:', guide?.first_name, 'Lat:', checkin.latitude, 'Lng:', checkin.longitude, '→ X:', pos.x.toFixed(1) + '%', 'Y:', pos.y.toFixed(1) + '%')
+      const pos = latLngToPercent(checkin.latitude, checkin.longitude, bounds)
+      console.log('[LiveMap] Guide:', guide?.first_name, 'Lat:', checkin.latitude, 'Lng:', checkin.longitude, 'Bounds:', bounds, '→ X:', pos.x.toFixed(1) + '%', 'Y:', pos.y.toFixed(1) + '%')
       
       guideLocations.push({
         id: tour.guide_id,
@@ -121,6 +156,7 @@ export default function LiveMap() {
 
     console.log('[LiveMap] Final locations:', guideLocations.length)
     setLocations(guideLocations)
+    setBounds(calculateBounds(guideLocations))
     setLastUpdated(new Date())
   }
 
@@ -194,7 +230,7 @@ export default function LiveMap() {
 
         {/* Pins */}
         {locations.map((guide) => {
-          const pos = latLngToPercent(guide.lat, guide.lng)
+          const pos = latLngToPercent(guide.lat, guide.lng, bounds)
           return (
             <button
               key={guide.id}
