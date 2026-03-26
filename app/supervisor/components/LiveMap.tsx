@@ -1,8 +1,10 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
+import * as React from 'react'
 import { supabase } from '@/lib/supabase/client'
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet'
+import L from 'leaflet'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 
@@ -136,6 +138,7 @@ function FitMapBounds({ locations, incidents, missing }: {
 }
 
 export default function LiveMap() {
+  const mapRef = React.useRef<L.Map | null>(null)
   const [locations, setLocations] = useState<GuideLocation[]>([])
   const [incidents, setIncidents] = useState<Incident[]>([])
   const [missingCheckins, setMissingCheckins] = useState<MissingCheckin[]>([])
@@ -147,6 +150,22 @@ export default function LiveMap() {
   const [showGuides, setShowGuides] = useState(true)
   const [showIncidents, setShowIncidents] = useState(true)
   const [showMissing, setShowMissing] = useState(true)
+  
+  // Reset view to fit all markers
+  const resetView = () => {
+    if (!mapRef.current) return
+    const allPoints: [number, number][] = []
+    locations.forEach(l => allPoints.push([l.lat, l.lng]))
+    incidents.forEach(i => { if (i.lat && i.lng) allPoints.push([i.lat, i.lng]) })
+    
+    if (allPoints.length === 0) {
+      mapRef.current.setView([20.6, -87.7], 9)
+    } else if (allPoints.length === 1) {
+      mapRef.current.setView(allPoints[0], 10)
+    } else {
+      mapRef.current.fitBounds(allPoints, { padding: [50, 50], maxZoom: 12 })
+    }
+  }
 
   useEffect(() => {
     loadAllData()
@@ -370,14 +389,42 @@ export default function LiveMap() {
         <MapContainer
           center={mapCenter}
           zoom={9}
-          scrollWheelZoom={true}
+          scrollWheelZoom={false}
+          doubleClickZoom={false}
           className="h-full w-full"
           style={{ height: '100%', minHeight: '300px' }}
+          zoomControl={false}
+          ref={mapRef}
         >
           <TileLayer
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           />
+          
+          {/* Zoom controls (top-right) */}
+          <div className="absolute top-3 right-3 z-[1000] flex flex-col gap-1">
+            <button
+              onClick={() => mapRef.current?.setZoom(mapRef.current?.getZoom() + 1)}
+              className="w-8 h-8 bg-white rounded shadow-md border border-gray-300 flex items-center justify-center text-lg font-bold hover:bg-gray-50"
+              title="Zoom in"
+            >
+              +
+            </button>
+            <button
+              onClick={() => mapRef.current?.setZoom(mapRef.current?.getZoom() - 1)}
+              className="w-8 h-8 bg-white rounded shadow-md border border-gray-300 flex items-center justify-center text-lg font-bold hover:bg-gray-50"
+              title="Zoom out"
+            >
+              −
+            </button>
+            <button
+              onClick={resetView}
+              className="w-8 h-8 bg-white rounded shadow-md border border-gray-300 flex items-center justify-center text-xs hover:bg-gray-50 mt-1"
+              title="Reset view"
+            >
+              ⟲
+            </button>
+          </div>
           
           <FitMapBounds locations={locations} incidents={incidents} missing={missingCheckins} />
           
