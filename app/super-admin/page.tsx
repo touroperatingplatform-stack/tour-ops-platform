@@ -267,7 +267,7 @@ export default function SuperAdminPage() {
       let deleted = 0
       for (const table of tables) {
         const { data, error } = await supabase.from(table).delete().neq('id', '00000000-0000-0000-0000-000000000000')
-        const recordCount = (data as any[])?.length || 0
+        const recordCount = (data as unknown as any[])?.length || 0
         deleted += recordCount
         if (error) {
           console.error(`Failed to clear ${table}:`, error)
