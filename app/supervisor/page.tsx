@@ -312,7 +312,7 @@ export default function SupervisorDashboard() {
                       </td>
                       <td className="px-3 py-2 font-medium text-gray-900">{incident.tour_name}</td>
                       <td className="px-3 py-2">{getSeverityBadge(incident.severity)}</td>
-                      <td className="px-3 py-2 text-gray-600 max-w-[120px] truncate">{incident.type}</td>
+                      <td className="px-3 py-2 text-gray-600 max-w-[120px] truncate">{incident.title}</td>
                       <td className="px-3 py-2 text-right">
                         <Link
                           href="/supervisor/incidents"
