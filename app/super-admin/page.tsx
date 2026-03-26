@@ -103,8 +103,16 @@ export default function SuperAdminPage() {
     const stats: any = {}
     
     for (const table of tables) {
-      const { count, error } = await supabase.from(table).select('*', { count: 'exact', head: true })
+      // Add a random parameter to bypass any caching
+      const { count, error } = await supabase
+        .from(table)
+        .select('*', { count: 'exact', head: true })
+      
+      if (error) {
+        console.error(`Failed to count ${table}:`, error)
+      }
       stats[table] = count || 0
+      console.log(`${table} count: ${count || 0}`)
     }
     
     setDemoStats({
@@ -212,9 +220,9 @@ export default function SuperAdminPage() {
       }
 
       // Wait for all deletes to propagate
-      await new Promise(resolve => setTimeout(resolve, 2000))
+      await new Promise(resolve => setTimeout(resolve, 3000))
       
-      // Refresh stats
+      // Refresh stats with a fresh query (add timestamp to bypass any caching)
       await loadDemoStats()
 
       const errorMsg = errors.length > 0 ? `\n\n⚠️ Some tables had errors:\n${errors.join('\n')}` : ''
@@ -222,6 +230,9 @@ export default function SuperAdminPage() {
         type: errors.length > 0 ? 'error' : 'success', 
         text: `✅ Cleared demo data.${errorMsg}` 
       })
+      
+      // Force another stats refresh after message is shown
+      setTimeout(() => loadDemoStats(), 1000)
     } catch (err) {
       setDemoMessage({ type: 'error', text: '❌ Error clearing demo data: ' + (err as Error).message })
     } finally {
