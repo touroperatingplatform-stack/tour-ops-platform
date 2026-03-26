@@ -236,14 +236,14 @@ BEGIN
     -- Carlos check-in (Chichen Itza route)
     ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa1',
      '11111111-1111-1111-1111-111111111111', v_brand_id, 'd2cda25c-35c2-49ac-949c-bc52486d27a0',
-     'pickup', now() - interval '2 hours',
+     'pre_pickup', now() - interval '2 hours',
      20.6843, -88.5678, 15.5, '06:00:00', -5,
      '[TEST] Departed on time, smooth traffic', now()),
     
     -- Maria check-in (at Tulum)
     ('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbb1',
      '22222222-2222-2222-2222-222222222222', v_brand_id, 'cbbb22ba-178a-4a1d-ba49-d9f412f88b03',
-     'arrival', now() - interval '1 hour',
+     'pre_pickup', now() - interval '1 hour',
      20.2150, -87.4290, 8.2, '09:00:00', 0,
      '[TEST] Arrived at Tulum, guests exploring', now())
 
