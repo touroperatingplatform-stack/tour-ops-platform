@@ -115,8 +115,8 @@ ON CONFLICT (id) DO UPDATE SET
 -- STEP 5: CREATE SETTINGS
 -- ==========================================
 
-INSERT INTO settings (id, key, value, updated_at) VALUES
-  ('set-0000-0000-0000-000000000001', 'company_name', '"Tour Ops Demo"'::jsonb, now())
+INSERT INTO settings (key, value, updated_at) VALUES
+  ('company_name', '"Tour Ops Demo"'::jsonb, now())
 ON CONFLICT (key) DO UPDATE SET 
   value = EXCLUDED.value,
   updated_at = now();
