@@ -197,6 +197,18 @@ export default function SuperAdminPage() {
     setDemoMessage(null)
 
     try {
+      // Verify auth and role
+      const { data: { user }, error: authError } = await supabase.auth.getUser()
+      if (authError) throw new Error('Auth failed: ' + authError.message)
+      if (!user) throw new Error('Not authenticated')
+      
+      const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
+      console.log('👤 Generating as:', user.email, '| Role:', profile?.role, '| UID:', user.id)
+      
+      if (profile?.role !== 'super_admin') {
+        throw new Error(`Insufficient permissions. Role '${profile?.role}' cannot generate demo data.`)
+      }
+      
       const today = new Date().toISOString().split('T')[0]
       const now = new Date()
       
