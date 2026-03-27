@@ -36,7 +36,7 @@ export default function LoginPage() {
         
         if (profile) {
           const redirects: Record<string, string> = {
-            super_admin: '/admin',
+            super_admin: '/super-admin',
             company_admin: '/admin',
             supervisor: '/supervisor',
             manager: '/supervisor',
@@ -101,7 +101,7 @@ export default function LoginPage() {
       }
 
       const redirects: Record<string, string> = {
-        super_admin: '/admin',
+        super_admin: '/super-admin',
         company_admin: '/admin',
         supervisor: '/supervisor',
         manager: '/supervisor',
