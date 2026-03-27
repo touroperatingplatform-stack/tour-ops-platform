@@ -136,20 +136,23 @@ export default function SuperAdminPage() {
     setDemoMessage(null)
 
     try {
+      // Get tours from the last 2 days to handle timezone differences
+      // (Cancun is UTC-5, so "today" in Cancun might be "yesterday" in UTC)
       const today = new Date().toISOString().split('T')[0]
+      const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0]
       
-      // First get today's tour IDs to delete related data
+      // First get tour IDs to delete related data
       const { data: todaysTours, error: toursFetchError } = await supabase
         .from('tours')
         .select('id')
-        .eq('tour_date', today)
+        .in('tour_date', [today, yesterday])
       
       if (toursFetchError) {
         console.error('Failed to fetch tours:', toursFetchError)
       }
       
       const todayTourIds = todaysTours?.map(t => t.id) || []
-      console.log(`Found ${todayTourIds.length} tours from today to delete`)
+      console.log(`Found ${todayTourIds.length} tours from today/yesterday to delete (searching ${today} and ${yesterday})`)
 
       const tables = [
         'activity_feed',
