@@ -38,8 +38,8 @@ export default function LoginPage() {
           const redirects: Record<string, string> = {
             super_admin: '/super-admin',
             company_admin: '/admin',
+            manager: '/admin',
             supervisor: '/supervisor',
-            manager: '/supervisor',
             operations: '/operations',
             guide: '/guide',
           }
@@ -103,8 +103,8 @@ export default function LoginPage() {
       const redirects: Record<string, string> = {
         super_admin: '/super-admin',
         company_admin: '/admin',
+        manager: '/admin',
         supervisor: '/supervisor',
-        manager: '/supervisor',
         operations: '/operations',
         guide: '/guide',
       }
