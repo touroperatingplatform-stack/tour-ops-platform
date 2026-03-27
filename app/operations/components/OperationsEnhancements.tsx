@@ -257,7 +257,7 @@ export function GuideCheckinStatus() {
     console.log('Check-ins loaded:', { 
       count: formatted.length,
       first: formatted[0],
-      guideFound: guideMap.get(formatted[0]?.guide_id ? checkinsData[0]?.guide_id : 'none')
+      guideFound: guideMap.get(checkinsData[0]?.guide_id || 'none')
     })
     setCheckins(formatted)
 
