@@ -124,7 +124,8 @@ export default function SuperAdminPage() {
       incidents: stats.incidents || 0,
       expenses: stats.tour_expenses || 0,
       feedback: stats.guest_feedback || 0,
-      activity: stats.activity_feed || 0
+      activity: stats.activity_feed || 0,
+      vehicles: stats.vehicles || 0
     })
   }
 
