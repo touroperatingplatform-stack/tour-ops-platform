@@ -36,7 +36,7 @@ export default function OperationsLayout({ children }: { children: React.ReactNo
       .eq('id', user.id)
       .single()
 
-    if (!['operations', 'manager', 'admin'].includes(profile?.role)) {
+    if (!['operations', 'supervisor', 'manager', 'admin', 'super_admin'].includes(profile?.role)) {
       router.push('/unauthorized')
       return
     }
