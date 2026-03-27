@@ -1,6 +1,6 @@
 -- ============================================
 -- CREATE generate_demo_data RPC function
--- Uses ACTUAL database schema columns
+-- Uses ACTUAL database schema columns (verified via information_schema)
 -- Run this ONCE in Supabase SQL Editor
 -- ============================================
 
@@ -126,8 +126,8 @@ BEGIN
   FROM tours t
   WHERE t.id = ANY(v_tour_ids[1:5]);
   
-  -- Create incidents (using ACTUAL schema columns)
-  INSERT INTO incidents (tour_id, reported_by, type, severity, description, status, guide_id, resolution_notes, created_at, updated_at)
+  -- Create incidents (ACTUAL columns: tour_id, reported_by, type, severity, description, status, guide_id, resolution_notes, escalation_level)
+  INSERT INTO incidents (tour_id, reported_by, type, severity, description, status, guide_id, resolution_notes, escalation_level)
   SELECT 
     t.id,
     t.guide_id,
@@ -137,8 +137,7 @@ BEGIN
     inc_status,
     t.guide_id,
     CASE WHEN inc_status = 'resolved' THEN 'Resolved on site' ELSE NULL END,
-    NOW(),
-    NOW()
+    1
   FROM (
     VALUES 
       (v_tour_ids[1], 'medical', 'medium', 'Guest felt dizzy. Possible dehydration.', 'resolved'),
@@ -170,17 +169,20 @@ BEGIN
   ) AS e(tour_id, cat, desc_text, amt)
   JOIN tours t ON t.id = e.tour_id;
   
-  -- Create guest feedback (using ACTUAL schema columns)
-  INSERT INTO guest_feedback (tour_id, guest_id, rating, review_title, review_text, review_date, responded, created_at)
+  -- Create guest feedback (ACTUAL columns: tour_id, brand_id, guide_id, guest_name, rating, comments, review_title, review_text, review_date, responded, guest_id)
+  INSERT INTO guest_feedback (tour_id, brand_id, guide_id, guest_name, rating, comments, review_title, review_text, review_date, responded, guest_id)
   SELECT 
     t.id,
-    g.id,
+    v_brand_id,
+    t.guide_id,
+    g.first_name || ' ' || g.last_name,
     rating,
+    text,
     title,
     text,
     NOW(),
     false,
-    NOW()
+    g.id
   FROM (
     VALUES 
       (v_tour_ids[1], 5, 'Absolutely Amazing!', 'Best tour of our vacation!'),
