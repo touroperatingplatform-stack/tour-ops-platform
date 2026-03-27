@@ -4,6 +4,7 @@ export const dynamic = 'force-dynamic'
 
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase/client'
+import RoleGuard from '@/lib/auth/RoleGuard'
 
 interface Company {
   id: string
@@ -1469,5 +1470,6 @@ TOUR-UUID-HERE,Jane,Smith,jane@email.com,+1-555-0102,Grand Velas Riviera Maya,20
         )}
       </div>
     </div>
+    </RoleGuard>
   )
 }

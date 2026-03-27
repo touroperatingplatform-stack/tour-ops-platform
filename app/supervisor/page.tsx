@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase/client'
+import RoleGuard from '@/lib/auth/RoleGuard'
 import LiveMap from './components/LiveMap'
 
 interface TourWithDetails {
@@ -224,9 +225,10 @@ export default function SupervisorDashboard() {
   }
 
   return (
-    <div className="h-full flex flex-col space-y-4 w-full overflow-hidden">
-      {/* Header - Fixed height */}
-      <div className="shrink-0">
+    <RoleGuard requiredRole="supervisor">
+      <div className="h-full flex flex-col space-y-4 w-full overflow-hidden">
+        {/* Header - Fixed height */}
+        <div className="shrink-0">
         <div className="mb-2">
           <h1 className="text-xl font-bold text-gray-900">Supervisor Dashboard</h1>
           <p className="text-sm text-gray-500">
@@ -424,5 +426,6 @@ export default function SupervisorDashboard() {
         </div>
       </div>
     </div>
+    </RoleGuard>
   )
 }

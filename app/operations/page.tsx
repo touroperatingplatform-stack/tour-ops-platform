@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase/client'
+import RoleGuard from '@/lib/auth/RoleGuard'
 import LiveMap from '../supervisor/components/LiveMap'
 import { IncidentAlerts, GuideCheckinStatus, OperationsMetrics } from './components/OperationsEnhancements'
 
@@ -195,15 +196,16 @@ export default function OperationsDashboard() {
   }
 
   return (
-    <div className="h-full flex flex-col space-y-4 w-full overflow-hidden">
-      {/* Header */}
-      <div className="shrink-0">
-        <div className="mb-2">
-          <h1 className="text-xl font-bold text-gray-900">Operations Dashboard</h1>
-          <p className="text-sm text-gray-500">
-            {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
-          </p>
-        </div>
+    <RoleGuard requiredRole="operations">
+      <div className="h-full flex flex-col space-y-4 w-full overflow-hidden">
+        {/* Header */}
+        <div className="shrink-0">
+          <div className="mb-2">
+            <h1 className="text-xl font-bold text-gray-900">Operations Dashboard</h1>
+            <p className="text-sm text-gray-500">
+              {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
+            </p>
+          </div>
 
         {/* Summary Metrics */}
         <div className="grid grid-cols-4 gap-3">
@@ -367,5 +369,6 @@ export default function OperationsDashboard() {
         </div>
       </div>
     </div>
+    </RoleGuard>
   )
 }
