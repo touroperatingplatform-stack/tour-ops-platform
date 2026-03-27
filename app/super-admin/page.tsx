@@ -43,6 +43,7 @@ interface DemoStats {
   expenses: number
   feedback: number
   activity: number
+  vehicles: number
 }
 
 interface ApiConfig {
@@ -69,7 +70,7 @@ export default function SuperAdminPage() {
   // Demo data state
   const [demoLoading, setDemoLoading] = useState(false)
   const [demoStats, setDemoStats] = useState<DemoStats>({
-    tours: 0, guests: 0, pickup_stops: 0, checkins: 0, incidents: 0, expenses: 0, feedback: 0, activity: 0
+    tours: 0, guests: 0, pickup_stops: 0, checkins: 0, incidents: 0, expenses: 0, feedback: 0, activity: 0, vehicles: 0
   })
   const [demoProgress, setDemoProgress] = useState<string>('')
   const [demoMessage, setDemoMessage] = useState<{type: 'success' | 'error', text: string} | null>(null)
@@ -99,7 +100,7 @@ export default function SuperAdminPage() {
   }
 
   async function loadDemoStats() {
-    const tables = ['tours', 'guests', 'pickup_stops', 'guide_checkins', 'incidents', 'tour_expenses', 'guest_feedback', 'activity_feed']
+    const tables = ['tours', 'guests', 'pickup_stops', 'guide_checkins', 'incidents', 'tour_expenses', 'guest_feedback', 'activity_feed', 'vehicles']
     const stats: any = {}
     
     for (const table of tables) {
@@ -244,7 +245,7 @@ export default function SuperAdminPage() {
   }
 
   async function handleGenerateDemoData() {
-    if (!confirm('📦 Generate Full Demo Data?\n\nThis will create:\n- Tours for TODAY with all 15 guides\n- Guests, pickup stops, check-ins\n- Incidents, expenses, feedback\n- Activity feed entries\n\nThis takes ~15 seconds. Continue?')) {
+    if (!confirm('📦 Generate Full Demo Data?\n\nThis will create:\n- Vehicle fleet (6 vehicles)\n- Tours for TODAY with all 15 guides\n- Guests, pickup stops, check-ins\n- Incidents, expenses, feedback\n- Activity feed entries\n\nThis takes ~15 seconds. Continue?')) {
       return
     }
 
@@ -332,7 +333,37 @@ export default function SuperAdminPage() {
       setDemoProgress(`✅ Created ${createdTourIds.length} tours for today`)
       await new Promise(resolve => setTimeout(resolve, 500))
 
-      // Step 2: Create guests for each tour
+      // Step 2: Create vehicles (fleet)
+      setDemoProgress('🚗 Creating vehicle fleet...')
+      const vehicleData = [
+        { plate: 'YXZ-123', make: 'Toyota', model: 'Hiace', year: 2022, capacity: 15 },
+        { plate: 'ABC-456', make: 'Mercedes', model: 'Sprinter', year: 2023, capacity: 18 },
+        { plate: 'DEF-789', make: 'Ford', model: 'Transit', year: 2021, capacity: 12 },
+        { plate: 'GHI-012', make: 'Chevrolet', model: 'Express', year: 2020, capacity: 10 },
+        { plate: 'JKL-345', make: 'Nissan', model: 'Urvan', year: 2022, capacity: 15 },
+        { plate: 'MNO-678', make: 'Hyundai', model: 'H350', year: 2023, capacity: 16 }
+      ]
+
+      let vehicleCount = 0
+      for (const v of vehicleData) {
+        await supabase.from('vehicles').insert({
+          company_id: companyId,
+          plate_number: v.plate,
+          make: v.make,
+          model: v.model,
+          year: v.year,
+          capacity: v.capacity,
+          status: vehicleCount < 4 ? 'in_use' : 'available',
+          mileage: Math.floor(Math.random() * 50000) + 10000,
+          next_maintenance: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+        })
+        vehicleCount++
+      }
+
+      setDemoProgress(`✅ Created ${vehicleCount} vehicles`)
+      await new Promise(resolve => setTimeout(resolve, 500))
+
+      // Step 3: Create guests for each tour
       setDemoProgress('👥 Adding guests...')
       let guestCount = 0
       const guestNames = [
