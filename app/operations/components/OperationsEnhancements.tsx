@@ -223,12 +223,6 @@ export function GuideCheckinStatus() {
       .select('id, first_name, last_name, role')
       .in('id', guideIds.length > 0 ? guideIds : ['00000000-0000-0000-0000-000000000000'])
 
-    console.log('Guides query result:', { 
-      count: guidesData?.length,
-      requestedCount: guideIds.length,
-      hasData: guidesData && guidesData.length > 0
-    })
-
     const { data: toursData } = await supabase
       .from('tours')
       .select('id, name')
@@ -237,30 +231,16 @@ export function GuideCheckinStatus() {
     const guideMap = new Map(guidesData?.map((g: any) => [g.id, `${g.first_name} ${g.last_name}`]) || [])
     const tourMap = new Map(toursData?.map((t: any) => [t.id, t.name]) || [])
 
-    console.log('Guide map keys:', Array.from(guideMap.keys()).slice(0, 5))
-    console.log('Check-in guide_ids:', checkinsData.map(c => c.guide_id).slice(0, 5))
+    const formatted = checkinsData.map((c: any) => ({
+      id: c.id,
+      guide_name: guideMap.get(c.guide_id) || 'Unknown',
+      tour_name: tourMap.get(c.tour_id) || 'Unknown Tour',
+      checkin_type: c.checkin_type,
+      checked_in_at: c.checked_in_at,
+      minutes_early_or_late: c.minutes_early_or_late,
+      location_accuracy: c.location_accuracy
+    }))
 
-    const formatted = checkinsData.map((c: any) => {
-      const guideName = guideMap.get(c.guide_id)
-      const tourName = tourMap.get(c.tour_id)
-      const result = {
-        id: c.id,
-        guide_name: guideName || 'Unknown',
-        tour_name: tourName || 'Unknown Tour',
-        checkin_type: c.checkin_type,
-        checked_in_at: c.checked_in_at,
-        minutes_early_or_late: c.minutes_early_or_late,
-        location_accuracy: c.location_accuracy
-      }
-      console.log(`Mapping check-in ${c.id.slice(0,8)}: guide_id=${c.guide_id?.slice(0,8)}, guideName=${guideName}`)
-      return result
-    })
-
-    console.log('Check-ins loaded (BEFORE setCheckins):', { 
-      count: formatted.length,
-      first: formatted[0],
-      guide_name_value: formatted[0]?.guide_name
-    })
     setCheckins(formatted)
     setLoading(false)
   }
@@ -280,9 +260,8 @@ export function GuideCheckinStatus() {
       </h3>
 
       <div className="space-y-2 max-h-64 overflow-auto">
-        {checkins.map((checkin, idx) => {
+        {checkins.map((checkin) => {
           const punctuality = getPunctualityStatus(checkin.minutes_early_or_late)
-          console.log(`Render check-in ${idx}: guide_name="${checkin.guide_name}", tour_name="${checkin.tour_name}"`)
           return (
             <div key={checkin.id} className="border border-gray-200 rounded-lg p-3 bg-white">
               <div className="flex items-center justify-between">

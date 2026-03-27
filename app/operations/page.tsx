@@ -89,12 +89,6 @@ export default function OperationsDashboard() {
         delayed_tours: delayedTours
       }))
       
-      console.log('Guides on duty debug:', { 
-        totalTours: formattedTours.length, 
-        guidesOnDuty,
-        sampleGuide: formattedTours[0]?.guide 
-      })
-      
       setStats(prev => ({
         ...prev,
         active_tours: activeTours,
