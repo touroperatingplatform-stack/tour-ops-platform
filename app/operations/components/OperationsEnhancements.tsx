@@ -195,10 +195,9 @@ export function GuideCheckinStatus() {
   }, [])
 
   async function loadCheckins() {
-    // Use timezone-aware date (checkins created in Cancun time)
+    // Simple date filter - last 48 hours to catch all recent check-ins
     const now = new Date()
-    const today = now.toISOString().split('T')[0]
-    const yesterday = new Date(now.getTime() - 86400000).toISOString().split('T')[0]
+    const twoDaysAgo = new Date(now.getTime() - 172800000).toISOString()
     
     const { data: checkinsData } = await supabase
       .from('guide_checkins')
@@ -207,10 +206,15 @@ export function GuideCheckinStatus() {
         tour:tours!tour_id (name),
         guide:profiles!guide_id (first_name, last_name)
       `)
-      .gte('checked_in_at', `${yesterday}T00:00:00.000Z`)
-      .lte('checked_in_at', `${today}T23:59:59.999Z`)
+      .gte('checked_in_at', twoDaysAgo)
       .order('checked_in_at', { ascending: false })
       .limit(20)
+
+    console.log('Check-ins query result:', { 
+      count: checkinsData?.length, 
+      error: null,
+      first: checkinsData?.[0] 
+    })
 
     if (checkinsData) {
       const formatted = checkinsData.map((c: any) => ({

@@ -79,12 +79,13 @@ export default function OperationsDashboard() {
       // Count all scheduled/in_progress tours as "active" (not just in_progress)
       const activeTours = formattedTours.filter(t => ['in_progress', 'scheduled'].includes(t.status)).length
       const delayedTours = formattedTours.filter(t => t.status === 'delayed').length
-      // Count unique guides (filter out unknown guides and empty names)
-      const guidesOnDuty = new Set(
-        formattedTours
-          .filter(t => t.guide && t.guide.first_name && t.guide.first_name !== 'Unknown')
-          .map(t => `${t.guide.first_name} ${t.guide.last_name}`.trim())
-      ).size
+      // Count unique guides from the actual guide data
+      const guidesOnDuty = formattedTours.filter(t => t.guide && t.guide.first_name).length
+      console.log('Guides on duty debug:', { 
+        totalTours: formattedTours.length, 
+        guidesOnDuty,
+        sampleGuide: formattedTours[0]?.guide 
+      })
       
       setStats(prev => ({
         ...prev,
