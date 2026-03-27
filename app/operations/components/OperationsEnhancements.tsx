@@ -199,22 +199,47 @@ export function GuideCheckinStatus() {
     const now = new Date()
     const twoDaysAgo = new Date(now.getTime() - 172800000).toISOString()
     
+    // First get check-ins without JOINs
     const { data: checkinsData } = await supabase
       .from('guide_checkins')
-      .select(`
-        id, checkin_type, checked_in_at, minutes_early_or_late, location_accuracy,
-        tour:tours!tour_id (name),
-        guide:profiles!guide_id (first_name, last_name)
-      `)
+      .select('id, guide_id, tour_id, checkin_type, checked_in_at, minutes_early_or_late, location_accuracy')
       .gte('checked_in_at', twoDaysAgo)
       .order('checked_in_at', { ascending: false })
       .limit(20)
 
-    console.log('Check-ins query result:', { 
-      count: checkinsData?.length, 
-      error: null,
-      first: checkinsData?.[0] 
+    if (!checkinsData || checkinsData.length === 0) {
+      setCheckins([])
+      setLoading(false)
+      return
+    }
+
+    // Then fetch guide and tour names separately
+    const guideIds = [...new Set(checkinsData.map(c => c.guide_id).filter(Boolean))]
+    const tourIds = [...new Set(checkinsData.map(c => c.tour_id).filter(Boolean))]
+
+    const [{ data: guidesData }, { data: toursData }] = await Promise.all([
+      supabase.from('profiles').select('id, first_name, last_name').in('id', guideIds.length > 0 ? guideIds : ['00000000-0000-0000-0000-000000000000']),
+      supabase.from('tours').select('id, name').in('id', tourIds.length > 0 ? tourIds : ['00000000-0000-0000-0000-000000000000'])
+    ])
+
+    const guideMap = new Map(guidesData?.map((g: any) => [g.id, g]) || [])
+    const tourMap = new Map(toursData?.map((t: any) => [t.id, t.name]) || [])
+
+    const formatted = checkinsData.map((c: any) => ({
+      id: c.id,
+      guide_name: guideMap.get(c.guide_id) ? `${guideMap.get(c.guide_id).first_name} ${guideMap.get(c.guide_id).last_name}` : 'Unknown',
+      tour_name: tourMap.get(c.tour_id) || 'Unknown Tour',
+      checkin_type: c.checkin_type,
+      checked_in_at: c.checked_in_at,
+      minutes_early_or_late: c.minutes_early_or_late,
+      location_accuracy: c.location_accuracy
+    }))
+
+    console.log('Check-ins loaded:', { 
+      count: formatted.length,
+      first: formatted[0] 
     })
+    setCheckins(formatted)
 
     if (checkinsData) {
       const formatted = checkinsData.map((c: any) => ({

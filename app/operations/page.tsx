@@ -81,6 +81,14 @@ export default function OperationsDashboard() {
       const delayedTours = formattedTours.filter(t => t.status === 'delayed').length
       // Count unique guides from the actual guide data
       const guidesOnDuty = formattedTours.filter(t => t.guide && t.guide.first_name).length
+      
+      setStats(prev => ({
+        ...prev,
+        active_tours: activeTours,
+        guides_on_duty: guidesOnDuty,
+        delayed_tours: delayedTours
+      }))
+      
       console.log('Guides on duty debug:', { 
         totalTours: formattedTours.length, 
         guidesOnDuty,
