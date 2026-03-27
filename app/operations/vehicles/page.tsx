@@ -18,6 +18,7 @@ interface Vehicle {
   assigned_guide?: string
 }
 
+// Operations vehicles fleet management
 export default function OperationsVehiclesPage() {
   const [vehicles, setVehicles] = useState<Vehicle[]>([])
   const [loading, setLoading] = useState(true)
