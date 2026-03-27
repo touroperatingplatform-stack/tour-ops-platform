@@ -370,18 +370,21 @@ export default function SuperAdminPage() {
 
       let vehicleCount = 0
       for (const v of vehicleData) {
-        await supabase.from('vehicles').insert({
-          company_id: companyId,
-          plate_number: v.plate,
-          make: v.make,
-          model: v.model,
-          year: v.year,
-          capacity: v.capacity,
-          status: vehicleCount < 4 ? 'in_use' : 'available',
-          mileage: Math.floor(Math.random() * 50000) + 10000,
-          next_maintenance: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
-        })
-        vehicleCount++
+        const { error } = await supabase
+          .from('vehicles')
+          .upsert({
+            company_id: companyId,
+            plate_number: v.plate,
+            make: v.make,
+            model: v.model,
+            year: v.year,
+            capacity: v.capacity,
+            status: vehicleCount < 4 ? 'in_use' : 'available',
+            mileage: Math.floor(Math.random() * 50000) + 10000,
+            next_maintenance: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+          }, { onConflict: 'plate_number' })
+        
+        if (!error) vehicleCount++
       }
 
       setDemoProgress(`✅ Created ${vehicleCount} vehicles`)
