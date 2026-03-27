@@ -52,7 +52,10 @@ export function IncidentAlerts({ onIncidentUpdate }: { onIncidentUpdate?: () => 
   }, [])
 
   async function loadIncidents() {
-    const today = new Date().toISOString().split('T')[0]
+    // Use timezone-aware date (incidents created in Cancun time)
+    const now = new Date()
+    const today = now.toISOString().split('T')[0]
+    const yesterday = new Date(now.getTime() - 86400000).toISOString().split('T')[0]
     
     const { data: incidentsData } = await supabase
       .from('incidents')
@@ -61,7 +64,7 @@ export function IncidentAlerts({ onIncidentUpdate }: { onIncidentUpdate?: () => 
         tour:tours (name),
         guide:profiles (first_name, last_name)
       `)
-      .gte('created_at', `${today}T00:00:00`)
+      .gte('created_at', `${yesterday}T00:00:00`)
       .in('status', ['reported', 'acknowledged'])
       .order('created_at', { ascending: false })
 
@@ -192,7 +195,10 @@ export function GuideCheckinStatus() {
   }, [])
 
   async function loadCheckins() {
-    const today = new Date().toISOString().split('T')[0]
+    // Use timezone-aware date (checkins created in Cancun time)
+    const now = new Date()
+    const today = now.toISOString().split('T')[0]
+    const yesterday = new Date(now.getTime() - 86400000).toISOString().split('T')[0]
     
     const { data: checkinsData } = await supabase
       .from('guide_checkins')
@@ -201,7 +207,7 @@ export function GuideCheckinStatus() {
         tour:tours (name),
         guide:profiles (first_name, last_name)
       `)
-      .gte('checked_in_at', `${today}T00:00:00`)
+      .gte('checked_in_at', `${yesterday}T00:00:00`)
       .order('checked_in_at', { ascending: false })
       .limit(20)
 
