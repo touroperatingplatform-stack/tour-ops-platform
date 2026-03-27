@@ -82,7 +82,7 @@ export const NAV_CONFIGS = {
     { href: '/operations', label: 'Dashboard', icon: '📊', minRole: 'operations' as Role },
     { href: '/operations/vehicles', label: 'Vehicles', icon: '🚌', minRole: 'operations' as Role },
     { href: '/operations/schedule', label: 'Schedule', icon: '📅', minRole: 'operations' as Role },
-    { href: '/operations/reports', label: 'Reports', icon: '📈', minRole: 'manager' as Role },
+    { href: '/operations/reports', label: 'Reports', icon: '📈', minRole: 'operations' as Role },
   ] as NavItem[],
 
   // Supervisor Navigation
