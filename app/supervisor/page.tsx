@@ -102,7 +102,13 @@ export default function SupervisorDashboard() {
       
       setTours(formattedTours)
       
-      const totalGuests = formattedTours.reduce((sum, t) => sum + (t.guest_count || 0), 0)
+      // Count actual guests from guests table, not guest_count column (which may be outdated)
+      const { count: actualGuestCount } = await supabase
+        .from('guests')
+        .select('*', { count: 'exact', head: true })
+        .in('tour_id', formattedTours.map(t => t.id))
+      
+      const totalGuests = actualGuestCount || 0
       const inProgress = formattedTours.filter(t => t.status === 'in_progress').length
       const scheduled = formattedTours.filter(t => t.status === 'scheduled').length
       
