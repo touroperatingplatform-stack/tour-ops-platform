@@ -336,14 +336,18 @@ export default function SuperAdminPage() {
 
       let vehicleCount = 0
       for (const v of vehicleData) {
-        // Check if vehicle already exists
-        const { data: existing } = await supabase
+        // Check if vehicle already exists (use limit(1) instead of single() to avoid 406)
+        const { data: existing, error: checkError } = await supabase
           .from('vehicles')
           .select('id')
           .eq('plate_number', v.plate)
-          .single()
+          .limit(1)
         
-        if (!existing) {
+        if (checkError) {
+          console.error('Error checking vehicle:', v.plate, checkError)
+        }
+        
+        if (!existing || existing.length === 0) {
           // Only insert if doesn't exist
           const { error } = await supabase.from('vehicles').insert({
             company_id: companyId,
@@ -357,7 +361,11 @@ export default function SuperAdminPage() {
             next_maintenance: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
           })
           
-          if (!error) vehicleCount++
+          if (error) {
+            console.error('Error inserting vehicle:', v.plate, error)
+          } else {
+            vehicleCount++
+          }
         } else {
           vehicleCount++ // Count existing vehicles too
         }
