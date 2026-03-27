@@ -176,8 +176,21 @@ export default function SuperAdminPage() {
       let deleted = 0
       const errors: string[] = []
       
+      console.log('🔍 Starting demo data cleanup...')
+      console.log('📋 Tables to delete (in order):', tables)
+      
       for (const table of tables) {
         try {
+          console.log(`🗑️ Attempting to delete from ${table}...`)
+          
+          // First, count how many records exist
+          const { count: recordCount } = await supabase
+            .from(table)
+            .select('*', { count: 'exact', head: true })
+            .gte('created_at', '1970-01-01')
+          
+          console.log(`📊 ${table} has ${recordCount} records to delete`)
+          
           // Supabase requires a WHERE clause
           // Try created_at first, fall back to id if that fails
           let { data, error } = await supabase
@@ -187,6 +200,7 @@ export default function SuperAdminPage() {
           
           // If created_at doesn't exist, try using id with neq (not equal)
           if (error && error.message?.includes('column')) {
+            console.log(`⚠️ ${table} has no created_at, trying id-based delete...`)
             const { data: dataById, error: errorById } = await supabase
               .from(table)
               .delete()
@@ -197,14 +211,17 @@ export default function SuperAdminPage() {
           }
           
           if (error) {
-            console.error(`Failed to clear ${table}:`, error)
+            console.error(`❌ Failed to clear ${table}:`, error)
+            console.error(`📝 Error details:`, error.message)
+            console.error(`🔗 Error hint:`, error.hint)
+            console.error(`📍 Error detail:`, error.details)
             errors.push(`${table}: ${error.message}`)
           } else {
             deleted++
-            console.log(`Cleared table: ${table}`)
+            console.log(`✅ Cleared table: ${table} (${recordCount} records)`);
           }
         } catch (tableError) {
-          console.error(`Error clearing ${table}:`, tableError)
+          console.error(`💥 Error clearing ${table}:`, tableError)
           errors.push(`${table}: ${(tableError as Error).message}`)
         }
       }
