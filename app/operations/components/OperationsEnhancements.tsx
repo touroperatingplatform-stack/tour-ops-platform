@@ -256,24 +256,12 @@ export function GuideCheckinStatus() {
       return result
     })
 
-    console.log('Check-ins loaded:', { 
+    console.log('Check-ins loaded (BEFORE setCheckins):', { 
       count: formatted.length,
-      first: formatted[0]
+      first: formatted[0],
+      guide_name_value: formatted[0]?.guide_name
     })
     setCheckins(formatted)
-
-    if (checkinsData) {
-      const formatted = checkinsData.map((c: any) => ({
-        id: c.id,
-        guide_name: `${c.guide?.first_name || ''} ${c.guide?.last_name || ''}`,
-        tour_name: c.tour?.name || 'Unknown',
-        checkin_type: c.checkin_type,
-        checked_in_at: c.checked_in_at,
-        minutes_early_or_late: c.minutes_early_or_late,
-        location_accuracy: c.location_accuracy
-      }))
-      setCheckins(formatted)
-    }
     setLoading(false)
   }
 
