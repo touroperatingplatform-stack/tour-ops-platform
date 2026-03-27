@@ -57,21 +57,29 @@ export default function OperationsDashboard() {
     const today = now.toISOString().split('T')[0]
     const tomorrow = new Date(now.getTime() + 86400000).toISOString().split('T')[0]
 
-    // Load tours (search both today and tomorrow for timezone edge case)
+    // Load tours without JOIN (RLS-friendly)
     const { data: toursData } = await supabase
       .from('tours')
-      .select(`
-        id, name, start_time, status, guest_count,
-        guide:guide_id (first_name, last_name)
-      `)
+      .select('id, name, start_time, status, guest_count, guide_id, tour_date')
       .in('tour_date', [today, tomorrow])
       .neq('status', 'cancelled')
       .order('start_time')
 
     if (toursData) {
+      // Get unique guide IDs
+      const guideIds = [...new Set(toursData.map(t => t.guide_id).filter(Boolean))]
+      
+      // Fetch guide names separately
+      const { data: guidesData } = await supabase
+        .from('profiles')
+        .select('id, first_name, last_name')
+        .in('id', guideIds.length > 0 ? guideIds : ['00000000-0000-0000-0000-000000000000'])
+      
+      const guideMap = new Map(guidesData?.map((g: any) => [g.id, { first_name: g.first_name, last_name: g.last_name }]) || [])
+      
       const formattedTours = toursData.map((t: any) => ({
         ...t,
-        guide: t.guide?.[0] || { first_name: 'Unknown', last_name: '' }
+        guide: guideMap.get(t.guide_id) || { first_name: 'Unknown', last_name: '' }
       })) as TourWithDetails[]
       
       setTours(formattedTours)
