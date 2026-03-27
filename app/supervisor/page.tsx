@@ -122,7 +122,7 @@ export default function SupervisorDashboard() {
       }))
 
       const activeGuidesList = formattedTours
-        .filter(t => t.status === 'in_progress' || t.status === 'scheduled')
+        .filter(t => t.status === 'in_progress')
         .map(t => ({
           id: t.id,
           name: `${t.guide.first_name} ${t.guide.last_name}`,
