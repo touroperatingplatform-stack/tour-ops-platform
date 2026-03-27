@@ -243,7 +243,7 @@ export function GuideCheckinStatus() {
     const formatted = checkinsData.map((c: any) => {
       const guideName = guideMap.get(c.guide_id)
       const tourName = tourMap.get(c.tour_id)
-      return {
+      const result = {
         id: c.id,
         guide_name: guideName || 'Unknown',
         tour_name: tourName || 'Unknown Tour',
@@ -252,12 +252,13 @@ export function GuideCheckinStatus() {
         minutes_early_or_late: c.minutes_early_or_late,
         location_accuracy: c.location_accuracy
       }
+      console.log(`Mapping check-in ${c.id.slice(0,8)}: guide_id=${c.guide_id?.slice(0,8)}, guideName=${guideName}`)
+      return result
     })
 
     console.log('Check-ins loaded:', { 
       count: formatted.length,
-      first: formatted[0],
-      guideFound: guideMap.get(checkinsData[0]?.guide_id || 'none')
+      first: formatted[0]
     })
     setCheckins(formatted)
 
