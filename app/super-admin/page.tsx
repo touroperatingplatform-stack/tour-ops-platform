@@ -394,9 +394,16 @@ export default function SuperAdminPage() {
 
       let vehicleCount = 0
       for (const v of vehicleData) {
-        const { error } = await supabase
+        // Check if vehicle already exists
+        const { data: existing } = await supabase
           .from('vehicles')
-          .upsert({
+          .select('id')
+          .eq('plate_number', v.plate)
+          .single()
+        
+        if (!existing) {
+          // Only insert if doesn't exist
+          const { error } = await supabase.from('vehicles').insert({
             company_id: companyId,
             plate_number: v.plate,
             make: v.make,
@@ -406,9 +413,12 @@ export default function SuperAdminPage() {
             status: vehicleCount < 4 ? 'in_use' : 'available',
             mileage: Math.floor(Math.random() * 50000) + 10000,
             next_maintenance: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
-          }, { onConflict: 'plate_number' })
-        
-        if (!error) vehicleCount++
+          })
+          
+          if (!error) vehicleCount++
+        } else {
+          vehicleCount++ // Count existing vehicles too
+        }
       }
 
       setDemoProgress(`✅ Created ${vehicleCount} vehicles`)
