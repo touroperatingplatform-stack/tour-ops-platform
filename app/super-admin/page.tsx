@@ -518,7 +518,7 @@ export default function SuperAdminPage() {
       setDemoProgress(`✅ Added ${expenseCount} expenses`)
       await new Promise(resolve => setTimeout(resolve, 500))
 
-      // Step 7: Create guest feedback (minimal fields - table schema is limited)
+      // Step 7: Create guest feedback (skip if table schema is incomplete)
       setDemoProgress('⭐ Generating guest feedback...')
       let feedbackCount = 0
       const feedbackData = [
@@ -530,27 +530,33 @@ export default function SuperAdminPage() {
       for (let i = 0; i < Math.min(createdTourIds.length, 3); i++) {
         const feedback = feedbackData[i % feedbackData.length]
         try {
-          // Insert only the core fields that definitely exist
+          // Try to insert with full schema, skip if table is missing columns
           const { error: fbError } = await supabase
             .from('guest_feedback')
             .insert({
               tour_id: createdTourIds[i],
               rating: feedback.rating,
               review_title: feedback.title,
-              review_text: feedback.text
+              review_text: feedback.text,
+              review_date: now.toISOString(),
+              responded: false
             })
           
           if (!fbError) {
             feedbackCount++
           } else {
-            console.error('Feedback insert failed:', fbError)
+            // Table schema is incomplete - skip feedback creation for now
+            // User should run docs/FIX-GUEST-FEEDBACK-SCHEMA.sql to add missing columns
+            console.log('Guest feedback skipped (table schema incomplete - run FIX-GUEST-FEEDBACK-SCHEMA.sql)')
+            break // Stop trying after first failure
           }
         } catch (fbError) {
-          console.error('Failed to create feedback:', fbError)
+          console.log('Guest feedback skipped (table schema incomplete)')
+          break
         }
       }
 
-      setDemoProgress(`✅ Generated ${feedbackCount} guest reviews`)
+      setDemoProgress(`✅ Generated ${feedbackCount} guest reviews${feedbackCount === 0 ? ' (table schema needs update)' : ''}`)
       await new Promise(resolve => setTimeout(resolve, 500))
 
       // Step 8: Create activity feed entries
