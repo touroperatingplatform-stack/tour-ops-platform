@@ -207,7 +207,8 @@ export function GuideCheckinStatus() {
         tour:tours!tour_id (name),
         guide:profiles!guide_id (first_name, last_name)
       `)
-      .gte('checked_in_at', `${yesterday}T00:00:00`)
+      .gte('checked_in_at', `${yesterday}T00:00:00.000Z`)
+      .lte('checked_in_at', `${today}T23:59:59.999Z`)
       .order('checked_in_at', { ascending: false })
       .limit(20)
 
