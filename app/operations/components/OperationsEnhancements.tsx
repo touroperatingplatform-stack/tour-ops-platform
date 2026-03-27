@@ -61,8 +61,8 @@ export function IncidentAlerts({ onIncidentUpdate }: { onIncidentUpdate?: () => 
       .from('incidents')
       .select(`
         id, type, severity, description, status, created_at,
-        tour:tours (name),
-        guide:profiles (first_name, last_name)
+        tour:tours!tour_id (name),
+        guide:profiles!guide_id (first_name, last_name)
       `)
       .gte('created_at', `${yesterday}T00:00:00`)
       .in('status', ['reported', 'acknowledged'])
@@ -204,8 +204,8 @@ export function GuideCheckinStatus() {
       .from('guide_checkins')
       .select(`
         id, checkin_type, checked_in_at, minutes_early_or_late, location_accuracy,
-        tour:tours (name),
-        guide:profiles (first_name, last_name)
+        tour:tours!tour_id (name),
+        guide:profiles!guide_id (first_name, last_name)
       `)
       .gte('checked_in_at', `${yesterday}T00:00:00`)
       .order('checked_in_at', { ascending: false })
