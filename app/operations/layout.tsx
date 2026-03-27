@@ -10,6 +10,7 @@ const navItems = [
   { href: '/operations', label: 'Dashboard', icon: '📊' },
   { href: '/operations/vehicles', label: 'Vehicles', icon: '🚌' },
   { href: '/operations/schedule', label: 'Schedule', icon: '📅' },
+  { href: '/operations/reports', label: 'Reports', icon: '📈' },
 ]
 
 export default function OperationsLayout({ children }: { children: React.ReactNode }) {
