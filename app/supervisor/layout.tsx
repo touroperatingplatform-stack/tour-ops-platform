@@ -8,6 +8,8 @@ import TopNav from './components/TopNav'
 
 const navItems = [
   { href: '/supervisor', label: 'Dashboard', icon: '📊' },
+  { href: '/operations', label: 'Operations', icon: '🚀' },
+  { href: '/reports', label: 'Reports', icon: '📈' },
   { href: '/supervisor/guides', label: 'Guides', icon: '👥' },
   { href: '/supervisor/expenses', label: 'Expenses', icon: '💵' },
   { href: '/supervisor/incidents', label: 'Incidents', icon: '🚨' },

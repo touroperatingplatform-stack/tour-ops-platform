@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase/client'
 import LiveMap from '../supervisor/components/LiveMap'
+import { IncidentAlerts, GuideCheckinStatus, OperationsMetrics } from './components/OperationsEnhancements'
 
 interface TourWithDetails {
   id: string
@@ -204,54 +205,35 @@ export default function OperationsDashboard() {
         </div>
       </div>
 
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col gap-4 min-h-0">
-        {/* Row 1: Live Map + Vehicle Status */}
-        <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-4 min-h-0">
+      {/* Main Content - Enhanced 3-Column Layout */}
+      <div className="flex-1 grid grid-cols-12 gap-4 min-h-0 overflow-auto">
+        {/* Left Column - Live Map (6 cols) */}
+        <div className="col-span-12 lg:col-span-6 flex flex-col">
           <LiveMap />
-          
-          {/* Vehicle Status */}
-          <div className="bg-white rounded-lg border border-gray-200 overflow-hidden flex flex-col">
-            <div className="px-3 py-2 border-b border-gray-200 bg-gray-50 shrink-0">
-              <h2 className="font-semibold text-gray-900 text-sm">Vehicle Fleet</h2>
-            </div>
-            
-            <div className="flex-1 overflow-auto">
-              <table className="w-full text-sm">
-                <thead className="bg-gray-50 text-left text-xs uppercase text-gray-500 sticky top-0">
-                  <tr>
-                    <th className="px-3 py-2 font-medium">Vehicle</th>
-                    <th className="px-3 py-2 font-medium">Plate</th>
-                    <th className="px-3 py-2 font-medium">Status</th>
-                    <th className="px-3 py-2 font-medium text-right">Capacity</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100">
-                  {vehicles.map((vehicle) => (
-                    <tr key={vehicle.id} className="hover:bg-gray-50">
-                      <td className="px-3 py-2 font-medium text-gray-900">{vehicle.make} {vehicle.model}</td>
-                      <td className="px-3 py-2 text-gray-600">{vehicle.plate_number}</td>
-                      <td className="px-3 py-2">{getVehicleStatusBadge(vehicle.status)}</td>
-                      <td className="px-3 py-2 text-right text-gray-600">{vehicle.capacity}</td>
-                    </tr>
-                  ))}
-                  {vehicles.length === 0 && (
-                    <tr>
-                      <td colSpan={4} className="px-3 py-4 text-center text-gray-500 text-sm">
-                        No vehicles registered.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
+        </div>
+
+        {/* Right Column - Panels (6 cols) */}
+        <div className="col-span-12 lg:col-span-6 flex flex-col gap-4 overflow-auto">
+          {/* Incident Alerts */}
+          <div className="bg-white rounded-lg border border-gray-200 p-4 shrink-0">
+            <IncidentAlerts onIncidentUpdate={loadOperationsData} />
+          </div>
+
+          {/* Operations Metrics */}
+          <div className="bg-white rounded-lg border border-gray-200 p-4 shrink-0">
+            <OperationsMetrics />
+          </div>
+
+          {/* Guide Check-ins */}
+          <div className="bg-white rounded-lg border border-gray-200 p-4 shrink-0">
+            <GuideCheckinStatus />
           </div>
         </div>
 
-        {/* Row 2: Timeline + Active Tours */}
-        <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-4 min-h-0">
-          {/* Today's Timeline */}
-          <div className="bg-white rounded-lg border border-gray-200 overflow-hidden flex flex-col">
+        {/* Bottom Row - Timeline + Active Tours + Vehicles */}
+        <div className="col-span-12 grid grid-cols-1 lg:grid-cols-3 gap-4 min-h-0">
+          {/* Timeline */}
+          <div className="lg:col-span-1 bg-white rounded-lg border border-gray-200 overflow-hidden flex flex-col">
             <div className="px-3 py-2 border-b border-gray-200 bg-gray-50 shrink-0">
               <h2 className="font-semibold text-gray-900 text-sm">Today's Timeline</h2>
             </div>
@@ -288,7 +270,7 @@ export default function OperationsDashboard() {
           </div>
 
           {/* Active Tours */}
-          <div className="bg-white rounded-lg border border-gray-200 overflow-hidden flex flex-col">
+          <div className="lg:col-span-1 bg-white rounded-lg border border-gray-200 overflow-hidden flex flex-col">
             <div className="px-3 py-2 border-b border-gray-200 bg-gray-50 flex items-center justify-between shrink-0">
               <h2 className="font-semibold text-gray-900 text-sm">Active Tours</h2>
               {stats.active_tours > 0 && (
@@ -317,6 +299,43 @@ export default function OperationsDashboard() {
                     <tr>
                       <td colSpan={3} className="px-3 py-4 text-center text-gray-500 text-sm">
                         No active tours.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Vehicle Fleet */}
+          <div className="lg:col-span-1 bg-white rounded-lg border border-gray-200 overflow-hidden flex flex-col">
+            <div className="px-3 py-2 border-b border-gray-200 bg-gray-50 shrink-0">
+              <h2 className="font-semibold text-gray-900 text-sm">Vehicle Fleet</h2>
+            </div>
+            
+            <div className="flex-1 overflow-auto">
+              <table className="w-full text-sm">
+                <thead className="bg-gray-50 text-left text-xs uppercase text-gray-500 sticky top-0">
+                  <tr>
+                    <th className="px-3 py-2 font-medium">Vehicle</th>
+                    <th className="px-3 py-2 font-medium">Plate</th>
+                    <th className="px-3 py-2 font-medium">Status</th>
+                    <th className="px-3 py-2 font-medium text-right">Capacity</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {vehicles.map((vehicle) => (
+                    <tr key={vehicle.id} className="hover:bg-gray-50">
+                      <td className="px-3 py-2 font-medium text-gray-900">{vehicle.make} {vehicle.model}</td>
+                      <td className="px-3 py-2 text-gray-600">{vehicle.plate_number}</td>
+                      <td className="px-3 py-2">{getVehicleStatusBadge(vehicle.status)}</td>
+                      <td className="px-3 py-2 text-right text-gray-600">{vehicle.capacity}</td>
+                    </tr>
+                  ))}
+                  {vehicles.length === 0 && (
+                    <tr>
+                      <td colSpan={4} className="px-3 py-4 text-center text-gray-500 text-sm">
+                        No vehicles registered.
                       </td>
                     </tr>
                   )}
