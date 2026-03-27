@@ -138,130 +138,50 @@ export default function SuperAdminPage() {
     setDemoMessage(null)
 
     try {
-      // Get tours from the last 2 days to handle timezone differences
-      // (Cancun is UTC-5, so "today" in Cancun might be "yesterday" in UTC)
-      const today = new Date().toISOString().split('T')[0]
-      const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0]
+      console.log('🔍 Starting demo data cleanup via database function...')
       
-      // First get tour IDs to delete related data
-      const { data: todaysTours, error: toursFetchError } = await supabase
-        .from('tours')
-        .select('id')
-        .in('tour_date', [today, yesterday])
+      // Use the database function that bypasses RLS
+      const { data: results, error } = await supabase.rpc('clear_demo_data')
       
-      if (toursFetchError) {
-        console.error('Failed to fetch tours:', toursFetchError)
+      if (error) {
+        console.error('❌ Database function failed:', error)
+        throw new Error(`Failed to clear demo data: ${error.message}`)
       }
       
-      const todayTourIds = todaysTours?.map(t => t.id) || []
-      console.log(`Found ${todayTourIds.length} tours from today/yesterday to delete (searching ${today} and ${yesterday})`)
-
-      // Order matters! Delete child tables (with FKs) before parent tables
-      const tables = [
-        'activity_feed',
-        'incident_comments',
-        'guest_feedback',  // Has FK to guests - must delete BEFORE guests
-        'push_notifications',
-        'external_bookings',
-        'cash_confirmations',
-        'payments',
-        'checklist_completions',
-        'tour_expenses',
-        'guide_checkins',
-        'pickup_stops',
-        'guests',  // Delete AFTER guest_feedback
-        'incidents'
-      ]
-
-      let deleted = 0
-      const errors: string[] = []
+      console.log('📊 Deletion results:', results)
       
-      console.log('🔍 Starting demo data cleanup...')
-      console.log('📋 Tables to delete (in order):', tables)
+      // Log what was deleted
+      let totalDeleted = 0
+      const tableResults: Record<string, number> = {}
       
-      for (const table of tables) {
-        try {
-          console.log(`🗑️ Attempting to delete from ${table}...`)
-          
-          // First, count how many records exist
-          const { count: recordCount } = await supabase
-            .from(table)
-            .select('*', { count: 'exact', head: true })
-            .gte('created_at', '1970-01-01')
-          
-          console.log(`📊 ${table} has ${recordCount} records to delete`)
-          
-          // Special handling for guest_feedback - delete ALL records (no date filter) to avoid FK issues
-          // This table has FK to guests, so we need to ensure it's completely empty before deleting guests
-          let { data, error } = table === 'guest_feedback' 
-            ? await supabase.from(table).delete().neq('id', '00000000-0000-0000-0000-000000000000')
-            : await supabase.from(table).delete().gte('created_at', '1970-01-01')
-          
-          // If created_at doesn't exist, try using id with neq (not equal)
-          if (error && error.message?.includes('column')) {
-            console.log(`⚠️ ${table} has no created_at, trying id-based delete...`)
-            const { data: dataById, error: errorById } = await supabase
-              .from(table)
-              .delete()
-              .neq('id', '00000000-0000-0000-0000-000000000000')
-            
-            data = dataById
-            error = errorById
+      if (results && Array.isArray(results)) {
+        for (const row of results) {
+          if (row.table_name && row.deleted_count !== null) {
+            tableResults[row.table_name] = row.deleted_count
+            totalDeleted += row.deleted_count
+            console.log(`✅ ${row.table_name}: ${row.deleted_count} records deleted`)
           }
-          
-          if (error) {
-            console.error(`❌ Failed to clear ${table}:`, error)
-            console.error(`📝 Error details:`, error.message)
-            console.error(`🔗 Error hint:`, error.hint)
-            console.error(`📍 Error detail:`, error.details)
-            errors.push(`${table}: ${error.message}`)
-          } else {
-            deleted++
-            console.log(`✅ Cleared table: ${table} (${recordCount} records)`);
-            
-            // Wait for replication after deleting guest_feedback
-            if (table === 'guest_feedback') {
-              console.log('⏳ Waiting for Supabase replication after guest_feedback delete...')
-              await new Promise(resolve => setTimeout(resolve, 2000))
-            }
-          }
-        } catch (tableError) {
-          console.error(`💥 Error clearing ${table}:`, tableError)
-          errors.push(`${table}: ${(tableError as Error).message}`)
         }
       }
-
-      // Delete today's tours
-      if (todayTourIds.length > 0) {
-        const { data: tourData, error: tourError } = await supabase
-          .from('tours')
-          .delete()
-          .in('id', todayTourIds)
-        
-        if (tourError) {
-          console.error('Failed to delete tours:', tourError)
-          errors.push(`tours: ${tourError.message}`)
-        } else {
-          deleted += todayTourIds.length
-          console.log(`Deleted ${todayTourIds.length} tours`)
-        }
-      }
-
-      // Wait for all deletes to propagate
-      await new Promise(resolve => setTimeout(resolve, 3000))
       
-      // Refresh stats with a fresh query (add timestamp to bypass any caching)
+      console.log(`🎉 Total records deleted: ${totalDeleted}`)
+      
+      // Wait for replication to propagate
+      console.log('⏳ Waiting for Supabase replication...')
+      await new Promise(resolve => setTimeout(resolve, 2000))
+      
+      // Refresh stats with a fresh query
       await loadDemoStats()
-
-      const errorMsg = errors.length > 0 ? `\n\n⚠️ Some tables had errors:\n${errors.join('\n')}` : ''
+      
       setDemoMessage({ 
-        type: errors.length > 0 ? 'error' : 'success', 
-        text: `✅ Cleared demo data.${errorMsg}` 
+        type: 'success', 
+        text: `✅ Cleared demo data (${totalDeleted} records total)`
       })
       
       // Force another stats refresh after message is shown
       setTimeout(() => loadDemoStats(), 1000)
     } catch (err) {
+      console.error('💥 Error in handleClearDemoData:', err)
       setDemoMessage({ type: 'error', text: '❌ Error clearing demo data: ' + (err as Error).message })
     } finally {
       setDemoLoading(false)
