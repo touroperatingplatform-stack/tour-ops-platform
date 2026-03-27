@@ -76,14 +76,6 @@ export default function SupervisorDashboard() {
     const today = now.toISOString().split('T')[0]
     const tomorrow = new Date(now.getTime() + 86400000).toISOString().split('T')[0]
 
-    // Get all guides first for lookup
-    const { data: guidesData } = await supabase
-      .from('profiles')
-      .select('id, first_name, last_name')
-      .eq('role', 'guide')
-
-    const guideMap = new Map(guidesData?.map((g: any) => [g.id, g]) || [])
-
     const { data: toursData } = await supabase
       .from('tours')
       .select('id, name, start_time, status, guest_count, guide_id')
@@ -92,6 +84,15 @@ export default function SupervisorDashboard() {
       .order('start_time')
 
     if (toursData) {
+      // Get only the guides referenced in these tours (not all guides)
+      const guideIds = [...new Set(toursData.map(t => t.guide_id).filter(Boolean))]
+      const { data: guidesData } = await supabase
+        .from('profiles')
+        .select('id, first_name, last_name')
+        .in('id', guideIds.length > 0 ? guideIds : ['00000000-0000-0000-0000-000000000000'])
+
+      const guideMap = new Map(guidesData?.map((g: any) => [g.id, g]) || [])
+
       const formattedTours = toursData.map((t: any) => {
         const guide = guideMap.get(t.guide_id)
         return {
@@ -132,23 +133,20 @@ export default function SupervisorDashboard() {
       setActiveGuides(activeGuidesList)
     }
 
-    const { data: incidentsData, error: incidentsError } = await supabase
+    const { data: incidentsData } = await supabase
       .from('incidents')
       .select('id, type, severity, status, tour_id, reported_by, created_at, description')
       .order('created_at', { ascending: false })
       .limit(20)
 
-    if (incidentsError) console.error('Incidents error:', incidentsError)
-    console.log('Incidents query:', { count: incidentsData?.length, error: incidentsError?.message })
-
     if (incidentsData && incidentsData.length > 0) {
-      // Get tour names
+      // Get tour names and reporter names
       const tourIds = [...new Set(incidentsData.map((i: any) => i.tour_id).filter(Boolean))]
       const reporterIds = [...new Set(incidentsData.map((i: any) => i.reported_by).filter(Boolean))]
       
       const [{ data: toursInfo }, { data: reportersData }] = await Promise.all([
-        supabase.from('tours').select('id, name').in('id', tourIds.length > 0 ? tourIds : ['00000000-0000-0000-0000-000000000000']),
-        supabase.from('profiles').select('id, first_name, last_name').in('id', reporterIds.length > 0 ? reporterIds : ['00000000-0000-0000-0000-000000000000'])
+        supabase.from('tours').select('id, name').in('id', tourIds),
+        supabase.from('profiles').select('id, first_name, last_name').in('id', reporterIds)
       ])
       
       const tourMap = new Map(toursInfo?.map((t: any) => [t.id, t.name]) || [])
