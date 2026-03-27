@@ -292,8 +292,9 @@ export function GuideCheckinStatus() {
       </h3>
 
       <div className="space-y-2 max-h-64 overflow-auto">
-        {checkins.map((checkin) => {
+        {checkins.map((checkin, idx) => {
           const punctuality = getPunctualityStatus(checkin.minutes_early_or_late)
+          console.log(`Render check-in ${idx}: guide_name="${checkin.guide_name}", tour_name="${checkin.tour_name}"`)
           return (
             <div key={checkin.id} className="border border-gray-200 rounded-lg p-3 bg-white">
               <div className="flex items-center justify-between">
