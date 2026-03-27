@@ -521,7 +521,7 @@ export default function SuperAdminPage() {
       setDemoProgress(`✅ Added ${expenseCount} expenses`)
       await new Promise(resolve => setTimeout(resolve, 500))
 
-      // Step 7: Create guest feedback (skip if table schema is incomplete)
+      // Step 7: Create guest feedback (schema is now complete)
       setDemoProgress('⭐ Generating guest feedback...')
       let feedbackCount = 0
       const feedbackData = [
@@ -533,33 +533,54 @@ export default function SuperAdminPage() {
       for (let i = 0; i < Math.min(createdTourIds.length, 3); i++) {
         const feedback = feedbackData[i % feedbackData.length]
         try {
-          // Try to insert with full schema, skip if table is missing columns
+          // Get tour info for brand_id
+          const { data: tour } = await supabase
+            .from('tours')
+            .select('brand_id')
+            .eq('id', createdTourIds[i])
+            .single()
+          
+          // Get a guest from this tour
+          const { data: tourGuests } = await supabase
+            .from('guests')
+            .select('id, first_name, last_name')
+            .eq('tour_id', createdTourIds[i])
+            .limit(1)
+          
+          const guest = tourGuests && tourGuests.length > 0 ? tourGuests[0] : null
+          
+          // Insert with all required fields
+          const feedbackInsert: any = {
+            tour_id: createdTourIds[i],
+            brand_id: tour?.brand_id,
+            rating: feedback.rating,
+            review_title: feedback.title,
+            review_text: feedback.text,
+            review_date: now.toISOString(),
+            responded: false
+          }
+          
+          // Add guest info if available
+          if (guest) {
+            feedbackInsert.guest_id = guest.id
+            feedbackInsert.guest_name = `${guest.first_name} ${guest.last_name}`
+          }
+          
           const { error: fbError } = await supabase
             .from('guest_feedback')
-            .insert({
-              tour_id: createdTourIds[i],
-              rating: feedback.rating,
-              review_title: feedback.title,
-              review_text: feedback.text,
-              review_date: now.toISOString(),
-              responded: false
-            })
+            .insert(feedbackInsert)
           
           if (!fbError) {
             feedbackCount++
           } else {
-            // Table schema is incomplete - skip feedback creation for now
-            // User should run docs/FIX-GUEST-FEEDBACK-SCHEMA.sql to add missing columns
-            console.log('Guest feedback skipped (table schema incomplete - run FIX-GUEST-FEEDBACK-SCHEMA.sql)')
-            break // Stop trying after first failure
+            console.error('Feedback insert failed:', fbError)
           }
         } catch (fbError) {
-          console.log('Guest feedback skipped (table schema incomplete)')
-          break
+          console.error('Failed to create feedback:', fbError)
         }
       }
 
-      setDemoProgress(`✅ Generated ${feedbackCount} guest reviews${feedbackCount === 0 ? ' (table schema needs update)' : ''}`)
+      setDemoProgress(`✅ Generated ${feedbackCount} guest reviews`)
       await new Promise(resolve => setTimeout(resolve, 500))
 
       // Step 8: Create activity feed entries
