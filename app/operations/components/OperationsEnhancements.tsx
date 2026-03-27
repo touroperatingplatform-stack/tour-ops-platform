@@ -11,6 +11,7 @@ interface Incident {
   description: string
   created_at: string
   status: 'reported' | 'acknowledged' | 'resolved'
+  guide_name?: string
 }
 
 interface GuideCheckin {
