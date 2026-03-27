@@ -62,21 +62,68 @@ export default function SuperAdminDemoPage() {
     setDemoMessage(null)
 
     try {
-      const { data: results, error } = await supabase.rpc('clear_demo_data')
+      const today = new Date().toISOString().split('T')[0]
       
-      if (error) throw new Error(`Failed to clear demo data: ${error.message}`)
+      // Get today's tour IDs
+      const { data: todaysTours } = await supabase
+        .from('tours')
+        .select('id')
+        .eq('tour_date', today)
       
-      setDemoMessage({ type: 'success', text: `✅ Cleared demo data successfully!` })
-      loadDemoStats()
-    } catch (error: any) {
-      setDemoMessage({ type: 'error', text: `❌ Error: ${error.message}` })
+      const todayTourIds = todaysTours?.map(t => t.id) || []
+
+      // Delete in correct order (FK constraints)
+      const tables = [
+        'guest_feedback',
+        'cash_confirmations',
+        'payments',
+        'checklist_completions',
+        'tour_expenses',
+        'incident_comments',
+        'incidents',
+        'guide_checkins',
+        'pickup_stops',
+        'guests',
+        'external_bookings',
+        'activity_feed',
+        'push_notifications'
+      ]
+
+      let deleted = 0
+      for (const table of tables) {
+        try {
+          const { data, error } = await supabase.from(table).delete().neq('id', '00000000-0000-0000-0000-000000000000')
+          const recordCount = (data as unknown as any[])?.length || 0
+          deleted += recordCount
+          if (error) console.error(`Failed to clear ${table}:`, error)
+        } catch (tableError) {
+          console.error(`Error clearing ${table}:`, tableError)
+        }
+      }
+
+      // Delete today's tours
+      if (todayTourIds.length > 0) {
+        const { data: tourData, error: tourError } = await supabase
+          .from('tours')
+          .delete()
+          .in('id', todayTourIds)
+        
+        const tourCount = (tourData as unknown as any[])?.length || 0
+        deleted += tourCount
+        if (tourError) console.error('Failed to delete tours:', tourError)
+      }
+
+      setDemoMessage({ type: 'success', text: `✅ Cleared ${deleted} demo records.` })
+      setTimeout(() => loadDemoStats(), 1000)
+    } catch (err) {
+      setDemoMessage({ type: 'error', text: '❌ Error clearing demo data: ' + (err as Error).message })
     } finally {
       setDemoLoading(false)
     }
   }
 
   async function handleGenerateDemoData() {
-    if (!confirm('Generate demo data?\n\nThis will create:\n- 15 tours\n- 40 guests\n- 20 pickup stops\n- 15 guide check-ins\n- 3 incidents\n- 5 expenses\n- 3 feedback entries\n- 5 activity feed entries\n- 6 vehicles\n\nContinue?')) {
+    if (!confirm('📦 Generate Full Demo Data?\n\nThis will create:\n- Tours for TODAY with all guides\n- Guests, pickup stops, check-ins\n- Incidents, expenses, feedback\n- Activity feed entries\n\nThis takes ~15 seconds. Continue?')) {
       return
     }
 
@@ -84,18 +131,370 @@ export default function SuperAdminDemoPage() {
     setDemoMessage(null)
 
     try {
-      const { data: results, error } = await supabase.rpc('generate_demo_data')
+      const today = new Date().toISOString().split('T')[0]
+      const now = new Date()
       
-      if (error) throw new Error(`Failed to generate demo data: ${error.message}`)
+      // Get guides
+      const { data: guides } = await supabase
+        .from('profiles')
+        .select('id, email, first_name, last_name, brand_id')
+        .eq('role', 'guide')
+        .eq('status', 'active')
       
-      setDemoMessage({ type: 'success', text: `✅ Generated demo data successfully!` })
-      loadDemoStats()
-    } catch (error: any) {
-      setDemoMessage({ type: 'error', text: `❌ Error: ${error.message}` })
+      if (!guides || guides.length === 0) {
+        throw new Error('No active guides found. Please create guide users first.')
+      }
+
+      // Get company and brands
+      const { data: companies } = await supabase.from('companies').select('id').limit(1)
+      const { data: brands } = await supabase.from('brands').select('id')
+      
+      if (!companies || companies.length === 0) {
+        throw new Error('No companies found. Please create a company first.')
+      }
+
+      const companyId = companies[0].id
+      const brandIds = brands?.map(b => b.id) || []
+
+      // Step 1: Create vehicles
+      setDemoProgress('🚗 Creating vehicles...')
+      const vehicleFleet = [
+        { plate: 'ABC-123', model: 'Toyota Hiace 2020', capacity: 13, status: 'available' },
+        { plate: 'XYZ-789', model: 'Mercedes Sprinter 2021', capacity: 19, status: 'available' },
+        { plate: 'DEF-456', model: 'Ford Transit 2019', capacity: 15, status: 'available' },
+        { plate: 'GHI-321', model: 'Chevrolet Express 2018', capacity: 12, status: 'available' },
+        { plate: 'JKL-654', model: 'Nissan Urvan 2020', capacity: 15, status: 'available' },
+        { plate: 'MNO-987', model: 'Hyundai H350 2021', capacity: 16, status: 'available' }
+      ]
+
+      let vehicleCount = 0
+      for (const v of vehicleFleet) {
+        await supabase.from('vehicles').insert({
+          company_id: companyId,
+          plate_number: v.plate,
+          model: v.model,
+          capacity: v.capacity,
+          status: v.status
+        })
+        vehicleCount++
+      }
+
+      setDemoProgress(`✅ Created ${vehicleCount} vehicles`)
+      await new Promise(resolve => setTimeout(resolve, 500))
+
+      // Step 2: Create tours
+      setDemoProgress('📍 Creating tours for today...')
+      const tourDestinations = [
+        { name: 'Tulum Ruins Express', start: '08:00', duration: 360, type: 'private', price: 89 },
+        { name: 'Chichen Itza Sunrise', start: '06:00', duration: 720, type: 'shared', price: 129 },
+        { name: 'Coba Adventure + Cenotes', start: '07:30', duration: 540, type: 'shared', price: 109 },
+        { name: 'Cenote Route Private', start: '09:00', duration: 420, type: 'private', price: 99 },
+        { name: 'Akumal Snorkeling Tour', start: '08:30', duration: 480, type: 'shared', price: 95 },
+        { name: 'Valladolid Cultural Tour', start: '07:00', duration: 600, type: 'shared', price: 99 },
+        { name: 'Tulum VIP Private', start: '09:30', duration: 360, type: 'private', price: 299 },
+        { name: 'Isla Mujeres Day Trip', start: '08:00', duration: 600, type: 'shared', price: 119 },
+        { name: 'Xcaret Park Tour', start: '08:30', duration: 540, type: 'shared', price: 139 },
+        { name: 'Tulum + Akumal Combo', start: '08:00', duration: 480, type: 'shared', price: 105 },
+        { name: 'Coba + Valladolid', start: '07:00', duration: 600, type: 'shared', price: 99 },
+        { name: 'Gran Cenote Private', start: '10:00', duration: 300, type: 'private', price: 79 },
+        { name: 'Playa del Carmen Tour', start: '09:00', duration: 420, type: 'shared', price: 89 },
+        { name: 'Puerto Morelos Reef', start: '08:30', duration: 360, type: 'shared', price: 95 },
+        { name: 'Sunset Tulum Tour', start: '14:00', duration: 300, type: 'private', price: 69 }
+      ]
+
+      const createdTourIds: string[] = []
+      for (let i = 0; i < Math.min(guides.length, tourDestinations.length); i++) {
+        const guide = guides[i]
+        const dest = tourDestinations[i]
+        const brandId = brandIds.length > 0 ? brandIds[i % brandIds.length] : null
+
+        const { data, error } = await supabase.from('tours').insert({
+          company_id: companyId,
+          brand_id: brandId,
+          guide_id: guide.id,
+          name: dest.name,
+          description: `Demo tour: ${dest.name}`,
+          tour_date: today,
+          start_time: dest.start,
+          duration_minutes: dest.duration,
+          capacity: dest.type === 'private' ? 8 : 20,
+          pickup_location: 'Hotel pickup included',
+          dropoff_location: 'Hotel dropoff',
+          price: dest.price,
+          status: 'scheduled',
+          guest_count: 0,
+          tour_type: dest.type,
+          created_by: null
+        }).select('id').single()
+
+        if (data) createdTourIds.push(data.id)
+        else if (error) console.error('Failed to create tour:', error)
+      }
+
+      setDemoProgress(`✅ Created ${createdTourIds.length} tours for today`)
+      await new Promise(resolve => setTimeout(resolve, 500))
+
+      // Step 3: Create guests
+      setDemoProgress('👥 Adding guests...')
+      let guestCount = 0
+      const guestNames = [
+        ['John', 'Smith'], ['Sarah', 'Johnson'], ['Michael', 'Brown'], ['Lisa', 'Brown'],
+        ['David', 'Wilson'], ['Jennifer', 'Wilson'], ['Robert', 'Garcia'], ['Amanda', 'Martinez'],
+        ['Christopher', 'Lee'], ['Jessica', 'Lopez'], ['William', 'Taylor'], ['Elizabeth', 'Taylor'],
+        ['Daniel', 'Anderson'], ['Michelle', 'Anderson'], ['Matthew', 'Thomas'], ['Ashley', 'Thomas'],
+        ['Joseph', 'Jackson'], ['Nancy', 'White'], ['Karen', 'Harris'], ['Betty', 'Clark'],
+        ['Edward', 'Lewis'], ['Sandra', 'Lewis'], ['George', 'Hall'], ['Dorothy', 'Allen'],
+        ['Kenneth', 'Young'], ['Carol', 'King'], ['Steven', 'Wright'], ['Ruth', 'Scott']
+      ]
+
+      const hotels = [
+        'Grand Velas Riviera Maya', 'Beloved Playa Mujeres', 'Secrets Maroma Beach',
+        'Finest Playa Mujeres', 'Hyatt Ziva Cap Cana', 'Excellence Playa Mujeres',
+        'TRS Coral Hotel', 'Hard Rock Hotel Cancun', 'Iberostar Selection Cancun',
+        'Live Aqua Beach Resort', 'Grand Sunset Resort', 'Vidanta Riviera Maya'
+      ]
+
+      for (const tourId of createdTourIds) {
+        const guestsForTour = Math.floor(Math.random() * 4) + 1
+        for (let g = 0; g < guestsForTour; g++) {
+          const nameIdx = (guestCount + g) % guestNames.length
+          const hotelIdx = (guestCount + g) % hotels.length
+          
+          await supabase.from('guests').insert({
+            tour_id: tourId,
+            first_name: guestNames[nameIdx][0],
+            last_name: guestNames[nameIdx][1],
+            email: `${guestNames[nameIdx][0].toLowerCase()}.${guestNames[nameIdx][1].toLowerCase()}${guestCount}@email.com`,
+            phone: `+1-555-${String(1000 + guestCount + g)}`,
+            hotel: hotels[hotelIdx],
+            room_number: String(100 + guestCount + g),
+            adults: Math.floor(Math.random() * 3) + 1,
+            children: Math.floor(Math.random() * 2),
+            notes: 'Demo guest for trial',
+            checked_in: false,
+            no_show: false
+          })
+          guestCount++
+        }
+      }
+
+      setDemoProgress(`✅ Added ${guestCount} guests`)
+      await new Promise(resolve => setTimeout(resolve, 500))
+
+      // Step 4: Create pickup stops
+      setDemoProgress('🚌 Creating pickup stops...')
+      let stopCount = 0
+      const pickupLocations = [
+        { name: 'Grand Sunset Resort', lat: 20.6897, lng: -87.0739, time: '07:30' },
+        { name: 'Vidanta Riviera Maya', lat: 20.6234, lng: -87.0812, time: '07:45' },
+        { name: 'Playa del Carmen Center', lat: 20.6296, lng: -87.0739, time: '08:00' },
+        { name: 'Maroma Beach Resort', lat: 20.7234, lng: -86.9812, time: '08:15' },
+        { name: 'Cancun Airport T3', lat: 21.0365, lng: -86.8770, time: '06:00' },
+        { name: 'Hotel Zone Km 9', lat: 21.1333, lng: -86.7667, time: '06:30' },
+        { name: 'Hotel Zone Km 12.5', lat: 21.1089, lng: -86.7594, time: '06:45' }
+      ]
+
+      for (const tourId of createdTourIds) {
+        const { data: tour } = await supabase.from('tours').select('tour_type').eq('id', tourId).single()
+        if (tour?.tour_type === 'shared') {
+          const stopsCount = Math.floor(Math.random() * 3) + 1
+          for (let s = 0; s < stopsCount; s++) {
+            const loc = pickupLocations[(stopCount + s) % pickupLocations.length]
+            const brandId = brandIds.length > 0 ? brandIds[0] : null
+            
+            await supabase.from('pickup_stops').insert({
+              tour_id: tourId,
+              brand_id: brandId,
+              sort_order: s + 1,
+              location_name: loc.name,
+              address: 'Demo address',
+              latitude: loc.lat,
+              longitude: loc.lng,
+              scheduled_time: loc.time,
+              guest_count: Math.floor(Math.random() * 4) + 1,
+              notes: 'Demo pickup stop'
+            })
+            stopCount++
+          }
+        }
+      }
+
+      setDemoProgress(`✅ Created ${stopCount} pickup stops`)
+      await new Promise(resolve => setTimeout(resolve, 500))
+
+      // Step 5: Create guide check-ins
+      setDemoProgress('📍 Simulating guide check-ins...')
+      let checkinCount = 0
+      for (const tourId of createdTourIds.slice(0, Math.min(createdTourIds.length, 5))) {
+        const { data: tour } = await supabase.from('tours').select('guide_id, brand_id, start_time').eq('id', tourId).single()
+        if (tour) {
+          const startTime = tour.start_time || '08:00'
+          const [hours, minutes] = startTime.split(':').map(Number)
+          const checkinTime = new Date()
+          checkinTime.setHours(hours, minutes - 20, 0)
+          
+          const minutesEarly = Math.floor(Math.random() * 15) - 5
+          
+          await supabase.from('guide_checkins').insert({
+            tour_id: tourId,
+            brand_id: tour.brand_id,
+            guide_id: tour.guide_id,
+            checkin_type: 'pre_pickup',
+            checked_in_at: checkinTime.toISOString(),
+            latitude: 20.6 + Math.random() * 0.5,
+            longitude: -87.0 + Math.random() * 0.3,
+            location_accuracy: 10 + Math.random() * 20,
+            gps_alert_triggered: false,
+            scheduled_time: startTime,
+            minutes_early_or_late: minutesEarly,
+            notes: minutesEarly >= 0 ? 'Arrived early' : 'Slightly delayed due to traffic',
+            selfie_url: 'https://cloudinary.com/dorhbpsxy/tour-ops/demo-selfie.jpg'
+          })
+          checkinCount++
+        }
+      }
+
+      setDemoProgress(`✅ Created ${checkinCount} guide check-ins`)
+      await new Promise(resolve => setTimeout(resolve, 500))
+
+      // Step 6: Create incidents
+      setDemoProgress('⚠️ Creating incidents...')
+      const incidentTypes = [
+        { type: 'medical_emergency', severity: 'medium', title: 'Guest Felt Dizzy', desc: 'Guest reported feeling dizzy during tour. Possible dehydration. Gave water and rest in shade.' },
+        { type: 'vehicle_breakdown', severity: 'medium', title: 'AC Not Working', desc: 'Vehicle AC blowing warm air. Guests uncomfortable in heat. Requesting repair or replacement.' },
+        { type: 'guest_complaint', severity: 'low', title: 'Tour Too Rushed', desc: 'Guests complained that the tour felt rushed. They did not have enough time at the attractions.' }
+      ]
+
+      let incidentCount = 0
+      for (const incident of incidentTypes) {
+        if (createdTourIds[incidentCount]) {
+          const { data: tour } = await supabase.from('tours').select('guide_id').eq('id', createdTourIds[incidentCount]).single()
+          if (tour) {
+            await supabase.from('incidents').insert({
+              tour_id: createdTourIds[incidentCount],
+              guide_id: tour.guide_id,
+              incident_type: incident.type,
+              severity: incident.severity,
+              title: incident.title,
+              description: incident.desc,
+              status: incidentCount === 0 ? 'resolved' : 'reported',
+              escalation_level: 1
+            })
+            incidentCount++
+          }
+        }
+      }
+
+      setDemoProgress(`✅ Created ${incidentCount} incidents`)
+      await new Promise(resolve => setTimeout(resolve, 500))
+
+      // Step 7: Create expenses
+      setDemoProgress('💵 Adding expenses...')
+      const expenseCategories = [
+        { category: 'fuel', amount: 45, desc: 'Van fuel' },
+        { category: 'parking', amount: 150, desc: 'Parking fee' },
+        { category: 'meals', amount: 180, desc: 'Guide lunch' },
+        { category: 'tolls', amount: 140, desc: 'Highway tolls' },
+        { category: 'supplies', amount: 95, desc: 'Bottled water for guests' }
+      ]
+
+      let expenseCount = 0
+      for (const tourId of createdTourIds.slice(0, Math.min(createdTourIds.length, 5))) {
+        const { data: tour } = await supabase.from('tours').select('guide_id').eq('id', tourId).single()
+        if (tour) {
+          const expense = expenseCategories[expenseCount % expenseCategories.length]
+          await supabase.from('tour_expenses').insert({
+            tour_id: tourId,
+            guide_id: tour.guide_id,
+            company_id: companyId,
+            category: expense.category,
+            description: expense.desc,
+            amount: expense.amount,
+            currency: 'MXN',
+            receipt_url: expenseCount % 2 === 0 ? 'https://cloudinary.com/dorhbpsxy/tour-ops/demo-receipt.jpg' : '',
+            has_receipt: expenseCount % 2 === 0,
+            status: 'pending',
+            notes: 'Demo expense for trial'
+          })
+          expenseCount++
+        }
+      }
+
+      setDemoProgress(`✅ Added ${expenseCount} expenses`)
+      await new Promise(resolve => setTimeout(resolve, 500))
+
+      // Step 8: Create guest feedback
+      setDemoProgress('⭐ Generating guest feedback...')
+      let feedbackCount = 0
+      const feedbackRatings = [
+        { rating: 5, title: 'Absolutely Amazing!', text: 'Best tour of our vacation! Guide was knowledgeable and locations were breathtaking.' },
+        { rating: 5, title: 'Great Experience', text: 'Loved every moment. Well organized and great value for money.' },
+        { rating: 4, title: 'Wonderful Tour', text: 'Amazing experience! Would definitely book again.' }
+      ]
+      
+      for (let i = 0; i < Math.min(createdTourIds.length, 3); i++) {
+        const feedback = feedbackRatings[i % feedbackRatings.length]
+        try {
+          await supabase.from('guest_feedback').insert({
+            tour_id: createdTourIds[i],
+            rating: feedback.rating,
+            review_title: feedback.title,
+            review_text: feedback.text,
+            review_date: now.toISOString(),
+            responded: false
+          })
+          feedbackCount++
+        } catch (fbError) {
+          console.error('Failed to create feedback:', fbError)
+        }
+      }
+
+      setDemoProgress(`✅ Generated ${feedbackCount} guest reviews`)
+      await new Promise(resolve => setTimeout(resolve, 500))
+
+      // Step 9: Create activity feed
+      setDemoProgress('📢 Creating activity feed...')
+      let activityCount = 0
+      for (const tourId of createdTourIds.slice(0, Math.min(createdTourIds.length, 5))) {
+        const { data: tour } = await supabase.from('tours').select('name, guide_id').eq('id', tourId).single()
+        const { data: guide } = await supabase.from('profiles').select('first_name, last_name, role').eq('id', tour?.guide_id).single()
+        
+        if (tour && guide) {
+          await supabase.from('activity_feed').insert({
+            company_id: companyId,
+            actor_id: tour.guide_id,
+            actor_name: `${guide.first_name} ${guide.last_name}`,
+            actor_role: guide.role,
+            activity_type: 'tour_started',
+            target_type: 'tour',
+            target_id: tourId,
+            target_name: tour.name,
+            message: `${guide.first_name} ${guide.last_name} started tour "${tour.name}"`,
+            is_public: true
+          })
+          activityCount++
+        }
+      }
+
+      setDemoProgress(`✅ Created ${activityCount} activity feed entries`)
+      await new Promise(resolve => setTimeout(resolve, 500))
+
+      setDemoProgress('')
+      setDemoMessage({ 
+        type: 'success', 
+        text: `✅ Demo data generated successfully!\n\n${createdTourIds.length} tours, ${guestCount} guests, ${stopCount} pickups, ${checkinCount} check-ins, ${incidentCount} incidents, ${expenseCount} expenses, ${feedbackCount} reviews, ${activityCount} activities, ${vehicleCount} vehicles`
+      })
+      setTimeout(() => loadDemoStats(), 2000)
+
+    } catch (err) {
+      setDemoMessage({ type: 'error', text: '❌ Error generating demo data: ' + (err as Error).message })
+      console.error('Demo generation error:', err)
     } finally {
       setDemoLoading(false)
     }
   }
+
+  const [demoProgress, setDemoProgress] = useState('')
 
   return (
     <RoleGuard requiredRole="super_admin">
@@ -107,6 +506,15 @@ export default function SuperAdminDemoPage() {
           {demoMessage && (
             <div className={`mb-6 p-4 rounded-lg ${demoMessage.type === 'success' ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'}`}>
               {demoMessage.text}
+            </div>
+          )}
+
+          {demoLoading && demoProgress && (
+            <div className="mb-6 p-4 rounded-lg bg-blue-50 border border-blue-200 text-blue-800">
+              <div className="flex items-center gap-3">
+                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
+                <p className="font-medium">{demoProgress}</p>
+              </div>
             </div>
           )}
 
@@ -122,7 +530,7 @@ export default function SuperAdminDemoPage() {
                 </div>
               </div>
               <p className="text-sm text-gray-600 mb-4">
-                Removes all demo data (guests, check-ins, incidents, expenses, feedback) while preserving users, tours, and configuration.
+                Removes all demo data (guests, check-ins, incidents, expenses, feedback, vehicles) while preserving users, brands, and configuration.
               </p>
               <button
                 onClick={handleClearDemoData}
@@ -143,57 +551,57 @@ export default function SuperAdminDemoPage() {
                 </div>
               </div>
               <p className="text-sm text-gray-600 mb-4">
-                Creates realistic demo data including tours, guests, check-ins, incidents, expenses, and feedback for testing and demos.
+                Creates realistic demo data including vehicles, tours, guests, check-ins, incidents, expenses, and feedback for testing and demos.
               </p>
               <button
                 onClick={handleGenerateDemoData}
                 disabled={demoLoading}
                 className="w-full bg-green-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-green-700 disabled:opacity-50"
               >
-                {demoLoading ? 'Generating...' : '📦 Generate Demo Data'}
+                {demoLoading ? 'Generating...' : '📦 Generate Full Demo'}
               </button>
             </div>
           </div>
 
           {/* Current Stats */}
           <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Current Demo Data</h2>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-              <div className="text-center p-4 bg-gray-50 rounded-lg">
-                <div className="text-2xl font-bold text-blue-600">{demoStats.tours}</div>
-                <div className="text-sm text-gray-600">Tours</div>
+            <h2 className="font-semibold text-gray-900 mb-4">Current Demo Data</h2>
+            <div className="grid grid-cols-3 md:grid-cols-5 gap-4">
+              <div className="text-center p-3 bg-gray-50 rounded-lg">
+                <p className="text-xl font-bold text-gray-900">{demoStats.tours}</p>
+                <p className="text-xs text-gray-500">Tours</p>
               </div>
-              <div className="text-center p-4 bg-gray-50 rounded-lg">
-                <div className="text-2xl font-bold text-green-600">{demoStats.guests}</div>
-                <div className="text-sm text-gray-600">Guests</div>
+              <div className="text-center p-3 bg-gray-50 rounded-lg">
+                <p className="text-xl font-bold text-gray-900">{demoStats.guests}</p>
+                <p className="text-xs text-gray-500">Guests</p>
               </div>
-              <div className="text-center p-4 bg-gray-50 rounded-lg">
-                <div className="text-2xl font-bold text-purple-600">{demoStats.checkins}</div>
-                <div className="text-sm text-gray-600">Check-ins</div>
+              <div className="text-center p-3 bg-gray-50 rounded-lg">
+                <p className="text-xl font-bold text-gray-900">{demoStats.vehicles}</p>
+                <p className="text-xs text-gray-500">Vehicles</p>
               </div>
-              <div className="text-center p-4 bg-gray-50 rounded-lg">
-                <div className="text-2xl font-bold text-orange-600">{demoStats.incidents}</div>
-                <div className="text-sm text-gray-600">Incidents</div>
+              <div className="text-center p-3 bg-gray-50 rounded-lg">
+                <p className="text-xl font-bold text-gray-900">{demoStats.checkins}</p>
+                <p className="text-xs text-gray-500">Check-ins</p>
               </div>
-              <div className="text-center p-4 bg-gray-50 rounded-lg">
-                <div className="text-2xl font-bold text-red-600">{demoStats.expenses}</div>
-                <div className="text-sm text-gray-600">Expenses</div>
+              <div className="text-center p-3 bg-gray-50 rounded-lg">
+                <p className="text-xl font-bold text-gray-900">{demoStats.incidents}</p>
+                <p className="text-xs text-gray-500">Incidents</p>
               </div>
-              <div className="text-center p-4 bg-gray-50 rounded-lg">
-                <div className="text-2xl font-bold text-pink-600">{demoStats.feedback}</div>
-                <div className="text-sm text-gray-600">Feedback</div>
+              <div className="text-center p-3 bg-gray-50 rounded-lg">
+                <p className="text-xl font-bold text-gray-900">{demoStats.expenses}</p>
+                <p className="text-xs text-gray-500">Expenses</p>
               </div>
-              <div className="text-center p-4 bg-gray-50 rounded-lg">
-                <div className="text-2xl font-bold text-indigo-600">{demoStats.vehicles}</div>
-                <div className="text-sm text-gray-600">Vehicles</div>
+              <div className="text-center p-3 bg-gray-50 rounded-lg">
+                <p className="text-xl font-bold text-gray-900">{demoStats.feedback}</p>
+                <p className="text-xs text-gray-500">Reviews</p>
               </div>
-              <div className="text-center p-4 bg-gray-50 rounded-lg">
-                <div className="text-2xl font-bold text-yellow-600">{demoStats.pickup_stops}</div>
-                <div className="text-sm text-gray-600">Stops</div>
+              <div className="text-center p-3 bg-gray-50 rounded-lg">
+                <p className="text-xl font-bold text-gray-900">{demoStats.activity}</p>
+                <p className="text-xs text-gray-500">Activity</p>
               </div>
-              <div className="text-center p-4 bg-gray-50 rounded-lg">
-                <div className="text-2xl font-bold text-teal-600">{demoStats.activity}</div>
-                <div className="text-sm text-gray-600">Activity</div>
+              <div className="text-center p-3 bg-gray-50 rounded-lg">
+                <p className="text-xl font-bold text-gray-900">{demoStats.pickup_stops}</p>
+                <p className="text-xs text-gray-500">Pickups</p>
               </div>
             </div>
           </div>
