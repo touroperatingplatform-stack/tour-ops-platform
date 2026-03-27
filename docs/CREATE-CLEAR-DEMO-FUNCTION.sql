@@ -29,7 +29,7 @@ BEGIN
     WHERE tour_date IN (today_date::DATE, yesterday_date::DATE)
   ) INTO tour_ids;
   
-  -- Delete in correct order (child tables first)
+  -- Delete in correct order (child tables first, vehicles last)
   RETURN QUERY
   SELECT 'activity_feed'::TEXT, COUNT(*)::BIGINT, 'deleted'::TEXT FROM (DELETE FROM activity_feed WHERE created_at >= (NOW() - INTERVAL '30 days')) t
   UNION ALL
@@ -57,7 +57,9 @@ BEGIN
   UNION ALL
   SELECT 'incidents', COUNT(*), 'deleted' FROM (DELETE FROM incidents WHERE tour_id = ANY(tour_ids)) t
   UNION ALL
-  SELECT 'tours', COUNT(*), 'deleted' FROM (DELETE FROM tours WHERE id = ANY(tour_ids)) t;
+  SELECT 'tours', COUNT(*), 'deleted' FROM (DELETE FROM tours WHERE id = ANY(tour_ids)) t
+  UNION ALL
+  SELECT 'vehicles', COUNT(*), 'deleted' FROM (DELETE FROM vehicles WHERE company_id = (SELECT id FROM companies LIMIT 1)) t;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
