@@ -217,16 +217,16 @@ export function GuideCheckinStatus() {
     const guideIds = [...new Set(checkinsData.map(c => c.guide_id).filter(Boolean))]
     const tourIds = [...new Set(checkinsData.map(c => c.tour_id).filter(Boolean))]
 
-    // Query all profiles (not just guides) - RLS might block role filter
+    // Query specific guides referenced in check-ins (not random 100)
     const { data: guidesData } = await supabase
       .from('profiles')
       .select('id, first_name, last_name, role')
-      .limit(100)
+      .in('id', guideIds.length > 0 ? guideIds : ['00000000-0000-0000-0000-000000000000'])
 
     console.log('Guides query result:', { 
       count: guidesData?.length,
-      hasData: guidesData && guidesData.length > 0,
-      sample: guidesData?.[0]
+      requestedCount: guideIds.length,
+      hasData: guidesData && guidesData.length > 0
     })
 
     const { data: toursData } = await supabase
