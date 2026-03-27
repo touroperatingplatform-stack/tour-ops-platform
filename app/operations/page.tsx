@@ -51,7 +51,10 @@ export default function OperationsDashboard() {
   }, [])
 
   async function loadOperationsData() {
-    const today = new Date().toISOString().split('T')[0]
+    // Get today's date in Cancun timezone (where tours are scheduled)
+    const now = new Date()
+    const cancunDate = new Date(now.toLocaleString('en-US', { timeZone: 'America/Cancun' }))
+    const today = cancunDate.toISOString().split('T')[0]
 
     // Load tours
     const { data: toursData } = await supabase
