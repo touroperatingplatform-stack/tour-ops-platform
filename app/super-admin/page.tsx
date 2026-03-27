@@ -264,8 +264,7 @@ export default function SuperAdminPage() {
       const createdTourIds: string[] = []
       const tourRegions: Record<string, string> = {} // Map tour IDs to regions
       
-      // Get current time for status calculation
-      const now = new Date()
+      // Get current time for status calculation (use existing 'now' from line 201)
       const currentHour = now.getHours()
       const currentMinute = now.getMinutes()
       const currentTimeInMinutes = currentHour * 60 + currentMinute
