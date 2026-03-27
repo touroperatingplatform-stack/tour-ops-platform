@@ -10,8 +10,19 @@ export default function AdminNav() {
   const pathname = usePathname()
   const [isMenuOpen, setIsMenuOpen] = useState(false)
 
+  // Determine nav config based on current page path
+  const getNavConfig = (path: string) => {
+    if (path.startsWith('/super-admin')) return NAV_CONFIGS.super_admin
+    if (path.startsWith('/operations')) return NAV_CONFIGS.operations
+    if (path.startsWith('/supervisor')) return NAV_CONFIGS.supervisor
+    if (path.startsWith('/guide')) return NAV_CONFIGS.guide
+    return NAV_CONFIGS.super_admin // default
+  }
+
+  const navConfig = getNavConfig(pathname)
+
   return (
-    <RoleNav items={NAV_CONFIGS.super_admin}>
+    <RoleNav items={navConfig}>
       {(filteredItems, userRole, loading) => {
         const currentPage = filteredItems.find(item => 
           pathname === item.href || pathname.startsWith(`${item.href}/`)
