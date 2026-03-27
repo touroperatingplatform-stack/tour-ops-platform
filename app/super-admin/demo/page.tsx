@@ -156,7 +156,7 @@ export default function SuperAdminDemoPage() {
       const companyId = companies[0].id
       const brandIds = brands?.map(b => b.id) || []
 
-      // Step 1: Create vehicles
+      // Step 1: Create vehicles (using OLD schema - no company_id)
       setDemoProgress('🚗 Creating vehicles...')
       const vehicleFleet = [
         { plate: 'ABC-123', model: 'Toyota Hiace 2020', capacity: 13, status: 'available' },
@@ -170,7 +170,6 @@ export default function SuperAdminDemoPage() {
       let vehicleCount = 0
       for (const v of vehicleFleet) {
         await supabase.from('vehicles').insert({
-          company_id: companyId,
           plate_number: v.plate,
           model: v.model,
           capacity: v.capacity,
@@ -357,12 +356,12 @@ export default function SuperAdminDemoPage() {
       setDemoProgress(`✅ Created ${checkinCount} guide check-ins`)
       await new Promise(resolve => setTimeout(resolve, 500))
 
-      // Step 6: Create incidents
+      // Step 6: Create incidents (using OLD schema columns that exist in DB)
       setDemoProgress('⚠️ Creating incidents...')
       const incidentTypes = [
-        { type: 'medical_emergency', severity: 'medium', title: 'Guest Felt Dizzy', desc: 'Guest reported feeling dizzy during tour. Possible dehydration. Gave water and rest in shade.' },
-        { type: 'vehicle_breakdown', severity: 'medium', title: 'AC Not Working', desc: 'Vehicle AC blowing warm air. Guests uncomfortable in heat. Requesting repair or replacement.' },
-        { type: 'guest_complaint', severity: 'low', title: 'Tour Too Rushed', desc: 'Guests complained that the tour felt rushed. They did not have enough time at the attractions.' }
+        { type: 'medical', severity: 'medium', desc: 'Guest felt dizzy. Possible dehydration.' },
+        { type: 'vehicle_issue', severity: 'medium', desc: 'AC not working in vehicle.' },
+        { type: 'complaint', severity: 'low', desc: 'Guest complained tour was too rushed.' }
       ]
 
       let incidentCount = 0
@@ -372,13 +371,13 @@ export default function SuperAdminDemoPage() {
           if (tour) {
             await supabase.from('incidents').insert({
               tour_id: createdTourIds[incidentCount],
+              reported_by: tour.guide_id,
               guide_id: tour.guide_id,
-              incident_type: incident.type,
+              type: incident.type,
               severity: incident.severity,
-              title: incident.title,
               description: incident.desc,
               status: incidentCount === 0 ? 'resolved' : 'reported',
-              escalation_level: 1
+              resolution_notes: incidentCount === 0 ? 'Resolved on site' : null
             })
             incidentCount++
           }
@@ -423,29 +422,31 @@ export default function SuperAdminDemoPage() {
       setDemoProgress(`✅ Added ${expenseCount} expenses`)
       await new Promise(resolve => setTimeout(resolve, 500))
 
-      // Step 8: Create guest feedback
+      // Step 8: Create guest feedback (using OLD schema - no tour_id FK, use guide_id)
       setDemoProgress('⭐ Generating guest feedback...')
       let feedbackCount = 0
       const feedbackRatings = [
-        { rating: 5, title: 'Absolutely Amazing!', text: 'Best tour of our vacation! Guide was knowledgeable and locations were breathtaking.' },
-        { rating: 5, title: 'Great Experience', text: 'Loved every moment. Well organized and great value for money.' },
-        { rating: 4, title: 'Wonderful Tour', text: 'Amazing experience! Would definitely book again.' }
+        { rating: 5, title: 'Absolutely Amazing!', text: 'Best tour of our vacation!' },
+        { rating: 5, title: 'Great Experience', text: 'Loved every moment. Well organized.' },
+        { rating: 4, title: 'Wonderful Tour', text: 'Amazing experience!' }
       ]
       
       for (let i = 0; i < Math.min(createdTourIds.length, 3); i++) {
         const feedback = feedbackRatings[i % feedbackRatings.length]
-        try {
-          await supabase.from('guest_feedback').insert({
-            tour_id: createdTourIds[i],
-            rating: feedback.rating,
-            review_title: feedback.title,
-            review_text: feedback.text,
-            review_date: now.toISOString(),
-            responded: false
-          })
-          feedbackCount++
-        } catch (fbError) {
-          console.error('Failed to create feedback:', fbError)
+        const { data: tour } = await supabase.from('tours').select('guide_id').eq('id', createdTourIds[i]).single()
+        if (tour) {
+          try {
+            await supabase.from('guest_feedback').insert({
+              guide_id: tour.guide_id,
+              rating: feedback.rating,
+              title: feedback.title,
+              comment: feedback.text,
+              created_at: now.toISOString()
+            })
+            feedbackCount++
+          } catch (fbError) {
+            console.error('Failed to create feedback:', fbError)
+          }
         }
       }
 
