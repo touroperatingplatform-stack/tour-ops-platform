@@ -130,7 +130,7 @@ export default function SuperAdminPage() {
   }
 
   async function handleClearDemoData() {
-    if (!confirm('⚠️ DANGER: This will delete ALL demo data!\n\nThis will remove:\n- All tours created today\n- All guests\n- All guide check-ins\n- All pickup stops\n- All incidents\n- All tour expenses\n- All checklist completions\n- All guest feedback\n- All activity feed entries\n\nUsers/auth, vehicles, brands will be preserved.\n\nContinue?')) {
+    if (!confirm('⚠️ DANGER: This will delete ALL demo data!\n\nThis will remove:\n- All tours created today\n- All guests\n- All guide check-ins\n- All pickup stops\n- All incidents\n- All tour expenses\n- All checklist completions\n- All guest feedback\n- All activity feed entries\n- All vehicles\n\nUsers/auth, brands, companies will be preserved.\n\nContinue?')) {
       return
     }
 
@@ -264,12 +264,35 @@ export default function SuperAdminPage() {
       const createdTourIds: string[] = []
       const tourRegions: Record<string, string> = {} // Map tour IDs to regions
       
+      // Get current time for status calculation
+      const now = new Date()
+      const currentHour = now.getHours()
+      const currentMinute = now.getMinutes()
+      const currentTimeInMinutes = currentHour * 60 + currentMinute
+      
       for (let i = 0; i < Math.min(guides.length, tourDestinations.length); i++) {
         const guide = guides[i]
         const dest = tourDestinations[i]
         const brandId = brandIds.length > 0 ? brandIds[i % brandIds.length] : null
         const region = dest.region || 'cancun'
         const coords = regionCoords[region]
+
+        // Calculate tour status based on current time vs start time
+        const [startHour, startMinute] = dest.start.split(':').map(Number)
+        const startTimeInMinutes = startHour * 60 + startMinute
+        const endTimeInMinutes = startTimeInMinutes + dest.duration
+        
+        // Determine status: in_progress if tour should have started and not ended yet
+        let tourStatus = 'scheduled'
+        if (currentTimeInMinutes >= startTimeInMinutes && currentTimeInMinutes < endTimeInMinutes) {
+          tourStatus = 'in_progress'
+        } else if (currentTimeInMinutes >= endTimeInMinutes) {
+          tourStatus = 'completed'
+        }
+        // Night shift handling (tours that span midnight)
+        if (dest.start >= '22:00' || dest.start < '05:00') {
+          tourStatus = 'in_progress'
+        }
 
         const { data, error } = await supabase.from('tours').insert({
           company_id: companyId,
@@ -284,7 +307,7 @@ export default function SuperAdminPage() {
           pickup_location: coords.name,
           dropoff_location: 'Hotel dropoff',
           price: dest.price,
-          status: dest.start >= '22:00' || dest.start < '05:00' ? 'in_progress' : 'scheduled',
+          status: tourStatus,
           guest_count: 0,
           tour_type: dest.type,
           created_by: null
