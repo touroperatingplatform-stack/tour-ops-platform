@@ -51,19 +51,20 @@ export default function OperationsDashboard() {
   }, [])
 
   async function loadOperationsData() {
-    // Get today's date in Cancun timezone (where tours are scheduled)
+    // Query for both today and tomorrow to handle timezone mismatch
+    // Tours created in Cancun (UTC-5) may be stored as next day in UTC
     const now = new Date()
-    const cancunDate = new Date(now.toLocaleString('en-US', { timeZone: 'America/Cancun' }))
-    const today = cancunDate.toISOString().split('T')[0]
+    const today = now.toISOString().split('T')[0]
+    const tomorrow = new Date(now.getTime() + 86400000).toISOString().split('T')[0]
 
-    // Load tours
+    // Load tours (search both today and tomorrow for timezone edge case)
     const { data: toursData } = await supabase
       .from('tours')
       .select(`
         id, name, start_time, status, guest_count,
         guide:guide_id (first_name, last_name)
       `)
-      .eq('tour_date', today)
+      .in('tour_date', [today, tomorrow])
       .neq('status', 'cancelled')
       .order('start_time')
 
