@@ -155,20 +155,21 @@ export default function SuperAdminPage() {
       const todayTourIds = todaysTours?.map(t => t.id) || []
       console.log(`Found ${todayTourIds.length} tours from today/yesterday to delete (searching ${today} and ${yesterday})`)
 
+      // Order matters! Delete child tables (with FKs) before parent tables
       const tables = [
         'activity_feed',
-        'guest_feedback',
+        'incident_comments',
+        'guest_feedback',  // Has FK to guests - must delete BEFORE guests
         'push_notifications',
         'external_bookings',
-        'guests',
-        'pickup_stops',
-        'guide_checkins',
-        'incident_comments',
-        'incidents',
-        'tour_expenses',
-        'checklist_completions',
+        'cash_confirmations',
         'payments',
-        'cash_confirmations'
+        'checklist_completions',
+        'tour_expenses',
+        'guide_checkins',
+        'pickup_stops',
+        'guests',  // Delete AFTER guest_feedback
+        'incidents'
       ]
 
       let deleted = 0
