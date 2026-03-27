@@ -385,19 +385,15 @@ export default function SupervisorDashboard() {
                   <Link href="/supervisor/incidents" className="text-xs text-blue-600 hover:underline">View all →</Link>
                 )}
               </div>
-              <div className="space-y-2 max-h-[200px] overflow-auto">
+              <div className="space-y-1.5 max-h-[150px] overflow-auto">
                 {incidents.filter(i => ['reported', 'acknowledged', 'in_progress'].includes(i.status)).slice(0, 5).map((incident) => (
-                  <div key={incident.id} className="flex items-start gap-2 p-2 bg-orange-50 rounded border border-orange-100">
-                    <span className="text-orange-500 text-sm">⚠️</span>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs font-medium text-gray-900 truncate">{incident.tour_name}</p>
-                      <p className="text-xs text-gray-600">{incident.type}</p>
-                      <p className="text-xs text-gray-500">{getSeverityBadge(incident.severity)}</p>
-                    </div>
+                  <div key={incident.id} className="flex items-center gap-1.5 text-xs">
+                    <span className="text-orange-500">⚠️</span>
+                    <span className="text-gray-700 truncate flex-1">{incident.tour_name}: {incident.type}</span>
                   </div>
                 ))}
                 {incidents.filter(i => ['reported', 'acknowledged', 'in_progress'].includes(i.status)).length === 0 && (
-                  <p className="text-sm text-gray-500 text-center py-2">No active alerts</p>
+                  <p className="text-xs text-gray-500 text-center py-1">No active alerts</p>
                 )}
               </div>
             </div>
