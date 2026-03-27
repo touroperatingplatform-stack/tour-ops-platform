@@ -269,7 +269,7 @@ export default function SuperAdminPage() {
   }
 
   async function handleGenerateDemoData() {
-    if (!confirm('📦 Generate Full Demo Data?\n\nThis will create:\n- Vehicle fleet (6 vehicles)\n- Tours for TODAY with all 15 guides\n- Guests, pickup stops, check-ins\n- Incidents, expenses, feedback\n- Activity feed entries\n\nThis takes ~15 seconds. Continue?')) {
+    if (!confirm('📦 Generate Full Demo Data?\n\nThis will create:\n- Vehicle fleet (6 vehicles) with assignments\n- Day tours (15 guides) + Night shift tours (3 guides)\n- Realistic pickup stops with actual hotel coordinates\n- Guide check-ins with accurate GPS locations\n- Incidents, expenses, feedback\n- Activity feed entries\n\nThis takes ~20 seconds. Continue?')) {
       return
     }
 
@@ -302,46 +302,69 @@ export default function SuperAdminPage() {
       const companyId = companies[0].id
       const brandIds = brands?.map(b => b.id) || []
 
-      // Step 1: Create tours for today (one per guide)
+      // Step 1: Create tours for today - Day shifts + Night shifts
       setDemoProgress('📍 Creating tours for today...')
       const tourDestinations = [
-        { name: 'Tulum Ruins Express', start: '08:00', duration: 360, type: 'private', price: 89 },
-        { name: 'Chichen Itza Sunrise', start: '06:00', duration: 720, type: 'shared', price: 129 },
-        { name: 'Coba Adventure + Cenotes', start: '07:30', duration: 540, type: 'shared', price: 109 },
-        { name: 'Cenote Route Private', start: '09:00', duration: 420, type: 'private', price: 99 },
-        { name: 'Akumal Snorkeling Tour', start: '08:30', duration: 480, type: 'shared', price: 95 },
-        { name: 'Valladolid Cultural Tour', start: '07:00', duration: 600, type: 'shared', price: 99 },
-        { name: 'Tulum VIP Private', start: '09:30', duration: 360, type: 'private', price: 299 },
-        { name: 'Isla Mujeres Day Trip', start: '08:00', duration: 600, type: 'shared', price: 119 },
-        { name: 'Xcaret Park Tour', start: '08:30', duration: 540, type: 'shared', price: 139 },
-        { name: 'Tulum + Akumal Combo', start: '08:00', duration: 480, type: 'shared', price: 105 },
-        { name: 'Coba + Valladolid', start: '07:00', duration: 600, type: 'shared', price: 99 },
-        { name: 'Gran Cenote Private', start: '10:00', duration: 300, type: 'private', price: 79 },
-        { name: 'Playa del Carmen Tour', start: '09:00', duration: 420, type: 'shared', price: 89 },
-        { name: 'Puerto Morelos Reef', start: '08:30', duration: 360, type: 'shared', price: 95 },
-        { name: 'Sunset Tulum Tour', start: '14:00', duration: 300, type: 'private', price: 69 }
+        // Day Tours (15)
+        { name: 'Chichen Itza Sunrise', start: '06:00', duration: 720, type: 'shared', price: 129, region: 'valladolid' },
+        { name: 'Coba + Valladolid', start: '07:00', duration: 600, type: 'shared', price: 99, region: 'valladolid' },
+        { name: 'Coba Adventure + Cenotes', start: '07:30', duration: 540, type: 'shared', price: 109, region: 'coba' },
+        { name: 'Tulum Ruins Express', start: '08:00', duration: 360, type: 'shared', price: 89, region: 'tulum' },
+        { name: 'Tulum + Akumal Combo', start: '08:00', duration: 480, type: 'shared', price: 105, region: 'tulum' },
+        { name: 'Isla Mujeres Day Trip', start: '08:00', duration: 600, type: 'shared', price: 119, region: 'isla' },
+        { name: 'Akumal Snorkeling Tour', start: '08:30', duration: 480, type: 'shared', price: 95, region: 'akumal' },
+        { name: 'Xcaret Park Tour', start: '08:30', duration: 540, type: 'shared', price: 139, region: 'playa' },
+        { name: 'Puerto Morelos Reef', start: '08:30', duration: 360, type: 'shared', price: 95, region: 'puerto' },
+        { name: 'Cenote Route Private', start: '09:00', duration: 420, type: 'private', price: 99, region: 'cenotes' },
+        { name: 'Playa del Carmen Tour', start: '09:00', duration: 420, type: 'shared', price: 89, region: 'playa' },
+        { name: 'Tulum VIP Private', start: '09:30', duration: 360, type: 'private', price: 299, region: 'tulum' },
+        { name: 'Gran Cenote Private', start: '10:00', duration: 300, type: 'private', price: 79, region: 'cenotes' },
+        { name: 'Valladolid Cultural Tour', start: '07:00', duration: 600, type: 'shared', price: 99, region: 'valladolid' },
+        { name: 'Sunset Tulum Tour', start: '14:00', duration: 300, type: 'private', price: 69, region: 'tulum' },
+        // Night Shift Tours (3)
+        { name: 'Cancun Airport Night Transfer', start: '23:00', duration: 90, type: 'private', price: 45, region: 'airport' },
+        { name: 'Playa del Carmen Night Out', start: '22:00', duration: 240, type: 'private', price: 55, region: 'playa' },
+        { name: 'Hotel Zone Late Pickup', start: '01:00', duration: 60, type: 'private', price: 35, region: 'cancun' }
       ]
 
+      // Real GPS coordinates for check-ins by region
+      const regionCoords: Record<string, { lat: number; lng: number; name: string }> = {
+        cancun: { lat: 21.1619, lng: -86.8515, name: 'Cancun Hotel Zone' },
+        airport: { lat: 21.0365, lng: -86.8770, name: 'Cancun Airport' },
+        playa: { lat: 20.6296, lng: -87.0739, name: 'Playa del Carmen' },
+        tulum: { lat: 20.2114, lng: -87.4654, name: 'Tulum Ruins' },
+        akumal: { lat: 20.3950, lng: -87.3139, name: 'Akumal Bay' },
+        coba: { lat: 20.5000, lng: -87.7333, name: 'Coba Archaeological Site' },
+        valladolid: { lat: 20.6897, lng: -88.2036, name: 'Valladolid Center' },
+        isla: { lat: 21.2311, lng: -86.7315, name: 'Isla Mujeres Ferry' },
+        cenotes: { lat: 20.3356, lng: -87.3581, name: 'Gran Cenote' },
+        puerto: { lat: 20.8500, lng: -86.8833, name: 'Puerto Morelos' }
+      }
+
       const createdTourIds: string[] = []
+      const tourRegions: Record<string, string> = {} // Map tour IDs to regions
+      
       for (let i = 0; i < Math.min(guides.length, tourDestinations.length); i++) {
         const guide = guides[i]
         const dest = tourDestinations[i]
         const brandId = brandIds.length > 0 ? brandIds[i % brandIds.length] : null
+        const region = dest.region || 'cancun'
+        const coords = regionCoords[region]
 
         const { data, error } = await supabase.from('tours').insert({
           company_id: companyId,
           brand_id: brandId,
           guide_id: guide.id,
           name: dest.name,
-          description: `Demo tour: ${dest.name}`,
+          description: `${dest.type === 'private' ? 'Private' : 'Shared'} tour to ${coords.name}`,
           tour_date: today,
           start_time: dest.start,
           duration_minutes: dest.duration,
           capacity: dest.type === 'private' ? 8 : 20,
-          pickup_location: 'Hotel pickup included',
+          pickup_location: coords.name,
           dropoff_location: 'Hotel dropoff',
           price: dest.price,
-          status: 'scheduled',
+          status: dest.start >= '22:00' || dest.start < '05:00' ? 'in_progress' : 'scheduled',
           guest_count: 0,
           tour_type: dest.type,
           created_by: null
@@ -349,6 +372,7 @@ export default function SuperAdminPage() {
 
         if (data) {
           createdTourIds.push(data.id)
+          tourRegions[data.id] = region
         } else if (error) {
           console.error('Failed to create tour:', error)
         }
@@ -437,25 +461,45 @@ export default function SuperAdminPage() {
       setDemoProgress(`✅ Added ${guestCount} guests`)
       await new Promise(resolve => setTimeout(resolve, 500))
 
-      // Step 3: Create pickup stops for shared tours
+      // Step 3: Create pickup stops with realistic hotel coordinates
       setDemoProgress('🚌 Creating pickup stops...')
       let stopCount = 0
-      const pickupLocations = [
-        { name: 'Grand Sunset Resort', lat: 20.6897, lng: -87.0739, time: '07:30' },
-        { name: 'Vidanta Riviera Maya', lat: 20.6234, lng: -87.0812, time: '07:45' },
-        { name: 'Playa del Carmen Center', lat: 20.6296, lng: -87.0739, time: '08:00' },
-        { name: 'Maroma Beach Resort', lat: 20.7234, lng: -86.9812, time: '08:15' },
-        { name: 'Cancun Airport T3', lat: 21.0365, lng: -86.8770, time: '06:00' },
-        { name: 'Hotel Zone Km 9', lat: 21.1333, lng: -86.7667, time: '06:30' },
-        { name: 'Hotel Zone Km 12.5', lat: 21.1089, lng: -86.7594, time: '06:45' }
-      ]
+      
+      // Real hotel coordinates in Cancun/Riviera Maya
+      const hotelPickups = {
+        cancun: [
+          { name: 'Grand Fiesta Americana Coral Beach', lat: 21.1389, lng: -86.7489, time: '06:30' },
+          { name: 'The Ritz-Carlton Cancun', lat: 21.0889, lng: -86.7731, time: '06:45' },
+          { name: 'Live Aqua Beach Resort', lat: 21.1089, lng: -86.7594, time: '07:00' },
+          { name: 'Hyatt Ziva Cancun', lat: 21.1333, lng: -86.7667, time: '07:15' }
+        ],
+        playa: [
+          { name: 'Grand Velas Riviera Maya', lat: 20.6897, lng: -87.0739, time: '07:30' },
+          { name: 'Secrets Maroma Beach', lat: 20.7234, lng: -86.9812, time: '07:45' },
+          { name: 'Finest Playa Mujeres', lat: 21.2167, lng: -86.8167, time: '08:00' },
+          { name: 'Beloved Playa Mujeres', lat: 21.2200, lng: -86.8200, time: '08:15' }
+        ],
+        tulum: [
+          { name: 'Grand Velas Tulum', lat: 20.2050, lng: -87.4550, time: '08:00' },
+          { name: 'Rosewood Mayakoba', lat: 20.6500, lng: -87.0500, time: '08:15' },
+          { name: 'Be Tulum Hotel', lat: 20.1950, lng: -87.4350, time: '08:30' }
+        ],
+        airport: [
+          { name: 'Cancun Airport Terminal 3', lat: 21.0365, lng: -86.8770, time: '22:45' },
+          { name: 'Cancun Airport Terminal 4', lat: 21.0400, lng: -86.8800, time: '23:00' }
+        ]
+      }
 
       for (const tourId of createdTourIds) {
-        const { data: tour } = await supabase.from('tours').select('tour_type').eq('id', tourId).single()
+        const { data: tour } = await supabase.from('tours').select('tour_type, name').eq('id', tourId).single()
         if (tour?.tour_type === 'shared') {
-          const stopsCount = Math.floor(Math.random() * 3) + 1 // 1-3 stops
+          // Get region for this tour
+          const region = tourRegions[tourId] || 'cancun'
+          const hotels = hotelPickups[region as keyof typeof hotelPickups] || hotelPickups.cancun
+          const stopsCount = Math.min(Math.floor(Math.random() * 3) + 1, hotels.length)
+          
           for (let s = 0; s < stopsCount; s++) {
-            const loc = pickupLocations[(stopCount + s) % pickupLocations.length]
+            const loc = hotels[s]
             const brandId = brandIds.length > 0 ? brandIds[0] : null
             
             await supabase.from('pickup_stops').insert({
@@ -463,12 +507,12 @@ export default function SuperAdminPage() {
               brand_id: brandId,
               sort_order: s + 1,
               location_name: loc.name,
-              address: 'Demo address',
+              address: `${loc.name}, Riviera Maya, Q.R., Mexico`,
               latitude: loc.lat,
               longitude: loc.lng,
               scheduled_time: loc.time,
               guest_count: Math.floor(Math.random() * 4) + 1,
-              notes: 'Demo pickup stop'
+              notes: `Pickup stop ${s + 1} for ${tour.name}`
             })
             stopCount++
           }
@@ -478,32 +522,56 @@ export default function SuperAdminPage() {
       setDemoProgress(`✅ Created ${stopCount} pickup stops`)
       await new Promise(resolve => setTimeout(resolve, 500))
 
-      // Step 4: Create guide check-ins
+      // Step 4: Create guide check-ins with accurate GPS by region
       setDemoProgress('📍 Simulating guide check-ins...')
       let checkinCount = 0
-      for (const tourId of createdTourIds.slice(0, Math.min(createdTourIds.length, 5))) {
-        const { data: tour } = await supabase.from('tours').select('guide_id, brand_id, start_time').eq('id', tourId).single()
+      
+      // Check-in locations near actual tour starting points
+      const checkinLocations = {
+        cancun: { lat: 21.1619, lng: -86.8515, spot: 'Hotel Zone pickup point' },
+        airport: { lat: 21.0365, lng: -86.8770, spot: 'Airport arrivals terminal' },
+        playa: { lat: 20.6296, lng: -87.0739, spot: 'Playa del Carmen center' },
+        tulum: { lat: 20.2114, lng: -87.4654, spot: 'Tulum ruins entrance' },
+        akumal: { lat: 20.3950, lng: -87.3139, spot: 'Akumal Bay parking' },
+        coba: { lat: 20.5000, lng: -87.7333, spot: 'Coba ruins parking' },
+        valladolid: { lat: 20.6897, lng: -88.2036, spot: 'Valladolid zocalo' },
+        isla: { lat: 21.2311, lng: -86.7315, spot: 'Puerto Juarez ferry terminal' },
+        cenotes: { lat: 20.3356, lng: -87.3581, spot: 'Gran Cenote parking' },
+        puerto: { lat: 20.8500, lng: -86.8833, spot: 'Puerto Morelos center' }
+      }
+
+      // Check in ALL tours (not just first 5)
+      for (const tourId of createdTourIds) {
+        const { data: tour } = await supabase.from('tours').select('guide_id, brand_id, start_time, name').eq('id', tourId).single()
         if (tour) {
+          const region = tourRegions[tourId] || 'cancun'
+          const location = checkinLocations[region as keyof typeof checkinLocations] || checkinLocations.cancun
+          
           const startTime = tour.start_time || '08:00'
           const [hours, minutes] = startTime.split(':').map(Number)
           const checkinTime = new Date()
           checkinTime.setHours(hours, minutes - 20, 0) // 20 min before tour
           
-          const minutesEarly = Math.floor(Math.random() * 15) - 5 // -5 to +10 minutes
+          const minutesEarly = Math.floor(Math.random() * 15) - 5
+          const isNightShift = tour.start_time && (tour.start_time >= '22:00' || tour.start_time < '05:00')
           
           await supabase.from('guide_checkins').insert({
             tour_id: tourId,
             brand_id: tour.brand_id,
             guide_id: tour.guide_id,
-            checkin_type: 'pre_pickup',
+            checkin_type: isNightShift ? 'night_shift' : 'pre_pickup',
             checked_in_at: checkinTime.toISOString(),
-            latitude: 20.6 + Math.random() * 0.5,
-            longitude: -87.0 + Math.random() * 0.3,
-            location_accuracy: 10 + Math.random() * 20,
+            latitude: location.lat + (Math.random() - 0.5) * 0.001, // Small variation for realism
+            longitude: location.lng + (Math.random() - 0.5) * 0.001,
+            location_accuracy: 5 + Math.random() * 15, // 5-20m accuracy
             gps_alert_triggered: false,
             scheduled_time: startTime,
             minutes_early_or_late: minutesEarly,
-            notes: minutesEarly >= 0 ? 'Arrived early' : 'Slightly delayed due to traffic',
+            notes: isNightShift 
+              ? `Night shift check-in at ${location.spot}`
+              : minutesEarly >= 0 
+                ? `Arrived ${minutesEarly}m early at ${location.spot}`
+                : `Running ${Math.abs(minutesEarly)}m late - traffic on main road`,
             selfie_url: 'https://cloudinary.com/dorhbpsxy/tour-ops/demo-selfie.jpg'
           })
           checkinCount++
