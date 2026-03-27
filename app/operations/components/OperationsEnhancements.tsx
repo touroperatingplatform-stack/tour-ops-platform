@@ -217,10 +217,16 @@ export function GuideCheckinStatus() {
     const guideIds = [...new Set(checkinsData.map(c => c.guide_id).filter(Boolean))]
     const tourIds = [...new Set(checkinsData.map(c => c.tour_id).filter(Boolean))]
 
-    const [{ data: guidesData }, { data: toursData }] = await Promise.all([
-      supabase.from('profiles').select('id, first_name, last_name').in('id', guideIds.length > 0 ? guideIds : ['00000000-0000-0000-0000-000000000000']),
-      supabase.from('tours').select('id, name').in('id', tourIds.length > 0 ? tourIds : ['00000000-0000-0000-0000-000000000000'])
-    ])
+    // Query all guides instead of using IN clause (more reliable)
+    const { data: guidesData } = await supabase
+      .from('profiles')
+      .select('id, first_name, last_name')
+      .eq('role', 'guide')
+
+    const { data: toursData } = await supabase
+      .from('tours')
+      .select('id, name')
+      .in('id', tourIds.length > 0 ? tourIds : ['00000000-0000-0000-0000-000000000000'])
 
     const guideMap = new Map(guidesData?.map((g: any) => [g.id, g]) || [])
     const tourMap = new Map(toursData?.map((t: any) => [t.id, t.name]) || [])
