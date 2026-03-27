@@ -886,9 +886,10 @@ TOUR-UUID-HERE,Jane,Smith,jane@email.com,+1-555-0102,Grand Velas Riviera Maya,20
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-gray-900 text-white py-6">
+    <RoleGuard requiredRole="super_admin">
+      <div className="min-h-screen bg-gray-50">
+        {/* Header */}
+        <div className="bg-gray-900 text-white py-6">
         <div className="max-w-7xl mx-auto px-4">
           <h1 className="text-3xl font-bold">Super Admin Dashboard</h1>
           <p className="text-gray-400 mt-1">Platform configuration and demo management</p>
