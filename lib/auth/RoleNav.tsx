@@ -58,8 +58,13 @@ export default function RoleNav({ items, userRole: explicitRole, children }: Rol
   // Filter items based on user's role
   const filteredItems = items.filter(item => {
     if (!item.minRole) return true  // No role requirement
-    if (!userRole) return false     // Not authenticated
-    return hasRole(userRole, item.minRole)
+    if (!userRole) {
+      console.log('RoleNav: No user role, filtering out:', item.label)
+      return false
+    }
+    const allowed = hasRole(userRole, item.minRole)
+    console.log('RoleNav:', item.label, 'minRole:', item.minRole, 'userRole:', userRole, 'allowed:', allowed)
+    return allowed
   })
 
   return <>{children(filteredItems, userRole, loading)}</>
