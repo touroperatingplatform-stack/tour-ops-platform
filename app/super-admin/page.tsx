@@ -191,12 +191,11 @@ export default function SuperAdminPage() {
           
           console.log(`📊 ${table} has ${recordCount} records to delete`)
           
-          // Supabase requires a WHERE clause
-          // Try created_at first, fall back to id if that fails
-          let { data, error } = await supabase
-            .from(table)
-            .delete()
-            .gte('created_at', '1970-01-01')
+          // Special handling for guest_feedback - delete ALL records (no date filter) to avoid FK issues
+          // This table has FK to guests, so we need to ensure it's completely empty before deleting guests
+          let { data, error } = table === 'guest_feedback' 
+            ? await supabase.from(table).delete().neq('id', '00000000-0000-0000-0000-000000000000')
+            : await supabase.from(table).delete().gte('created_at', '1970-01-01')
           
           // If created_at doesn't exist, try using id with neq (not equal)
           if (error && error.message?.includes('column')) {
@@ -219,6 +218,12 @@ export default function SuperAdminPage() {
           } else {
             deleted++
             console.log(`✅ Cleared table: ${table} (${recordCount} records)`);
+            
+            // Wait for replication after deleting guest_feedback
+            if (table === 'guest_feedback') {
+              console.log('⏳ Waiting for Supabase replication after guest_feedback delete...')
+              await new Promise(resolve => setTimeout(resolve, 2000))
+            }
           }
         } catch (tableError) {
           console.error(`💥 Error clearing ${table}:`, tableError)
