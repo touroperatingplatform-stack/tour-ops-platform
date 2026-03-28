@@ -7,11 +7,14 @@ interface Incident {
   id: string
   tour_name: string
   type: string
-  severity: 'low' | 'medium' | 'high'
+  severity: 'low' | 'medium' | 'high' | 'critical'
   description: string
   created_at: string
-  status: 'reported' | 'acknowledged' | 'resolved'
+  status: 'reported' | 'acknowledged' | 'in_progress' | 'resolved' | 'closed'
   guide_name?: string
+  acknowledged_at?: string
+  assigned_to?: string
+  escalation_level?: number
 }
 
 interface GuideCheckin {
@@ -60,12 +63,13 @@ export function IncidentAlerts({ onIncidentUpdate }: { onIncidentUpdate?: () => 
     const { data: incidentsData } = await supabase
       .from('incidents')
       .select(`
-        id, type, severity, description, status, created_at,
+        id, type, severity, description, status, created_at, acknowledged_at, assigned_to, escalation_level,
         tour:tours!tour_id (name),
-        guide:profiles!guide_id (first_name, last_name)
+        guide:profiles!guide_id (first_name, last_name),
+        assignee:profiles!assigned_to (first_name, last_name)
       `)
       .gte('created_at', `${yesterday}T00:00:00`)
-      .in('status', ['reported', 'acknowledged'])
+      .in('status', ['reported', 'acknowledged', 'in_progress'])
       .order('created_at', { ascending: false })
 
     if (incidentsData) {
@@ -76,8 +80,11 @@ export function IncidentAlerts({ onIncidentUpdate }: { onIncidentUpdate?: () => 
         severity: i.severity,
         description: i.description,
         created_at: i.created_at,
+        acknowledged_at: i.acknowledged_at,
         status: i.status,
-        guide_name: `${i.guide?.first_name || ''} ${i.guide?.last_name || ''}`
+        guide_name: `${i.guide?.first_name || ''} ${i.guide?.last_name || ''}`,
+        assigned_to: i.assignee ? `${i.assignee.first_name || ''} ${i.assignee.last_name || ''}` : undefined,
+        escalation_level: i.escalation_level
       }))
       setIncidents(formatted)
       onIncidentUpdate?.()
@@ -85,10 +92,29 @@ export function IncidentAlerts({ onIncidentUpdate }: { onIncidentUpdate?: () => 
     setLoading(false)
   }
 
-  async function updateIncidentStatus(incidentId: string, newStatus: 'acknowledged' | 'resolved') {
+  async function updateIncidentStatus(incidentId: string, newStatus: 'acknowledged' | 'in_progress' | 'resolved' | 'closed') {
     const { error } = await supabase
       .from('incidents')
-      .update({ status: newStatus })
+      .update({ 
+        status: newStatus,
+        ...(newStatus === 'resolved' ? { resolved_at: new Date().toISOString() } : {})
+      })
+      .eq('id', incidentId)
+    
+    if (!error) {
+      loadIncidents()
+      onIncidentUpdate?.()
+    }
+  }
+
+  async function assignIncident(incidentId: string, assigneeId: string) {
+    const { error } = await supabase
+      .from('incidents')
+      .update({ 
+        assigned_to: assigneeId,
+        assigned_at: new Date().toISOString(),
+        status: 'in_progress'
+      })
       .eq('id', incidentId)
     
     if (!error) {
@@ -99,9 +125,10 @@ export function IncidentAlerts({ onIncidentUpdate }: { onIncidentUpdate?: () => 
 
   function getSeverityColor(severity: string) {
     switch (severity) {
-      case 'high': return 'bg-red-100 text-red-700 border-red-200'
-      case 'medium': return 'bg-yellow-100 text-yellow-700 border-yellow-200'
-      case 'low': return 'bg-blue-100 text-blue-700 border-blue-200'
+      case 'critical': return 'bg-red-100 text-red-800 border-red-300'
+      case 'high': return 'bg-orange-100 text-orange-800 border-orange-300'
+      case 'medium': return 'bg-yellow-100 text-yellow-800 border-yellow-300'
+      case 'low': return 'bg-blue-100 text-blue-800 border-blue-300'
       default: return 'bg-gray-100 text-gray-700 border-gray-200'
     }
   }
@@ -110,12 +137,26 @@ export function IncidentAlerts({ onIncidentUpdate }: { onIncidentUpdate?: () => 
     const icons: Record<string, string> = {
       delay: '🚗',
       vehicle_issue: '🔧',
+      vehicle_breakdown: '🔧',
       medical: '🏥',
+      guest_injury: '🏥',
       guest_issue: '👤',
       weather: '🌧️',
+      no_show: '❌',
       other: '⚠️'
     }
     return icons[type] || '⚠️'
+  }
+
+  function getStatusBadge(status: string) {
+    const styles: Record<string, string> = {
+      reported: 'bg-red-100 text-red-700',
+      acknowledged: 'bg-yellow-100 text-yellow-700',
+      in_progress: 'bg-blue-100 text-blue-700',
+      resolved: 'bg-green-100 text-green-700',
+      closed: 'bg-gray-100 text-gray-600'
+    }
+    return styles[status] || styles.reported
   }
 
   if (loading) return <div className="text-sm text-gray-500 p-4">Loading incidents...</div>
@@ -145,16 +186,36 @@ export function IncidentAlerts({ onIncidentUpdate }: { onIncidentUpdate?: () => 
                 <div className="flex items-center gap-2 mb-1">
                   <span className="text-lg">{getTypeIcon(incident.type)}</span>
                   <span className="font-medium">{incident.tour_name}</span>
+                  <span className={`text-xs px-2 py-0.5 rounded ${getStatusBadge(incident.status)}`}>
+                    {incident.status.replace('_', ' ')}
+                  </span>
+                  {incident.escalation_level && incident.escalation_level > 0 && (
+                    <span className="text-xs px-2 py-0.5 rounded bg-red-200 text-red-800 font-bold">
+                      ⚠️ L{incident.escalation_level}
+                    </span>
+                  )}
                 </div>
                 <p className="text-sm opacity-90 mb-2">{incident.description}</p>
-                <div className="flex items-center gap-2 text-xs">
-                  <span className="opacity-75">
+                <div className="flex items-center gap-2 text-xs opacity-75">
+                  <span>
                     {new Date(incident.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                   </span>
+                  {incident.acknowledged_at && (
+                    <>
+                      <span>•</span>
+                      <span>Ack: {new Date(incident.acknowledged_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                    </>
+                  )}
                   {incident.guide_name && (
                     <>
                       <span>•</span>
                       <span>{incident.guide_name}</span>
+                    </>
+                  )}
+                  {incident.assigned_to && (
+                    <>
+                      <span>•</span>
+                      <span>→ {incident.assigned_to}</span>
                     </>
                   )}
                 </div>
@@ -164,17 +225,33 @@ export function IncidentAlerts({ onIncidentUpdate }: { onIncidentUpdate?: () => 
                 {incident.status === 'reported' && (
                   <button
                     onClick={() => updateIncidentStatus(incident.id, 'acknowledged')}
-                    className="px-2 py-1 bg-white bg-opacity-50 hover:bg-opacity-75 rounded text-xs font-medium"
+                    className="px-2 py-1 bg-white bg-opacity-75 hover:bg-opacity-100 rounded text-xs font-medium"
                   >
-                    Acknowledge
+                    ✓ Acknowledge
                   </button>
                 )}
-                {incident.status !== 'resolved' && (
+                {incident.status === 'acknowledged' && (
+                  <>
+                    <button
+                      onClick={() => updateIncidentStatus(incident.id, 'in_progress')}
+                      className="px-2 py-1 bg-white bg-opacity-75 hover:bg-opacity-100 rounded text-xs font-medium"
+                    >
+                      ▶ Start
+                    </button>
+                    <button
+                      onClick={() => updateIncidentStatus(incident.id, 'resolved')}
+                      className="px-2 py-1 bg-white bg-opacity-75 hover:bg-opacity-100 rounded text-xs font-medium"
+                    >
+                      ✓ Resolve
+                    </button>
+                  </>
+                )}
+                {incident.status === 'in_progress' && (
                   <button
                     onClick={() => updateIncidentStatus(incident.id, 'resolved')}
-                    className="px-2 py-1 bg-white bg-opacity-50 hover:bg-opacity-75 rounded text-xs font-medium"
+                    className="px-2 py-1 bg-white bg-opacity-75 hover:bg-opacity-100 rounded text-xs font-medium"
                   >
-                    Resolve
+                    ✓ Resolve
                   </button>
                 )}
               </div>
