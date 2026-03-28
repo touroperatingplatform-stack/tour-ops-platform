@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase/client'
+import { useTranslation } from '@/lib/i18n/useTranslation'
 
 interface Incident {
   id: string
@@ -44,6 +45,7 @@ interface OperationsMetrics {
 }
 
 export function IncidentAlerts({ onIncidentUpdate }: { onIncidentUpdate?: () => void }) {
+  const { t } = useTranslation()
   const [incidents, setIncidents] = useState<Incident[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -179,12 +181,12 @@ export function IncidentAlerts({ onIncidentUpdate }: { onIncidentUpdate?: () => 
     return styles[status] || styles.reported
   }
 
-  if (loading) return <div className="text-sm text-gray-500 p-4">Loading incidents...</div>
+  if (loading) return <div className="text-sm text-gray-500 p-4">{t('common.loading')}</div>
   if (incidents.length === 0) {
     return (
       <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-center">
-        <p className="text-green-700 font-medium">✅ No active incidents</p>
-        <p className="text-green-600 text-sm mt-1">All tours operating normally</p>
+        <p className="text-green-700 font-medium">✅ {t('incidents.noActiveIncidents') || 'No active incidents'}</p>
+        <p className="text-green-600 text-sm mt-1">{t('incidents.allToursNormal') || 'All tours operating normally'}</p>
       </div>
     )
   }
@@ -193,7 +195,7 @@ export function IncidentAlerts({ onIncidentUpdate }: { onIncidentUpdate?: () => 
     <div className="space-y-3">
       <div className="flex items-center justify-between">
         <h3 className="font-semibold text-gray-900 flex items-center gap-2">
-          <span className="text-lg">🚨</span> Active Incidents
+          <span className="text-lg">🚨</span> {t('incidents.activeIncidents') || 'Active Incidents'}
           <span className="bg-red-100 text-red-700 text-xs px-2 py-0.5 rounded-full">{incidents.length}</span>
         </h3>
       </div>
@@ -246,14 +248,14 @@ export function IncidentAlerts({ onIncidentUpdate }: { onIncidentUpdate?: () => 
                   href={`/operations/incidents/${incident.id}`}
                   className="px-2 py-1 bg-white bg-opacity-75 hover:bg-opacity-100 rounded text-xs font-medium text-center text-blue-600"
                 >
-                  View Details →
+                  {t('common.viewDetails') || 'View Details'} →
                 </Link>
                 {incident.status === 'reported' && (
                   <button
                     onClick={() => updateIncidentStatus(incident.id, 'acknowledged')}
                     className="px-2 py-1 bg-white bg-opacity-75 hover:bg-opacity-100 rounded text-xs font-medium"
                   >
-                    ✓ Acknowledge
+                    ✓ {t('incidents.acknowledge') || 'Acknowledge'}
                   </button>
                 )}
                 {incident.status === 'acknowledged' && (
@@ -262,7 +264,7 @@ export function IncidentAlerts({ onIncidentUpdate }: { onIncidentUpdate?: () => 
                       onClick={() => updateIncidentStatus(incident.id, 'in_progress')}
                       className="px-2 py-1 bg-white bg-opacity-75 hover:bg-opacity-100 rounded text-xs font-medium"
                     >
-                      ▶ Start
+                      ▶ {t('incidents.start') || 'Start'}
                     </button>
                   </>
                 )}

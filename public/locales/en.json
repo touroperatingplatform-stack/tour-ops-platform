@@ -36,7 +36,14 @@
     "yes": "Yes",
     "no": "No",
     "post": "Post",
-    "noComments": "No comments yet"
+    "noComments": "No comments yet",
+    "name": "Name",
+    "firstName": "First Name",
+    "lastName": "Last Name",
+    "active": "Active",
+    "inactive": "Inactive",
+    "saving": "Saving...",
+    "viewDetails": "View Details"
   },
   "incident": {
     "title": "Incident Management",
@@ -147,6 +154,18 @@
     "assignDrivers": "Assign Drivers",
     "vehicle": "Vehicle",
     "unassigned": "Unassigned"
+  },
+  "incidents": {
+    "activeIncidents": "Active Incidents",
+    "noActiveIncidents": "No active incidents",
+    "allToursNormal": "All tours operating normally",
+    "acknowledge": "Acknowledge",
+    "start": "Start",
+    "resolve": "Resolve",
+    "close": "Close",
+    "assign": "Assign",
+    "escalate": "Escalate",
+    "viewDetails": "View Details"
   },
   "vehicles": {
     "title": "Vehicle Fleet",

@@ -36,7 +36,14 @@
     "yes": "Sí",
     "no": "No",
     "post": "Publicar",
-    "noComments": "Sin comentarios aún"
+    "noComments": "Sin comentarios aún",
+    "name": "Nombre",
+    "firstName": "Nombre",
+    "lastName": "Apellido",
+    "active": "Activo",
+    "inactive": "Inactivo",
+    "saving": "Guardando...",
+    "viewDetails": "Ver Detalles"
   },
   "incident": {
     "title": "Gestión de Incidentes",
@@ -147,6 +154,18 @@
     "assignDrivers": "Asignar Choferes",
     "vehicle": "Vehículo",
     "unassigned": "No Asignado"
+  },
+  "incidents": {
+    "activeIncidents": "Incidentes Activos",
+    "noActiveIncidents": "No hay incidentes activos",
+    "allToursNormal": "Todos los tours operando normalmente",
+    "acknowledge": "Reconocer",
+    "start": "Iniciar",
+    "resolve": "Resolver",
+    "close": "Cerrar",
+    "assign": "Asignar",
+    "escalate": "Escalar",
+    "viewDetails": "Ver Detalles"
   },
   "vehicles": {
     "title": "Flotilla de Vehículos",
