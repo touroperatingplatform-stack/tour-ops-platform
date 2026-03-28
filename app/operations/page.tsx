@@ -171,9 +171,14 @@ export default function OperationsDashboard() {
       in_use: 'bg-blue-100 text-blue-700',
       maintenance: 'bg-red-100 text-red-700'
     }
+    const labels: Record<string, string> = {
+      available: t('vehicles.available'),
+      in_use: t('vehicles.inUse'),
+      maintenance: t('vehicles.maintenance')
+    }
     return (
       <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${styles[status] || 'bg-gray-100'}`}>
-        {status.replace('_', ' ')}
+        {labels[status] || status.replace('_', ' ')}
       </span>
     )
   }

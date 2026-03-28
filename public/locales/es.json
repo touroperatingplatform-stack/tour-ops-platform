@@ -196,15 +196,6 @@
     "upcoming": "Próximo",
     "current": "Actual"
   },
-  "time": {
-    "ago": "hace",
-    "early": "temprano",
-    "late": "tarde",
-    "hour": "hora",
-    "hours": "horas",
-    "minute": "minuto",
-    "minutes": "minutos"
-  },
   "schedule": {
     "title": "Horarios",
     "date": "Fecha",
@@ -244,6 +235,13 @@
     "tryAgain": "Por favor intenta de nuevo"
   },
   "time": {
+    "ago": "hace",
+    "early": "temprano",
+    "late": "tarde",
+    "hour": "hora",
+    "hours": "horas",
+    "minute": "minuto",
+    "minutes": "minutos",
     "today": "Hoy",
     "yesterday": "Ayer",
     "tomorrow": "Mañana",
