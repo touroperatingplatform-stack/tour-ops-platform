@@ -1,6 +1,6 @@
 'use client'
 
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react'
+import { createContext, useContext, useState, useEffect } from 'react'
 
 type Locale = 'en' | 'es'
 
@@ -12,7 +12,11 @@ interface TranslationContextType {
 
 const TranslationContext = createContext<TranslationContextType | undefined>(undefined)
 
-export function TranslationProvider({ children }: { children: ReactNode }) {
+interface TranslationProviderProps {
+  children: React.ReactNode
+}
+
+export function TranslationProvider({ children }: TranslationProviderProps) {
   const [locale, setLocaleState] = useState<Locale>('en')
   const [translations, setTranslations] = useState<Record<string, any>>({})
   const [loaded, setLoaded] = useState(false)

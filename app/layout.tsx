@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
-import { TranslationProvider } from '@/lib/i18n/useTranslation'
+import Providers from '@/components/Providers'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -39,9 +39,9 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-title" content="TourOps" />
       </head>
       <body className={inter.className}>
-        <TranslationProvider>
+        <Providers>
           {children}
-        </TranslationProvider>
+        </Providers>
         <script dangerouslySetInnerHTML={{
           __html: `
             if ('serviceWorker' in navigator) {
