@@ -42,6 +42,7 @@ export default function LoginPage() {
             supervisor: '/supervisor',
             operations: '/operations',
             guide: '/guide',
+            driver: '/driver',
           }
           const path = redirects[profile.role] || '/admin'
           console.log('Redirecting to:', path)
@@ -107,6 +108,7 @@ export default function LoginPage() {
         supervisor: '/supervisor',
         operations: '/operations',
         guide: '/guide',
+        driver: '/driver',
       }
       
       const redirectPath = redirects[profile.role] || '/admin'
