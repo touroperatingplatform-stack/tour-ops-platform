@@ -73,8 +73,12 @@ export default function SuperAdminDemoPage() {
       
       const todayTourIds = todaysTours?.map(t => t.id) || []
 
+      // Get ALL tour IDs first (for FK cleanup)
+      const { data: allToursData } = await supabase.from('tours').select('id')
+      const allTourIds = allToursData?.map(t => t.id) || []
+
       // Delete in correct order (FK constraints)
-      // guest_feedback must be deleted FIRST (references guests and tours)
+      // guest_feedback MUST be deleted before guests/tours (has FK to both)
       const tables = [
         'guest_feedback',      // Delete first - FK to guests and tours
         'cash_confirmations',
@@ -94,10 +98,13 @@ export default function SuperAdminDemoPage() {
       let deleted = 0
       for (const table of tables) {
         try {
-          // For guest_feedback, delete ALL records (no filter) since it references guests/tours
-          const query = table === 'guest_feedback' 
-            ? supabase.from(table).delete()
-            : supabase.from(table).delete().neq('id', '00000000-0000-0000-0000-000000000000')
+          // For guest_feedback, filter by tour_id to avoid FK issues
+          let query = supabase.from(table).delete().neq('id', '00000000-0000-0000-0000-000000000000')
+          
+          // Special handling: delete guest_feedback for our tours first
+          if (table === 'guest_feedback' && allTourIds.length > 0) {
+            query = supabase.from(table).delete().in('tour_id', allTourIds)
+          }
           
           const { data, error } = await query
           const recordCount = (data as unknown as any[])?.length || 0
@@ -108,10 +115,7 @@ export default function SuperAdminDemoPage() {
         }
       }
 
-      // Delete ALL tours (not just today's) to avoid FK issues
-      const { data: allTours } = await supabase.from('tours').select('id')
-      const allTourIds = allTours?.map(t => t.id) || []
-      
+      // Now delete tours (guest_feedback already cleared)
       if (allTourIds.length > 0) {
         const { data: tourData, error: tourError } = await supabase
           .from('tours')
