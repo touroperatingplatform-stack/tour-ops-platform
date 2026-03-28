@@ -8,6 +8,7 @@ import TopNav from './components/TopNav'
 
 const navItems = [
   { href: '/operations', label: 'Dashboard', icon: '📊' },
+  { href: '/operations/drivers', label: 'Drivers', icon: '🚗' },
   { href: '/operations/vehicles', label: 'Vehicles', icon: '🚌' },
   { href: '/operations/schedule', label: 'Schedule', icon: '📅' },
   { href: '/operations/reports', label: 'Reports', icon: '📈' },
