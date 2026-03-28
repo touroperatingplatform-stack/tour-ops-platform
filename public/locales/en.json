@@ -174,7 +174,11 @@
     "capacity": "Capacity",
     "available": "Available",
     "inUse": "In Use",
-    "maintenance": "Maintenance"
+    "maintenance": "Maintenance",
+    "addVehicle": "Add Vehicle",
+    "noVehicles": "No vehicles yet",
+    "vehicle": "Vehicle",
+    "passengers": "passengers"
   },
   "schedule": {
     "title": "Schedule",
