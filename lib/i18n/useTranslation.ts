@@ -65,9 +65,11 @@ export function TranslationProvider({ children }: TranslationProviderProps) {
     return typeof value === 'string' ? value : key
   }
 
+  const contextValue = { locale: locale, setLocale: setLocale, t: t }
   const Provider = TranslationContext.Provider
+  
   return (
-    <Provider value={{ locale, setLocale, t }}>
+    <Provider value={contextValue}>
       {children}
     </Provider>
   )
