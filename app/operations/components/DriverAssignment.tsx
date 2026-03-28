@@ -32,7 +32,16 @@ export default function DriverAssignment({ onAssignmentChange }: DriverAssignmen
   const [saving, setSaving] = useState<string | null>(null)
   const [drivers, setDrivers] = useState<Driver[]>([])
   const [tours, setTours] = useState<Tour[]>([])
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0])
+  // Get local date string (avoid timezone issues)
+  const getLocalDate = () => {
+    const now = new Date()
+    const year = now.getFullYear()
+    const month = String(now.getMonth() + 1).padStart(2, '0')
+    const day = String(now.getDate()).padStart(2, '0')
+    return `${year}-${month}-${day}`
+  }
+  
+  const [selectedDate, setSelectedDate] = useState(getLocalDate())
 
   useEffect(() => {
     loadData()
