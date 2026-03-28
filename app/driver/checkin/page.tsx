@@ -55,7 +55,10 @@ export default function DriverCheckinPage() {
     if (tourIdFromUrl) {
       setSelectedTour(tourIdFromUrl)
       const tour = tours.find(t => t.id === tourIdFromUrl)
-      if (tour) setVehicle(tour.vehicles)
+      if (tour) {
+        // vehicles is array from Supabase join, take first item
+        setVehicle(Array.isArray(tour.vehicles) ? tour.vehicles[0] : tour.vehicles)
+      }
     }
   }, [tourIdFromUrl, tours])
 
@@ -81,7 +84,7 @@ export default function DriverCheckinPage() {
         .neq('status', 'cancelled')
         .order('start_time', { ascending: true })
 
-      // Supabase returns vehicles as array from join, take first item
+      // Supabase returns vehicles as array from join, normalize to single object
       const formattedTours = (data || []).map((t: any) => ({
         ...t,
         vehicles: Array.isArray(t.vehicles) ? t.vehicles[0] : t.vehicles
@@ -89,8 +92,9 @@ export default function DriverCheckinPage() {
       
       setTours(formattedTours)
       
-      if (data && data.length > 0 && tourIdFromUrl) {
-        const tour = data.find(t => t.id === tourIdFromUrl)
+      // Use formattedTours (already normalized), not raw data
+      if (formattedTours.length > 0 && tourIdFromUrl) {
+        const tour = formattedTours.find(t => t.id === tourIdFromUrl)
         if (tour) {
           setSelectedTour(tour.id)
           setVehicle(tour.vehicles)
@@ -114,6 +118,7 @@ export default function DriverCheckinPage() {
       const tour = tours.find(t => t.id === selectedTour)
       if (!tour) return
 
+      // Get vehicle_id directly from tour (not from vehicles object)
       const { error } = await supabase
         .from('driver_checkins')
         .insert({
