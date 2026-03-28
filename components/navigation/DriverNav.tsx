@@ -6,7 +6,7 @@ import { usePathname } from 'next/navigation'
 const navItems = [
   { href: '/driver', label: 'Tours', icon: '🚌', activeIcon: '🚌' },
   { href: '/driver/checkin', label: 'Check-in', icon: '🚗', activeIcon: '🚗' },
-  { href: '/driver/history', label: 'History', icon: '📜', activeIcon: '📜' },
+  { href: '/driver/profile', label: 'Profile', icon: '👤', activeIcon: '👤' },
 ]
 
 export default function DriverNav() {
