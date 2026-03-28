@@ -73,14 +73,14 @@ export default function TopNav() {
                       className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
                       onClick={() => setShowMenu(false)}
                     >
-                      My Profile
+                      {t('profile.title')}
                     </Link>
                     <div className="border-t border-gray-100 my-1" />
                     <button
                       onClick={handleSignOut}
                       className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50"
                     >
-                      Sign Out
+                      {t('auth.signOut')}
                     </button>
                   </div>
                 </>
