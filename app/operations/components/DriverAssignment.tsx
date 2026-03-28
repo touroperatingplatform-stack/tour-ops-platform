@@ -66,7 +66,15 @@ export default function DriverAssignment({ onAssignmentChange }: DriverAssignmen
         driver_type: d.driver_type,
         status: d.status
       }))
-      setDrivers(formattedDrivers)
+      
+      // Deduplicate drivers by profile_id
+      const uniqueDriversMap = new Map<string, Driver>()
+      formattedDrivers.forEach((d) => {
+        if (!uniqueDriversMap.has(d.id)) {
+          uniqueDriversMap.set(d.id, d)
+        }
+      })
+      setDrivers(Array.from(uniqueDriversMap.values()))
 
       // Load tours for selected date
       const { data: toursData } = await supabase
@@ -90,7 +98,15 @@ export default function DriverAssignment({ onAssignmentChange }: DriverAssignmen
         ...t,
         driver_name: t.profiles ? `${t.profiles.first_name} ${t.profiles.last_name}` : undefined
       }))
-      setTours(formattedTours)
+      
+      // Deduplicate tours by id
+      const uniqueToursMap = new Map<string, Tour>()
+      formattedTours.forEach((t) => {
+        if (!uniqueToursMap.has(t.id)) {
+          uniqueToursMap.set(t.id, t)
+        }
+      })
+      setTours(Array.from(uniqueToursMap.values()))
     } catch (error) {
       console.error('Error loading driver assignment data:', error)
     } finally {
