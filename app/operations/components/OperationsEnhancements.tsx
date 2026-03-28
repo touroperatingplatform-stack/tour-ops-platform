@@ -55,35 +55,44 @@ export function IncidentAlerts({ onIncidentUpdate }: { onIncidentUpdate?: () => 
   }, [])
 
   async function loadIncidents() {
-    // Use timezone-aware date (incidents created in Cancun time)
     const now = new Date()
-    const today = now.toISOString().split('T')[0]
     const yesterday = new Date(now.getTime() - 86400000).toISOString().split('T')[0]
     
-    const { data: incidentsData } = await supabase
+    const { data: incidentsData, error } = await supabase
       .from('incidents')
-      .select(`
-        id, type, severity, description, status, created_at, acknowledged_at, assigned_to, escalation_level,
-        tour:tours!tour_id (name),
-        guide:profiles!guide_id (first_name, last_name),
-        assignee:profiles!assigned_to (first_name, last_name)
-      `)
+      .select('id, type, severity, description, status, created_at, acknowledged_at, assigned_to, escalation_level, tour_id, guide_id')
       .gte('created_at', `${yesterday}T00:00:00`)
       .in('status', ['reported', 'acknowledged', 'in_progress'])
       .order('created_at', { ascending: false })
 
+    if (error) {
+      console.error('Error loading incidents:', error)
+      setLoading(false)
+      return
+    }
+
     if (incidentsData) {
-      const formatted = incidentsData.map((i: any) => ({
+      // Fetch tour names separately
+      const tourIds = [...new Set(incidentsData.map(i => i.tour_id).filter(Boolean))]
+      const guideIds = [...new Set(incidentsData.map(i => i.guide_id).filter(Boolean))]
+      
+      const { data: tours } = await supabase.from('tours').select('id, name').in('id', tourIds.length > 0 ? tourIds : ['00000000-0000-0000-0000-000000000000'])
+      const { data: guides } = await supabase.from('profiles').select('id, first_name, last_name').in('id', guideIds.length > 0 ? guideIds : ['00000000-0000-0000-0000-000000000000'])
+      
+      const tourMap = new Map(tours?.map(t => [t.id, t.name]))
+      const guideMap = new Map(guides?.map(g => [g.id, `${g.first_name} ${g.last_name}`]))
+
+      const formatted = incidentsData.map(i => ({
         id: i.id,
-        tour_name: i.tour?.name || 'Unknown Tour',
+        tour_name: tourMap.get(i.tour_id) || 'Unknown Tour',
         type: i.type,
         severity: i.severity,
         description: i.description,
         created_at: i.created_at,
         acknowledged_at: i.acknowledged_at,
         status: i.status,
-        guide_name: `${i.guide?.first_name || ''} ${i.guide?.last_name || ''}`,
-        assigned_to: i.assignee ? `${i.assignee.first_name || ''} ${i.assignee.last_name || ''}` : undefined,
+        guide_name: guideMap.get(i.guide_id) || 'Unknown',
+        assigned_to: i.assigned_to,
         escalation_level: i.escalation_level
       }))
       setIncidents(formatted)
