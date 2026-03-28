@@ -20,6 +20,7 @@ interface Incident {
   assigned_to_name?: string
   assigned_at?: string
   escalation_level: number
+  escalation_reason?: string
   photo_urls?: string[]
   created_at: string
   acknowledged_at?: string
