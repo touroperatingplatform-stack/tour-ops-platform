@@ -108,23 +108,23 @@ export default function OperationsDashboard() {
       }))
 
       // Generate timeline
-      const timelineEvents: TimelineEvent[] = formattedTours.map(t => {
-        const tourTime = new Date(`${today}T${t.start_time}`)
+      const timelineEvents: TimelineEvent[] = formattedTours.map(tour => {
+        const tourTime = new Date(`${today}T${tour.start_time}`)
         const now = new Date()
         let eventStatus: TimelineEvent['status']
         
-        if (t.status === 'completed') {
+        if (tour.status === 'completed') {
           eventStatus = 'completed'
-        } else if (t.status === 'in_progress') {
+        } else if (tour.status === 'in_progress') {
           eventStatus = 'current'
         } else {
           eventStatus = tourTime < now ? 'completed' : 'upcoming'
         }
         
         return {
-          time: t.start_time?.slice(0, 5),
-          event: t.status === 'in_progress' ? t('timeline.departed') : t.status === 'completed' ? t('timeline.completed') : t('timeline.scheduled'),
-          tour: t.name,
+          time: tour.start_time?.slice(0, 5),
+          event: tour.status === 'in_progress' ? t('timeline.departed') : tour.status === 'completed' ? t('timeline.completed') : t('timeline.scheduled'),
+          tour: tour.name,
           status: eventStatus
         }
       })
