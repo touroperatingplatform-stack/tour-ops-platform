@@ -73,14 +73,10 @@ export default function SuperAdminDemoPage() {
       
       const todayTourIds = todaysTours?.map(t => t.id) || []
 
-      // Get ALL tour IDs first (for FK cleanup)
-      const { data: allToursData } = await supabase.from('tours').select('id')
-      const allTourIds = allToursData?.map(t => t.id) || []
-
       // Delete in correct order (FK constraints)
-      // guest_feedback MUST be deleted before guests/tours (has FK to both)
+      // guest_feedback MUST be deleted before guests (guest_id has no ON DELETE CASCADE)
       const tables = [
-        'guest_feedback',      // Delete first - FK to guests and tours
+        'guest_feedback',      // Delete FIRST - guest_id FK has no cascade
         'cash_confirmations',
         'payments',
         'checklist_completions',
@@ -89,42 +85,29 @@ export default function SuperAdminDemoPage() {
         'incidents',
         'guide_checkins',
         'pickup_stops',
-        'guests',              // Delete after guest_feedback
+        'guests',
         'external_bookings',
         'activity_feed',
-        'push_notifications'
+        'push_notifications',
+        'tours'                 // tours last (tour_id has CASCADE, so feedback already gone)
       ]
 
       let deleted = 0
       for (const table of tables) {
         try {
-          // For guest_feedback, filter by tour_id to avoid FK issues
-          let query = supabase.from(table).delete().neq('id', '00000000-0000-0000-0000-000000000000')
+          // Use gt (greater than) instead of neq - works for all tables including guest_feedback
+          // Supabase requires a WHERE clause, gt('id', '0000...') matches all real UUIDs
+          const { data, error } = await supabase
+            .from(table)
+            .delete()
+            .gt('id', '00000000-0000-0000-0000-000000000000')
           
-          // Special handling: delete guest_feedback for our tours first
-          if (table === 'guest_feedback' && allTourIds.length > 0) {
-            query = supabase.from(table).delete().in('tour_id', allTourIds)
-          }
-          
-          const { data, error } = await query
           const recordCount = (data as unknown as any[])?.length || 0
           deleted += recordCount
           if (error) console.error(`Failed to clear ${table}:`, error)
         } catch (tableError) {
           console.error(`Error clearing ${table}:`, tableError)
         }
-      }
-
-      // Now delete tours (guest_feedback already cleared)
-      if (allTourIds.length > 0) {
-        const { data: tourData, error: tourError } = await supabase
-          .from('tours')
-          .delete()
-          .in('id', allTourIds)
-        
-        const tourCount = (tourData as unknown as any[])?.length || 0
-        deleted += tourCount
-        if (tourError) console.error('Failed to delete tours:', tourError)
       }
 
       setDemoMessage({ type: 'success', text: `✅ Cleared ${deleted} demo records.` })
