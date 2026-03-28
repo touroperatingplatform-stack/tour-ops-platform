@@ -174,7 +174,11 @@
     "capacity": "Capacidad",
     "available": "Disponible",
     "inUse": "En Uso",
-    "maintenance": "Mantenimiento"
+    "maintenance": "Mantenimiento",
+    "vehicle": "Vehículo",
+    "addVehicle": "Agregar Vehículo",
+    "passengers": "pasajeros",
+    "noVehicles": "No hay vehículos registrados"
   },
   "schedule": {
     "title": "Horarios",
