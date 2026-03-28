@@ -19,6 +19,7 @@ interface Driver {
   driver_type: 'employee' | 'freelance'
   status: 'active' | 'inactive'
   hire_date?: string
+  assigned_tours_count?: number
 }
 
 export default function DriversManagement() {
@@ -28,6 +29,9 @@ export default function DriversManagement() {
   const [drivers, setDrivers] = useState<Driver[]>([])
   const [showAddModal, setShowAddModal] = useState(false)
   const [editingDriver, setEditingDriver] = useState<Driver | null>(null)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [filterType, setFilterType] = useState<'all' | 'employee' | 'freelance'>('all')
+  const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'inactive'>('all')
 
   // Form state
   const [formData, setFormData] = useState({
@@ -68,6 +72,22 @@ export default function DriversManagement() {
         `)
         .order('created_at', { ascending: false })
 
+      const today = new Date().toISOString().split('T')[0]
+      
+      // Count today's assignments for each driver
+      const { data: assignments } = await supabase
+        .from('tours')
+        .select('driver_id')
+        .eq('tour_date', today)
+        .neq('status', 'cancelled')
+
+      const assignmentCount: Record<string, number> = {}
+      assignments?.forEach(a => {
+        if (a.driver_id) {
+          assignmentCount[a.driver_id] = (assignmentCount[a.driver_id] || 0) + 1
+        }
+      })
+
       const formatted: Driver[] = (data || []).map((d: any) => ({
         id: d.id,
         profile_id: d.profile_id,
@@ -79,7 +99,8 @@ export default function DriversManagement() {
         license_expiry: d.license_expiry || undefined,
         driver_type: d.driver_type,
         status: d.status,
-        hire_date: d.hire_date || undefined
+        hire_date: d.hire_date || undefined,
+        assigned_tours_count: assignmentCount[d.profile_id] || 0
       }))
 
       setDrivers(formatted)
@@ -167,6 +188,21 @@ export default function DriversManagement() {
     })
   }
 
+  const filteredDrivers = drivers.filter(d => {
+    if (filterType !== 'all' && d.driver_type !== filterType) return false
+    if (filterStatus !== 'all' && d.status !== filterStatus) return false
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase()
+      return (
+        d.first_name.toLowerCase().includes(q) ||
+        d.last_name.toLowerCase().includes(q) ||
+        d.email.toLowerCase().includes(q) ||
+        (d.license_number || '').toLowerCase().includes(q)
+      )
+    }
+    return true
+  })
+
   function openEditModal(driver: Driver) {
     setEditingDriver(driver)
     setFormData({
@@ -240,6 +276,52 @@ export default function DriversManagement() {
             </div>
           </div>
 
+          {/* Search and Filters */}
+          <div className="bg-white rounded-xl border border-gray-200 p-4 mb-8">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  {t('common.search') || 'Buscar'}
+                </label>
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder={t('drivers.searchPlaceholder') || 'Nombre, email, licencia...'}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  {t('drivers.type') || 'Tipo'}
+                </label>
+                <select
+                  value={filterType}
+                  onChange={(e) => setFilterType(e.target.value as any)}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="all">{t('common.all') || 'Todos'}</option>
+                  <option value="employee">{t('drivers.employee') || 'Empleado'}</option>
+                  <option value="freelance">{t('drivers.freelance') || 'Freelance'}</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  {t('common.status') || 'Estado'}
+                </label>
+                <select
+                  value={filterStatus}
+                  onChange={(e) => setFilterStatus(e.target.value as any)}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="all">{t('common.all') || 'Todos'}</option>
+                  <option value="active">{t('common.active') || 'Activo'}</option>
+                  <option value="inactive">{t('common.inactive') || 'Inactivo'}</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
           {/* Driver Assignment */}
           <div className="bg-white rounded-xl border border-gray-200 p-6 mb-8">
             <h2 className="font-semibold text-gray-900 mb-4">{t('drivers.assignToTours') || 'Assign Drivers to Tours'}</h2>
@@ -265,13 +347,25 @@ export default function DriversManagement() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
-                  {drivers.map((driver) => (
+                  {filteredDrivers.map((driver) => (
                     <tr key={driver.id} className="hover:bg-gray-50">
                       <td className="px-6 py-4">
-                        <p className="font-medium text-gray-900">
-                          {driver.first_name} {driver.last_name}
-                        </p>
-                        <p className="text-xs text-gray-500">ID: {driver.profile_id.slice(0, 8)}...</p>
+                        <div className="flex items-center gap-3">
+                          <div>
+                            <p className="font-medium text-gray-900">
+                              {driver.first_name} {driver.last_name}
+                            </p>
+                            {driver.assigned_tours_count ? (
+                              <p className="text-xs text-blue-600 font-medium">
+                                🚌 {driver.assigned_tours_count} tour{(driver.assigned_tours_count || 0) > 1 ? 's' : ''} hoy
+                              </p>
+                            ) : (
+                              <p className="text-xs text-green-600 font-medium">
+                                ✓ Disponible
+                              </p>
+                            )}
+                          </div>
+                        </div>
                       </td>
                       <td className="px-6 py-4">
                         <p className="text-gray-900">{driver.email}</p>

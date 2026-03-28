@@ -157,8 +157,15 @@
     "saving": "Guardando...",
     "type": "Tipo",
     "assignDrivers": "Asignar Choferes",
-    "vehicle": "Vehículo",
-    "unassigned": "No Asignado"
+    "assignments": "Asignación de Choferes",
+    "driver": "Chofer",
+    "unassigned": "No Asignado",
+    "assignedTo": "Asignado a",
+    "availableDrivers": "Choferes Disponibles",
+    "noActiveDrivers": "No hay choferes activos. Agrega choferes en Operaciones → Choferes",
+    "noToursToday": "No hay tours programados para hoy",
+    "searchPlaceholder": "Nombre, email, licencia...",
+    "vehicle": "Vehículo"
   },
   "incidents": {
     "activeIncidents": "Incidentes Activos",

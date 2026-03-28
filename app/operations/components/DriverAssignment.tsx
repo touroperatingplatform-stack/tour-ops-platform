@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase/client'
+import { useTranslation } from '@/lib/i18n/useTranslation'
 
 interface Driver {
   id: string
@@ -26,6 +27,7 @@ interface DriverAssignmentProps {
 }
 
 export default function DriverAssignment({ onAssignmentChange }: DriverAssignmentProps) {
+  const { t } = useTranslation()
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState<string | null>(null)
   const [drivers, setDrivers] = useState<Driver[]>([])
@@ -131,9 +133,9 @@ export default function DriverAssignment({ onAssignmentChange }: DriverAssignmen
     <div className="bg-white rounded-lg border border-gray-200 p-4">
       <div className="flex items-center justify-between mb-4">
         <div>
-          <h2 className="font-semibold text-gray-900">Driver Assignments</h2>
+          <h2 className="font-semibold text-gray-900">{t('drivers.assignments') || 'Asignación de Choferes'}</h2>
           <p className="text-sm text-gray-500">
-            {new Date(selectedDate).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+            {new Date(selectedDate).toLocaleDateString('es-MX', { weekday: 'short', day: 'numeric', month: 'short' })}
           </p>
         </div>
         <input
@@ -145,7 +147,7 @@ export default function DriverAssignment({ onAssignmentChange }: DriverAssignmen
       </div>
 
       {tours.length === 0 ? (
-        <p className="text-sm text-gray-500 text-center py-4">No tours scheduled for this date</p>
+        <p className="text-sm text-gray-500 text-center py-4">{t('drivers.noToursToday') || 'No hay tours programados para hoy'}</p>
       ) : (
         <div className="space-y-3">
           {tours.map((tour) => (
@@ -159,23 +161,23 @@ export default function DriverAssignment({ onAssignmentChange }: DriverAssignmen
                   <p className="text-xs text-gray-500">{tour.start_time}</p>
                 </div>
                 {saving === tour.id && (
-                  <span className="text-xs text-blue-600">Saving...</span>
+                  <span className="text-xs text-blue-600">{t('common.saving') || 'Guardando...'}</span>
                 )}
               </div>
 
               <div className="flex items-center gap-2">
-                <label className="text-xs text-gray-600">Driver:</label>
+                <label className="text-xs text-gray-600">{t('drivers.driver') || 'Chofer:'}</label>
                 <select
                   value={tour.driver_id || ''}
                   onChange={(e) => assignDriver(tour.id, e.target.value)}
                   disabled={saving === tour.id}
                   className="flex-1 border border-gray-300 rounded px-2 py-1 text-sm focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
                 >
-                  <option value="">Unassigned</option>
+                  <option value="">{t('drivers.unassigned') || 'No Asignado'}</option>
                   {drivers.map((driver) => (
                     <option key={driver.id} value={driver.id}>
                       {driver.first_name} {driver.last_name}
-                      {driver.driver_type === 'freelance' ? ' (Freelance)' : ''}
+                      {driver.driver_type === 'freelance' ? ` (${t('drivers.freelance') || 'Freelance'})` : ''}
                     </option>
                   ))}
                 </select>
@@ -183,7 +185,7 @@ export default function DriverAssignment({ onAssignmentChange }: DriverAssignmen
 
               {tour.driver_name && (
                 <p className="text-xs text-green-600 mt-1">
-                  ✓ Assigned to {tour.driver_name}
+                  ✓ {t('drivers.assignedTo') || 'Asignado a'} {tour.driver_name}
                 </p>
               )}
             </div>
@@ -193,11 +195,11 @@ export default function DriverAssignment({ onAssignmentChange }: DriverAssignmen
 
       <div className="mt-4 pt-4 border-t border-gray-200">
         <p className="text-xs text-gray-500">
-          <strong>Available Drivers:</strong> {drivers.length} active
+          <strong>{t('drivers.availableDrivers') || 'Choferes Disponibles'}:</strong> {drivers.length} {t('common.active') || 'activos'}
         </p>
         {drivers.length === 0 && (
           <p className="text-xs text-yellow-600 mt-1">
-            ⚠️ No active drivers in system. Add drivers in Operations → Drivers
+            ⚠️ {t('drivers.noActiveDrivers') || 'No hay choferes activos. Agrega choferes en Operaciones → Choferes'}
           </p>
         )}
       </div>
