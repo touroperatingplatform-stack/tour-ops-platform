@@ -79,7 +79,7 @@ export default function DriverDashboard() {
         setTodayTour({
           ...tourData,
           guide: tourData.profiles as any,
-          vehicle: tourData.vehicles as any
+          vehicle: Array.isArray(tourData.vehicles) ? tourData.vehicles[0] : tourData.vehicles
         })
       }
 

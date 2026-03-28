@@ -16,7 +16,7 @@ interface Tour {
     plate_number: string
     model: string
     capacity: number
-  }
+  } | null
 }
 
 export default function DriverCheckinPage() {
@@ -81,7 +81,13 @@ export default function DriverCheckinPage() {
         .neq('status', 'cancelled')
         .order('start_time', { ascending: true })
 
-      setTours(data || [])
+      // Supabase returns vehicles as array from join, take first item
+      const formattedTours = (data || []).map((t: any) => ({
+        ...t,
+        vehicles: Array.isArray(t.vehicles) ? t.vehicles[0] : t.vehicles
+      }))
+      
+      setTours(formattedTours)
       
       if (data && data.length > 0 && tourIdFromUrl) {
         const tour = data.find(t => t.id === tourIdFromUrl)
