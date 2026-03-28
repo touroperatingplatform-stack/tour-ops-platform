@@ -103,8 +103,14 @@ export default function DriversManagement() {
         assigned_tours_count: assignmentCount[d.profile_id] || 0
       }))
 
-      // Deduplicate by profile_id (keep first occurrence)
-      const unique = formatted.filter((d, i, arr) => arr.findIndex(x => x.profile_id === d.profile_id) === i)
+      // Deduplicate by profile_id using Map (keeps first occurrence)
+      const uniqueMap = new Map<string, Driver>()
+      formatted.forEach(d => {
+        if (!uniqueMap.has(d.profile_id)) {
+          uniqueMap.set(d.profile_id, d)
+        }
+      })
+      const unique = Array.from(uniqueMap.values())
 
       setDrivers(unique)
     } catch (error) {
