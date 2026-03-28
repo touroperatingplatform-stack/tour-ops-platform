@@ -1,59 +1,63 @@
 'use client'
 
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react'
+import { useState, useEffect } from 'react'
 
 type Locale = 'en' | 'es'
 
-interface TranslationContextType {
-  locale: Locale
-  setLocale: (locale: Locale) => void
-  t: (key: string) => string
+// Global store
+let currentLocale: Locale = 'en'
+let translations: Record<string, any> = {}
+let loaded = false
+const listeners: Set<() => void> = new Set()
+
+function notifyListeners() {
+  listeners.forEach(fn => fn())
 }
 
-const TranslationContext = createContext<TranslationContextType | undefined>(undefined)
-
-interface TranslationProviderProps {
-  children: ReactNode
-}
-
-export function TranslationProvider({ children }: TranslationProviderProps) {
-  const [locale, setLocaleState] = useState<Locale>('en')
-  const [translations, setTranslations] = useState<Record<string, any>>({})
-  const [loaded, setLoaded] = useState(false)
+export function useTranslation() {
+  const [, forceUpdate] = useState({})
 
   useEffect(() => {
+    const handler = () => forceUpdate({})
+    listeners.add(handler)
+
+    // Load saved locale
     const savedLocale = localStorage.getItem('locale') as Locale
-    if (savedLocale && (savedLocale === 'en' || savedLocale === 'es')) {
-      setLocaleState(savedLocale)
+    if (savedLocale && (savedLocale === 'en' || savedLocale === 'es') && savedLocale !== currentLocale) {
+      currentLocale = savedLocale
+      loadTranslations(savedLocale)
+    }
+
+    return () => {
+      listeners.delete(handler)
     }
   }, [])
 
-  useEffect(() => {
-    async function loadTranslations() {
-      try {
-        const response = await fetch(`/locales/${locale}.json`)
-        const data = await response.json()
-        setTranslations(data)
-        localStorage.setItem('locale', locale)
-        setLoaded(true)
-      } catch (error) {
-        console.error('Failed to load translations:', error)
-        setLoaded(true)
-      }
-    }
-    loadTranslations()
-  }, [locale])
-
   function setLocale(newLocale: Locale) {
-    setLocaleState(newLocale)
+    currentLocale = newLocale
+    localStorage.setItem('locale', newLocale)
+    loadTranslations(newLocale)
+    notifyListeners()
+  }
+
+  async function loadTranslations(locale: Locale) {
+    try {
+      const response = await fetch(`/locales/${locale}.json`)
+      translations = await response.json()
+      loaded = true
+      notifyListeners()
+    } catch (error) {
+      console.error('Failed to load translations:', error)
+      loaded = true
+    }
   }
 
   function t(key: string): string {
     if (!loaded) return key
-    
+
     const keys = key.split('.')
     let value: any = translations
-    
+
     for (const k of keys) {
       if (value && typeof value === 'object' && k in value) {
         value = value[k]
@@ -61,24 +65,13 @@ export function TranslationProvider({ children }: TranslationProviderProps) {
         return key
       }
     }
-    
+
     return typeof value === 'string' ? value : key
   }
 
-  const contextValue = { locale: locale, setLocale: setLocale, t: t }
-  const Provider = TranslationContext.Provider
-  
-  return (
-    <Provider value={contextValue}>
-      {children}
-    </Provider>
-  )
-}
-
-export function useTranslation() {
-  const context = useContext(TranslationContext)
-  if (context === undefined) {
-    throw new Error('useTranslation must be used within a TranslationProvider')
+  return {
+    locale: currentLocale,
+    setLocale,
+    t
   }
-  return context
 }

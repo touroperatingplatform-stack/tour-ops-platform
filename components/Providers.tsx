@@ -1,7 +1,4 @@
-'use client'
-
-import { TranslationProvider } from '@/lib/i18n/useTranslation'
-
+// No provider needed - useTranslation uses global store
 export default function Providers({ children }: { children: React.ReactNode }) {
-  return <TranslationProvider>{children}</TranslationProvider>
+  return children
 }
