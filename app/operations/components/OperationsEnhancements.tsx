@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import Link from 'next/link'
 import { supabase } from '@/lib/supabase/client'
 
 interface Incident {
@@ -241,6 +242,12 @@ export function IncidentAlerts({ onIncidentUpdate }: { onIncidentUpdate?: () => 
               </div>
               
               <div className="flex flex-col gap-1">
+                <Link
+                  href={`/operations/incidents/${incident.id}`}
+                  className="px-2 py-1 bg-white bg-opacity-75 hover:bg-opacity-100 rounded text-xs font-medium text-center text-blue-600"
+                >
+                  View Details →
+                </Link>
                 {incident.status === 'reported' && (
                   <button
                     onClick={() => updateIncidentStatus(incident.id, 'acknowledged')}
@@ -257,21 +264,7 @@ export function IncidentAlerts({ onIncidentUpdate }: { onIncidentUpdate?: () => 
                     >
                       ▶ Start
                     </button>
-                    <button
-                      onClick={() => updateIncidentStatus(incident.id, 'resolved')}
-                      className="px-2 py-1 bg-white bg-opacity-75 hover:bg-opacity-100 rounded text-xs font-medium"
-                    >
-                      ✓ Resolve
-                    </button>
                   </>
-                )}
-                {incident.status === 'in_progress' && (
-                  <button
-                    onClick={() => updateIncidentStatus(incident.id, 'resolved')}
-                    className="px-2 py-1 bg-white bg-opacity-75 hover:bg-opacity-100 rounded text-xs font-medium"
-                  >
-                    ✓ Resolve
-                  </button>
                 )}
               </div>
             </div>
