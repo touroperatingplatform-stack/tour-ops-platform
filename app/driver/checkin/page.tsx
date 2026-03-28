@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase/client'
@@ -19,7 +19,8 @@ interface Tour {
   } | null
 }
 
-export default function DriverCheckinPage() {
+// Inner component that uses useSearchParams (must be wrapped in Suspense)
+function DriverCheckinContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const tourIdFromUrl = searchParams.get('tour_id')
@@ -372,5 +373,21 @@ export default function DriverCheckinPage() {
         </div>
       </div>
     </RoleGuard>
+  )
+}
+
+// Main export wraps the content in Suspense for useSearchParams
+export default function DriverCheckinPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    }>
+      <DriverCheckinContent />
+    </Suspense>
   )
 }
