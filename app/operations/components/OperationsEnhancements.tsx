@@ -337,9 +337,10 @@ export function GuideCheckinStatus() {
   }
 
   function getPunctualityStatus(minutes: number) {
-    if (minutes >= 0) return { label: `${minutes}m early`, color: 'text-green-600' }
-    if (minutes >= -5) return { label: `${Math.abs(minutes)}m late`, color: 'text-yellow-600' }
-    return { label: `${Math.abs(minutes)}m late`, color: 'text-red-600' }
+    const m = Math.abs(minutes)
+    if (minutes >= 0) return { label: `${m}m ${t('time.early')}`, color: 'text-green-600' }
+    if (minutes >= -5) return { label: `${m}m ${t('time.late')}`, color: 'text-yellow-600' }
+    return { label: `${m}m ${t('time.late')}`, color: 'text-red-600' }
   }
 
   if (loading) return <div className="text-sm text-gray-500">Loading...</div>

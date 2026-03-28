@@ -180,6 +180,31 @@
     "passengers": "pasajeros",
     "noVehicles": "No hay vehículos registrados"
   },
+  "tour": {
+    "scheduled": "Programado",
+    "in_progress": "En Curso",
+    "completed": "Completado",
+    "departed": "Partió",
+    "delayed": "Retrasado",
+    "cancelled": "Cancelado",
+    "active": "Activo"
+  },
+  "timeline": {
+    "scheduled": "Programado",
+    "completed": "Completado",
+    "departed": "Partió",
+    "upcoming": "Próximo",
+    "current": "Actual"
+  },
+  "time": {
+    "ago": "hace",
+    "early": "temprano",
+    "late": "tarde",
+    "hour": "hora",
+    "hours": "horas",
+    "minute": "minuto",
+    "minutes": "minutos"
+  },
   "schedule": {
     "title": "Horarios",
     "date": "Fecha",

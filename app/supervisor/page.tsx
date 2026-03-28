@@ -128,7 +128,7 @@ export default function SupervisorDashboard() {
           id: t.id,
           name: `${t.guide.first_name} ${t.guide.last_name}`,
           tour: t.name,
-          lastCheckIn: '5 min ago',
+          lastCheckIn: 'hace 5 min',
           status: 'active' as const
         }))
       setActiveGuides(activeGuidesList)

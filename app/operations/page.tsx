@@ -123,7 +123,7 @@ export default function OperationsDashboard() {
         
         return {
           time: t.start_time?.slice(0, 5),
-          event: t.status === 'in_progress' ? 'Departed' : t.status === 'completed' ? 'Completed' : 'Scheduled',
+          event: t.status === 'in_progress' ? t('timeline.departed') : t.status === 'completed' ? t('timeline.completed') : t('timeline.scheduled'),
           tour: t.name,
           status: eventStatus
         }
