@@ -278,6 +278,7 @@ export function IncidentAlerts({ onIncidentUpdate }: { onIncidentUpdate?: () => 
 }
 
 export function GuideCheckinStatus() {
+  const { t } = useTranslation()
   const [checkins, setCheckins] = useState<GuideCheckin[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -343,7 +344,7 @@ export function GuideCheckinStatus() {
     return { label: `${m}m ${t('time.late')}`, color: 'text-red-600' }
   }
 
-  if (loading) return <div className="text-sm text-gray-500">Loading...</div>
+  if (loading) return <div className="text-sm text-gray-500">{t('common.loading')}</div>
 
   return (
     <div className="space-y-3">
