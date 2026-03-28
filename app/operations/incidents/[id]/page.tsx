@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase/client'
+import { useTranslation } from '@/lib/i18n/useTranslation'
 
 interface Incident {
   id: string
@@ -46,6 +47,7 @@ interface Profile {
 }
 
 export default function IncidentDetailPage() {
+  const { t } = useTranslation()
   const params = useParams()
   const router = useRouter()
   const [incident, setIncident] = useState<Incident | null>(null)
@@ -298,7 +300,7 @@ export default function IncidentDetailPage() {
         {/* Header */}
         <div className="mb-6">
           <Link href="/operations/incidents" className="text-blue-600 hover:text-blue-900 text-sm">
-            ← Back to Incidents
+            ← {t('common.backToIncidents')}
           </Link>
           <div className="mt-3 flex items-center justify-between">
             <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
@@ -306,7 +308,7 @@ export default function IncidentDetailPage() {
               <span>{incident.tour_name}</span>
             </h1>
             <span className={`px-3 py-1 text-sm font-medium rounded-full ${getStatusColor(incident.status)}`}>
-              {incident.status.replace('_', ' ')}
+              {t(`incident.${incident.status}`)}
             </span>
           </div>
         </div>
@@ -316,24 +318,24 @@ export default function IncidentDetailPage() {
           <div className="lg:col-span-2 space-y-6">
             {/* Incident Details */}
             <div className="bg-white rounded-lg shadow p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Incident Details</h2>
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">{t('incident.details')}</h2>
               
               <div className="space-y-4">
                 <div>
-                  <label className="text-sm font-medium text-gray-500">Description</label>
+                  <label className="text-sm font-medium text-gray-500">{t('incident.description')}</label>
                   <p className="text-gray-900 mt-1">{incident.description}</p>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="text-sm font-medium text-gray-500">Type</label>
-                    <p className="text-gray-900 mt-1">{incident.type.replace('_', ' ')}</p>
+                    <label className="text-sm font-medium text-gray-500">{t('common.type')}</label>
+                    <p className="text-gray-900 mt-1">{t(`incident.${incident.type}`)}</p>
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-gray-500">Severity</label>
+                    <label className="text-sm font-medium text-gray-500">{t('common.severity')}</label>
                     <p className="mt-1">
                       <span className={`px-2 py-1 text-xs font-medium rounded-full ${getSeverityColor(incident.severity)}`}>
-                        {incident.severity}
+                        {t(`incident.${incident.severity}`)}
                       </span>
                     </p>
                   </div>
@@ -341,11 +343,11 @@ export default function IncidentDetailPage() {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="text-sm font-medium text-gray-500">Guide</label>
+                    <label className="text-sm font-medium text-gray-500">{t('incident.guide')}</label>
                     <p className="text-gray-900 mt-1">{incident.guide_name}</p>
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-gray-500">Reported</label>
+                    <label className="text-sm font-medium text-gray-500">{t('incident.reported')}</label>
                     <p className="text-gray-900 mt-1">
                       {new Date(incident.created_at).toLocaleString()}
                     </p>
@@ -354,7 +356,7 @@ export default function IncidentDetailPage() {
 
                 {incident.acknowledged_at && (
                   <div>
-                    <label className="text-sm font-medium text-gray-500">Acknowledged At</label>
+                    <label className="text-sm font-medium text-gray-500">{t('incident.acknowledgedAt')}</label>
                     <p className="text-gray-900 mt-1">
                       {new Date(incident.acknowledged_at).toLocaleString()}
                     </p>
@@ -363,7 +365,7 @@ export default function IncidentDetailPage() {
 
                 {incident.started_at && (
                   <div>
-                    <label className="text-sm font-medium text-gray-500">Work Started At</label>
+                    <label className="text-sm font-medium text-gray-500">{t('incident.startedAt')}</label>
                     <p className="text-gray-900 mt-1">
                       {new Date(incident.started_at).toLocaleString()}
                     </p>
@@ -373,20 +375,20 @@ export default function IncidentDetailPage() {
                 {incident.resolved_at && (
                   <>
                     <div>
-                      <label className="text-sm font-medium text-gray-500">Resolved At</label>
+                      <label className="text-sm font-medium text-gray-500">{t('incident.resolvedAt')}</label>
                       <p className="text-gray-900 mt-1">
                         {new Date(incident.resolved_at).toLocaleString()}
                       </p>
                     </div>
                     {incident.resolution_category && (
                       <div>
-                        <label className="text-sm font-medium text-gray-500">Resolution Category</label>
-                        <p className="text-gray-900 mt-1 capitalize">{incident.resolution_category}</p>
+                        <label className="text-sm font-medium text-gray-500">{t('incident.resolutionCategory')}</label>
+                        <p className="text-gray-900 mt-1 capitalize">{t(`incident.resolution.${incident.resolution_category}`) || incident.resolution_category}</p>
                       </div>
                     )}
                     {incident.resolution_notes && (
                       <div>
-                        <label className="text-sm font-medium text-gray-500">Resolution Notes</label>
+                        <label className="text-sm font-medium text-gray-500">{t('incident.resolutionNotes')}</label>
                         <p className="text-gray-900 mt-1 whitespace-pre-wrap">{incident.resolution_notes}</p>
                       </div>
                     )}
@@ -396,7 +398,7 @@ export default function IncidentDetailPage() {
                 {/* Photos */}
                 {incident.photo_urls && incident.photo_urls.length > 0 && (
                   <div>
-                    <label className="text-sm font-medium text-gray-500 mb-2 block">Photos</label>
+                    <label className="text-sm font-medium text-gray-500 mb-2 block">{t('incident.photos')}</label>
                     <div className="grid grid-cols-3 gap-2">
                       {incident.photo_urls.map((url, idx) => (
                         <a
@@ -417,7 +419,7 @@ export default function IncidentDetailPage() {
 
             {/* Comments */}
             <div className="bg-white rounded-lg shadow p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Comments & Updates</h2>
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">{t('incident.comments')}</h2>
               
               <div className="space-y-4 mb-6">
                 {comments.map((comment) => (
@@ -432,7 +434,7 @@ export default function IncidentDetailPage() {
                   </div>
                 ))}
                 {comments.length === 0 && (
-                  <p className="text-gray-500 text-center py-4">No comments yet</p>
+                  <p className="text-gray-500 text-center py-4">{t('common.noComments')}</p>
                 )}
               </div>
 
@@ -441,7 +443,7 @@ export default function IncidentDetailPage() {
                   type="text"
                   value={newComment}
                   onChange={(e) => setNewComment(e.target.value)}
-                  placeholder="Add a comment..."
+                  placeholder={t('incident.addComment') || 'Add a comment...'}
                   className="flex-1 border border-gray-300 rounded-md px-3 py-2 text-sm"
                   onKeyPress={(e) => e.key === 'Enter' && addComment()}
                 />
@@ -449,7 +451,7 @@ export default function IncidentDetailPage() {
                   onClick={addComment}
                   className="px-4 py-2 bg-blue-600 text-white rounded-md text-sm hover:bg-blue-700"
                 >
-                  Post
+                  {t('common.post')}
                 </button>
               </div>
             </div>
@@ -459,17 +461,17 @@ export default function IncidentDetailPage() {
           <div className="space-y-6">
             {/* Assignment */}
             <div className="bg-white rounded-lg shadow p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Assignment</h2>
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">{t('incident.assignment')}</h2>
               
               <div className="space-y-4">
                 <div>
-                  <label className="text-sm font-medium text-gray-500">Assigned To</label>
+                  <label className="text-sm font-medium text-gray-500">{t('common.assignedTo')}</label>
                   <select
                     value={assigneeId}
                     onChange={(e) => setAssigneeId(e.target.value)}
                     className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm mt-1"
                   >
-                    <option value="">Unassigned</option>
+                    <option value="">{t('common.unassigned')}</option>
                     {profiles.map(p => (
                       <option key={p.id} value={p.id}>
                         {p.first_name} {p.last_name} ({p.role})
@@ -480,7 +482,7 @@ export default function IncidentDetailPage() {
 
                 {incident.assigned_to_name && (
                   <div>
-                    <label className="text-sm font-medium text-gray-500">Assigned At</label>
+                    <label className="text-sm font-medium text-gray-500">{t('incident.assignedAt')}</label>
                     <p className="text-gray-900 mt-1 text-sm">
                       {incident.assigned_at ? new Date(incident.assigned_at).toLocaleString() : 'N/A'}
                     </p>
@@ -491,14 +493,14 @@ export default function IncidentDetailPage() {
                   onClick={assignIncident}
                   className="w-full px-4 py-2 bg-blue-600 text-white rounded-md text-sm hover:bg-blue-700"
                 >
-                  Update Assignment
+                  {t('incident.updateAssignment')}
                 </button>
               </div>
             </div>
 
             {/* Actions */}
             <div className="bg-white rounded-lg shadow p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Actions</h2>
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">{t('common.actions')}</h2>
               
               <div className="space-y-3">
                 {incident.status === 'reported' && (
@@ -506,7 +508,7 @@ export default function IncidentDetailPage() {
                     onClick={() => updateStatus('acknowledged')}
                     className="w-full px-4 py-2 bg-yellow-600 text-white rounded-md text-sm hover:bg-yellow-700"
                   >
-                    ✓ Acknowledge
+                    ✓ {t('incident.acknowledge')}
                   </button>
                 )}
 
@@ -516,14 +518,14 @@ export default function IncidentDetailPage() {
                       onClick={() => updateStatus('in_progress')}
                       className="w-full px-4 py-2 bg-blue-600 text-white rounded-md text-sm hover:bg-blue-700"
                     >
-                      ▶ Start Work
+                      ▶ {t('incident.startWork')}
                     </button>
                     {canResolve && (
                       <button
                         onClick={() => setShowResolutionForm(true)}
                         className="w-full px-4 py-2 bg-green-600 text-white rounded-md text-sm hover:bg-green-700"
                       >
-                        ✓ Resolve
+                        ✓ {t('incident.resolve')}
                       </button>
                     )}
                   </>
@@ -536,7 +538,7 @@ export default function IncidentDetailPage() {
                         onClick={() => setShowResolutionForm(true)}
                         className="w-full px-4 py-2 bg-green-600 text-white rounded-md text-sm hover:bg-green-700"
                       >
-                        ✓ Resolve
+                        ✓ {t('incident.resolve')}
                       </button>
                     )}
                   </>
@@ -547,7 +549,7 @@ export default function IncidentDetailPage() {
                     onClick={() => updateStatus('closed')}
                     className="w-full px-4 py-2 bg-gray-600 text-white rounded-md text-sm hover:bg-gray-700"
                   >
-                    Close Incident
+                    {t('incident.close')}
                   </button>
                 )}
               </div>
@@ -556,8 +558,8 @@ export default function IncidentDetailPage() {
             {/* Escalation */}
             {incident.escalation_level > 0 && (
               <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                <h2 className="text-lg font-semibold text-red-900 mb-2">⚠️ Escalated</h2>
-                <p className="text-sm text-red-700">Level {incident.escalation_level}</p>
+                <h2 className="text-lg font-semibold text-red-900 mb-2">⚠️ {t('incident.escalated')}</h2>
+                <p className="text-sm text-red-700">{t('incident.level')} {incident.escalation_level}</p>
                 {incident.escalation_reason && (
                   <p className="text-sm text-red-700 mt-2">{incident.escalation_reason}</p>
                 )}
@@ -570,33 +572,33 @@ export default function IncidentDetailPage() {
         {showResolutionForm && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
             <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Resolve Incident</h2>
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">{t('incident.resolveIncident')}</h2>
               
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Resolution Category</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{t('incident.resolutionCategory')}</label>
                   <select
                     value={resolutionCategory}
                     onChange={(e) => setResolutionCategory(e.target.value)}
                     className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
                   >
-                    <option value="">Select category...</option>
-                    <option value="repaired">Repaired</option>
-                    <option value="replaced">Replaced</option>
-                    <option value="refunded">Refunded</option>
-                    <option value="apologized">Apologized</option>
-                    <option value="other">Other</option>
+                    <option value="">{t('incident.selectCategory')}</option>
+                    <option value="repaired">{t('incident.resolution.repaired')}</option>
+                    <option value="replaced">{t('incident.resolution.replaced')}</option>
+                    <option value="refunded">{t('incident.resolution.refunded')}</option>
+                    <option value="apologized">{t('incident.resolution.apologized')}</option>
+                    <option value="other">{t('incident.resolution.other')}</option>
                   </select>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Resolution Notes *</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{t('incident.resolutionNotes')} *</label>
                   <textarea
                     value={resolutionNotes}
                     onChange={(e) => setResolutionNotes(e.target.value)}
                     rows={4}
                     className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
-                    placeholder="Describe what was done to resolve this incident..."
+                    placeholder={t('incident.resolutionNotesPlaceholder') || 'Describe what was done to resolve this incident...'}
                   />
                 </div>
 
@@ -605,13 +607,13 @@ export default function IncidentDetailPage() {
                     onClick={() => setShowResolutionForm(false)}
                     className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-md text-sm hover:bg-gray-50"
                   >
-                    Cancel
+                    {t('common.cancel')}
                   </button>
                   <button
                     onClick={resolveIncident}
                     className="flex-1 px-4 py-2 bg-green-600 text-white rounded-md text-sm hover:bg-green-700"
                   >
-                    Resolve
+                    {t('incident.resolve')}
                   </button>
                 </div>
               </div>

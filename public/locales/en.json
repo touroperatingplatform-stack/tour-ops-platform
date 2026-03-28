@@ -17,6 +17,7 @@
     "view": "View",
     "close": "Close",
     "back": "Back",
+    "backToIncidents": "Back to Incidents",
     "submit": "Submit",
     "search": "Search",
     "filter": "Filter",
@@ -33,7 +34,9 @@
     "unassigned": "Unassigned",
     "all": "All",
     "yes": "Yes",
-    "no": "No"
+    "no": "No",
+    "post": "Post",
+    "noComments": "No comments yet"
   },
   "incident": {
     "title": "Incident Management",
