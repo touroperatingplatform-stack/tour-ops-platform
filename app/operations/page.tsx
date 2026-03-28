@@ -6,6 +6,7 @@ import { supabase } from '@/lib/supabase/client'
 import RoleGuard from '@/lib/auth/RoleGuard'
 import LiveMap from '../supervisor/components/LiveMap'
 import { IncidentAlerts, GuideCheckinStatus, OperationsMetrics } from './components/OperationsEnhancements'
+import DriverAssignment from './components/DriverAssignment'
 
 interface TourWithDetails {
   id: string
@@ -250,6 +251,11 @@ export default function OperationsDashboard() {
           {/* Guide Check-ins */}
           <div className="bg-white rounded-lg border border-gray-200 p-4 shrink-0">
             <GuideCheckinStatus />
+          </div>
+
+          {/* Driver Assignments */}
+          <div className="bg-white rounded-lg border border-gray-200 p-4 shrink-0">
+            <DriverAssignment onAssignmentChange={loadOperationsData} />
           </div>
         </div>
 
