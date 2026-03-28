@@ -222,24 +222,36 @@ export default function SuperAdminDemoPage() {
       setDemoProgress(`✅ Created ${vehicleCount} vehicles`)
       await new Promise(resolve => setTimeout(resolve, 500))
 
-      // Step 2: Create tours
+      // Step 2: Create tours (spread across full day for realistic live demo)
       setDemoProgress('📍 Creating tours for today...')
       const tourDestinations = [
-        { name: 'Tulum Ruins Express', start: '08:00', duration: 360, type: 'private', price: 89 },
+        // Early Morning (06:00-08:00)
         { name: 'Chichen Itza Sunrise', start: '06:00', duration: 720, type: 'shared', price: 129 },
-        { name: 'Coba Adventure + Cenotes', start: '07:30', duration: 540, type: 'shared', price: 109 },
-        { name: 'Cenote Route Private', start: '09:00', duration: 420, type: 'private', price: 99 },
+        { name: 'Valladolid Cultural Tour', start: '06:30', duration: 660, type: 'shared', price: 119 },
+        { name: 'Coba + Cenote Early Bird', start: '07:00', duration: 600, type: 'shared', price: 109 },
+        { name: 'Tulum Ruins Sunrise', start: '07:30', duration: 420, type: 'shared', price: 95 },
+        
+        // Morning (08:00-11:00)
+        { name: 'Tulum Ruins Express', start: '08:00', duration: 360, type: 'private', price: 89 },
+        { name: 'Coba Adventure + Cenotes', start: '08:00', duration: 540, type: 'shared', price: 109 },
         { name: 'Akumal Snorkeling Tour', start: '08:30', duration: 480, type: 'shared', price: 95 },
-        { name: 'Valladolid Cultural Tour', start: '07:00', duration: 600, type: 'shared', price: 99 },
-        { name: 'Tulum VIP Private', start: '09:30', duration: 360, type: 'private', price: 299 },
-        { name: 'Isla Mujeres Day Trip', start: '08:00', duration: 600, type: 'shared', price: 119 },
         { name: 'Xcaret Park Tour', start: '08:30', duration: 540, type: 'shared', price: 139 },
-        { name: 'Tulum + Akumal Combo', start: '08:00', duration: 480, type: 'shared', price: 105 },
-        { name: 'Coba + Valladolid', start: '07:00', duration: 600, type: 'shared', price: 99 },
+        { name: 'Isla Mujeres Day Trip', start: '09:00', duration: 600, type: 'shared', price: 119 },
+        { name: 'Cenote Route Private', start: '09:00', duration: 420, type: 'private', price: 99 },
+        { name: 'Playa del Carmen Tour', start: '09:30', duration: 420, type: 'shared', price: 89 },
         { name: 'Gran Cenote Private', start: '10:00', duration: 300, type: 'private', price: 79 },
-        { name: 'Playa del Carmen Tour', start: '09:00', duration: 420, type: 'shared', price: 89 },
-        { name: 'Puerto Morelos Reef', start: '08:30', duration: 360, type: 'shared', price: 95 },
-        { name: 'Sunset Tulum Tour', start: '14:00', duration: 300, type: 'private', price: 69 }
+        
+        // Afternoon (12:00-17:00)
+        { name: 'Tulum + Akumal Combo', start: '12:00', duration: 480, type: 'shared', price: 105 },
+        { name: 'Coba Ruins Afternoon', start: '13:00', duration: 420, type: 'private', price: 99 },
+        { name: 'Sunset Tulum Tour', start: '15:00', duration: 360, type: 'private', price: 89 },
+        
+        // Evening/Night (17:00-22:00)
+        { name: 'Puerto Morelos Reef Sunset', start: '17:00', duration: 300, type: 'shared', price: 95 },
+        { name: 'Cancun Hotel Zone Night Tour', start: '18:00', duration: 240, type: 'private', price: 79 },
+        { name: 'Playa del Carmen Evening', start: '19:00', duration: 300, type: 'shared', price: 69 },
+        { name: 'Cenote Night Swim Experience', start: '20:00', duration: 240, type: 'private', price: 85 },
+        { name: 'Tulum Ruins Moonlight Tour', start: '21:00', duration: 180, type: 'private', price: 75 }
       ]
 
       const createdTourIds: string[] = []
@@ -272,6 +284,35 @@ export default function SuperAdminDemoPage() {
       }
 
       setDemoProgress(`✅ Created ${createdTourIds.length} tours for today`)
+      
+      // Update tour statuses based on current time (realistic live demo)
+      setDemoProgress('⏰ Setting realistic tour statuses...')
+      const now = new Date()
+      const twoHoursAgo = new Date(now.getTime() - 120 * 60000)
+      
+      for (let i = 0; i < tourDestinations.length && i < guides.length; i++) {
+        const dest = tourDestinations[i]
+        const tourId = createdTourIds[i]
+        
+        // Calculate tour start and end times
+        const [hours, minutes] = dest.start.split(':').map(Number)
+        const tourStart = new Date(now)
+        tourStart.setHours(hours, minutes, 0, 0)
+        const tourEnd = new Date(tourStart.getTime() + dest.duration * 60000)
+        
+        // Determine status based on time
+        let status = 'scheduled'
+        if (tourEnd < twoHoursAgo) {
+          status = 'completed'  // Tour ended more than 2 hours ago
+        } else if (tourStart < now) {
+          status = 'in_progress'  // Tour started but hasn't ended yet
+        }
+        
+        await supabase.from('tours').update({ status }).eq('id', tourId)
+      }
+      
+      setDemoProgress('✅ Set realistic statuses (completed/in_progress/scheduled)')
+      await new Promise(resolve => setTimeout(resolve, 500))
       
       // Assign drivers to tours
       setDemoProgress('👷 Assigning drivers to tours...')
