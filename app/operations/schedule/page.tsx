@@ -10,7 +10,7 @@ import { useTranslation } from '@/lib/i18n/useTranslation'
 import TourDetailsModal from '../components/TourDetailsModal'
 import TourAddModal from '../components/TourAddModal'
 
-interface Tour {
+export interface Tour {
   id: string
   name: string
   tour_date: string
