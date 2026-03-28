@@ -75,7 +75,7 @@ export default function OperationsSchedulePage() {
   const [showAddModal, setShowAddModal] = useState(false)
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [sidebarTab, setSidebarTab] = useState<'drivers' | 'vehicles'>('drivers')
-  const pollIntervalRef = useRef<NodeJS.Timeout>()
+  const pollIntervalRef = useRef<NodeJS.Timeout | null>(null)
 
   useEffect(() => {
     loadData()
