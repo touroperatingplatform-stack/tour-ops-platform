@@ -105,7 +105,7 @@ export default function DriversManagement() {
 
       // Deduplicate by profile_id using Map (keeps first occurrence)
       const uniqueMap = new Map<string, Driver>()
-      formatted.forEach(d => {
+      formatted.forEach((d) => {
         if (!uniqueMap.has(d.profile_id)) {
           uniqueMap.set(d.profile_id, d)
         }
