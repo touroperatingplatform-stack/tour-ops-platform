@@ -127,7 +127,7 @@ export default function DriverCheckinPage() {
           vehicle_id: tour.vehicle_id,
           mileage_start: mileageStart ? parseInt(mileageStart) : null,
           fuel_level_before: fuelLevelBefore || null,
-          vehicle_condition,
+          vehicle_condition: vehicleCondition,
           issues: issues || null,
           inspection_data: inspection
         })
