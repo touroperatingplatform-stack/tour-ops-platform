@@ -97,7 +97,12 @@
     "resolveIncident": "Resolver Incidente",
     "resolutionNotesRequired": "Las notas de resolución son requeridas",
     "assignedSuccessfully": "Incidente asignado exitosamente",
-    "resolvedSuccessfully": "Incidente resuelto exitosamente"
+    "resolvedSuccessfully": "Incidente resuelto exitosamente",
+    "myIncidents": "Mis Incidentes",
+    "assignTo": "Asignar A",
+    "selectStaff": "Seleccionar personal",
+    "startWork": "Iniciar Trabajo",
+    "close": "Cerrar"
   },
   "dashboard": {
     "title": "Dashboard de Operaciones",

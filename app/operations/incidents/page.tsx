@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import Link from 'next/link'
 import { supabase } from '@/lib/supabase/client'
 import { useTranslation } from '@/lib/i18n/useTranslation'
 
@@ -14,6 +13,8 @@ interface Incident {
   description: string
   created_at: string
   guide_name: string
+  guide_id: string
+  assigned_to?: string
   assigned_to_name?: string
   escalation_level: number
 }
@@ -25,12 +26,32 @@ export default function IncidentsPage() {
   const [filterStatus, setFilterStatus] = useState<string>('all')
   const [filterSeverity, setFilterSeverity] = useState<string>('all')
   const [filterType, setFilterType] = useState<string>('all')
+  const [filterMyIncidents, setFilterMyIncidents] = useState<boolean>(false)
   const [dateFrom, setDateFrom] = useState<string>('')
   const [dateTo, setDateTo] = useState<string>('')
+  const [currentUserId, setCurrentUserId] = useState<string>('')
+  const [assignModalOpen, setAssignModalOpen] = useState(false)
+  const [selectedIncident, setSelectedIncident] = useState<Incident | null>(null)
+  const [assignTo, setAssignTo] = useState<string>('')
+  const [availableStaff, setAvailableStaff] = useState<{id: string, name: string}[]>([])
+  const [actionLoading, setActionLoading] = useState<string>('')
 
   useEffect(() => {
-    loadIncidents()
+    getCurrentUser()
   }, [])
+
+  useEffect(() => {
+    if (currentUserId) {
+      loadIncidents()
+    }
+  }, [currentUserId])
+
+  async function getCurrentUser() {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (user) {
+      setCurrentUserId(user.id)
+    }
+  }
 
   async function loadIncidents() {
     const { data: incidentsData } = await supabase
@@ -43,14 +64,13 @@ export default function IncidentsPage() {
       return
     }
 
-    // Fetch related data
     const tourIds = [...new Set(incidentsData.map(i => i.tour_id).filter(Boolean))]
     const guideIds = [...new Set(incidentsData.map(i => i.guide_id).filter(Boolean))]
     const assigneeIds = [...new Set(incidentsData.map(i => i.assigned_to).filter(Boolean))]
 
     const { data: tours } = await supabase.from('tours').select('id, name').in('id', tourIds.length > 0 ? tourIds : ['00000000-0000-0000-0000-000000000000'])
     const { data: guides } = await supabase.from('profiles').select('id, first_name, last_name').in('id', guideIds.length > 0 ? guideIds : ['00000000-0000-0000-0000-000000000000'])
-    const { data: assignees } = await supabase.from('profiles').select('id, first_name, last_name').in('id', assigneeIds.length > 0 ? assigneeIds : ['00000000-0000-0000-0000-000000000000'])
+    const { data: assignees } = await supabase.from('profiles').select('id, first_name, last_name, role').in('id', assigneeIds.length > 0 ? assigneeIds : ['00000000-0000-0000-0000-000000000000'])
 
     const tourMap = new Map(tours?.map(t => [t.id, t.name]))
     const guideMap = new Map(guides?.map(g => [g.id, `${g.first_name} ${g.last_name}`]))
@@ -65,12 +85,117 @@ export default function IncidentsPage() {
       description: i.description,
       created_at: i.created_at,
       guide_name: guideMap.get(i.guide_id) || 'Unknown',
+      guide_id: i.guide_id,
+      assigned_to: i.assigned_to,
       assigned_to_name: i.assigned_to ? assigneeMap.get(i.assigned_to) : undefined,
       escalation_level: i.escalation_level || 0
     }))
 
     setIncidents(formatted)
     setLoading(false)
+  }
+
+  async function loadAvailableStaff() {
+    const { data: staff } = await supabase
+      .from('profiles')
+      .select('id, first_name, last_name, role')
+      .in('role', ['super_admin', 'company_admin', 'manager', 'supervisor', 'operations'])
+    
+    if (staff) {
+      setAvailableStaff(staff.map(s => ({
+        id: s.id,
+        name: `${s.first_name} ${s.last_name}`
+      })))
+    }
+  }
+
+  function openAssignModal(incident: Incident) {
+    setSelectedIncident(incident)
+    setAssignTo(incident.assigned_to || '')
+    loadAvailableStaff()
+    setAssignModalOpen(true)
+  }
+
+  async function handleAssign() {
+    if (!selectedIncident || !assignTo) return
+    
+    setActionLoading(`assign-${selectedIncident.id}`)
+    
+    const { error } = await supabase
+      .from('incidents')
+      .update({ 
+        assigned_to: assignTo,
+        status: 'acknowledged'
+      })
+      .eq('id', selectedIncident.id)
+
+    if (!error) {
+      await loadIncidents()
+      setAssignModalOpen(false)
+      setSelectedIncident(null)
+    }
+    
+    setActionLoading('')
+  }
+
+  async function handleAcknowledge(incidentId: string) {
+    setActionLoading(`ack-${incidentId}`)
+    
+    const { error } = await supabase
+      .from('incidents')
+      .update({ status: 'acknowledged' })
+      .eq('id', incidentId)
+
+    if (!error) {
+      await loadIncidents()
+    }
+    
+    setActionLoading('')
+  }
+
+  async function handleStartWork(incidentId: string) {
+    setActionLoading(`start-${incidentId}`)
+    
+    const { error } = await supabase
+      .from('incidents')
+      .update({ status: 'in_progress' })
+      .eq('id', incidentId)
+
+    if (!error) {
+      await loadIncidents()
+    }
+    
+    setActionLoading('')
+  }
+
+  async function handleResolve(incidentId: string) {
+    setActionLoading(`resolve-${incidentId}`)
+    
+    const { error } = await supabase
+      .from('incidents')
+      .update({ status: 'resolved' })
+      .eq('id', incidentId)
+
+    if (!error) {
+      await loadIncidents()
+    }
+    
+    setActionLoading('')
+  }
+
+  async function handleClose(incidentId: string) {
+    setActionLoading(`close-${incidentId}`)
+    
+    const { error } = await supabase
+      .from('incidents')
+      .update({ status: 'closed' })
+      .eq('id', incidentId)
+
+    if (!error) {
+      await loadIncidents()
+    }
+    
+    setActionLoading('')
   }
 
   function getSeverityColor(severity: string) {
@@ -81,6 +206,17 @@ export default function IncidentsPage() {
       low: 'text-blue-700 bg-blue-100'
     }
     return colors[severity] || 'text-gray-700 bg-gray-100'
+  }
+
+  function getStatusBadge(status: string) {
+    const badges: Record<string, string> = {
+      reported: '🔴 ' + t('incident.reported'),
+      acknowledged: '🟡 ' + t('incident.acknowledged'),
+      in_progress: '🔵 ' + t('incident.inProgress'),
+      resolved: '🟢 ' + t('incident.resolved'),
+      closed: '⚫ ' + t('incident.closed')
+    }
+    return badges[status] || status
   }
 
   function getStatusColor(status: string) {
@@ -109,10 +245,52 @@ export default function IncidentsPage() {
     return icons[type] || '⚠️'
   }
 
-  const filtered = incidents.filter(i => {
+  function getEscalationBadge(level: number) {
+    if (level <= 0) return null
+    const colors = {
+      1: 'bg-red-600 text-white',
+      2: 'bg-orange-500 text-white',
+      3: 'bg-yellow-500 text-white'
+    }
+    return (
+      <span className={`ml-2 text-xs font-bold px-2 py-0.5 rounded ${colors[level as keyof typeof colors] || 'bg-gray-500 text-white'}`}>
+        🔴 L{level}
+      </span>
+    )
+  }
+
+  function getSortedIncidents() {
+    return [...incidents].sort((a, b) => {
+      // L1/L2 first
+      if (a.escalation_level > 0 && b.escalation_level === 0) return -1
+      if (b.escalation_level > 0 && a.escalation_level === 0) return 1
+      if (a.escalation_level > b.escalation_level) return -1
+      if (b.escalation_level > a.escalation_level) return 1
+      
+      // Then by status priority
+      const statusPriority: Record<string, number> = {
+        reported: 1,
+        acknowledged: 2,
+        in_progress: 3,
+        resolved: 4,
+        closed: 5
+      }
+      const aPriority = statusPriority[a.status] || 99
+      const bPriority = statusPriority[b.status] || 99
+      if (aPriority !== bPriority) return aPriority - bPriority
+      
+      // Then by date (newest first)
+      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    })
+  }
+
+  const filtered = getSortedIncidents().filter(i => {
+    if (filterMyIncidents && i.assigned_to !== currentUserId) return false
     if (filterStatus !== 'all' && i.status !== filterStatus) return false
     if (filterSeverity !== 'all' && i.severity !== filterSeverity) return false
     if (filterType !== 'all' && i.type !== filterType) return false
+    if (dateFrom && new Date(i.created_at) < new Date(dateFrom)) return false
+    if (dateTo && new Date(i.created_at) > new Date(dateTo + 'T23:59:59')) return false
     return true
   })
 
@@ -126,10 +304,77 @@ export default function IncidentsPage() {
 
   const types = [...new Set(incidents.map(i => i.type))]
 
+  function renderActionButton(incident: Incident) {
+    const isLoading = actionLoading !== ''
+    
+    switch (incident.status) {
+      case 'reported':
+        return (
+          <div className="flex gap-2">
+            <button
+              onClick={() => handleAcknowledge(incident.id)}
+              disabled={isLoading}
+              className="px-3 py-1 text-xs font-medium text-yellow-700 bg-yellow-100 hover:bg-yellow-200 rounded disabled:opacity-50"
+            >
+              ✓ {t('incident.acknowledge')}
+            </button>
+            <button
+              onClick={() => openAssignModal(incident)}
+              disabled={isLoading}
+              className="px-3 py-1 text-xs font-medium text-blue-700 bg-blue-100 hover:bg-blue-200 rounded disabled:opacity-50"
+            >
+              👤 {t('incident.assign')}
+            </button>
+          </div>
+        )
+      case 'acknowledged':
+        return (
+          <div className="flex gap-2">
+            <button
+              onClick={() => openAssignModal(incident)}
+              disabled={isLoading}
+              className="px-3 py-1 text-xs font-medium text-blue-700 bg-blue-100 hover:bg-blue-200 rounded disabled:opacity-50"
+            >
+              👤 {t('incident.assign')}
+            </button>
+            <button
+              onClick={() => handleStartWork(incident.id)}
+              disabled={isLoading}
+              className="px-3 py-1 text-xs font-medium text-green-700 bg-green-100 hover:bg-green-200 rounded disabled:opacity-50"
+            >
+              ▶️ {t('incident.startWork')}
+            </button>
+          </div>
+        )
+      case 'in_progress':
+        return (
+          <button
+            onClick={() => handleResolve(incident.id)}
+            disabled={isLoading}
+            className="px-3 py-1 text-xs font-medium text-green-700 bg-green-100 hover:bg-green-200 rounded disabled:opacity-50"
+          >
+            ✅ {t('incident.resolve')}
+          </button>
+        )
+      case 'resolved':
+        return (
+          <button
+            onClick={() => handleClose(incident.id)}
+            disabled={isLoading}
+            className="px-3 py-1 text-xs font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded disabled:opacity-50"
+          >
+            📋 {t('incident.close')}
+          </button>
+        )
+      default:
+        return <span className="text-gray-400 text-sm">—</span>
+    }
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-gray-500">Loading incidents...</div>
+        <div className="text-gray-500">{t('common.loading')}</div>
       </div>
     )
   }
@@ -169,7 +414,7 @@ export default function IncidentsPage() {
 
         {/* Filters */}
         <div className="bg-white rounded-lg shadow p-4 mb-6">
-          <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-6 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">{t('common.status')}</label>
               <select
@@ -230,6 +475,17 @@ export default function IncidentsPage() {
                 className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
               />
             </div>
+            <div className="flex items-end">
+              <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={filterMyIncidents}
+                  onChange={(e) => setFilterMyIncidents(e.target.checked)}
+                  className="rounded border-gray-300"
+                />
+                {t('incident.myIncidents') || 'Mis Incidentes'}
+              </label>
+            </div>
           </div>
         </div>
 
@@ -255,9 +511,7 @@ export default function IncidentsPage() {
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className="text-lg">{getTypeIcon(incident.type)}</span>
                       <span className="ml-2 text-sm text-gray-900">{t(`incident.${incident.type}`)}</span>
-                      {incident.escalation_level > 0 && (
-                        <span className="ml-2 text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded">{t('incident.level')}{incident.escalation_level}</span>
-                      )}
+                      {getEscalationBadge(incident.escalation_level)}
                     </td>
                     <td className="px-6 py-4">
                       <div className="text-sm font-medium text-gray-900">{incident.tour_name}</div>
@@ -270,7 +524,7 @@ export default function IncidentsPage() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(incident.status)}`}>
-                        {t(`incident.${incident.status}`)}
+                        {getStatusBadge(incident.status)}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
@@ -283,12 +537,7 @@ export default function IncidentsPage() {
                       {new Date(incident.created_at).toLocaleDateString()}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm">
-                      <Link
-                        href={`/operations/incidents/${incident.id}`}
-                        className="text-blue-600 hover:text-blue-900"
-                      >
-                        {t('common.view')} →
-                      </Link>
+                      {renderActionButton(incident)}
                     </td>
                   </tr>
                 ))}
@@ -302,6 +551,51 @@ export default function IncidentsPage() {
           )}
         </div>
       </div>
+
+      {/* Assignment Modal */}
+      {assignModalOpen && selectedIncident && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md">
+            <h3 className="text-lg font-bold text-gray-900 mb-4">
+              {t('incident.assign')} - {selectedIncident.tour_name}
+            </h3>
+            
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                {t('incident.assignTo')}
+              </label>
+              <select
+                value={assignTo}
+                onChange={(e) => setAssignTo(e.target.value)}
+                className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
+              >
+                <option value="">{t('incident.selectStaff')}</option>
+                {availableStaff.map(staff => (
+                  <option key={staff.id} value={staff.id}>
+                    {staff.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => setAssignModalOpen(false)}
+                className="px-4 py-2 text-sm text-gray-700 bg-gray-100 hover:bg-gray-200 rounded"
+              >
+                {t('common.cancel')}
+              </button>
+              <button
+                onClick={handleAssign}
+                disabled={!assignTo || actionLoading !== ''}
+                className="px-4 py-2 text-sm text-white bg-blue-600 hover:bg-blue-700 rounded disabled:opacity-50"
+              >
+                {t('incident.assign')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
