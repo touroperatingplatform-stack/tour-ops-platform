@@ -85,6 +85,7 @@ export const NAV_CONFIGS = {
   // Operations Navigation
   operations: [
     { href: '/operations', label: 'Dashboard', icon: '📊', minRole: 'operations' as Role },
+    { href: '/operations/drivers', label: 'Driver Assignment', icon: '🚗', minRole: 'operations' as Role },
     { href: '/operations/vehicles', label: 'Vehicles', icon: '🚌', minRole: 'operations' as Role },
     { href: '/operations/schedule', label: 'Schedule', icon: '📅', minRole: 'operations' as Role },
     { href: '/operations/reports', label: 'Reports', icon: '📈', minRole: 'operations' as Role },

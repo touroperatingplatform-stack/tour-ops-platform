@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase/client'
 import RoleGuard from '@/lib/auth/RoleGuard'
+import DriverAssignment from '../components/DriverAssignment'
 
 interface Driver {
   id: string
@@ -235,6 +236,12 @@ export default function DriversManagement() {
               <p className="text-2xl font-bold text-purple-600">{drivers.filter(d => d.driver_type === 'freelance').length}</p>
               <p className="text-sm text-gray-500">Freelance</p>
             </div>
+          </div>
+
+          {/* Driver Assignment */}
+          <div className="bg-white rounded-xl border border-gray-200 p-6 mb-8">
+            <h2 className="font-semibold text-gray-900 mb-4">Assign Drivers to Tours</h2>
+            <DriverAssignment onAssignmentChange={() => {}} />
           </div>
 
           {/* Drivers Table */}
