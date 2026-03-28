@@ -93,17 +93,27 @@ export function IncidentAlerts({ onIncidentUpdate }: { onIncidentUpdate?: () => 
   }
 
   async function updateIncidentStatus(incidentId: string, newStatus: 'acknowledged' | 'in_progress' | 'resolved' | 'closed') {
+    const updates: any = { status: newStatus }
+    
+    // Set timestamps based on status
+    if (newStatus === 'acknowledged') {
+      updates.acknowledged_at = new Date().toISOString()
+    } else if (newStatus === 'in_progress') {
+      updates.started_at = new Date().toISOString()
+    } else if (newStatus === 'resolved') {
+      updates.resolved_at = new Date().toISOString()
+    }
+    
     const { error } = await supabase
       .from('incidents')
-      .update({ 
-        status: newStatus,
-        ...(newStatus === 'resolved' ? { resolved_at: new Date().toISOString() } : {})
-      })
+      .update(updates)
       .eq('id', incidentId)
     
     if (!error) {
       loadIncidents()
       onIncidentUpdate?.()
+    } else {
+      console.error('Failed to update incident:', error)
     }
   }
 

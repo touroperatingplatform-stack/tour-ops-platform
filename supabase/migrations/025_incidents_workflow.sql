@@ -64,34 +64,6 @@ CREATE POLICY "Supervisors can update all incidents"
     )
   );
 
--- Function to auto-set acknowledged_at when status changes to 'acknowledged'
-CREATE OR REPLACE FUNCTION incidents_set_acknowledged_at()
-RETURNS TRIGGER AS $$
-BEGIN
-  IF NEW.status = 'acknowledged' AND OLD.status != 'acknowledged' THEN
-    NEW.acknowledged_at = NOW();
-    NEW.acknowledged_by = auth.uid();
-  END IF;
-  
-  IF NEW.status = 'in_progress' AND OLD.status != 'in_progress' THEN
-    NEW.started_at = NOW();
-    NEW.started_by = auth.uid();
-  END IF;
-  
-  IF NEW.status = 'resolved' AND OLD.status != 'resolved' THEN
-    NEW.resolved_at = NOW();
-    NEW.resolved_by = auth.uid();
-  END IF;
-  
-  RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
--- Drop old trigger if exists
+-- Simple trigger to update updated_at only (avoid auth.uid() issues)
 DROP TRIGGER IF EXISTS incidents_status_tracker ON incidents;
-
--- Create trigger for status tracking
-CREATE TRIGGER incidents_status_tracker
-  BEFORE UPDATE ON incidents
-  FOR EACH ROW
-  EXECUTE FUNCTION incidents_set_acknowledged_at();
+DROP FUNCTION IF EXISTS incidents_set_acknowledged_at() CASCADE;
