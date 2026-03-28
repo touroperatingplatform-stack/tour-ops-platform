@@ -95,6 +95,8 @@
   "dashboard": {
     "title": "Operations Dashboard",
     "activeTours": "Active Tours",
+    "active": "active",
+    "noActiveTours": "No active tours",
     "vehiclesInUse": "Vehicles In Use",
     "guidesOnDuty": "Guides On Duty",
     "delayed": "Delayed",
@@ -110,7 +112,10 @@
     "incidentsPending": "incidents pending attention",
     "noCheckinsToday": "No check-ins today",
     "early": "early",
-    "late": "late"
+    "late": "late",
+    "timeline": "Today's Timeline",
+    "tour": "Tour",
+    "guide": "Guide"
   },
   "drivers": {
     "title": "Driver Assignment",

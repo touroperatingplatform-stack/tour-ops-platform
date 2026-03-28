@@ -17,6 +17,7 @@
     "view": "Ver",
     "close": "Cerrar",
     "back": "Atrás",
+    "backToIncidents": "Volver a Incidentes",
     "submit": "Enviar",
     "search": "Buscar",
     "filter": "Filtrar",
@@ -33,7 +34,9 @@
     "unassigned": "No Asignado",
     "all": "Todos",
     "yes": "Sí",
-    "no": "No"
+    "no": "No",
+    "post": "Publicar",
+    "noComments": "Sin comentarios aún"
   },
   "incident": {
     "title": "Gestión de Incidentes",
@@ -92,6 +95,8 @@
   "dashboard": {
     "title": "Dashboard de Operaciones",
     "activeTours": "Tours Activos",
+    "active": "activos",
+    "noActiveTours": "No hay tours activos",
     "vehiclesInUse": "Vehículos en Uso",
     "guidesOnDuty": "Guías de Servicio",
     "delayed": "Retrasados",
@@ -107,7 +112,10 @@
     "incidentsPending": "incidentes pendientes de atención",
     "noCheckinsToday": "Sin check-ins hoy",
     "early": "temprano",
-    "late": "tarde"
+    "late": "tarde",
+    "timeline": "Línea de Tiempo de Hoy",
+    "tour": "Tour",
+    "guide": "Guía"
   },
   "drivers": {
     "title": "Asignación de Choferes",

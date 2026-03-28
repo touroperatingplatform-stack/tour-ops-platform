@@ -6,6 +6,7 @@ import { supabase } from '@/lib/supabase/client'
 import RoleGuard from '@/lib/auth/RoleGuard'
 import LiveMap from '../supervisor/components/LiveMap'
 import { IncidentAlerts, GuideCheckinStatus, OperationsMetrics } from './components/OperationsEnhancements'
+import { useTranslation } from '@/lib/i18n/useTranslation'
 
 interface TourWithDetails {
   id: string
@@ -36,6 +37,7 @@ interface TimelineEvent {
 }
 
 export default function OperationsDashboard() {
+  const { t } = useTranslation()
   const [tours, setTours] = useState<TourWithDetails[]>([])
   const [vehicles, setVehicles] = useState<Vehicle[]>([])
   const [timeline, setTimeline] = useState<TimelineEvent[]>([])
@@ -158,15 +160,9 @@ export default function OperationsDashboard() {
       completed: 'bg-green-100 text-green-700',
       delayed: 'bg-yellow-100 text-yellow-700'
     }
-    const labels: Record<string, string> = {
-      scheduled: 'Scheduled',
-      in_progress: 'In Progress',
-      completed: 'Completed',
-      delayed: 'Delayed'
-    }
     return (
       <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${styles[status] || styles.scheduled}`}>
-        {labels[status] || status}
+        {t(`tour.${status}`) || status}
       </span>
     )
   }
@@ -201,7 +197,7 @@ export default function OperationsDashboard() {
         {/* Header */}
         <div className="shrink-0">
           <div className="mb-2">
-            <h1 className="text-xl font-bold text-gray-900">Operations Dashboard</h1>
+            <h1 className="text-xl font-bold text-gray-900">{t('dashboard.title')}</h1>
             <p className="text-sm text-gray-500">
               {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
             </p>
@@ -210,19 +206,19 @@ export default function OperationsDashboard() {
         {/* Summary Metrics */}
         <div className="grid grid-cols-4 gap-3">
           <div className="bg-white rounded-lg border border-gray-200 p-3 text-center">
-            <p className="text-xs text-blue-600 uppercase font-medium">Active Tours</p>
+            <p className="text-xs text-blue-600 uppercase font-medium">{t('dashboard.activeTours')}</p>
             <p className="text-2xl font-bold text-blue-600">{stats.active_tours}</p>
           </div>
           <div className="bg-white rounded-lg border border-gray-200 p-3 text-center">
-            <p className="text-xs text-green-600 uppercase font-medium">Vehicles In Use</p>
+            <p className="text-xs text-green-600 uppercase font-medium">{t('dashboard.vehiclesInUse')}</p>
             <p className="text-2xl font-bold text-green-600">{stats.vehicles_in_use}</p>
           </div>
           <div className="bg-white rounded-lg border border-gray-200 p-3 text-center">
-            <p className="text-xs text-purple-600 uppercase font-medium">Guides On Duty</p>
+            <p className="text-xs text-purple-600 uppercase font-medium">{t('dashboard.guidesOnDuty')}</p>
             <p className="text-2xl font-bold text-purple-600">{stats.guides_on_duty}</p>
           </div>
           <div className="bg-white rounded-lg border border-gray-200 p-3 text-center">
-            <p className="text-xs text-yellow-600 uppercase font-medium">Delayed</p>
+            <p className="text-xs text-yellow-600 uppercase font-medium">{t('dashboard.delayed')}</p>
             <p className="text-2xl font-bold text-yellow-600">{stats.delayed_tours}</p>
           </div>
         </div>
@@ -258,7 +254,7 @@ export default function OperationsDashboard() {
           {/* Timeline */}
           <div className="lg:col-span-1 bg-white rounded-lg border border-gray-200 overflow-hidden flex flex-col">
             <div className="px-3 py-2 border-b border-gray-200 bg-gray-50 shrink-0">
-              <h2 className="font-semibold text-gray-900 text-sm">Today's Timeline</h2>
+              <h2 className="font-semibold text-gray-900 text-sm">{t('dashboard.timeline')}</h2>
             </div>
             
             <div className="flex-1 overflow-auto p-4">
@@ -295,9 +291,9 @@ export default function OperationsDashboard() {
           {/* Active Tours */}
           <div className="lg:col-span-1 bg-white rounded-lg border border-gray-200 overflow-hidden flex flex-col">
             <div className="px-3 py-2 border-b border-gray-200 bg-gray-50 flex items-center justify-between shrink-0">
-              <h2 className="font-semibold text-gray-900 text-sm">Active Tours</h2>
+              <h2 className="font-semibold text-gray-900 text-sm">{t('dashboard.activeTours')}</h2>
               {stats.active_tours > 0 && (
-                <span className="bg-blue-100 text-blue-700 text-xs px-2 py-0.5 rounded-full">{stats.active_tours} active</span>
+                <span className="bg-blue-100 text-blue-700 text-xs px-2 py-0.5 rounded-full">{stats.active_tours} {t('dashboard.active')}</span>
               )}
             </div>
             
@@ -305,9 +301,9 @@ export default function OperationsDashboard() {
               <table className="w-full text-sm">
                 <thead className="bg-gray-50 text-left text-xs uppercase text-gray-500 sticky top-0">
                   <tr>
-                    <th className="px-3 py-2 font-medium">Tour</th>
-                    <th className="px-3 py-2 font-medium">Guide</th>
-                    <th className="px-3 py-2 font-medium">Status</th>
+                    <th className="px-3 py-2 font-medium">{t('dashboard.tour')}</th>
+                    <th className="px-3 py-2 font-medium">{t('dashboard.guide')}</th>
+                    <th className="px-3 py-2 font-medium">{t('common.status')}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
@@ -321,7 +317,7 @@ export default function OperationsDashboard() {
                   {tours.filter(t => ['in_progress', 'scheduled'].includes(t.status)).length === 0 && (
                     <tr>
                       <td colSpan={3} className="px-3 py-4 text-center text-gray-500 text-sm">
-                        No active tours.
+                        {t('dashboard.noActiveTours')}
                       </td>
                     </tr>
                   )}
@@ -333,17 +329,17 @@ export default function OperationsDashboard() {
           {/* Vehicle Fleet */}
           <div className="lg:col-span-1 bg-white rounded-lg border border-gray-200 overflow-hidden flex flex-col">
             <div className="px-3 py-2 border-b border-gray-200 bg-gray-50 shrink-0">
-              <h2 className="font-semibold text-gray-900 text-sm">Vehicle Fleet</h2>
+              <h2 className="font-semibold text-gray-900 text-sm">{t('vehicles.title')}</h2>
             </div>
             
             <div className="flex-1 overflow-auto">
               <table className="w-full text-sm">
                 <thead className="bg-gray-50 text-left text-xs uppercase text-gray-500 sticky top-0">
                   <tr>
-                    <th className="px-3 py-2 font-medium">Vehicle</th>
-                    <th className="px-3 py-2 font-medium">Plate</th>
-                    <th className="px-3 py-2 font-medium">Status</th>
-                    <th className="px-3 py-2 font-medium text-right">Capacity</th>
+                    <th className="px-3 py-2 font-medium">{t('vehicles.vehicle')}</th>
+                    <th className="px-3 py-2 font-medium">{t('vehicles.plate')}</th>
+                    <th className="px-3 py-2 font-medium">{t('common.status')}</th>
+                    <th className="px-3 py-2 font-medium text-right">{t('vehicles.capacity')}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
@@ -358,7 +354,7 @@ export default function OperationsDashboard() {
                   {vehicles.length === 0 && (
                     <tr>
                       <td colSpan={4} className="px-3 py-4 text-center text-gray-500 text-sm">
-                        No vehicles registered.
+                        {t('vehicles.noVehicles') || 'No vehicles registered.'}
                       </td>
                     </tr>
                   )}
