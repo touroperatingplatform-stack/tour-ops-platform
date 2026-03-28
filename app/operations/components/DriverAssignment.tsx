@@ -85,9 +85,12 @@ export default function DriverAssignment({ onAssignmentChange }: DriverAssignmen
           tour_date,
           start_time,
           driver_id,
-          profiles!driver_id (
-            first_name,
-            last_name
+          driver_profiles!tours_driver_id_fkey (
+            profile_id,
+            profiles (
+              first_name,
+              last_name
+            )
           )
         `)
         .eq('tour_date', selectedDate)
@@ -96,7 +99,9 @@ export default function DriverAssignment({ onAssignmentChange }: DriverAssignmen
 
       const formattedTours: Tour[] = (toursData || []).map((t: any) => ({
         ...t,
-        driver_name: t.profiles ? `${t.profiles.first_name} ${t.profiles.last_name}` : undefined
+        driver_name: t.driver_profiles?.profiles 
+          ? `${t.driver_profiles.profiles.first_name} ${t.driver_profiles.profiles.last_name}`
+          : (t.driver_id ? 'Assigned' : undefined)
       }))
       
       // Deduplicate tours by id
