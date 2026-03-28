@@ -311,14 +311,14 @@ export default function OperationsDashboard() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
-                  {tours.filter(t => t.status === 'in_progress').map((tour) => (
+                  {tours.filter(t => ['in_progress', 'scheduled'].includes(t.status)).map((tour) => (
                     <tr key={tour.id} className="hover:bg-gray-50">
                       <td className="px-3 py-2 font-medium text-gray-900">{tour.name}</td>
                       <td className="px-3 py-2 text-gray-600">{tour.guide.first_name} {tour.guide.last_name}</td>
                       <td className="px-3 py-2">{getStatusBadge(tour.status)}</td>
                     </tr>
                   ))}
-                  {tours.filter(t => t.status === 'in_progress').length === 0 && (
+                  {tours.filter(t => ['in_progress', 'scheduled'].includes(t.status)).length === 0 && (
                     <tr>
                       <td colSpan={3} className="px-3 py-4 text-center text-gray-500 text-sm">
                         No active tours.
