@@ -164,13 +164,22 @@
     "guide": "Guía",
     "driver": "Chofer",
     "vehicle": "Vehículo",
-    "guests": "Huéspedes"
+    "guests": "Huéspedes",
+    "time": "Hora",
+    "noTours": "No hay tours programados para esta fecha"
   },
   "reports": {
     "title": "Reportes",
     "dateRange": "Rango de Fechas",
     "generate": "Generar Reporte",
-    "export": "Exportar"
+    "export": "Exportar",
+    "comingSoon": "Próximamente - análisis y reportes estarán disponibles aquí",
+    "tourPerformance": "Rendimiento de Tours",
+    "tourPerformanceDesc": "Conteo de huéspedes, ingresos y estadísticas de tours",
+    "vehicleUsage": "Uso de Vehículos",
+    "vehicleUsageDesc": "Utilización de flotilla y seguimiento de mantenimiento",
+    "guidePerformance": "Rendimiento de Guías",
+    "guidePerformanceDesc": "Check-ins, incidentes y comentarios de huéspedes"
   },
   "auth": {
     "signIn": "Iniciar Sesión",

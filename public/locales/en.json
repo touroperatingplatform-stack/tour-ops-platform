@@ -164,13 +164,22 @@
     "guide": "Guide",
     "driver": "Driver",
     "vehicle": "Vehicle",
-    "guests": "Guests"
+    "guests": "Guests",
+    "time": "Time",
+    "noTours": "No tours scheduled for this date"
   },
   "reports": {
     "title": "Reports",
     "dateRange": "Date Range",
     "generate": "Generate Report",
-    "export": "Export"
+    "export": "Export",
+    "comingSoon": "Coming soon - analytics and reporting will be available here",
+    "tourPerformance": "Tour Performance",
+    "tourPerformanceDesc": "Guest counts, revenue, and tour statistics",
+    "vehicleUsage": "Vehicle Usage",
+    "vehicleUsageDesc": "Fleet utilization and maintenance tracking",
+    "guidePerformance": "Guide Performance",
+    "guidePerformanceDesc": "Check-ins, incidents, and guest feedback"
   },
   "auth": {
     "signIn": "Sign In",
