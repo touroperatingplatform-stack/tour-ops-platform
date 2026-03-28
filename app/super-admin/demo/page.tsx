@@ -287,7 +287,6 @@ export default function SuperAdminDemoPage() {
       
       // Update tour statuses based on current time (realistic live demo)
       setDemoProgress('⏰ Setting realistic tour statuses...')
-      const now = new Date()
       const twoHoursAgo = new Date(now.getTime() - 120 * 60000)
       
       for (let i = 0; i < tourDestinations.length && i < guides.length; i++) {
