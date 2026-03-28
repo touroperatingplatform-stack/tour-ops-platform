@@ -158,6 +158,45 @@ export default function SuperAdminDemoPage() {
       const brandIds = brands?.map(b => b.id) || []
       const randomSuffix = Math.floor(Math.random() * 10000)
 
+      // Step 0: Create driver profiles for test drivers
+      setDemoProgress('🚗 Setting up test drivers...')
+      const testDrivers = [
+        { email: 'felipe@lifeoperations.com', type: 'freelance', license: 'LIC-FEL-001', expiry: '2027-12-31' },
+        { email: 'driver1@lifeoperations.com', type: 'employee', license: 'LIC-DRV1-001', expiry: '2027-06-30' },
+        { email: 'driver2@lifeoperations.com', type: 'employee', license: 'LIC-DRV2-001', expiry: '2027-08-15' },
+        { email: 'driver3@lifeoperations.com', type: 'employee', license: 'LIC-DRV3-001', expiry: '2027-09-20' }
+      ]
+
+      let driverSetupCount = 0
+      for (const driver of testDrivers) {
+        // Update profile role to driver
+        await supabase.from('profiles').update({ role: 'driver' }).eq('email', driver.email)
+        
+        // Get profile ID
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('email', driver.email)
+          .single()
+        
+        if (profile) {
+          // Create driver_profile (upsert to avoid duplicates)
+          await supabase.from('driver_profiles').upsert({
+            profile_id: profile.id,
+            license_number: driver.license,
+            license_expiry: driver.expiry,
+            driver_type: driver.type,
+            hire_date: '2025-01-15',
+            status: 'active',
+            company_id: companyId
+          })
+          driverSetupCount++
+        }
+      }
+
+      setDemoProgress(`✅ Set up ${driverSetupCount} test drivers`)
+      await new Promise(resolve => setTimeout(resolve, 500))
+
       // Step 1: Create vehicles (VERIFIED: company_id, plate_number, make, model, year, capacity, status)
       setDemoProgress('🚗 Creating vehicles...')
       const vehicleFleet = [
@@ -236,6 +275,26 @@ export default function SuperAdminDemoPage() {
       }
 
       setDemoProgress(`✅ Created ${createdTourIds.length} tours for today`)
+      
+      // Assign drivers to tours
+      setDemoProgress('👷 Assigning drivers to tours...')
+      const { data: allDrivers } = await supabase
+        .from('driver_profiles')
+        .select('profile_id')
+        .eq('status', 'active')
+      
+      const driverIds = allDrivers?.map(d => d.profile_id) || []
+      
+      if (driverIds.length > 0) {
+        for (let i = 0; i < createdTourIds.length; i++) {
+          const driverId = driverIds[i % driverIds.length]
+          await supabase.from('tours').update({ driver_id: driverId }).eq('id', createdTourIds[i])
+        }
+        setDemoProgress(`✅ Assigned drivers to ${createdTourIds.length} tours`)
+      } else {
+        setDemoProgress('⚠️ No active drivers found for assignment')
+      }
+      
       await new Promise(resolve => setTimeout(resolve, 500))
 
       // Step 3: Create guests
@@ -359,6 +418,54 @@ export default function SuperAdminDemoPage() {
       }
 
       setDemoProgress(`✅ Created ${checkinCount} guide check-ins`)
+      await new Promise(resolve => setTimeout(resolve, 500))
+
+      // Step 5b: Create driver check-ins (vehicle inspections)
+      setDemoProgress('🚗 Creating driver vehicle inspections...')
+      let driverCheckinCount = 0
+      for (const tourId of createdTourIds.slice(0, Math.min(createdTourIds.length, 5))) {
+        const { data: tour } = await supabase
+          .from('tours')
+          .select('driver_id, vehicle_id, start_time')
+          .eq('id', tourId)
+          .single()
+        
+        if (tour?.driver_id) {
+          const startTime = tour.start_time || '08:00'
+          const [hours, minutes] = startTime.split(':').map(Number)
+          const checkinTime = new Date()
+          checkinTime.setHours(hours, minutes - 45, 0) // Driver checks in 45 min before tour
+          
+          const mileageBase = 45000 + Math.floor(Math.random() * 5000)
+          const fuelLevels = ['full', '3/4', '1/2', '1/4', 'empty']
+          const conditions = ['good', 'good', 'good', 'fair', 'poor']
+          
+          await supabase.from('driver_checkins').insert({
+            tour_id: tourId,
+            driver_id: tour.driver_id,
+            vehicle_id: tour.vehicle_id,
+            checked_in_at: checkinTime.toISOString(),
+            mileage_start: mileageBase,
+            mileage_end: null,
+            fuel_level_before: fuelLevels[Math.floor(Math.random() * fuelLevels.length)],
+            fuel_level_after: null,
+            vehicle_condition: conditions[Math.floor(Math.random() * conditions.length)],
+            issues: Math.random() > 0.7 ? 'Minor scratch on rear bumper, already documented' : null,
+            inspection_data: {
+              tires: 'ok',
+              brakes: 'ok',
+              lights: 'ok',
+              ac: Math.random() > 0.8 ? 'issue' : 'ok',
+              cleanliness: 'good',
+              first_aid: 'ok',
+              fire_extinguisher: 'ok'
+            }
+          })
+          driverCheckinCount++
+        }
+      }
+
+      setDemoProgress(`✅ Created ${driverCheckinCount} driver vehicle inspections`)
       await new Promise(resolve => setTimeout(resolve, 500))
 
       // Step 6: Create incidents (VERIFIED: tour_id, reported_by, type, severity, description, status, guide_id, resolution_notes, escalation_level)
