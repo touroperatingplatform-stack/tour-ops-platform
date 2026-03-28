@@ -41,7 +41,7 @@ export default function TourAddModal({ selectedDate, onClose, onSave }: TourAddM
         .from('driver_profiles')
         .select(`
           profile_id,
-          profiles (
+          profiles!inner (
             first_name,
             last_name
           )
@@ -61,9 +61,9 @@ export default function TourAddModal({ selectedDate, onClose, onSave }: TourAddM
       }
 
       if (driversData) {
-        setDrivers(driversData.map(d => ({
+        setDrivers(driversData.map((d: any) => ({
           id: d.profile_id,
-          name: `${d.profiles.first_name || ''} ${d.profiles.last_name || ''}`.trim()
+          name: `${d.profiles?.first_name || ''} ${d.profiles?.last_name || ''}`.trim()
         })))
       }
 
