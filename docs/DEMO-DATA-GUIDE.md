@@ -1,5 +1,18 @@
 # Demo Data Generation Guide
 
+## 🎯 ONE RULE: DON'T ASSUME. VERIFY FIRST.
+
+**Every time you write demo data code:**
+
+1. **Don't assume** column names exist - check the schema
+2. **Don't assume** RPC functions work - verify or use direct inserts
+3. **Don't assume** old code is correct - it may reference outdated schema
+4. **Don't assume** anything - query the database to confirm
+
+**Today's waste:** Hours debugging because code assumed columns that didn't exist.
+
+---
+
 ## ⚠️ Critical Rules - DO NOT IGNORE
 
 ### 1. NEVER Use RPC Functions for Demo Data
