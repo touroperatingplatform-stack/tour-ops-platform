@@ -22,7 +22,6 @@ interface TourWithDetails {
 
 interface Vehicle {
   id: string
-  make: string
   model: string
   plate_number: string
   status: 'available' | 'in_use' | 'maintenance'
