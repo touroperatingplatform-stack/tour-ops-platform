@@ -103,7 +103,10 @@ export default function DriversManagement() {
         assigned_tours_count: assignmentCount[d.profile_id] || 0
       }))
 
-      setDrivers(formatted)
+      // Deduplicate by profile_id (keep first occurrence)
+      const unique = formatted.filter((d, i, arr) => arr.findIndex(x => x.profile_id === d.profile_id) === i)
+
+      setDrivers(unique)
     } catch (error) {
       console.error('Error loading drivers:', error)
     } finally {
