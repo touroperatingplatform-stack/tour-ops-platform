@@ -4,6 +4,7 @@ export const dynamic = 'force-dynamic'
 
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase/client'
+import { useTranslation } from '@/lib/i18n/useTranslation'
 
 const maintenanceTypes = [
   { value: 'oil_change', label: 'Oil Change', icon: '🛢️' },
@@ -14,6 +15,7 @@ const maintenanceTypes = [
 ]
 
 export default function VehicleMaintenancePage() {
+  const { t } = useTranslation()
   const [maintenance, setMaintenance] = useState<any[]>([])
   const [vehicles, setVehicles] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
@@ -51,7 +53,7 @@ export default function VehicleMaintenancePage() {
     loadData()
   }
 
-  if (loading) return <div className="p-4 text-center">Loading...</div>
+  if (loading) return <div className="p-4 text-center">{t('common.loading')}</div>
 
   const upcoming = maintenance.filter(m => m.status === 'scheduled')
   const inProgress = maintenance.filter(m => m.status === 'in_progress')
@@ -60,33 +62,33 @@ export default function VehicleMaintenancePage() {
   return (
     <div className="p-4">
       <div className="flex items-center justify-between mb-4">
-        <h1 className="text-xl font-bold text-gray-900">Vehicle Maintenance</h1>
+        <h1 className="text-xl font-bold text-gray-900">{t('maintenance.title') || 'Vehicle Maintenance'}</h1>
         <button
           onClick={() => setShowForm(true)}
           className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium"
         >
-          + Schedule
+          + {t('maintenance.schedule') || 'Schedule'}
         </button>
       </div>
 
       <div className="grid grid-cols-3 gap-3 mb-4">
         <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-center">
           <p className="text-2xl font-bold text-yellow-700">{upcoming.length}</p>
-          <p className="text-xs text-yellow-600">Upcoming</p>
+          <p className="text-xs text-yellow-600">{t('maintenance.upcoming') || 'Upcoming'}</p>
         </div>
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-center">
           <p className="text-2xl font-bold text-blue-700">{inProgress.length}</p>
-          <p className="text-xs text-blue-600">In Progress</p>
+          <p className="text-xs text-blue-600">{t('maintenance.inProgress') || 'In Progress'}</p>
         </div>
         <div className="bg-green-50 border border-green-200 rounded-lg p-3 text-center">
           <p className="text-2xl font-bold text-green-700">{completed.length}</p>
-          <p className="text-xs text-green-600">Completed</p>
+          <p className="text-xs text-green-600">{t('maintenance.completed') || 'Completed'}</p>
         </div>
       </div>
 
       {upcoming.length > 0 && (
         <div className="mb-6">
-          <h2 className="font-semibold text-gray-700 mb-2">Upcoming</h2>
+          <h2 className="font-semibold text-gray-700 mb-2">{t('maintenance.upcoming') || 'Upcoming'}</h2>
           <div className="space-y-2">
             {upcoming.map((m) => (
               <MaintenanceCard key={m.id} item={m} onUpdateStatus={updateStatus} />
@@ -97,7 +99,7 @@ export default function VehicleMaintenancePage() {
 
       {inProgress.length > 0 && (
         <div className="mb-6">
-          <h2 className="font-semibold text-gray-700 mb-2">In Progress</h2>
+          <h2 className="font-semibold text-gray-700 mb-2">{t('maintenance.inProgress') || 'In Progress'}</h2>
           <div className="space-y-2">
             {inProgress.map((m) => (
               <MaintenanceCard key={m.id} item={m} onUpdateStatus={updateStatus} />
@@ -108,7 +110,7 @@ export default function VehicleMaintenancePage() {
 
       {completed.length > 0 && (
         <div>
-          <h2 className="font-semibold text-gray-700 mb-2">Recently Completed</h2>
+          <h2 className="font-semibold text-gray-700 mb-2">{t('maintenance.recentlyCompleted') || 'Recently Completed'}</h2>
           <div className="space-y-2">
             {completed.slice(0, 5).map((m) => (
               <MaintenanceCard key={m.id} item={m} onUpdateStatus={updateStatus} />

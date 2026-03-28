@@ -227,6 +227,26 @@
     "thisMonth": "This Month",
     "lastMonth": "Last Month"
   },
+  "maintenance": {
+    "title": "Vehicle Maintenance",
+    "schedule": "Schedule",
+    "upcoming": "Upcoming",
+    "inProgress": "In Progress",
+    "completed": "Completed",
+    "recentlyCompleted": "Recently Completed",
+    "type": "Type",
+    "vehicle": "Vehicle",
+    "scheduledDate": "Scheduled Date",
+    "completedDate": "Completed Date",
+    "notes": "Notes",
+    "cost": "Cost",
+    "mileage": "Mileage",
+    "oilChange": "Oil Change",
+    "tireRotation": "Tire Rotation",
+    "inspection": "Inspection",
+    "repair": "Repair",
+    "other": "Other"
+  },
   "roles": {
     "super_admin": "Super Admin",
     "company_admin": "Company Admin",

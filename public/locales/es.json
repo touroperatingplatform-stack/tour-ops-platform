@@ -227,6 +227,26 @@
     "thisMonth": "Este Mes",
     "lastMonth": "Mes Pasado"
   },
+  "maintenance": {
+    "title": "Mantenimiento de Vehículos",
+    "schedule": "Programar",
+    "upcoming": "Próximos",
+    "inProgress": "En Progreso",
+    "completed": "Completados",
+    "recentlyCompleted": "Recientemente Completados",
+    "type": "Tipo",
+    "vehicle": "Vehículo",
+    "scheduledDate": "Fecha Programada",
+    "completedDate": "Fecha Completada",
+    "notes": "Notas",
+    "cost": "Costo",
+    "mileage": "Kilometraje",
+    "oilChange": "Cambio de Aceite",
+    "tireRotation": "Rotación de Llantas",
+    "inspection": "Inspección",
+    "repair": "Reparación",
+    "other": "Otro"
+  },
   "roles": {
     "super_admin": "Super Admin",
     "company_admin": "Admin de Empresa",
