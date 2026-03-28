@@ -6,6 +6,7 @@ import { supabase } from '@/lib/supabase/client'
 import RoleGuard from '@/lib/auth/RoleGuard'
 import LiveMap from '../supervisor/components/LiveMap'
 import { IncidentAlerts, GuideCheckinStatus, OperationsMetrics } from './components/OperationsEnhancements'
+import DriverAssignment from './components/DriverAssignment'
 
 interface TourWithDetails {
   id: string
@@ -40,6 +41,7 @@ export default function OperationsDashboard() {
   const [vehicles, setVehicles] = useState<Vehicle[]>([])
   const [timeline, setTimeline] = useState<TimelineEvent[]>([])
   const [loading, setLoading] = useState(true)
+  const [showDriverAssignment, setShowDriverAssignment] = useState(false)
   const [stats, setStats] = useState({
     active_tours: 0,
     vehicles_in_use: 0,
@@ -200,11 +202,19 @@ export default function OperationsDashboard() {
       <div className="h-full flex flex-col space-y-4 w-full overflow-hidden">
         {/* Header */}
         <div className="shrink-0">
-          <div className="mb-2">
-            <h1 className="text-xl font-bold text-gray-900">Operations Dashboard</h1>
-            <p className="text-sm text-gray-500">
-              {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
-            </p>
+          <div className="mb-2 flex items-center justify-between">
+            <div>
+              <h1 className="text-xl font-bold text-gray-900">Operations Dashboard</h1>
+              <p className="text-sm text-gray-500">
+                {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
+              </p>
+            </div>
+            <button
+              onClick={() => setShowDriverAssignment(true)}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
+            >
+              🚗 Assign Drivers
+            </button>
           </div>
 
         {/* Summary Metrics */}
@@ -369,6 +379,29 @@ export default function OperationsDashboard() {
         </div>
       </div>
     </div>
+
+    {/* Driver Assignment Modal */}
+    {showDriverAssignment && (
+      <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+        <div className="bg-white rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-auto">
+          <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
+            <h2 className="text-lg font-bold text-gray-900">Assign Drivers to Tours</h2>
+            <button
+              onClick={() => setShowDriverAssignment(false)}
+              className="text-gray-400 hover:text-gray-600 text-2xl"
+            >
+              ✕
+            </button>
+          </div>
+          <div className="p-6">
+            <DriverAssignment onAssignmentChange={() => {
+              loadOperationsData()
+              setShowDriverAssignment(false)
+            }} />
+          </div>
+        </div>
+      </div>
+    )}
     </RoleGuard>
   )
 }
