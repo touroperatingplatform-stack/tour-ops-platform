@@ -81,6 +81,9 @@ export default function SuperAdminDemoPage() {
         'payments',
         'checklist_completions',
         'tour_expenses',
+        'expenses',            // NEW: references tours.tour_id
+        'driver_checkins',     // NEW: references tours.tour_id
+        'reservation_manifest',// NEW: references tours.tour_id
         'incident_comments',
         'incidents',
         'guide_checkins',
@@ -89,7 +92,7 @@ export default function SuperAdminDemoPage() {
         'external_bookings',
         'activity_feed',
         'push_notifications',
-        'tours',                // tours after feedback (tour_id has CASCADE)
+        'tours',                // tours after all children (tour_id has CASCADE)
         'vehicles'              // vehicles last (created by demo, no FK dependencies)
       ]
 
