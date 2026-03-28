@@ -89,7 +89,8 @@ export default function SuperAdminDemoPage() {
         'external_bookings',
         'activity_feed',
         'push_notifications',
-        'tours'                 // tours last (tour_id has CASCADE, so feedback already gone)
+        'tours',                // tours after feedback (tour_id has CASCADE)
+        'vehicles'              // vehicles last (created by demo, no FK dependencies)
       ]
 
       let deleted = 0
