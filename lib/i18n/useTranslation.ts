@@ -1,6 +1,6 @@
 'use client'
 
-import { createContext, useContext, useState, useEffect } from 'react'
+import { createContext, useContext, useState, useEffect, ReactNode } from 'react'
 
 type Locale = 'en' | 'es'
 
@@ -13,7 +13,7 @@ interface TranslationContextType {
 const TranslationContext = createContext<TranslationContextType | undefined>(undefined)
 
 interface TranslationProviderProps {
-  children: React.ReactNode
+  children: ReactNode
 }
 
 export function TranslationProvider({ children }: TranslationProviderProps) {
@@ -22,7 +22,6 @@ export function TranslationProvider({ children }: TranslationProviderProps) {
   const [loaded, setLoaded] = useState(false)
 
   useEffect(() => {
-    // Load saved locale from localStorage
     const savedLocale = localStorage.getItem('locale') as Locale
     if (savedLocale && (savedLocale === 'en' || savedLocale === 'es')) {
       setLocaleState(savedLocale)
@@ -30,7 +29,6 @@ export function TranslationProvider({ children }: TranslationProviderProps) {
   }, [])
 
   useEffect(() => {
-    // Load translations
     async function loadTranslations() {
       try {
         const response = await fetch(`/locales/${locale}.json`)
@@ -60,17 +58,18 @@ export function TranslationProvider({ children }: TranslationProviderProps) {
       if (value && typeof value === 'object' && k in value) {
         value = value[k]
       } else {
-        return key // Return key if translation not found
+        return key
       }
     }
     
     return typeof value === 'string' ? value : key
   }
 
+  const Provider = TranslationContext.Provider
   return (
-    <TranslationContext.Provider value={{ locale, setLocale, t }}>
+    <Provider value={{ locale, setLocale, t }}>
       {children}
-    </TranslationContext.Provider>
+    </Provider>
   )
 }
 
