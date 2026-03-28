@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase/client'
 import RoleGuard from '@/lib/auth/RoleGuard'
+import DriverNav from '@/components/navigation/DriverNav'
 
 interface TourAssignment {
   id: string
@@ -139,6 +140,7 @@ export default function DriverDashboard() {
 
   return (
     <RoleGuard requiredRole="driver">
+      <DriverNav />
       <div className="p-4 space-y-6">
         {/* Date Header */}
         <section>

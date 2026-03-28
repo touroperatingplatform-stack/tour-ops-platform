@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase/client'
 import RoleGuard from '@/lib/auth/RoleGuard'
+import DriverNav from '@/components/navigation/DriverNav'
 
 interface Tour {
   id: string
@@ -157,6 +158,7 @@ function DriverCheckinContent() {
 
   return (
     <RoleGuard requiredRole="driver">
+      <DriverNav />
       <div className="min-h-screen bg-gray-50">
         {/* Header */}
         <div className="bg-white border-b border-gray-200">
