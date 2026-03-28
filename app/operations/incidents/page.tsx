@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase/client'
+import { useTranslation } from '@/lib/i18n/useTranslation'
 
 interface Incident {
   id: string
@@ -18,6 +19,7 @@ interface Incident {
 }
 
 export default function IncidentsPage() {
+  const { t } = useTranslation()
   const [incidents, setIncidents] = useState<Incident[]>([])
   const [loading, setLoading] = useState(true)
   const [filterStatus, setFilterStatus] = useState<string>('all')
@@ -137,30 +139,30 @@ export default function IncidentsPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="mb-6">
-          <h1 className="text-2xl font-bold text-gray-900">Incident Management</h1>
-          <p className="text-gray-600 mt-1">Track and resolve operational incidents</p>
+          <h1 className="text-2xl font-bold text-gray-900">{t('incident.title')}</h1>
+          <p className="text-gray-600 mt-1">{t('incident.subtitle')}</p>
         </div>
 
         {/* Stats */}
         <div className="grid grid-cols-5 gap-4 mb-6">
           <div className="bg-white rounded-lg shadow p-4">
-            <p className="text-sm text-gray-600">Total</p>
+            <p className="text-sm text-gray-600">{t('common.all')}</p>
             <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
           </div>
           <div className="bg-red-50 rounded-lg shadow p-4">
-            <p className="text-sm text-red-600">Reported</p>
+            <p className="text-sm text-red-600">{t('incident.reported')}</p>
             <p className="text-2xl font-bold text-red-700">{stats.reported}</p>
           </div>
           <div className="bg-yellow-50 rounded-lg shadow p-4">
-            <p className="text-sm text-yellow-600">Acknowledged</p>
+            <p className="text-sm text-yellow-600">{t('incident.acknowledged')}</p>
             <p className="text-2xl font-bold text-yellow-700">{stats.acknowledged}</p>
           </div>
           <div className="bg-blue-50 rounded-lg shadow p-4">
-            <p className="text-sm text-blue-600">In Progress</p>
+            <p className="text-sm text-blue-600">{t('incident.inProgress')}</p>
             <p className="text-2xl font-bold text-blue-700">{stats.in_progress}</p>
           </div>
           <div className="bg-green-50 rounded-lg shadow p-4">
-            <p className="text-sm text-green-600">Resolved</p>
+            <p className="text-sm text-green-600">{t('incident.resolved')}</p>
             <p className="text-2xl font-bold text-green-700">{stats.resolved}</p>
           </div>
         </div>
@@ -169,49 +171,49 @@ export default function IncidentsPage() {
         <div className="bg-white rounded-lg shadow p-4 mb-6">
           <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">{t('common.status')}</label>
               <select
                 value={filterStatus}
                 onChange={(e) => setFilterStatus(e.target.value)}
                 className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
               >
-                <option value="all">All Status</option>
-                <option value="reported">Reported</option>
-                <option value="acknowledged">Acknowledged</option>
-                <option value="in_progress">In Progress</option>
-                <option value="resolved">Resolved</option>
-                <option value="closed">Closed</option>
+                <option value="all">{t('common.all')}</option>
+                <option value="reported">{t('incident.reported')}</option>
+                <option value="acknowledged">{t('incident.acknowledged')}</option>
+                <option value="in_progress">{t('incident.inProgress')}</option>
+                <option value="resolved">{t('incident.resolved')}</option>
+                <option value="closed">{t('incident.closed')}</option>
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Severity</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">{t('common.severity')}</label>
               <select
                 value={filterSeverity}
                 onChange={(e) => setFilterSeverity(e.target.value)}
                 className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
               >
-                <option value="all">All Severity</option>
-                <option value="critical">Critical</option>
-                <option value="high">High</option>
-                <option value="medium">Medium</option>
-                <option value="low">Low</option>
+                <option value="all">{t('common.all')}</option>
+                <option value="critical">{t('incident.critical')}</option>
+                <option value="high">{t('incident.high')}</option>
+                <option value="medium">{t('incident.medium')}</option>
+                <option value="low">{t('incident.low')}</option>
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">{t('common.type')}</label>
               <select
                 value={filterType}
                 onChange={(e) => setFilterType(e.target.value)}
                 className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
               >
-                <option value="all">All Types</option>
-                {types.map(t => (
-                  <option key={t} value={t}>{t.replace('_', ' ')}</option>
+                <option value="all">{t('common.all')}</option>
+                {types.map(t_type => (
+                  <option key={t_type} value={t_type}>{t(`incident.${t_type}`)}</option>
                 ))}
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">From Date</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">{t('schedule.date')}</label>
               <input
                 type="date"
                 value={dateFrom}
@@ -220,7 +222,7 @@ export default function IncidentsPage() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">To Date</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">{t('schedule.date')}</label>
               <input
                 type="date"
                 value={dateTo}
@@ -237,14 +239,14 @@ export default function IncidentsPage() {
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tour</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Severity</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Guide</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Assigned To</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('common.type')}</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('incident.tour')}</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('common.severity')}</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('common.status')}</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('incident.guide')}</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('common.assignedTo')}</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('common.created')}</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('common.actions')}</th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
@@ -252,9 +254,9 @@ export default function IncidentsPage() {
                   <tr key={incident.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className="text-lg">{getTypeIcon(incident.type)}</span>
-                      <span className="ml-2 text-sm text-gray-900">{incident.type.replace('_', ' ')}</span>
+                      <span className="ml-2 text-sm text-gray-900">{t(`incident.${incident.type}`)}</span>
                       {incident.escalation_level > 0 && (
-                        <span className="ml-2 text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded">L{incident.escalation_level}</span>
+                        <span className="ml-2 text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded">{t('incident.level')}{incident.escalation_level}</span>
                       )}
                     </td>
                     <td className="px-6 py-4">
@@ -263,19 +265,19 @@ export default function IncidentsPage() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`px-2 py-1 text-xs font-medium rounded-full ${getSeverityColor(incident.severity)}`}>
-                        {incident.severity}
+                        {t(`incident.${incident.severity}`)}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(incident.status)}`}>
-                        {incident.status.replace('_', ' ')}
+                        {t(`incident.${incident.status}`)}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       {incident.guide_name}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {incident.assigned_to_name || <span className="text-gray-400">Unassigned</span>}
+                      {incident.assigned_to_name || t('common.unassigned')}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {new Date(incident.created_at).toLocaleDateString()}
@@ -285,7 +287,7 @@ export default function IncidentsPage() {
                         href={`/operations/incidents/${incident.id}`}
                         className="text-blue-600 hover:text-blue-900"
                       >
-                        View →
+                        {t('common.view')} →
                       </Link>
                     </td>
                   </tr>
@@ -295,7 +297,7 @@ export default function IncidentsPage() {
           </div>
           {filtered.length === 0 && (
             <div className="text-center py-12 text-gray-500">
-              No incidents found matching your filters
+              {t('common.noResults') || 'No incidents found matching your filters'}
             </div>
           )}
         </div>
