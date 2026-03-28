@@ -6,6 +6,7 @@ export const ROLE_HIERARCHY = {
   supervisor: 70,
   operations: 60,
   guide: 50,
+  driver: 40,
 } as const
 
 export type Role = keyof typeof ROLE_HIERARCHY

@@ -190,7 +190,7 @@ export default function DriversManagement() {
   }
 
   return (
-    <RoleGuard requiredRole={['operations', 'manager', 'company_admin', 'super_admin']}>
+    <RoleGuard requiredRole="operations">
       <div className="min-h-screen bg-gray-50">
         {/* Header */}
         <div className="bg-white border-b border-gray-200">

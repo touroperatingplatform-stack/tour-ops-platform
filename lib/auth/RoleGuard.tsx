@@ -6,7 +6,7 @@ import { hasRole, type Role } from './roles'
 
 interface RoleGuardProps {
   children: React.ReactNode
-  requiredRole: Role
+  requiredRole: Role | Role[]
   fallback?: React.ReactNode
 }
 
@@ -38,7 +38,11 @@ export default function RoleGuard({ children, requiredRole, fallback }: RoleGuar
 
         const role = profile?.role as Role | null
         setUserRole(role)
-        setAuthorized(hasRole(role, requiredRole))
+        // Handle both single role and array of roles
+        const isAuthorized = Array.isArray(requiredRole) 
+          ? requiredRole.some(r => hasRole(role, r))
+          : hasRole(role, requiredRole)
+        setAuthorized(isAuthorized)
       } catch (error) {
         console.error('RoleGuard auth check failed:', error)
         setAuthorized(false)
@@ -84,7 +88,9 @@ export default function RoleGuard({ children, requiredRole, fallback }: RoleGuar
             </div>
             <div>
               <span className="text-sm text-gray-500">Required role:</span>
-              <p className="text-blue-600 font-medium">{requiredRole}</p>
+              <p className="text-blue-600 font-medium">
+                {Array.isArray(requiredRole) ? requiredRole.join(' or ') : requiredRole}
+              </p>
             </div>
           </div>
 
