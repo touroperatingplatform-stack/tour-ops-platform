@@ -1083,15 +1083,21 @@ export default function SuperAdminDemoPage() {
       setDemoProgress('💰 Creating cash confirmations...')
       let cashCount = 0
       for (const tourId of createdTourIds.slice(0, Math.min(createdTourIds.length, 5))) {
-        const { data: tour } = await supabase.from('tours').select('guide_id').eq('id', tourId).single()
+        const { data: tour } = await supabase.from('tours').select('guide_id, brand_id, price, guest_count').eq('id', tourId).single()
         if (tour) {
+          const expected = (tour.price || 100) * (tour.guest_count || 1)
+          const actual = expected + Math.floor(Math.random() * 20) - 10
           await supabase.from('cash_confirmations').insert({
             tour_id: tourId,
+            brand_id: tour.brand_id,
             guide_id: tour.guide_id,
-            cash_amount: Math.floor(Math.random() * 200) + 50,
-            currency: 'MXN',
-            confirmed_at: now.toISOString(),
-            notes: 'Demo cash confirmation'
+            cash_expected: expected,
+            cash_actual: actual,
+            ticket_count_expected: tour.guest_count || 1,
+            ticket_count_actual: tour.guest_count || 1,
+            status: 'pending',
+            guide_notes: 'Demo cash confirmation',
+            has_discrepancy: expected !== actual
           })
           cashCount++
         }
@@ -1103,17 +1109,17 @@ export default function SuperAdminDemoPage() {
       setDemoProgress('💳 Creating payments...')
       let paymentCount = 0
       for (const tourId of createdTourIds.slice(0, Math.min(createdTourIds.length, 5))) {
-        const { data: tour } = await supabase.from('tours').select('guide_id, price').eq('id', tourId).single()
+        const { data: tour } = await supabase.from('tours').select('guide_id, price, guest_count').eq('id', tourId).single()
         if (tour) {
+          const amount = (tour.price || 100) * (tour.guest_count || 1)
           await supabase.from('payments').insert({
             tour_id: tourId,
-            guide_id: tour.guide_id,
             company_id: companyId,
-            amount: tour.price || 100,
+            amount: amount,
             currency: 'MXN',
+            payment_type: 'tour_payment',
             payment_method: 'cash',
             status: 'completed',
-            paid_at: now.toISOString(),
             notes: 'Demo payment'
           })
           paymentCount++
@@ -1126,19 +1132,17 @@ export default function SuperAdminDemoPage() {
       setDemoProgress('📋 Creating checklist completions...')
       let checklistCount = 0
       for (const tourId of createdTourIds.slice(0, Math.min(createdTourIds.length, 5))) {
-        const { data: tour } = await supabase.from('tours').select('guide_id').eq('id', tourId).single()
+        const { data: tour } = await supabase.from('tours').select('guide_id, brand_id').eq('id', tourId).single()
         if (tour) {
+          // Create a dummy template_id (using tour_id as placeholder)
           await supabase.from('checklist_completions').insert({
             tour_id: tourId,
+            brand_id: tour.brand_id,
             guide_id: tour.guide_id,
-            checklist_type: 'pre_tour',
+            template_id: tourId,  // Using tour_id as placeholder
+            stage: 'pre_tour',
             completed_at: now.toISOString(),
-            items: {
-              vehicle_inspection: true,
-              guest_manifest: true,
-              safety_equipment: true,
-              first_aid_kit: true
-            },
+            is_confirmed: true,
             notes: 'All checks complete'
           })
           checklistCount++
@@ -1151,16 +1155,35 @@ export default function SuperAdminDemoPage() {
       setDemoProgress('📝 Creating reservation manifest...')
       let manifestCount = 0
       for (const tourId of createdTourIds.slice(0, Math.min(createdTourIds.length, 5))) {
-        const { data: guests } = await supabase.from('guests').select('id, first_name, last_name, hotel').eq('tour_id', tourId).limit(3)
-        if (guests && guests.length > 0) {
-          for (const guest of guests) {
+        const { data: tour } = await supabase.from('tours').select('brand_id, name, start_time, guest_count').eq('id', tourId).single()
+        if (tour) {
+          const numEntries = Math.min(tour.guest_count || 3, 5)
+          for (let i = 0; i < numEntries; i++) {
             await supabase.from('reservation_manifest').insert({
               tour_id: tourId,
-              guest_id: guest.id,
-              guest_name: `${guest.first_name} ${guest.last_name}`,
-              hotel: guest.hotel,
-              pickup_time: '08:00',
-              status: 'confirmed'
+              brand_id: tour.brand_id,
+              booking_reference: `BK-${tourId.substring(0, 8).toUpperCase()}-${i + 1}`,
+              booking_platform: ['direct', 'expedia', 'viator', 'tripadvisor'][i % 4],
+              adult_pax: Math.floor(Math.random() * 2) + 1,
+              child_pax: Math.floor(Math.random() * 2),
+              infant_pax: 0,
+              total_pax: Math.floor(Math.random() * 3) + 1,
+              hotel_name: ['Grand Velas', 'Secrets Maroma', 'Hyatt Ziva'][i % 3],
+              room_number: String(100 + i),
+              language_code: 'en',
+              pickup_time: tour.start_time || '08:00',
+              rep_name: 'Demo Rep',
+              agency_name: 'Demo Agency',
+              primary_contact_name: `Guest ${i + 1}`,
+              contact_phone: `+1-555-${1000 + i}`,
+              contact_email: `guest${i}@email.com`,
+              dietary_restrictions: [],
+              accessibility_needs: [],
+              special_requests: i === 0 ? 'Anniversary celebration' : null,
+              pickup_location: 'Hotel lobby',
+              checked_in: false,
+              no_show: false,
+              notes: 'Demo manifest entry'
             })
             manifestCount++
           }
