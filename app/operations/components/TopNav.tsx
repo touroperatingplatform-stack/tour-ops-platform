@@ -60,31 +60,32 @@ export default function TopNav() {
                 <span className="hidden sm:block text-sm font-medium">{t('nav.menu')}</span>
               </button>
 
-            {/* Dropdown */}
-            {showMenu && (
-              <>
-                <div
-                  className="fixed inset-0 z-40"
-                  onClick={() => setShowMenu(false)}
-                />
-                <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl border border-gray-200 shadow-lg z-50 py-2">
-                  <Link
-                    href="/profile"
-                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+              {/* Dropdown */}
+              {showMenu && (
+                <>
+                  <div
+                    className="fixed inset-0 z-40"
                     onClick={() => setShowMenu(false)}
-                  >
-                    My Profile
-                  </Link>
-                  <div className="border-t border-gray-100 my-1" />
-                  <button
-                    onClick={handleSignOut}
-                    className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50"
-                  >
-                    Sign Out
-                  </button>
-                </div>
-              </>
-            )}
+                  />
+                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl border border-gray-200 shadow-lg z-50 py-2">
+                    <Link
+                      href="/profile"
+                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                      onClick={() => setShowMenu(false)}
+                    >
+                      My Profile
+                    </Link>
+                    <div className="border-t border-gray-100 my-1" />
+                    <button
+                      onClick={handleSignOut}
+                      className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50"
+                    >
+                      Sign Out
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
           </div>
         </div>
       </div>
