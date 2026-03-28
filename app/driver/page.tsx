@@ -69,11 +69,15 @@ export default function DriverDashboard() {
         .order('start_time')
 
       if (toursData) {
-        setTodayTours(toursData.map(t => ({
-          ...t,
-          guide_name: `${t.profiles.first_name} ${t.profiles.last_name}`,
-          vehicle: Array.isArray(t.vehicles) ? t.vehicles[0] : t.vehicles
-        })))
+        setTodayTours(toursData.map(t => {
+          // profiles is returned as array from Supabase join
+          const profile = Array.isArray(t.profiles) ? t.profiles[0] : t.profiles
+          return {
+            ...t,
+            guide_name: profile ? `${profile.first_name} ${profile.last_name}` : 'Unknown Guide',
+            vehicle: Array.isArray(t.vehicles) ? t.vehicles[0] : t.vehicles
+          }
+        }))
       }
 
       // Get recent check-ins
