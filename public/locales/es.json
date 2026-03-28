@@ -141,7 +141,20 @@
     "late": "tarde",
     "timeline": "Línea de Tiempo de Hoy",
     "tour": "Tour",
-    "guide": "Guía"
+    "guide": "Guía",
+    "operationsMap": "Mapa de Operaciones",
+    "guides": "Guías",
+    "incidents": "Incidentes",
+    "missing": "Faltantes",
+    "refresh": "Actualizar",
+    "onTime": "A tiempo",
+    "close": "Cerca",
+    "activeGuides": "Guías Activos",
+    "todayTimeline": "Línea de Tiempo de Hoy",
+    "scheduled": "Programado"
+  },
+  "tour": {
+    "scheduled": "Programado"
   },
   "drivers": {
     "title": "Gestión de Choferes",

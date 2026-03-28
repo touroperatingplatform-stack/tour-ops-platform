@@ -141,7 +141,20 @@
     "late": "late",
     "timeline": "Today's Timeline",
     "tour": "Tour",
-    "guide": "Guide"
+    "guide": "Guide",
+    "operationsMap": "Operations Map",
+    "guides": "Guides",
+    "incidents": "Incidents",
+    "missing": "Missing",
+    "refresh": "Refresh",
+    "onTime": "On time",
+    "close": "Close",
+    "activeGuides": "Active Guides",
+    "todayTimeline": "Today's Timeline",
+    "scheduled": "Scheduled"
+  },
+  "tour": {
+    "scheduled": "Scheduled"
   },
   "drivers": {
     "title": "Driver Management",
