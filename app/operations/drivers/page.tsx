@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { supabase } from '@/lib/supabase/client'
 import RoleGuard from '@/lib/auth/RoleGuard'
 import DriverAssignment from '../components/DriverAssignment'
+import { useTranslation } from '@/lib/i18n/useTranslation'
 
 interface Driver {
   id: string
@@ -21,6 +22,7 @@ interface Driver {
 }
 
 export default function DriversManagement() {
+  const { t } = useTranslation()
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [drivers, setDrivers] = useState<Driver[]>([])
@@ -199,10 +201,10 @@ export default function DriversManagement() {
             <div className="flex items-center justify-between">
               <div>
                 <Link href="/operations" className="text-sm text-gray-500 hover:underline">
-                  ← Operations
+                  ← {t('common.back')}
                 </Link>
-                <h1 className="text-2xl font-bold text-gray-900 mt-1">Driver Management</h1>
-                <p className="text-sm text-gray-500">Manage drivers, licenses, and assignments</p>
+                <h1 className="text-2xl font-bold text-gray-900 mt-1">{t('drivers.title')}</h1>
+                <p className="text-sm text-gray-500">{t('drivers.subtitle') || 'Manage drivers, licenses, and assignments'}</p>
               </div>
               <button
                 onClick={() => {
@@ -211,7 +213,7 @@ export default function DriversManagement() {
                 }}
                 className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700"
               >
-                + Add Driver
+                + {t('drivers.addDriver') || 'Add Driver'}
               </button>
             </div>
           </div>
@@ -222,44 +224,44 @@ export default function DriversManagement() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
             <div className="bg-white rounded-xl border border-gray-200 p-4">
               <p className="text-2xl font-bold text-gray-900">{drivers.length}</p>
-              <p className="text-sm text-gray-500">Total Drivers</p>
+              <p className="text-sm text-gray-500">{t('drivers.totalDrivers') || 'Total Drivers'}</p>
             </div>
             <div className="bg-white rounded-xl border border-gray-200 p-4">
               <p className="text-2xl font-bold text-green-600">{drivers.filter(d => d.status === 'active').length}</p>
-              <p className="text-sm text-gray-500">Active</p>
+              <p className="text-sm text-gray-500">{t('common.active') || 'Active'}</p>
             </div>
             <div className="bg-white rounded-xl border border-gray-200 p-4">
               <p className="text-2xl font-bold text-blue-600">{drivers.filter(d => d.driver_type === 'employee').length}</p>
-              <p className="text-sm text-gray-500">Employees</p>
+              <p className="text-sm text-gray-500">{t('drivers.employees') || 'Employees'}</p>
             </div>
             <div className="bg-white rounded-xl border border-gray-200 p-4">
               <p className="text-2xl font-bold text-purple-600">{drivers.filter(d => d.driver_type === 'freelance').length}</p>
-              <p className="text-sm text-gray-500">Freelance</p>
+              <p className="text-sm text-gray-500">{t('drivers.freelance') || 'Freelance'}</p>
             </div>
           </div>
 
           {/* Driver Assignment */}
           <div className="bg-white rounded-xl border border-gray-200 p-6 mb-8">
-            <h2 className="font-semibold text-gray-900 mb-4">Assign Drivers to Tours</h2>
+            <h2 className="font-semibold text-gray-900 mb-4">{t('drivers.assignToTours') || 'Assign Drivers to Tours'}</h2>
             <DriverAssignment onAssignmentChange={() => {}} />
           </div>
 
           {/* Drivers Table */}
           <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
             <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
-              <h2 className="font-semibold text-gray-900">All Drivers</h2>
+              <h2 className="font-semibold text-gray-900">{t('drivers.allDrivers') || 'All Drivers'}</h2>
             </div>
             
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead className="bg-gray-50 text-left text-xs uppercase text-gray-500">
                   <tr>
-                    <th className="px-6 py-3 font-medium">Name</th>
-                    <th className="px-6 py-3 font-medium">Contact</th>
-                    <th className="px-6 py-3 font-medium">License</th>
-                    <th className="px-6 py-3 font-medium">Type</th>
-                    <th className="px-6 py-3 font-medium">Status</th>
-                    <th className="px-6 py-3 font-medium text-right">Actions</th>
+                    <th className="px-6 py-3 font-medium">{t('common.name') || 'Name'}</th>
+                    <th className="px-6 py-3 font-medium">{t('drivers.contact') || 'Contact'}</th>
+                    <th className="px-6 py-3 font-medium">{t('drivers.license') || 'License'}</th>
+                    <th className="px-6 py-3 font-medium">{t('drivers.type') || 'Type'}</th>
+                    <th className="px-6 py-3 font-medium">{t('common.status')}</th>
+                    <th className="px-6 py-3 font-medium text-right">{t('common.actions')}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
@@ -301,7 +303,7 @@ export default function DriversManagement() {
                             ? 'bg-blue-100 text-blue-700'
                             : 'bg-purple-100 text-purple-700'
                         }`}>
-                          {driver.driver_type}
+                          {t(`drivers.${driver.driver_type}`) || driver.driver_type}
                         </span>
                       </td>
                       <td className="px-6 py-4">
@@ -310,7 +312,7 @@ export default function DriversManagement() {
                             ? 'bg-green-100 text-green-700'
                             : 'bg-gray-100 text-gray-600'
                         }`}>
-                          {driver.status}
+                          {t(`common.${driver.status}`) || driver.status}
                         </span>
                       </td>
                       <td className="px-6 py-4 text-right">
@@ -319,7 +321,7 @@ export default function DriversManagement() {
                             onClick={() => openEditModal(driver)}
                             className="text-blue-600 hover:underline text-xs font-medium"
                           >
-                            Edit
+                            {t('common.edit')}
                           </button>
                           <button
                             onClick={() => toggleDriverStatus(driver)}
@@ -329,7 +331,7 @@ export default function DriversManagement() {
                                 : 'text-green-600 hover:underline'
                             }`}
                           >
-                            {driver.status === 'active' ? 'Deactivate' : 'Activate'}
+                            {driver.status === 'active' ? (t('drivers.deactivate') || 'Deactivate') : (t('drivers.activate') || 'Activate')}
                           </button>
                         </div>
                       </td>
@@ -338,7 +340,7 @@ export default function DriversManagement() {
                   {drivers.length === 0 && (
                     <tr>
                       <td colSpan={6} className="px-6 py-8 text-center text-gray-500">
-                        No drivers yet. Click "Add Driver" to create one.
+                        {t('drivers.noDrivers') || 'No drivers yet. Click "Add Driver" to create one.'}
                       </td>
                     </tr>
                   )}
@@ -354,7 +356,7 @@ export default function DriversManagement() {
             <div className="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-auto">
               <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
                 <h2 className="text-lg font-semibold text-gray-900">
-                  {editingDriver ? 'Edit Driver' : 'Add New Driver'}
+                  {editingDriver ? (t('drivers.editDriver') || 'Edit Driver') : (t('drivers.addNewDriver') || 'Add New Driver')}
                 </h2>
                 <button
                   onClick={() => {
@@ -372,7 +374,7 @@ export default function DriversManagement() {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      First Name *
+                      {t('common.firstName') || 'First Name'} *
                     </label>
                     <input
                       type="text"
@@ -384,7 +386,7 @@ export default function DriversManagement() {
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Last Name *
+                      {t('common.lastName') || 'Last Name'} *
                     </label>
                     <input
                       type="text"
@@ -399,7 +401,7 @@ export default function DriversManagement() {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Email *
+                      {t('auth.email')} *
                     </label>
                     <input
                       type="email"
@@ -411,7 +413,7 @@ export default function DriversManagement() {
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Phone
+                      {t('drivers.phone') || 'Phone'}
                     </label>
                     <input
                       type="tel"
@@ -425,7 +427,7 @@ export default function DriversManagement() {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      License Number
+                      {t('drivers.licenseNumber') || 'License Number'}
                     </label>
                     <input
                       type="text"
@@ -436,7 +438,7 @@ export default function DriversManagement() {
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      License Expiry
+                      {t('drivers.licenseExpiry') || 'License Expiry'}
                     </label>
                     <input
                       type="date"
@@ -450,20 +452,20 @@ export default function DriversManagement() {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Driver Type
+                      {t('drivers.driverType') || 'Driver Type'}
                     </label>
                     <select
                       value={formData.driver_type}
                       onChange={(e) => setFormData({ ...formData, driver_type: e.target.value as 'employee' | 'freelance' })}
                       className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500"
                     >
-                      <option value="employee">Employee</option>
-                      <option value="freelance">Freelance</option>
+                      <option value="employee">{t('drivers.employee') || 'Employee'}</option>
+                      <option value="freelance">{t('drivers.freelance') || 'Freelance'}</option>
                     </select>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Hire Date
+                      {t('drivers.hireDate') || 'Hire Date'}
                     </label>
                     <input
                       type="date"
@@ -480,7 +482,7 @@ export default function DriversManagement() {
                     disabled={saving}
                     className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50"
                   >
-                    {saving ? 'Saving...' : editingDriver ? 'Update Driver' : 'Create Driver'}
+                    {saving ? (t('common.saving') || 'Saving...') : editingDriver ? (t('drivers.updateDriver') || 'Update Driver') : (t('drivers.createDriver') || 'Create Driver')}
                   </button>
                   <button
                     type="button"
@@ -491,13 +493,13 @@ export default function DriversManagement() {
                     }}
                     className="px-4 py-2 border border-gray-300 rounded-lg font-medium text-gray-700 hover:bg-gray-50"
                   >
-                    Cancel
+                    {t('common.cancel')}
                   </button>
                 </div>
 
                 {editingDriver && (
                   <p className="text-xs text-gray-500 text-center">
-                    Note: To change email/password, the driver must update via their own account
+                    {t('drivers.emailNote') || 'Note: To change email/password, the driver must update via their own account'}
                   </p>
                 )}
               </form>
