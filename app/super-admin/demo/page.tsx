@@ -1079,33 +1079,7 @@ export default function SuperAdminDemoPage() {
       setDemoProgress(`✅ Added ${expenseCount} expenses`)
       await new Promise(resolve => setTimeout(resolve, 300))
 
-      // Step 9: Create cash confirmations
-      setDemoProgress('💰 Creating cash confirmations...')
-      let cashCount = 0
-      for (const tourId of createdTourIds.slice(0, Math.min(createdTourIds.length, 5))) {
-        const { data: tour } = await supabase.from('tours').select('guide_id, brand_id, price, guest_count').eq('id', tourId).single()
-        if (tour) {
-          const expected = (tour.price || 100) * (tour.guest_count || 1)
-          const actual = expected + Math.floor(Math.random() * 20) - 10
-          await supabase.from('cash_confirmations').insert({
-            tour_id: tourId,
-            brand_id: tour.brand_id,
-            guide_id: tour.guide_id,
-            cash_expected: expected,
-            cash_actual: actual,
-            ticket_count_expected: tour.guest_count || 1,
-            ticket_count_actual: tour.guest_count || 1,
-            status: 'pending',
-            guide_notes: 'Demo cash confirmation',
-            has_discrepancy: expected !== actual
-          })
-          cashCount++
-        }
-      }
-      setDemoProgress(`✅ Created ${cashCount} cash confirmations`)
-      await new Promise(resolve => setTimeout(resolve, 300))
-
-      // Step 10: Create payments
+      // Step 9: Create payments (verified working)
       setDemoProgress('💳 Creating payments...')
       let paymentCount = 0
       for (const tourId of createdTourIds.slice(0, Math.min(createdTourIds.length, 5))) {
@@ -1126,70 +1100,6 @@ export default function SuperAdminDemoPage() {
         }
       }
       setDemoProgress(`✅ Created ${paymentCount} payments`)
-      await new Promise(resolve => setTimeout(resolve, 300))
-
-      // Step 11: Create checklist completions
-      setDemoProgress('📋 Creating checklist completions...')
-      let checklistCount = 0
-      for (const tourId of createdTourIds.slice(0, Math.min(createdTourIds.length, 5))) {
-        const { data: tour } = await supabase.from('tours').select('guide_id, brand_id').eq('id', tourId).single()
-        if (tour) {
-          // Create a dummy template_id (using tour_id as placeholder)
-          await supabase.from('checklist_completions').insert({
-            tour_id: tourId,
-            brand_id: tour.brand_id,
-            guide_id: tour.guide_id,
-            template_id: tourId,  // Using tour_id as placeholder
-            stage: 'pre_tour',
-            completed_at: now.toISOString(),
-            is_confirmed: true,
-            notes: 'All checks complete'
-          })
-          checklistCount++
-        }
-      }
-      setDemoProgress(`✅ Created ${checklistCount} checklist completions`)
-      await new Promise(resolve => setTimeout(resolve, 300))
-
-      // Step 12: Create reservation manifest entries
-      setDemoProgress('📝 Creating reservation manifest...')
-      let manifestCount = 0
-      for (const tourId of createdTourIds.slice(0, Math.min(createdTourIds.length, 5))) {
-        const { data: tour } = await supabase.from('tours').select('brand_id, name, start_time, guest_count').eq('id', tourId).single()
-        if (tour) {
-          const numEntries = Math.min(tour.guest_count || 3, 5)
-          for (let i = 0; i < numEntries; i++) {
-            await supabase.from('reservation_manifest').insert({
-              tour_id: tourId,
-              brand_id: tour.brand_id,
-              booking_reference: `BK-${tourId.substring(0, 8).toUpperCase()}-${i + 1}`,
-              booking_platform: ['direct', 'expedia', 'viator', 'tripadvisor'][i % 4],
-              adult_pax: Math.floor(Math.random() * 2) + 1,
-              child_pax: Math.floor(Math.random() * 2),
-              infant_pax: 0,
-              total_pax: Math.floor(Math.random() * 3) + 1,
-              hotel_name: ['Grand Velas', 'Secrets Maroma', 'Hyatt Ziva'][i % 3],
-              room_number: String(100 + i),
-              language_code: 'en',
-              pickup_time: tour.start_time || '08:00',
-              rep_name: 'Demo Rep',
-              agency_name: 'Demo Agency',
-              primary_contact_name: `Guest ${i + 1}`,
-              contact_phone: `+1-555-${1000 + i}`,
-              contact_email: `guest${i}@email.com`,
-              dietary_restrictions: [],
-              accessibility_needs: [],
-              special_requests: i === 0 ? 'Anniversary celebration' : null,
-              pickup_location: 'Hotel lobby',
-              checked_in: false,
-              no_show: false,
-              notes: 'Demo manifest entry'
-            })
-            manifestCount++
-          }
-        }
-      }
-      setDemoProgress(`✅ Created ${manifestCount} manifest entries`)
       await new Promise(resolve => setTimeout(resolve, 300))
 
       // Step 13: Create guest feedback
@@ -1257,7 +1167,7 @@ export default function SuperAdminDemoPage() {
       setDemoProgress('')
       setDemoMessage({ 
         type: 'success', 
-        text: `✅ V2 Live Demo generated!\n\n${createdTourIds.length} tours, ${guestCount} guests, ${stopCount} pickups, ${checkinCount} check-ins, ${driverCheckinCount} driver inspections, ${incidentCount} incidents, ${expenseCount} expenses, ${cashCount} cash confirmations, ${paymentCount} payments, ${checklistCount} checklists, ${manifestCount} manifest entries, ${feedbackCount} reviews, ${activityCount} activities, ${vehicleIds.length} vehicles`
+        text: `✅ V2 Live Demo generated!\n\n${createdTourIds.length} tours, ${guestCount} guests, ${stopCount} pickups, ${checkinCount} check-ins, ${driverCheckinCount} driver inspections, ${incidentCount} incidents, ${expenseCount} expenses, ${paymentCount} payments, ${feedbackCount} reviews, ${activityCount} activities, ${vehicleIds.length} vehicles`
       })
       setTimeout(() => loadDemoStats(), 2000)
 
