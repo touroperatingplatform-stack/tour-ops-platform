@@ -4,10 +4,13 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { supabase } from '@/lib/supabase/client'
+import LanguageToggle from '@/components/LanguageToggle'
+import { useTranslation } from '@/lib/i18n/useTranslation'
 
 export default function TopNav() {
   const pathname = usePathname()
   const [showMenu, setShowMenu] = useState(false)
+  const { t } = useTranslation()
 
   async function handleSignOut() {
     await supabase.auth.signOut()
@@ -16,10 +19,13 @@ export default function TopNav() {
 
   // Get page title based on path
   const getPageTitle = () => {
-    if (pathname === '/operations') return 'Dashboard'
-    if (pathname.includes('/vehicles')) return 'Vehicle Fleet'
-    if (pathname.includes('/schedule')) return 'Schedule'
-    return 'Operations'
+    if (pathname === '/operations') return t('dashboard.title')
+    if (pathname.includes('/vehicles')) return t('vehicles.title')
+    if (pathname.includes('/schedule')) return t('schedule.title')
+    if (pathname.includes('/incidents')) return t('incident.title')
+    if (pathname.includes('/drivers')) return t('drivers.title')
+    if (pathname.includes('/reports')) return t('reports.title')
+    return t('nav.dashboard')
   }
 
   return (
@@ -39,17 +45,20 @@ export default function TopNav() {
             {getPageTitle()}
           </h1>
 
-          {/* Right - User Menu */}
-          <div className="relative">
-            <button
-              onClick={() => setShowMenu(!showMenu)}
-              className="flex items-center gap-2 text-gray-600 hover:text-gray-900"
-            >
-              <span className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
-                👤
-              </span>
-              <span className="hidden sm:block text-sm font-medium">Menu</span>
-            </button>
+          {/* Right - Language Toggle + User Menu */}
+          <div className="flex items-center gap-3">
+            <LanguageToggle />
+            
+            <div className="relative">
+              <button
+                onClick={() => setShowMenu(!showMenu)}
+                className="flex items-center gap-2 text-gray-600 hover:text-gray-900"
+              >
+                <span className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
+                  👤
+                </span>
+                <span className="hidden sm:block text-sm font-medium">{t('nav.menu')}</span>
+              </button>
 
             {/* Dropdown */}
             {showMenu && (
