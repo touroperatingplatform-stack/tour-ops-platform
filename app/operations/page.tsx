@@ -139,7 +139,6 @@ export default function OperationsDashboard() {
     if (vehiclesData) {
       const formattedVehicles = vehiclesData.map((v: any) => ({
         id: v.id,
-        make: v.model.split(' ')[0] || '',
         model: v.model,
         plate_number: v.plate_number,
         status: v.status === 'active' ? 'available' : v.status,
@@ -345,7 +344,7 @@ export default function OperationsDashboard() {
                 <tbody className="divide-y divide-gray-100">
                   {vehicles.map((vehicle) => (
                     <tr key={vehicle.id} className="hover:bg-gray-50">
-                      <td className="px-3 py-2 font-medium text-gray-900">{vehicle.make} {vehicle.model}</td>
+                      <td className="px-3 py-2 font-medium text-gray-900">{vehicle.model}</td>
                       <td className="px-3 py-2 text-gray-600">{vehicle.plate_number}</td>
                       <td className="px-3 py-2">{getVehicleStatusBadge(vehicle.status)}</td>
                       <td className="px-3 py-2 text-right text-gray-600">{vehicle.capacity}</td>
