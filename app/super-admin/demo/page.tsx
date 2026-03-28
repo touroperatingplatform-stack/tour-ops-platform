@@ -74,8 +74,9 @@ export default function SuperAdminDemoPage() {
       const todayTourIds = todaysTours?.map(t => t.id) || []
 
       // Delete in correct order (FK constraints)
+      // guest_feedback must be deleted FIRST (references guests and tours)
       const tables = [
-        'guest_feedback',
+        'guest_feedback',      // Delete first - FK to guests and tours
         'cash_confirmations',
         'payments',
         'checklist_completions',
@@ -84,7 +85,7 @@ export default function SuperAdminDemoPage() {
         'incidents',
         'guide_checkins',
         'pickup_stops',
-        'guests',
+        'guests',              // Delete after guest_feedback
         'external_bookings',
         'activity_feed',
         'push_notifications'
@@ -93,7 +94,12 @@ export default function SuperAdminDemoPage() {
       let deleted = 0
       for (const table of tables) {
         try {
-          const { data, error } = await supabase.from(table).delete().neq('id', '00000000-0000-0000-0000-000000000000')
+          // For guest_feedback, delete ALL records (no filter) since it references guests/tours
+          const query = table === 'guest_feedback' 
+            ? supabase.from(table).delete()
+            : supabase.from(table).delete().neq('id', '00000000-0000-0000-0000-000000000000')
+          
+          const { data, error } = await query
           const recordCount = (data as unknown as any[])?.length || 0
           deleted += recordCount
           if (error) console.error(`Failed to clear ${table}:`, error)
@@ -102,12 +108,15 @@ export default function SuperAdminDemoPage() {
         }
       }
 
-      // Delete today's tours
-      if (todayTourIds.length > 0) {
+      // Delete ALL tours (not just today's) to avoid FK issues
+      const { data: allTours } = await supabase.from('tours').select('id')
+      const allTourIds = allTours?.map(t => t.id) || []
+      
+      if (allTourIds.length > 0) {
         const { data: tourData, error: tourError } = await supabase
           .from('tours')
           .delete()
-          .in('id', todayTourIds)
+          .in('id', allTourIds)
         
         const tourCount = (tourData as unknown as any[])?.length || 0
         deleted += tourCount
