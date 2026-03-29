@@ -12,7 +12,7 @@ interface Expense {
   description: string
   receipt_url: string | null
   status: 'pending' | 'approved' | 'rejected'
-  submitted_at: string
+  created_at: string
 }
 
 export default function ExpensesPage() {
@@ -26,13 +26,13 @@ export default function ExpensesPage() {
 
   async function loadExpenses() {
     const { data } = await supabase
-      .from('expenses')
+      .from('tour_expenses')
       .select(`
-        id, amount, category, description, receipt_url, status, submitted_at,
+        id, amount, category, description, receipt_url, status, created_at,
         guide:guide_id (first_name, last_name),
         tour:tour_id (name)
       `)
-      .order('submitted_at', { ascending: false })
+      .order('created_at', { ascending: false })
 
     if (data) {
       const formatted: Expense[] = data.map((e: any) => ({
@@ -44,7 +44,7 @@ export default function ExpensesPage() {
         description: e.description,
         receipt_url: e.receipt_url,
         status: e.status,
-        submitted_at: e.submitted_at
+        created_at: e.created_at
       }))
       setExpenses(formatted)
     }
@@ -53,7 +53,7 @@ export default function ExpensesPage() {
 
   async function updateStatus(id: string, newStatus: 'approved' | 'rejected') {
     await supabase
-      .from('expenses')
+      .from('tour_expenses')
       .update({ status: newStatus })
       .eq('id', id)
     
