@@ -7,6 +7,7 @@ import { supabase } from '@/lib/supabase/client'
 import RoleGuard from '@/lib/auth/RoleGuard'
 import AdminNav from '@/components/navigation/AdminNav'
 import { useTranslation } from '@/lib/i18n/useTranslation'
+import { getLocalDate } from '@/lib/timezone'
 import TourDetailsModal from '../components/TourDetailsModal'
 import TourAddModal from '../components/TourAddModal'
 
@@ -68,7 +69,7 @@ export default function OperationsSchedulePage() {
   const [drivers, setDrivers] = useState<Driver[]>([])
   const [vehicles, setVehicles] = useState<Vehicle[]>([])
   const [loading, setLoading] = useState(true)
-  const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0])
+  const [selectedDate, setSelectedDate] = useState<string>(getLocalDate())
   const [filterStatus, setFilterStatus] = useState<'all' | 'scheduled' | 'in_progress' | 'completed' | 'delayed'>('all')
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedTour, setSelectedTour] = useState<Tour | null>(null)
