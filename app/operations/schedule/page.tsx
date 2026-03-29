@@ -106,7 +106,6 @@ export default function OperationsSchedulePage() {
           vehicle_id,
           pickup_location,
           dropoff_location,
-          notes,
           price,
           guide:guide_id (
             id,
