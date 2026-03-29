@@ -196,18 +196,26 @@ export default function OperationsReportsPage() {
 
   async function loadGuidePerformance(dateFilters: { start: string; end: string }) {
     // Load guide check-ins (without nested join)
-    const { data: checkins } = await supabase
+    const { data: checkins, error: checkinsError } = await supabase
       .from('guide_checkins')
       .select('*')
       .gte('checked_in_at', dateFilters.start)
       .lte('checked_in_at', dateFilters.end)
 
+    if (checkinsError) {
+      console.error('Error loading guide checkins:', checkinsError)
+    }
+
     // Load cash confirmations (without nested join)
-    const { data: confirmations } = await supabase
+    const { data: confirmations, error: confirmationsError } = await supabase
       .from('cash_confirmations')
       .select('*')
       .gte('created_at', dateFilters.start)
       .lte('created_at', dateFilters.end)
+
+    if (confirmationsError) {
+      console.error('Error loading cash confirmations:', confirmationsError)
+    }
 
     // Load tours
     const { data: tours } = await supabase

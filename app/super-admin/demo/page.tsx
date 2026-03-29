@@ -430,7 +430,11 @@ export default function SuperAdminDemoPage() {
       setDemoProgress('📍 Simulating guide check-ins...')
       let checkinCount = 0
       for (const tourId of createdTourIds.slice(0, Math.min(createdTourIds.length, 5))) {
-        const { data: tour } = await supabase.from('tours').select('guide_id, brand_id, start_time').eq('id', tourId).single()
+        const { data: tour, error: tourError } = await supabase.from('tours').select('guide_id, brand_id, start_time').eq('id', tourId).single()
+        if (tourError) {
+          console.error('Error fetching tour for checkin:', tourError)
+          continue
+        }
         if (tour) {
           const startTime = tour.start_time || '08:00'
           const [hours, minutes] = startTime.split(':').map(Number)
@@ -439,7 +443,7 @@ export default function SuperAdminDemoPage() {
           
           const minutesEarly = Math.floor(Math.random() * 15) - 5
           
-          await supabase.from('guide_checkins').insert({
+          const { error: insertError } = await supabase.from('guide_checkins').insert({
             tour_id: tourId,
             brand_id: tour.brand_id,
             guide_id: tour.guide_id,
@@ -454,7 +458,12 @@ export default function SuperAdminDemoPage() {
             notes: minutesEarly >= 0 ? 'Arrived early' : 'Slightly delayed due to traffic',
             selfie_url: 'https://cloudinary.com/dorhbpsxy/tour-ops/demo-selfie.jpg'
           })
-          checkinCount++
+          
+          if (insertError) {
+            console.error('Failed to create guide checkin:', insertError)
+          } else {
+            checkinCount++
+          }
         }
       }
 
@@ -465,11 +474,16 @@ export default function SuperAdminDemoPage() {
       setDemoProgress('🚗 Creating driver vehicle inspections...')
       let driverCheckinCount = 0
       for (const tourId of createdTourIds.slice(0, Math.min(createdTourIds.length, 5))) {
-        const { data: tour } = await supabase
+        const { data: tour, error: tourError } = await supabase
           .from('tours')
           .select('driver_id, vehicle_id, start_time')
           .eq('id', tourId)
           .single()
+        
+        if (tourError) {
+          console.error('Error fetching tour for driver checkin:', tourError)
+          continue
+        }
         
         if (tour?.driver_id) {
           const startTime = tour.start_time || '08:00'
@@ -481,7 +495,7 @@ export default function SuperAdminDemoPage() {
           const fuelLevels = ['full', '3/4', '1/2', '1/4', 'empty']
           const conditions = ['good', 'good', 'good', 'fair', 'poor']
           
-          await supabase.from('driver_checkins').insert({
+          const { error: insertError } = await supabase.from('driver_checkins').insert({
             tour_id: tourId,
             driver_id: tour.driver_id,
             vehicle_id: tour.vehicle_id,
@@ -502,7 +516,12 @@ export default function SuperAdminDemoPage() {
               fire_extinguisher: 'ok'
             }
           })
-          driverCheckinCount++
+          
+          if (insertError) {
+            console.error('Failed to create driver checkin:', insertError)
+          } else {
+            driverCheckinCount++
+          }
         }
       }
 
