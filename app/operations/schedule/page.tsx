@@ -338,13 +338,13 @@ export default function OperationsSchedulePage() {
                   onClick={() => setSidebarTab('drivers')}
                   className={`flex-1 px-2 py-1 text-xs font-medium rounded ${sidebarTab === 'drivers' ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:bg-gray-100'}`}
                 >
-                  👤 {t('nav.drivers')} ({drivers.filter(d => d.available).length})
+                  👤 {t('nav.drivers')} ({drivers.length})
                 </button>
                 <button
                   onClick={() => setSidebarTab('vehicles')}
                   className={`flex-1 px-2 py-1 text-xs font-medium rounded ${sidebarTab === 'vehicles' ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:bg-gray-100'}`}
                 >
-                  🚌 {t('nav.vehicles')} ({vehicles.filter(v => v.available).length})
+                  🚌 {t('nav.vehicles')} ({vehicles.length})
                 </button>
               </div>
             </div>
