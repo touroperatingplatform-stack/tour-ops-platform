@@ -85,24 +85,31 @@ export default function DriverAssignment({ onAssignmentChange }: DriverAssignmen
           name,
           tour_date,
           start_time,
-          driver_id,
-          driver_profiles!tours_driver_id_fkey (
-            profile_id,
-            profiles (
-              first_name,
-              last_name
-            )
-          )
+          driver_id
         `)
         .eq('tour_date', selectedDate)
         .neq('status', 'cancelled')
         .order('start_time')
 
+      // Get driver IDs and fetch names
+      const driverIds = toursData?.map(t => t.driver_id).filter(Boolean) || []
+      let driverNames: Record<string, string> = {}
+      
+      if (driverIds.length > 0) {
+        const { data: driversData } = await supabase
+          .from('profiles')
+          .select('id, first_name, last_name')
+          .in('id', driverIds)
+        
+        driverNames = {}
+        driversData?.forEach(d => {
+          driverNames[d.id] = `${d.first_name || ''} ${d.last_name || ''}`.trim()
+        })
+      }
+
       const formattedTours: Tour[] = (toursData || []).map((t: any) => ({
         ...t,
-        driver_name: t.driver_profiles?.profiles 
-          ? `${t.driver_profiles.profiles.first_name} ${t.driver_profiles.profiles.last_name}`
-          : (t.driver_id ? 'Assigned' : undefined)
+        driver_name: driverNames[t.driver_id] || (t.driver_id ? 'Assigned' : undefined)
       }))
       
       // Deduplicate tours by id
