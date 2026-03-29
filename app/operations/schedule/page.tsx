@@ -137,7 +137,7 @@ export default function OperationsSchedulePage() {
       const { data: checkinsData } = await supabase
         .from('driver_checkins')
         .select('tour_id, driver_id')
-        .eq('tour_id', toursData?.map(t => t.id) || ['00000000-0000-0000-0000-000000000000'])
+        .in('tour_id', toursData?.map(t => t.id) || ['00000000-0000-0000-0000-000000000000'])
 
       const checkedInTourIds = new Set(checkinsData?.map(c => c.tour_id) || [])
 
