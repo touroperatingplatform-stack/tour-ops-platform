@@ -668,9 +668,12 @@ export default function SuperAdminDemoPage() {
     try {
       const today = getLocalDate()
       const now = new Date()
-      const currentHour = now.getHours()
-      const currentMinute = now.getMinutes()
-      const currentTimeMinutes = currentHour * 60 + currentMinute
+      
+      // Use simulated demo time of 14:00 (2 PM) for realistic 24-hour operation demo
+      // This ensures a mix of completed, in-progress, and scheduled tours regardless of actual time
+      const demoHour = 14
+      const demoMinute = 0
+      const currentTimeMinutes = demoHour * 60 + demoMinute
 
       setDemoProgress('🔍 Fetching guides, drivers, companies...')
       
