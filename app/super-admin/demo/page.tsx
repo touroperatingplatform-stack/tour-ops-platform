@@ -700,15 +700,15 @@ export default function SuperAdminDemoPage() {
       // Step 0: Setup drivers
       setDemoProgress('🚗 Setting up test drivers...')
       const testDrivers = [
-        { email: 'felipe@lifeoperations.com', type: 'freelance', license: 'LIC-FEL-001', expiry: '2027-12-31' },
-        { email: 'driver1@lifeoperations.com', type: 'employee', license: 'LIC-DRV1-001', expiry: '2027-06-30' },
-        { email: 'driver2@lifeoperations.com', type: 'employee', license: 'LIC-DRV2-001', expiry: '2027-08-15' },
-        { email: 'driver3@lifeoperations.com', type: 'employee', license: 'LIC-DRV3-001', expiry: '2027-09-20' }
+        { email: 'felipe@lifeoperations.com', type: 'freelance', license: 'LIC-FEL-001', expiry: '2027-12-31', first_name: 'Felipe', last_name: 'Driver' },
+        { email: 'driver1@lifeoperations.com', type: 'employee', license: 'LIC-DRV1-001', expiry: '2027-06-30', first_name: 'Carlos', last_name: 'Driver One' },
+        { email: 'driver2@lifeoperations.com', type: 'employee', license: 'LIC-DRV2-001', expiry: '2027-08-15', first_name: 'Miguel', last_name: 'Driver Two' },
+        { email: 'driver3@lifeoperations.com', type: 'employee', license: 'LIC-DRV3-001', expiry: '2027-09-20', first_name: 'Jose', last_name: 'Driver Three' }
       ]
 
       let driverSetupCount = 0
       for (const driver of testDrivers) {
-        await supabase.from('profiles').update({ role: 'driver' }).eq('email', driver.email)
+        await supabase.from('profiles').update({ role: 'driver', first_name: driver.first_name, last_name: driver.last_name }).eq('email', driver.email)
         const { data: profile } = await supabase.from('profiles').select('id').eq('email', driver.email).single()
         if (profile) {
           await supabase.from('driver_profiles').upsert({
