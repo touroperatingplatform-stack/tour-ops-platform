@@ -82,7 +82,7 @@ export default function OperationsVehiclesPage() {
 
       setVehicles(uniqueVehicles)
 
-      // Count vehicles on tour today
+      // Count vehicles on tour today (unique vehicles, not tour count)
       const today = new Date().toISOString().split('T')[0]
       const { data: toursData } = await supabase
         .from('tours')
@@ -91,7 +91,7 @@ export default function OperationsVehiclesPage() {
         .neq('status', 'cancelled')
         .not('vehicle_id', 'is', null)
 
-      const onTourCount = toursData?.length || 0
+      const onTourCount = new Set(toursData?.map(t => t.vehicle_id) || []).size
 
       // Calculate stats
       const stats: Stats = {
