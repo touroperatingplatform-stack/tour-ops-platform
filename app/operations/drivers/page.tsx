@@ -334,7 +334,9 @@ export default function DriversManagement() {
           {/* Driver Assignment */}
           <div className="bg-white rounded-xl border border-gray-200 p-6 mb-8">
             <h2 className="font-semibold text-gray-900 mb-4">{t('drivers.assignToTours') || 'Assign Drivers to Tours'}</h2>
-            <DriverAssignment onAssignmentChange={() => {}} />
+            <div className="max-h-[400px] overflow-y-auto">
+              <DriverAssignment onAssignmentChange={() => {}} />
+            </div>
           </div>
 
           {/* Drivers Table */}
