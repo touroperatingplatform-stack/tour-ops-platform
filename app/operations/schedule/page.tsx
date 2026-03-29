@@ -203,11 +203,11 @@ export default function OperationsSchedulePage() {
       })
       setDrivers(Array.from(driverMap.values()))
 
-      // Load available vehicles
+      // Load vehicles (all, not just available - for assignment sidebar)
       const { data: vehiclesData } = await supabase
         .from('vehicles')
         .select('*')
-        .eq('status', 'available')
+        .limit(50)
 
       const formattedVehicles: Vehicle[] = (vehiclesData || []).map((v: any) => ({
         id: v.id,
