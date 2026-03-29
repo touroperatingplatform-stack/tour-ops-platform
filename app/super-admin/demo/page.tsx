@@ -428,13 +428,16 @@ export default function SuperAdminDemoPage() {
 
       // Step 5: Create guide check-ins
       setDemoProgress('📍 Simulating guide check-ins...')
+      console.log('V2 DEBUG: Starting guide check-in creation, tours:', createdTourIds.length)
       let checkinCount = 0
       for (const tourId of createdTourIds.slice(0, Math.min(createdTourIds.length, 5))) {
+        console.log('V2 DEBUG: Creating check-in for tour:', tourId)
         const { data: tour, error: tourError } = await supabase.from('tours').select('guide_id, brand_id, start_time').eq('id', tourId).single()
         if (tourError) {
-          console.error('Error fetching tour for checkin:', tourError)
+          console.error('V2 DEBUG: Error fetching tour for checkin:', tourError)
           continue
         }
+        console.log('V2 DEBUG: Tour data:', tour)
         if (tour) {
           const startTime = tour.start_time || '08:00'
           const [hours, minutes] = startTime.split(':').map(Number)
@@ -442,6 +445,8 @@ export default function SuperAdminDemoPage() {
           checkinTime.setHours(hours, minutes - 20, 0)
           
           const minutesEarly = Math.floor(Math.random() * 15) - 5
+          
+          console.log('V2 DEBUG: Inserting check-in with guide_id:', tour.guide_id, 'brand_id:', tour.brand_id)
           
           const { error: insertError } = await supabase.from('guide_checkins').insert({
             tour_id: tourId,
@@ -460,8 +465,9 @@ export default function SuperAdminDemoPage() {
           })
           
           if (insertError) {
-            console.error('Failed to create guide checkin:', insertError)
+            console.error('V2 DEBUG: Failed to create guide checkin:', insertError)
           } else {
+            console.log('V2 DEBUG: Check-in created successfully')
             checkinCount++
           }
         }
