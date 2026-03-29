@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase/client'
 import { useTranslation } from '@/lib/i18n/useTranslation'
+import { getLocalDate } from '@/lib/timezone'
 
 interface Driver {
   id: string
@@ -32,17 +33,7 @@ export default function DriverAssignment({ onAssignmentChange }: DriverAssignmen
   const [saving, setSaving] = useState<string | null>(null)
   const [drivers, setDrivers] = useState<Driver[]>([])
   const [tours, setTours] = useState<Tour[]>([])
-  // Get date string in Cancun timezone
-  const getCancunDate = () => {
-    const now = new Date()
-    const cancunTime = new Date(now.toLocaleString('en-US', { timeZone: 'America/Cancun' }))
-    const year = cancunTime.getFullYear()
-    const month = String(cancunTime.getMonth() + 1).padStart(2, '0')
-    const day = String(cancunTime.getDate()).padStart(2, '0')
-    return `${year}-${month}-${day}`
-  }
-  
-  const [selectedDate, setSelectedDate] = useState(getCancunDate())
+  const [selectedDate, setSelectedDate] = useState(getLocalDate())
 
   useEffect(() => {
     loadData()
@@ -166,7 +157,7 @@ export default function DriverAssignment({ onAssignmentChange }: DriverAssignmen
         <div>
           <h2 className="font-semibold text-gray-900">{t('drivers.assignments') || 'Asignación de Choferes'}</h2>
           <p className="text-sm text-gray-500">
-            {new Date(selectedDate + 'T00:00:00').toLocaleDateString('es-MX', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'America/Cancun' })}
+            {new Date(selectedDate + 'T00:00:00').toLocaleDateString('es-MX', { weekday: 'short', day: 'numeric', month: 'short' })}
           </p>
         </div>
         <input

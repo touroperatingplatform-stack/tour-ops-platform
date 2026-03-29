@@ -186,6 +186,7 @@
     "capacity": "Capacidad",
     "available": "Disponible",
     "inUse": "En Uso",
+    "in_use": "En Tour",
     "maintenance": "Mantenimiento",
     "vehicle": "Vehículo",
     "addVehicle": "Agregar Vehículo",
