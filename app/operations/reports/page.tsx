@@ -7,13 +7,18 @@ import { supabase } from '@/lib/supabase/client'
 import RoleGuard from '@/lib/auth/RoleGuard'
 import AdminNav from '@/components/navigation/AdminNav'
 import { useTranslation } from '@/lib/i18n/useTranslation'
-import { getLocalDate } from '@/lib/timezone'
+import { getLocalDate, getConfiguredTimezone, DEFAULT_TIMEZONE } from '@/lib/timezone'
 
 export default function OperationsReportsPage() {
   const { t } = useTranslation()
   const [activeTab, setActiveTab] = useState<'tours' | 'vehicles' | 'guides'>('tours')
   const [dateRange, setDateRange] = useState<'today' | 'yesterday' | 'week'>('today')
   const [loading, setLoading] = useState(true)
+  const [timezone, setTimezone] = useState<string>(DEFAULT_TIMEZONE)
+
+  useEffect(() => {
+    getConfiguredTimezone().then(setTimezone)
+  }, [])
 
   // Tour Performance Data
   const [tourStats, setTourStats] = useState({
@@ -50,8 +55,10 @@ export default function OperationsReportsPage() {
   const [guidePerformance, setGuidePerformance] = useState<Array<{ name: string; toursCount: number; onTimePercent: number; cashPending: number }>>([])
 
   useEffect(() => {
-    loadData()
-  }, [dateRange, activeTab])
+    if (timezone) {
+      loadData()
+    }
+  }, [dateRange, activeTab, timezone])
 
   async function loadData() {
     setLoading(true)
@@ -70,15 +77,11 @@ export default function OperationsReportsPage() {
   }
 
   function getDateFilters() {
-    const today = getLocalDate()
+    const today = getLocalDate(timezone)
     
     if (dateRange === 'today') {
       return { start: today, end: today }
     } else if (dateRange === 'yesterday') {
-      const yesterdayDate = new Date()
-      yesterdayDate.setDate(yesterdayDate.getDate() - 1)
-      const yesterday = getLocalDate()
-      // Simple yesterday: subtract 1 day from today's date string
       const [y, m, d] = today.split('-').map(Number)
       const prevDay = new Date(y, m - 1, d - 1)
       const yesterdayStr = `${prevDay.getFullYear()}-${String(prevDay.getMonth() + 1).padStart(2, '0')}-${String(prevDay.getDate()).padStart(2, '0')}`

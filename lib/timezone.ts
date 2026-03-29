@@ -9,6 +9,8 @@
  * @see docs/TIMEZONE-SETTING.md for full documentation
  */
 
+import { useState, useEffect } from 'react'
+
 // Default timezone (Cancun - EST, no DST)
 export const DEFAULT_TIMEZONE = 'America/Cancun'
 
@@ -60,11 +62,41 @@ export function toDateInTimezone(dateStr: string, timezone: string = DEFAULT_TIM
 
 /**
  * Get user's configured timezone from settings
- * This should be called from the backend/supabase side
- * For client-side, pass timezone as prop from server component
+ * @returns Configured timezone string or default
  */
 export async function getConfiguredTimezone(): Promise<string> {
-  // This will be implemented in the settings page
-  // For now, return default
-  return DEFAULT_TIMEZONE
+  if (typeof window === 'undefined') {
+    return DEFAULT_TIMEZONE
+  }
+  
+  try {
+    const { supabase } = await import('@/lib/supabase/client')
+    const { data } = await supabase
+      .from('system_settings')
+      .select('setting_value')
+      .eq('setting_key', 'timezone')
+      .single()
+    
+    return data?.setting_value || DEFAULT_TIMEZONE
+  } catch {
+    return DEFAULT_TIMEZONE
+  }
+}
+
+/**
+ * React hook to get configured timezone
+ * @returns [timezone, loading] tuple
+ */
+export function useConfiguredTimezone() {
+  const [timezone, setTimezone] = useState<string>(DEFAULT_TIMEZONE)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    getConfiguredTimezone().then((tz) => {
+      setTimezone(tz)
+      setLoading(false)
+    })
+  }, [])
+
+  return [timezone, loading] as const
 }
