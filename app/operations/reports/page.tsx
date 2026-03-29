@@ -7,6 +7,7 @@ import { supabase } from '@/lib/supabase/client'
 import RoleGuard from '@/lib/auth/RoleGuard'
 import AdminNav from '@/components/navigation/AdminNav'
 import { useTranslation } from '@/lib/i18n/useTranslation'
+import { getLocalDate } from '@/lib/timezone'
 
 export default function OperationsReportsPage() {
   const { t } = useTranslation()
@@ -69,20 +70,25 @@ export default function OperationsReportsPage() {
   }
 
   function getDateFilters() {
-    const today = new Date()
-    today.setHours(23, 59, 59, 999)
+    const today = getLocalDate()
     
     if (dateRange === 'today') {
-      return { start: today.toISOString().split('T')[0], end: today.toISOString().split('T')[0] }
+      return { start: today, end: today }
     } else if (dateRange === 'yesterday') {
-      const yesterday = new Date(today)
-      yesterday.setDate(yesterday.getDate() - 1)
-      return { start: yesterday.toISOString().split('T')[0], end: yesterday.toISOString().split('T')[0] }
+      const yesterdayDate = new Date()
+      yesterdayDate.setDate(yesterdayDate.getDate() - 1)
+      const yesterday = getLocalDate()
+      // Simple yesterday: subtract 1 day from today's date string
+      const [y, m, d] = today.split('-').map(Number)
+      const prevDay = new Date(y, m - 1, d - 1)
+      const yesterdayStr = `${prevDay.getFullYear()}-${String(prevDay.getMonth() + 1).padStart(2, '0')}-${String(prevDay.getDate()).padStart(2, '0')}`
+      return { start: yesterdayStr, end: yesterdayStr }
     } else {
       // Last 7 days
-      const weekAgo = new Date(today)
-      weekAgo.setDate(weekAgo.getDate() - 7)
-      return { start: weekAgo.toISOString().split('T')[0], end: today.toISOString().split('T')[0] }
+      const [y, m, d] = today.split('-').map(Number)
+      const weekAgo = new Date(y, m - 1, d - 7)
+      const weekAgoStr = `${weekAgo.getFullYear()}-${String(weekAgo.getMonth() + 1).padStart(2, '0')}-${String(weekAgo.getDate()).padStart(2, '0')}`
+      return { start: weekAgoStr, end: today }
     }
   }
 
