@@ -195,29 +195,17 @@ export default function OperationsReportsPage() {
   }
 
   async function loadGuidePerformance(dateFilters: { start: string; end: string }) {
-    // Load guide check-ins
+    // Load guide check-ins (without nested join)
     const { data: checkins } = await supabase
       .from('guide_checkins')
-      .select(`
-        *,
-        guide:guide_id (
-          first_name,
-          last_name
-        )
-      `)
+      .select('*')
       .gte('checked_in_at', dateFilters.start)
       .lte('checked_in_at', dateFilters.end)
 
-    // Load cash confirmations
+    // Load cash confirmations (without nested join)
     const { data: confirmations } = await supabase
       .from('cash_confirmations')
-      .select(`
-        *,
-        guide:guide_id (
-          first_name,
-          last_name
-        )
-      `)
+      .select('*')
       .gte('created_at', dateFilters.start)
       .lte('created_at', dateFilters.end)
 
@@ -227,6 +215,24 @@ export default function OperationsReportsPage() {
       .select('guide_id, status')
       .gte('tour_date', dateFilters.start)
       .lte('tour_date', dateFilters.end)
+
+    // Fetch guide names separately
+    const guideIds = new Set<string>()
+    checkins?.forEach(c => guideIds.add(c.guide_id))
+    confirmations?.forEach(c => guideIds.add(c.guide_id))
+    
+    let guideNames: Record<string, string> = {}
+    if (guideIds.size > 0) {
+      const { data: guidesData } = await supabase
+        .from('profiles')
+        .select('id, first_name, last_name')
+        .in('id', Array.from(guideIds))
+      
+      guideNames = {}
+      guidesData?.forEach(g => {
+        guideNames[g.id] = `${g.first_name || ''} ${g.last_name || ''}`.trim()
+      })
+    }
 
     const guideMap: Record<string, { 
       name: string; 
@@ -241,7 +247,7 @@ export default function OperationsReportsPage() {
     // Process check-ins for punctuality
     checkins?.forEach(c => {
       const guideId = c.guide_id
-      const guideName = c.guide ? `${c.guide.first_name || ''} ${c.guide.last_name || ''}`.trim() : 'Unknown'
+      const guideName = guideNames[guideId] || 'Unknown'
       
       if (!guideMap[guideId]) {
         guideMap[guideId] = { name: guideName, toursCount: 0, onTime: 0, late: 0, cashPending: 0, reconciliationsComplete: 0, discrepancies: 0 }
@@ -258,7 +264,7 @@ export default function OperationsReportsPage() {
     // Process cash confirmations
     confirmations?.forEach(c => {
       const guideId = c.guide_id
-      const guideName = c.guide ? `${c.guide.first_name || ''} ${c.guide.last_name || ''}`.trim() : 'Unknown'
+      const guideName = guideNames[guideId] || 'Unknown'
       
       if (!guideMap[guideId]) {
         guideMap[guideId] = { name: guideName, toursCount: 0, onTime: 0, late: 0, cashPending: 0, reconciliationsComplete: 0, discrepancies: 0 }
