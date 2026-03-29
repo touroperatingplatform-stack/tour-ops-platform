@@ -80,18 +80,18 @@ export default function OperationsReportsPage() {
     const today = getLocalDate(timezone)
     
     if (dateRange === 'today') {
-      return { start: today, end: today }
+      return { start: today, end: today + 'T23:59:59' }
     } else if (dateRange === 'yesterday') {
       const [y, m, d] = today.split('-').map(Number)
       const prevDay = new Date(y, m - 1, d - 1)
       const yesterdayStr = `${prevDay.getFullYear()}-${String(prevDay.getMonth() + 1).padStart(2, '0')}-${String(prevDay.getDate()).padStart(2, '0')}`
-      return { start: yesterdayStr, end: yesterdayStr }
+      return { start: yesterdayStr, end: yesterdayStr + 'T23:59:59' }
     } else {
       // Last 7 days
       const [y, m, d] = today.split('-').map(Number)
       const weekAgo = new Date(y, m - 1, d - 7)
       const weekAgoStr = `${weekAgo.getFullYear()}-${String(weekAgo.getMonth() + 1).padStart(2, '0')}-${String(weekAgo.getDate()).padStart(2, '0')}`
-      return { start: weekAgoStr, end: today }
+      return { start: weekAgoStr, end: today + 'T23:59:59' }
     }
   }
 
