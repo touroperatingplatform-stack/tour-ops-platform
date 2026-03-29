@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase/client'
 import RoleGuard from '@/lib/auth/RoleGuard'
 import AdminNav from '@/components/navigation/AdminNav'
+import { getLocalDate } from '@/lib/timezone'
 
 interface DemoStats {
   tours: number
@@ -63,7 +64,7 @@ export default function SuperAdminDemoPage() {
     setDemoMessage(null)
 
     try {
-      const today = new Date().toISOString().split('T')[0]
+      const today = getLocalDate()
       
       // Get today's tour IDs
       const { data: todaysTours } = await supabase
@@ -665,7 +666,7 @@ export default function SuperAdminDemoPage() {
     setDemoMessage(null)
 
     try {
-      const today = new Date().toISOString().split('T')[0]
+      const today = getLocalDate()
       const now = new Date()
       const currentHour = now.getHours()
       const currentMinute = now.getMinutes()
