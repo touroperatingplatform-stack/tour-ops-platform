@@ -42,20 +42,20 @@ export default function TestLayout({ children }: { children: React.ReactNode }) 
 
   return (
     <div className="h-screen flex flex-col bg-gray-50 overflow-hidden">
-      {/* Top Navigation - DEBUG: Invisible outer, red inner */}
-      <header className="bg-white border-8 border-transparent flex-shrink-0">
-        <div className="border-b-4 border-red-400 px-4 py-3">
+      {/* Top Navigation */}
+      <header className="bg-white border-b flex-shrink-0">
+        <div className="px-4 py-3">
           <div className="flex items-center justify-between px-4 py-3">
-            {/* Logo/Brand - DEBUG: Blue background */}
-            <div className="flex items-center gap-3 border-4 border-blue-400 border-dashed p-2 mx-2">
+            {/* Logo/Brand */}
+            <div className="flex items-center gap-3">
               <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold text-sm">
                 T
               </div>
               <span className="font-bold text-gray-900">{currentPage}</span>
             </div>
 
-            {/* Right side - DEBUG: Purple background */}
-            <div className="flex items-center gap-3 border-4 border-purple-400 border-dashed p-2 mx-2">
+            {/* Right side */}
+            <div className="flex items-center gap-3">
               {/* Language Toggle - Flag Dropdown */}
               <div className="relative">
                 <button 
@@ -71,7 +71,7 @@ export default function TestLayout({ children }: { children: React.ReactNode }) 
                       className="fixed inset-0 z-50"
                       onClick={() => setShowLangMenu(false)}
                     />
-                    <div className="absolute top-10 right-0 bg-white rounded-lg shadow-xl z-50 border-4 border-yellow-400 p-2">
+                    <div className="absolute top-10 right-0 bg-white rounded-lg shadow-xl z-50 p-2">
                       <button 
                         onClick={() => { setLanguage('EN'); setShowLangMenu(false); }}
                         className={`flex items-center gap-2 px-4 py-2 rounded-lg w-full ${language === 'EN' ? 'bg-blue-100' : 'hover:bg-gray-100'}`}
@@ -114,16 +114,16 @@ export default function TestLayout({ children }: { children: React.ReactNode }) 
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 overflow-hidden bg-green-200">
-        <div className="w-full h-full overflow-auto px-10 py-6 border-8 border-transparent">
+      <main className="flex-1 overflow-hidden bg-white">
+        <div className="w-full h-full overflow-auto px-10 py-6">
           <div className="h-full flex flex-col">
             {children}
           </div>
         </div>
       </main>
 
-      {/* Bottom Navigation - DEBUG: Orange border */}
-      <nav className="flex-none bg-white border-t-4 border-orange-400 z-50">
+      {/* Bottom Navigation */}
+      <nav className="flex-none bg-white border-t z-50">
         <div className="flex justify-around items-center px-2 py-2">
           {navItems.map((item) => {
             const active = isActive(item.href)
@@ -131,7 +131,7 @@ export default function TestLayout({ children }: { children: React.ReactNode }) 
               <Link
                 key={item.href}
                 href={item.href}
-                className={`flex flex-col items-center justify-center py-2 px-2 min-w-[48px] border-2 border-dashed border-yellow-400 ${
+                className={`flex flex-col items-center justify-center py-2 px-2 min-w-[48px] ${
                   active ? 'text-blue-600' : 'text-gray-500'
                 }`}
               >
@@ -142,7 +142,7 @@ export default function TestLayout({ children }: { children: React.ReactNode }) 
           })}
           <button
             onClick={() => setShowMore(true)}
-            className="flex flex-col items-center justify-center py-2 px-2 min-w-[48px] text-gray-500 border-2 border-dashed border-teal-400"
+            className="flex flex-col items-center justify-center py-2 px-2 min-w-[48px] text-gray-500"
           >
             <span className="text-xl mb-1">☰</span>
             <span className="text-xs">More</span>
@@ -150,31 +150,31 @@ export default function TestLayout({ children }: { children: React.ReactNode }) 
         </div>
       </nav>
 
-      {/* More Menu - Full screen white bg, pink border, items fill space */}
+      {/* More Menu */}
       {showMore && (
         <>
           <div 
             className="fixed inset-0 bg-white z-50"
             onClick={() => setShowMore(false)}
           />
-          <div className="fixed inset-4 bg-white rounded-2xl shadow-2xl z-50 border-8 border-pink-400 flex flex-col">
-            <div className="p-4 border-8 border-transparent flex flex-col h-full">
-              <div className="flex items-center justify-center mb-4 border-2 border-dashed border-cyan-400 p-4">
+          <div className="fixed inset-4 bg-white rounded-2xl shadow-2xl z-50 flex flex-col">
+            <div className="p-4 flex flex-col h-full">
+              <div className="flex items-center justify-center mb-4 p-4">
                 <span className="font-bold text-2xl">Menu</span>
                 <button 
                   onClick={() => setShowMore(false)}
-                  className="absolute right-10 p-4 hover:bg-gray-100 rounded-lg border-2 border-dashed border-red-400"
+                  className="absolute right-10 p-4 hover:bg-gray-100 rounded-lg"
                 >
                   <span className="text-2xl">✕</span>
                 </button>
               </div>
-              <div className="flex-1 grid grid-cols-3 grid-rows-3 gap-4 border-2 border-dashed border-indigo-400 p-2">
+              <div className="flex-1 grid grid-cols-3 grid-rows-3 gap-4 p-2">
                 {moreItems.map((item) => (
                   <Link
                     key={item.href}
                     href={item.href}
                     onClick={() => setShowMore(false)}
-                    className="flex flex-col items-center justify-center gap-2 p-4 rounded-xl text-gray-600 hover:bg-gray-50 border border-dashed border-gray-300 bg-gray-50 h-full"
+                    className="flex flex-col items-center justify-center gap-2 p-4 rounded-xl text-gray-600 hover:bg-gray-50 bg-gray-50 h-full"
                   >
                     <span className="text-3xl">{item.icon}</span>
                     <span className="text-sm font-medium">{item.label}</span>
@@ -186,15 +186,15 @@ export default function TestLayout({ children }: { children: React.ReactNode }) 
         </>
       )}
 
-      {/* User Menu - Centered with invisible border */}
+      {/* User Menu */}
       {showUserMenu && (
         <>
           <div 
             className="fixed inset-0 z-50"
             onClick={() => setShowUserMenu(false)}
           />
-          <div className="fixed top-20 right-8 w-64 bg-white rounded-2xl shadow-2xl z-50 border-4 border-teal-400">
-            <div className="p-2 border-8 border-transparent">
+          <div className="fixed top-20 right-8 w-64 bg-white rounded-2xl shadow-2xl z-50">
+            <div className="p-2">
               <div className="border-b pb-3 mb-3">
                 <div className="flex flex-col items-center gap-3 p-2">
                   <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white">
