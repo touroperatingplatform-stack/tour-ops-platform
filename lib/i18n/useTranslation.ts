@@ -14,6 +14,23 @@ function notifyListeners() {
   listeners.forEach(fn => fn())
 }
 
+// Load translations immediately
+async function loadTranslations(locale: Locale) {
+  try {
+    const response = await fetch(`/locales/${locale}.json`)
+    translations = await response.json()
+    loaded = true
+    notifyListeners()
+  } catch (error) {
+    console.error('Failed to load translations:', error)
+    loaded = true
+    notifyListeners()
+  }
+}
+
+// Initial load
+loadTranslations('en')
+
 export function useTranslation() {
   const [, forceUpdate] = useState({})
 
@@ -38,18 +55,6 @@ export function useTranslation() {
     localStorage.setItem('locale', newLocale)
     loadTranslations(newLocale)
     notifyListeners()
-  }
-
-  async function loadTranslations(locale: Locale) {
-    try {
-      const response = await fetch(`/locales/${locale}.json`)
-      translations = await response.json()
-      loaded = true
-      notifyListeners()
-    } catch (error) {
-      console.error('Failed to load translations:', error)
-      loaded = true
-    }
   }
 
   function t(key: string): string {
