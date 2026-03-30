@@ -20,6 +20,14 @@ interface DemoStats {
   vehicles: number
 }
 
+interface DemoLogEntry {
+  step: string
+  status: 'success' | 'error' | 'skipped'
+  count: number
+  message: string
+  error?: string
+}
+
 export default function SuperAdminDemoPage() {
   const [demoLoading, setDemoLoading] = useState(false)
   const [demoStats, setDemoStats] = useState<DemoStats>({
@@ -27,6 +35,8 @@ export default function SuperAdminDemoPage() {
   })
   const [demoMessage, setDemoMessage] = useState<{type: 'success' | 'error', text: string} | null>(null)
   const [demoProgress, setDemoProgress] = useState('')
+  const [demoLog, setDemoLog] = useState<DemoLogEntry[]>([])
+  const [showLog, setShowLog] = useState(false)
 
   useEffect(() => {
     loadDemoStats()
@@ -682,6 +692,10 @@ export default function SuperAdminDemoPage() {
     }
   }
 
+  function addLogEntry(step: string, status: 'success' | 'error' | 'skipped', count: number, message: string, error?: string) {
+    setDemoLog(prev => [...prev, { step, status, count, message, error }])
+  }
+
   async function handleGenerateDemoDataV2() {
     if (!confirm('📦 V2: Generate PERFECT Live Demo Data?\n\nThis creates a REALISTIC 24-hour live operation:\n- Tours spread across the day with correct statuses\n- Vehicles ASSIGNED to tours (with in_use status)\n- Drivers ASSIGNED to tours\n- Guests with realistic counts\n- Guide & Driver check-ins\n- Incidents, expenses, feedback\n- Cash confirmations, payments, checklist completions\n- Reservation manifest entries\n\n⏰ Times are calculated from CURRENT TIME for realistic live demo.\n\nContinue?')) {
       return
@@ -689,6 +703,8 @@ export default function SuperAdminDemoPage() {
 
     setDemoLoading(true)
     setDemoMessage(null)
+    setDemoLog([])
+    setShowLog(true)
 
     try {
       const today = getLocalDate()
