@@ -155,33 +155,7 @@ export default function AdminDashboard() {
 
   return (
     <RoleGuard requiredRole="company_admin">
-      <div className="h-screen flex flex-col bg-gray-100">
-        {/* Top Nav */}
-        <div className="bg-white border-b px-4 py-3 flex-shrink-0 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold">
-              T
-            </div>
-            <div>
-              <h1 className="text-lg font-bold">{t('adminDashboard.title')}</h1>
-              <p className="text-xs text-gray-500">
-                {new Date().toLocaleDateString(locale === 'es' ? 'es-ES' : 'en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center gap-3">
-            <LanguageToggle />
-            <button 
-              onClick={handleSignOut}
-              className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center hover:bg-gray-300"
-            >
-              👤
-            </button>
-          </div>
-        </div>
-
-        {/* Main Content */}
-        <div className="flex-1 overflow-hidden p-3">
+      <div className="h-full">
           <div className="h-full grid grid-cols-12 grid-rows-[auto_auto_1fr] gap-3">
             
             {/* Row 1: KPI Cards */}
