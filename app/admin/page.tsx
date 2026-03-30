@@ -8,7 +8,6 @@ import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase/client'
 import RoleGuard from '@/lib/auth/RoleGuard'
 import { getLocalDate } from '@/lib/timezone'
-import LanguageToggle from '@/components/LanguageToggle'
 import { useTranslation } from '@/lib/i18n/useTranslation'
 
 interface DashboardStats {
@@ -42,7 +41,7 @@ export default function AdminDashboard() {
     guestsToday: 0,
     incidentsOpen: 0,
     incidentsTotal: 0,
-    onTimeRate: 0,
+    onTimeRate: 94,
     guidesActive: 0,
     guidesTotal: 0
   })
@@ -119,11 +118,6 @@ export default function AdminDashboard() {
     }
   }
 
-  async function handleSignOut() {
-    await supabase.auth.signOut()
-    router.push('/login')
-  }
-
   if (loading) {
     return (
       <RoleGuard requiredRole="company_admin">
@@ -136,8 +130,13 @@ export default function AdminDashboard() {
 
   return (
     <RoleGuard requiredRole="company_admin">
-      <div className="h-full flex flex-col gap-6 px-10 py-6">
-        {/* KPI Cards Row */}
+      <div className="h-full flex flex-col gap-6">
+        {/* HEADER SECTION - REMOVED, now in top nav */}
+        <div className="flex-none">
+          {/* Empty spacer */}
+        </div>
+
+        {/* KPI CARDS ROW */}
         <div className="flex-none">
           <div className="grid grid-cols-4 gap-6">
             <div className="bg-white rounded-lg border border-gray-200 p-5 text-center">
@@ -165,7 +164,7 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        {/* Middle Section */}
+        {/* MIDDLE SECTION */}
         <div className="flex-1 min-h-0 overflow-hidden">
           <div className="h-full grid grid-cols-12 gap-6">
             {/* Active Tours + Team - Left */}
@@ -262,7 +261,7 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        {/* Bottom Section */}
+        {/* BOTTOM SECTION */}
         <div className="flex-1 min-h-0 overflow-hidden">
           <div className="h-full grid grid-cols-12 gap-6">
             {/* Timeline */}
@@ -284,21 +283,23 @@ export default function AdminDashboard() {
               </div>
             </div>
 
-            {/* Fleet Status - Evenly distributed items */}
-            <div className="col-span-3 h-full overflow-auto bg-white rounded-lg border border-gray-200 p-5 flex flex-col">
-              <span className="font-semibold text-sm block text-center mb-6">{t('adminDashboard.fleetStatus')}</span>
-              <div className="flex-1 flex flex-col justify-between">
-                <div className="flex items-center justify-between px-4 py-3 bg-gray-50 rounded-lg">
-                  <span className="text-sm">{t('adminDashboard.inUse')}</span>
-                  <span className="font-bold text-xl">4</span>
-                </div>
-                <div className="flex items-center justify-between px-4 py-3 bg-gray-50 rounded-lg">
-                  <span className="text-sm">{t('adminDashboard.available')}</span>
-                  <span className="font-bold text-xl">2</span>
-                </div>
-                <div className="flex items-center justify-between px-4 py-3 bg-gray-50 rounded-lg">
-                  <span className="text-sm">{t('adminDashboard.maintenance')}</span>
-                  <span className="font-bold text-xl text-red-600">0</span>
+            {/* Fleet Status */}
+            <div className="col-span-3 h-full overflow-auto bg-white rounded-lg border-8 border-transparent">
+              <div className="p-8 h-full flex flex-col border-8 border-transparent">
+                <span className="font-semibold text-sm block text-center mb-6 border-8 border-transparent">{t('adminDashboard.fleetStatus')}</span>
+                <div className="flex-1 flex flex-col justify-between border-8 border-transparent">
+                  <div className="flex items-center justify-between px-4 py-3 bg-gray-50 rounded-lg">
+                    <span className="text-sm">{t('adminDashboard.inUse')}</span>
+                    <span className="font-bold text-xl">4</span>
+                  </div>
+                  <div className="flex items-center justify-between px-4 py-3 bg-gray-50 rounded-lg">
+                    <span className="text-sm">{t('adminDashboard.available')}</span>
+                    <span className="font-bold text-xl">2</span>
+                  </div>
+                  <div className="flex items-center justify-between px-4 py-3 bg-gray-50 rounded-lg">
+                    <span className="text-sm">{t('adminDashboard.maintenance')}</span>
+                    <span className="font-bold text-xl text-red-600">0</span>
+                  </div>
                 </div>
               </div>
             </div>
