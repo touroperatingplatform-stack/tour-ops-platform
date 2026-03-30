@@ -388,7 +388,7 @@ export default function SuperAdminClientsPage() {
       document.body.removeChild(a)
       URL.revokeObjectURL(url)
       
-      alert(`✅ Export complete!\n\nIncluded:\n- 1 client\n- ${exportData.companies.length} companies\n- ${exportData.users.length} users\n- ${exportData.tours.length} tours\n- ${exportData.guests.length} guests\n- ${exportData.vehicles.length} vehicles\n- ${exportData.incidents.length} incidents\n- ${exportData.expenses.length} expenses\n- ${exportData.checkins.length} check-ins\n- ${exportData.feedback.length} feedback entries`
+      alert(`✅ Export complete!\n\nIncluded:\n- 1 client\n- ${exportData.companies.length} companies\n- ${exportData.users.length} users\n- ${exportData.tours.length} tours\n- ${exportData.guests.length} guests\n- ${exportData.vehicles.length} vehicles\n- ${exportData.incidents.length} incidents\n- ${exportData.expenses.length} expenses\n- ${exportData.checkins.length} check-ins\n- ${exportData.feedback.length} feedback entries`)
       
     } catch (error: any) {
       alert('❌ Error exporting data: ' + error.message)
