@@ -162,7 +162,7 @@ export default function TestLayout({ children }: { children: React.ReactNode }) 
         </>
       )}
 
-      {/* User Menu */}
+      {/* User Menu - Centered with invisible border */}
       {showUserMenu && (
         <>
           <div 
@@ -170,13 +170,13 @@ export default function TestLayout({ children }: { children: React.ReactNode }) 
             onClick={() => setShowUserMenu(false)}
           />
           <div className="fixed top-20 right-8 w-64 bg-white rounded-2xl shadow-2xl z-50 border-4 border-teal-400">
-            <div className="p-2">
+            <div className="p-2 border-8 border-transparent">
               <div className="border-b pb-3 mb-3">
-                <div className="flex items-center gap-3 p-2">
+                <div className="flex flex-col items-center gap-3 p-2">
                   <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white">
                     👤
                   </div>
-                  <div>
+                  <div className="text-center">
                     <p className="font-semibold">Admin User</p>
                     <p className="text-xs text-gray-500">admin@example.com</p>
                   </div>
@@ -190,10 +190,10 @@ export default function TestLayout({ children }: { children: React.ReactNode }) 
                       item.action()
                       setShowUserMenu(false)
                     }}
-                    className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-gray-100 text-left"
+                    className="w-full flex flex-col items-center gap-1 p-3 rounded-lg hover:bg-gray-100"
                   >
-                    <span className="text-xl">{item.icon}</span>
-                    <span>{item.label}</span>
+                    <span className="text-2xl">{item.icon}</span>
+                    <span className="text-sm">{item.label}</span>
                   </button>
                 ))}
               </div>
