@@ -1,39 +1,39 @@
 'use client'
 
-import AdminLayoutNew from '../admin/layout-new'
+import TestLayout from './TestLayout'
 
 export default function TestPage() {
   return (
-    <AdminLayoutNew>
+    <TestLayout>
       <div className="space-y-8">
         <div className="bg-gray-100 border-2 border-dashed border-gray-400 rounded-lg p-3">
           <h2 className="font-bold text-gray-800">Container Padding Test</h2>
-          <p className="text-sm text-gray-600">Space BETWEEN each colored box shows the padding/margin.</p>
+          <p className="text-sm text-gray-600">The PINK area is the scrollable container. Content should have space from the pink edges.</p>
         </div>
 
         <div className="bg-red-100 border-2 border-red-500 rounded-lg p-4">
           <h3 className="font-bold text-red-800 mb-2">NO MARGIN (mx-0)</h3>
-          <p className="text-red-700 text-sm">This touches the container edge. No space on sides.</p>
+          <p className="text-red-700 text-sm">This touches the pink container edge. No space on sides.</p>
         </div>
 
         <div className="px-4">
           <div className="bg-orange-100 border-2 border-orange-500 rounded-lg p-4">
             <h3 className="font-bold text-orange-800 mb-2">mx-4 (16px)</h3>
-            <p className="text-orange-700 text-sm">Parent has px-4 padding. This box inside has margin.</p>
+            <p className="text-orange-700 text-sm">Parent has px-4 padding. Space from pink edge.</p>
           </div>
         </div>
 
         <div className="px-6">
           <div className="bg-yellow-100 border-2 border-yellow-500 rounded-lg p-4">
             <h3 className="font-bold text-yellow-800 mb-2">mx-6 (24px)</h3>
-            <p className="text-yellow-700 text-sm">Parent has px-6 padding. This matches current layout.</p>
+            <p className="text-yellow-700 text-sm">Parent has px-6 padding. More space.</p>
           </div>
         </div>
 
         <div className="px-8">
           <div className="bg-green-100 border-2 border-green-500 rounded-lg p-4">
             <h3 className="font-bold text-green-800 mb-2">mx-8 (32px)</h3>
-            <p className="text-green-700 text-sm">Parent has px-8 padding. More space.</p>
+            <p className="text-green-700 text-sm">Parent has px-8 padding. Comfortable.</p>
           </div>
         </div>
 
@@ -51,19 +51,18 @@ export default function TestPage() {
           </div>
         </div>
 
-        <div className="bg-gray-200 border-2 border-gray-500 rounded-lg p-4 mx-4">
-          <h3 className="font-bold text-gray-800 mb-2">Content margin only (no parent padding)</h3>
-          <p className="text-gray-700 text-sm">This uses mx-4 on the box itself, no parent wrapper.</p>
-        </div>
-
         <div className="bg-white rounded-lg border border-gray-200 p-4">
           <h3 className="font-semibold mb-2">Long Content Test</h3>
           <p className="text-gray-600 text-sm leading-relaxed">
-            Testing scroll behavior. Content should scroll within the main area.
-            The padding you choose will be applied to all admin pages.
+            Testing scroll behavior within the pink container area.
+            The container has px-6 padding (24px) by default.
+            Content inside can add more margin if needed.
+          </p>
+          <p className="text-gray-600 text-sm leading-relaxed mt-4">
+            More content here to test scrolling. The pink border shows the container boundary.
           </p>
         </div>
       </div>
-    </AdminLayoutNew>
+    </TestLayout>
   )
 }
