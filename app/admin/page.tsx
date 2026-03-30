@@ -136,13 +136,9 @@ export default function AdminDashboard() {
 
   return (
     <RoleGuard requiredRole="company_admin">
-      <div className="h-screen flex flex-col bg-gray-100">
-        {/* Main Content */}
-        <div className="flex-1 overflow-hidden p-3">
-          <div className="h-full grid grid-cols-12 grid-rows-[auto_auto_1fr] gap-3">
-            
-            {/* Row 1: KPI Cards */}
-            <div className="col-span-12 grid grid-cols-4 gap-3">
+      <div className="space-y-3">
+        {/* Row 1: KPI Cards */}
+        <div className="grid grid-cols-4 gap-3">
               <div className="bg-white rounded-lg border border-gray-200 p-3">
                 <p className="text-xs text-gray-500 uppercase font-medium">{t('adminDashboard.toursToday')}</p>
                 <div className="flex items-baseline gap-2 mt-1">
@@ -168,7 +164,7 @@ export default function AdminDashboard() {
             </div>
 
             {/* Row 2: Middle Section */}
-            <div className="col-span-12 grid grid-cols-12 gap-3">
+            <div className="grid grid-cols-12 gap-3">
               {/* Active Tours + Team - Left */}
               <div className="col-span-4 grid grid-rows-2 gap-3">
                 <div className="bg-white rounded-lg border border-gray-200 p-3">
