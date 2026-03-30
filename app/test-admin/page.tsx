@@ -141,21 +141,23 @@ export default function TestPage() {
             </div>
 
             {/* Fleet Status */}
-            <div className="col-span-3 h-full overflow-auto bg-white rounded-lg border border-gray-200 p-8 flex flex-col">
-              <span className="font-semibold text-sm block text-center mb-6">Fleet Status</span>
-              <div className="flex-1 flex flex-col justify-center">
-                <div className="space-y-6">
-                  <div className="flex items-center justify-between px-4 py-3 bg-gray-50 rounded-lg">
-                    <span className="text-sm">In Use</span>
-                    <span className="font-bold text-xl">4</span>
-                  </div>
-                  <div className="flex items-center justify-between px-4 py-3 bg-gray-50 rounded-lg">
-                    <span className="text-sm">Available</span>
-                    <span className="font-bold text-xl">2</span>
-                  </div>
-                  <div className="flex items-center justify-between px-4 py-3 bg-gray-50 rounded-lg">
-                    <span className="text-sm">Maintenance</span>
-                    <span className="font-bold text-xl text-red-600">0</span>
+            <div className="col-span-3 h-full overflow-auto bg-white rounded-lg border-8 border-transparent">
+              <div className="p-8 h-full flex flex-col">
+                <span className="font-semibold text-sm block text-center mb-6">Fleet Status</span>
+                <div className="flex-1 flex flex-col justify-center">
+                  <div className="space-y-6">
+                    <div className="flex items-center justify-between px-4 py-3 bg-gray-50 rounded-lg">
+                      <span className="text-sm">In Use</span>
+                      <span className="font-bold text-xl">4</span>
+                    </div>
+                    <div className="flex items-center justify-between px-4 py-3 bg-gray-50 rounded-lg">
+                      <span className="text-sm">Available</span>
+                      <span className="font-bold text-xl">2</span>
+                    </div>
+                    <div className="flex items-center justify-between px-4 py-3 bg-gray-50 rounded-lg">
+                      <span className="text-sm">Maintenance</span>
+                      <span className="font-bold text-xl text-red-600">0</span>
+                    </div>
                   </div>
                 </div>
               </div>

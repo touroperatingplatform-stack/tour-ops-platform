@@ -35,9 +35,9 @@ export default function TestLayout({ children }: { children: React.ReactNode }) 
       {/* Top Navigation - DEBUG: Outer red border */}
       <header className="bg-white border-b-4 border-red-400 flex-shrink-0">
         <div className="px-4 py-3">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between px-4 py-3">
             {/* Logo/Brand - DEBUG: Blue background */}
-            <div className="flex items-center gap-3 border-4 border-blue-400 border-dashed p-1">
+            <div className="flex items-center gap-3 border-4 border-blue-400 border-dashed p-2 mx-2">
               <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold text-sm">
                 T
               </div>
@@ -45,7 +45,7 @@ export default function TestLayout({ children }: { children: React.ReactNode }) 
             </div>
 
             {/* Right side - DEBUG: Purple background */}
-            <div className="flex items-center gap-2 border-4 border-purple-400 border-dashed p-1">
+            <div className="flex items-center gap-2 border-4 border-purple-400 border-dashed p-2 mx-2">
               <button className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center hover:bg-gray-300">
                 👤
               </button>
@@ -98,13 +98,13 @@ export default function TestLayout({ children }: { children: React.ReactNode }) 
             className="fixed inset-0 bg-black bg-opacity-50 z-50"
             onClick={() => setShowMore(false)}
           />
-          <div className="fixed bottom-20 left-4 right-4 bg-white rounded-2xl shadow-2xl z-50 border-4 border-pink-400">
-            <div className="p-4">
-              <div className="flex items-center justify-between mb-4 border-2 border-dashed border-cyan-400 p-2">
+          <div className="fixed bottom-20 left-4 right-4 bg-white rounded-2xl shadow-2xl z-50 border-8 border-pink-400">
+            <div className="p-4 border-8 border-transparent">
+              <div className="flex items-center justify-center mb-4 border-2 border-dashed border-cyan-400 p-2">
                 <span className="font-bold text-lg">Menu</span>
                 <button 
                   onClick={() => setShowMore(false)}
-                  className="p-2 hover:bg-gray-100 rounded-lg border-2 border-dashed border-red-400"
+                  className="absolute right-6 p-2 hover:bg-gray-100 rounded-lg border-2 border-dashed border-red-400"
                 >
                   ✕
                 </button>
