@@ -172,8 +172,7 @@ function normalizeBookingData(data: any, partner: any) {
       room_number: data.room_number,
       adults: parseInt(data.adult_count) || 1,
       children: parseInt(data.child_count) || 0,
-      pax: parseInt(data.total travelers) || 1,
-      commission: parseFloat(data.commission) || 0
+      pax: parseInt(data['total travelers']) || 1,
     }
   }
 
