@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase/client'
 import { useTranslation } from '@/lib/i18n/useTranslation'
+import { getLocalDate } from '@/lib/timezone'
 
 interface Incident {
   id: string
