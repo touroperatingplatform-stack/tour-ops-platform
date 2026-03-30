@@ -142,11 +142,11 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        {/* Main Content - No Scroll */}
-        <div className="flex-1 p-4 grid grid-cols-12 gap-4">
+        {/* Main Content - No Scroll - RED OUTER BORDER */}
+        <div className="flex-1 p-4 grid grid-cols-12 gap-4 border-4 border-red-500 rounded-xl">
           
-          {/* KPI Cards Row - Blue Border */}
-          <div className="col-span-12 grid grid-cols-4 gap-4 border-2 border-blue-400 rounded-xl p-2">
+          {/* KPI Cards Row - BLUE BORDER */}
+          <div className="col-span-12 grid grid-cols-4 gap-4 border-2 border-blue-500 rounded-xl p-2">
             {/* Tours */}
             <div className="bg-white rounded-xl shadow p-4 flex flex-col justify-between">
               <div className="flex items-center justify-between mb-2">
@@ -208,8 +208,8 @@ export default function AdminDashboard() {
             </div>
           </div>
 
-          {/* Active Tours + Team Status - Green Border */}
-          <div className="col-span-4 grid grid-rows-2 gap-4 border-2 border-green-400 rounded-xl p-2">
+          {/* Active Tours + Team Status - GREEN BORDER */}
+          <div className="col-span-4 grid grid-rows-2 gap-4 border-2 border-green-500 rounded-xl p-2">
             {/* Active Tours */}
             <div className="bg-white rounded-xl shadow p-4">
               <div className="flex items-center justify-between mb-3">
@@ -238,8 +238,8 @@ export default function AdminDashboard() {
             </div>
           </div>
 
-          {/* Attention Required - Yellow/Orange Border */}
-          <div className="col-span-5 bg-white rounded-xl shadow p-4 flex flex-col border-2 border-yellow-400">
+          {/* Attention Required - YELLOW BORDER */}
+          <div className="col-span-5 bg-white rounded-xl shadow p-4 flex flex-col border-2 border-yellow-500">
             <div className="flex items-center justify-between mb-3">
               <span className="font-semibold">⚠️ Attention Required</span>
               <span className="text-gray-400 text-sm">{attentionItems.length} items</span>
@@ -263,8 +263,8 @@ export default function AdminDashboard() {
             </div>
           </div>
 
-          {/* Quick Actions - Purple Border */}
-          <div className="col-span-3 bg-white rounded-xl shadow p-4 flex flex-col border-2 border-purple-400">
+          {/* Quick Actions - PURPLE BORDER */}
+          <div className="col-span-3 bg-white rounded-xl shadow p-4 flex flex-col border-2 border-purple-500">
             <span className="font-semibold mb-3">Quick Actions</span>
             <div className="flex-1 grid grid-cols-2 gap-2">
               <Link href="/admin/tours" className="flex flex-col items-center justify-center p-3 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors">
@@ -286,8 +286,8 @@ export default function AdminDashboard() {
             </div>
           </div>
 
-          {/* Bottom Row - Live Timeline - Cyan Border */}
-          <div className="col-span-9 bg-white rounded-xl shadow p-4 border-2 border-cyan-400">
+          {/* Bottom Row - Live Timeline - CYAN BORDER */}
+          <div className="col-span-9 bg-white rounded-xl shadow p-4 border-2 border-cyan-500">
             <div className="flex items-center justify-between mb-3">
               <span className="font-semibold">Today's Timeline</span>
               <span className="text-gray-400 text-sm">{stats.toursTotal} tours</span>
@@ -302,8 +302,8 @@ export default function AdminDashboard() {
             </div>
           </div>
 
-          {/* Fleet Status - Pink Border */}
-          <div className="col-span-3 bg-white rounded-xl shadow p-4 border-2 border-pink-400">
+          {/* Fleet Status - PINK BORDER */}
+          <div className="col-span-3 bg-white rounded-xl shadow p-4 border-2 border-pink-500">
             <span className="font-semibold">Fleet Status</span>
             <div className="mt-3 space-y-2">
               <div className="flex items-center justify-between text-sm">
