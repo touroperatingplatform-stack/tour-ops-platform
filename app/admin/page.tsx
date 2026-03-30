@@ -31,7 +31,6 @@ interface AttentionItem {
 }
 
 export default function AdminDashboard() {
-  const router = useRouter()
   const { t, locale } = useTranslation()
   const [stats, setStats] = useState<DashboardStats>({
     toursTotal: 0,
