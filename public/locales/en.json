@@ -25,6 +25,8 @@
   },
   "nav": {
     "dashboard": "Dashboard",
+    "tours": "Tours",
+    "guests": "Guests",
     "incidents": "Incidents",
     "drivers": "Drivers",
     "vehicles": "Vehicles",
@@ -34,6 +36,7 @@
   },
   "common": {
     "loading": "Loading...",
+    "add": "Add",
     "save": "Save",
     "cancel": "Cancel",
     "delete": "Delete",
@@ -197,5 +200,14 @@
     "operations": "Operations",
     "guide": "Guide",
     "driver": "Driver"
+  },
+  "fleet": {
+    "total": "Total",
+    "ready": "Ready",
+    "onTour": "On Tour",
+    "maintenance": "Maintenance",
+    "seats": "seats",
+    "manageVehicles": "Manage vehicles",
+    "noVehicles": "No vehicles found"
   }
 }

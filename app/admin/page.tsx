@@ -328,31 +328,6 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        {/* Bottom Nav */}
-        <div className="bg-white border-t px-4 py-3 flex-shrink-0">
-          <div className="flex items-center justify-around">
-            <Link href="/admin" className="flex flex-col items-center text-blue-600">
-              <span className="text-xl">📊</span>
-              <span className="text-xs">{t('nav.dashboard')}</span>
-            </Link>
-            <Link href="/admin/tours" className="flex flex-col items-center text-gray-400">
-              <span className="text-xl">🚌</span>
-              <span className="text-xs">{t('nav.tours')}</span>
-            </Link>
-            <Link href="/admin/guests" className="flex flex-col items-center text-gray-400">
-              <span className="text-xl">👤</span>
-              <span className="text-xs">{t('nav.guests')}</span>
-            </Link>
-            <Link href="/admin/reports" className="flex flex-col items-center text-gray-400">
-              <span className="text-xl">📈</span>
-              <span className="text-xs">{t('nav.reports')}</span>
-            </Link>
-            <Link href="/admin/settings" className="flex flex-col items-center text-gray-400">
-              <span className="text-xl">⚙️</span>
-              <span className="text-xs">{t('common.menu')}</span>
-            </Link>
-          </div>
-        </div>
       </div>
     </RoleGuard>
   )
