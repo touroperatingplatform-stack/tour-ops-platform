@@ -138,30 +138,7 @@ export default function SuperAdminDashboard() {
 
   return (
     <RoleGuard requiredRole='super_admin'>
-      <div className="min-h-screen bg-gray-50">
-        {/* Header */}
-        <div className="bg-white border-b">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900">Platform Dashboard</h1>
-                <p className="text-sm text-gray-600 mt-1">
-                  {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
-                </p>
-              </div>
-              <div className="flex items-center gap-4">
-                <Link
-                  href="/operations"
-                  className="text-sm text-gray-600 hover:text-gray-900"
-                >
-                  ← Back to Operations
-                </Link>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto">
 
         {loading ? (
           <div className="flex items-center justify-center h-64">
@@ -352,7 +329,6 @@ export default function SuperAdminDashboard() {
           </>
         )}
       </div>
-    </div>
     </RoleGuard>
   )
 }
