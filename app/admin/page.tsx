@@ -4,11 +4,9 @@ export const dynamic = 'force-dynamic'
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase/client'
 import RoleGuard from '@/lib/auth/RoleGuard'
 import { getLocalDate } from '@/lib/timezone'
-import LanguageToggle from '@/components/LanguageToggle'
 import { useTranslation } from '@/lib/i18n/useTranslation'
 
 interface DashboardStats {
@@ -111,6 +109,14 @@ export default function AdminDashboard() {
     setLoading(false)
   }
 
+  function getLocaleDateString(locale: string) {
+    return new Date().toLocaleDateString(locale === 'es' ? 'es-ES' : 'en-US', { 
+      weekday: 'long', 
+      month: 'long', 
+      day: 'numeric' 
+    })
+  }
+
   function getSeverityColor(severity: string) {
     switch (severity) {
       case 'high': return 'bg-red-500'
@@ -127,27 +133,8 @@ export default function AdminDashboard() {
   if (loading) {
     return (
       <RoleGuard requiredRole="company_admin">
-        <div className="h-screen flex flex-col bg-gray-100">
-          {/* Top Nav */}
-          <div className="bg-white border-b px-4 py-3 flex-shrink-0 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold">
-                T
-              </div>
-              <h1 className="text-lg font-bold">{t('adminDashboard.title')}</h1>
-            </div>
-            <div className="flex items-center gap-3">
-              <LanguageToggle />
-              <button className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
-                👤
-              </button>
-            </div>
-          </div>
-          
-          {/* Loading */}
-          <div className="flex-1 flex items-center justify-center">
-            <div className="text-gray-500">{t('common.loading')}</div>
-          </div>
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="text-gray-500">{t('common.loading')}</div>
         </div>
       </RoleGuard>
     )
@@ -156,30 +143,6 @@ export default function AdminDashboard() {
   return (
     <RoleGuard requiredRole="company_admin">
       <div className="h-screen flex flex-col bg-gray-100">
-        {/* Top Nav */}
-        <div className="bg-white border-b px-4 py-3 flex-shrink-0 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold">
-              T
-            </div>
-            <div>
-              <h1 className="text-lg font-bold">{t('adminDashboard.title')}</h1>
-              <p className="text-xs text-gray-500">
-                {new Date().toLocaleDateString(locale === 'es' ? 'es-ES' : 'en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center gap-3">
-            <LanguageToggle />
-            <button 
-              onClick={handleSignOut}
-              className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center hover:bg-gray-300"
-            >
-              👤
-            </button>
-          </div>
-        </div>
-
         {/* Main Content */}
         <div className="flex-1 overflow-hidden p-3">
           <div className="h-full grid grid-cols-12 grid-rows-[auto_auto_1fr] gap-3">
