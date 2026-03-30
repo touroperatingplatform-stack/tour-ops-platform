@@ -42,16 +42,16 @@ export default function TestLayout({ children }: { children: React.ReactNode }) 
 
   return (
     <div className="h-screen flex flex-col bg-gray-50 overflow-hidden">
-      {/* Top Navigation */}
-      <header className="bg-white border-b flex-shrink-0">
+      {/* Top Navigation - No border */}
+      <header className="bg-white flex-shrink-0">
         <div className="px-4 py-3 border-8 border-transparent">
           <div className="flex items-center justify-between px-4 py-3">
-            {/* Logo/Brand */}
+            {/* Logo + Dashboard */}
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold text-sm">
                 T
               </div>
-              <span className="font-bold text-gray-900">{currentPage}</span>
+              <span className="font-bold text-gray-900">Dashboard</span>
             </div>
 
             {/* Right side */}
@@ -122,8 +122,8 @@ export default function TestLayout({ children }: { children: React.ReactNode }) 
         </div>
       </main>
 
-      {/* Bottom Navigation */}
-      <nav className="flex-none bg-white border-t z-50">
+      {/* Bottom Navigation - No border */}
+      <nav className="flex-none bg-white z-50">
         <div className="flex justify-around items-center px-2 py-2">
           {navItems.map((item) => {
             const active = isActive(item.href)

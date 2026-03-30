@@ -6,12 +6,9 @@ export default function TestPage() {
   return (
     <TestLayout>
       <div className="h-full flex flex-col gap-6">
-        {/* HEADER SECTION */}
-        <div className="flex-none text-center py-2">
-          <h1 className="text-xl font-bold text-gray-900">Dashboard</h1>
-          <p className="text-sm text-gray-500">
-            {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
-          </p>
+        {/* HEADER SECTION - REMOVED, now in top nav */}
+        <div className="flex-none">
+          {/* Empty spacer */}
         </div>
 
         {/* KPI CARDS ROW */}
