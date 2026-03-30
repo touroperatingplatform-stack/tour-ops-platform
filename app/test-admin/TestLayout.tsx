@@ -91,34 +91,34 @@ export default function TestLayout({ children }: { children: React.ReactNode }) 
         </div>
       </nav>
 
-      {/* More Menu */}
+      {/* More Menu - Full screen white bg, pink border, items fill space */}
       {showMore && (
         <>
           <div 
-            className="fixed inset-0 bg-black bg-opacity-50 z-50"
+            className="fixed inset-0 bg-white z-50"
             onClick={() => setShowMore(false)}
           />
-          <div className="fixed bottom-20 left-4 right-4 bg-white rounded-2xl shadow-2xl z-50 border-8 border-pink-400">
-            <div className="p-4 border-8 border-transparent">
+          <div className="fixed inset-4 bg-white rounded-2xl shadow-2xl z-50 border-8 border-pink-400 flex flex-col">
+            <div className="p-4 border-8 border-transparent flex flex-col h-full">
               <div className="flex items-center justify-center mb-4 border-2 border-dashed border-cyan-400 p-2">
                 <span className="font-bold text-lg">Menu</span>
                 <button 
                   onClick={() => setShowMore(false)}
-                  className="absolute right-6 p-2 hover:bg-gray-100 rounded-lg border-2 border-dashed border-red-400"
+                  className="absolute right-10 p-2 hover:bg-gray-100 rounded-lg border-2 border-dashed border-red-400"
                 >
                   ✕
                 </button>
               </div>
-              <div className="grid grid-cols-3 gap-3 border-2 border-dashed border-indigo-400 p-2">
+              <div className="flex-1 grid grid-cols-3 grid-rows-3 gap-4 border-2 border-dashed border-indigo-400 p-2">
                 {moreItems.map((item) => (
                   <Link
                     key={item.href}
                     href={item.href}
                     onClick={() => setShowMore(false)}
-                    className="flex flex-col items-center gap-1 p-3 rounded-xl text-gray-600 hover:bg-gray-50 border border-dashed border-gray-300"
+                    className="flex flex-col items-center justify-center gap-2 p-4 rounded-xl text-gray-600 hover:bg-gray-50 border border-dashed border-gray-300 bg-gray-50 h-full"
                   >
-                    <span className="text-2xl">{item.icon}</span>
-                    <span className="text-xs font-medium">{item.label}</span>
+                    <span className="text-3xl">{item.icon}</span>
+                    <span className="text-sm font-medium">{item.label}</span>
                   </Link>
                 ))}
               </div>
