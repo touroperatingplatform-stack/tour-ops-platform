@@ -1,6 +1,6 @@
 'use client'
 
-import AdminLayoutNew from '../layout-new'
+import AdminLayoutNew from '../admin/layout-new'
 import { useTranslation } from '@/lib/i18n/useTranslation'
 
 export default function TestPage() {
