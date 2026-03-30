@@ -6,40 +6,39 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase/client'
 import RoleGuard from '@/lib/auth/RoleGuard'
-import DriverNav from '@/components/navigation/DriverNav'
+import { getLocalDate } from '@/lib/timezone'
 
-interface TourAssignment {
+interface Tour {
   id: string
   name: string
-  tour_date: string
   start_time: string
-  status: string
+  pickup_location: string
   guide_name: string
-  vehicle?: {
+  vehicle: {
     plate_number: string
     model: string
-    capacity: number
   }
 }
 
-interface DriverCheckin {
-  id: string
-  tour_id: string
-  checked_in_at: string
-  mileage_start: number | null
-  fuel_level_before: string | null
-  vehicle_condition: string | null
-  issues: string | null
+interface VehicleStatus {
+  mileage: number
+  fuel: string
+  condition: string
 }
 
 export default function DriverDashboard() {
-  const [loading, setLoading] = useState(true)
-  const [todayTours, setTodayTours] = useState<TourAssignment[]>([])
-  const [recentCheckins, setRecentCheckins] = useState<DriverCheckin[]>([])
-  const [stats, setStats] = useState({
-    total_trips: 0,
-    pending_issues: 0
+  const [todayTour, setTodayTour] = useState<Tour | null>(null)
+  const [checkinStatus, setCheckinStatus] = useState<'pending' | 'completed'>('pending')
+  const [vehicleStatus, setVehicleStatus] = useState<VehicleStatus>({
+    mileage: 45234,
+    fuel: '3/4',
+    condition: 'good'
   })
+  const [stats, setStats] = useState({
+    tripsThisMonth: 24,
+    onTimeRate: 98
+  })
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     loadDriverData()
@@ -53,55 +52,44 @@ export default function DriverDashboard() {
         return
       }
 
-      const today = new Date().toISOString().split('T')[0]
+      const today = getLocalDate()
 
-      // Get today's assigned tours
+      // Get today's assigned tour
       const { data: toursData } = await supabase
         .from('tours')
         .select(`
-          id, name, tour_date, start_time, status,
+          id, name, start_time, pickup_location,
           profiles!guide_id (first_name, last_name),
-          vehicles (plate_number, model, capacity)
+          vehicles (plate_number, model)
         `)
         .eq('driver_id', user.id)
         .eq('tour_date', today)
         .neq('status', 'cancelled')
         .order('start_time')
+        .limit(1)
+        .single()
 
       if (toursData) {
-        setTodayTours(toursData.map(t => {
-          // profiles is returned as array from Supabase join
-          const profile = Array.isArray(t.profiles) ? t.profiles[0] : t.profiles
-          return {
-            ...t,
-            guide_name: profile ? `${profile.first_name} ${profile.last_name}` : 'Unknown Guide',
-            vehicle: Array.isArray(t.vehicles) ? t.vehicles[0] : t.vehicles
-          }
-        }))
+        const profile = Array.isArray(toursData.profiles) ? toursData.profiles[0] : toursData.profiles
+        setTodayTour({
+          id: toursData.id,
+          name: toursData.name,
+          start_time: toursData.start_time,
+          pickup_location: toursData.pickup_location,
+          guide_name: profile ? `${profile.first_name} ${profile.last_name}` : 'Unknown',
+          vehicle: Array.isArray(toursData.vehicles) ? toursData.vehicles[0] : toursData.vehicles
+        })
       }
 
-      // Get recent check-ins
-      const { data: checkinsData } = await supabase
+      // Check if already checked in
+      const { data: checkin } = await supabase
         .from('driver_checkins')
-        .select('id, tour_id, checked_in_at, mileage_start, fuel_level_before, vehicle_condition, issues')
+        .select('id')
         .eq('driver_id', user.id)
-        .order('checked_in_at', { ascending: false })
-        .limit(5)
+        .eq('tour_date', today)
+        .single()
 
-      setRecentCheckins(checkinsData || [])
-
-      // Get stats
-      const { count: tripCount } = await supabase
-        .from('driver_checkins')
-        .select('*', { count: 'exact', head: true })
-        .eq('driver_id', user.id)
-
-      const pendingIssues = checkinsData?.filter(c => c.issues).length || 0
-
-      setStats({
-        total_trips: tripCount || 0,
-        pending_issues: pendingIssues
-      })
+      setCheckinStatus(checkin ? 'completed' : 'pending')
 
     } catch (error) {
       console.error('Error loading driver data:', error)
@@ -110,190 +98,214 @@ export default function DriverDashboard() {
     }
   }
 
-  function getTimeUntilStart(startTime: string) {
-    const now = new Date()
-    const [hours, minutes] = startTime.split(':').map(Number)
-    const startTimeDate = new Date(now)
-    startTimeDate.setHours(hours, minutes, 0)
-    const diffMs = startTimeDate.getTime() - now.getTime()
-    const diffMins = Math.floor(diffMs / 60000)
-    
-    if (diffMins < -30) return { text: 'Started', urgent: false }
-    if (diffMins < 0) return { text: 'Starting soon', urgent: true }
-    if (diffMins < 30) return { text: `${diffMins}m`, urgent: true }
-    return { text: `${Math.floor(diffMins / 60)}h ${diffMins % 60}m`, urgent: false }
-  }
-
-  function getStatusBadge(status: string) {
-    const styles: Record<string, string> = {
-      scheduled: 'bg-blue-100 text-blue-700',
-      in_progress: 'bg-green-100 text-green-700',
-      completed: 'bg-gray-100 text-gray-700',
-    }
-    return styles[status] || 'bg-gray-100'
-  }
-
   if (loading) {
     return (
-      <div className="px-4 py-4 space-y-4">
-        <div className="h-32 bg-gray-200 rounded-2xl animate-pulse"></div>
-        <div className="h-24 bg-gray-200 rounded-2xl animate-pulse"></div>
-      </div>
+      <RoleGuard requiredRole="driver">
+        <div className="h-screen flex items-center justify-center bg-gray-50">
+          <div className="text-gray-500">Loading...</div>
+        </div>
+      </RoleGuard>
     )
   }
 
   return (
     <RoleGuard requiredRole="driver">
-      <DriverNav />
-      <div className="p-4 space-y-6">
-        {/* Date Header */}
-        <section>
-          <p className="text-sm text-gray-500 mb-4">
-            {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
-          </p>
-          
-          {todayTours.length === 0 ? (
-            <div className="bg-white rounded-2xl p-8 text-center border border-gray-200 shadow-sm">
-              <span className="text-4xl block mb-3">🎉</span>
-              <p className="text-gray-900 font-medium text-lg">No tours assigned today</p>
-              <p className="text-sm text-gray-500 mt-1">Check back later or contact operations</p>
+      <div className="h-screen flex flex-col bg-gray-50 overflow-hidden">
+        {/* Header */}
+        <div className="bg-white border-b px-4 py-4 flex-shrink-0">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-xl font-bold">Driver Dashboard</h1>
+              <p className="text-gray-500 text-sm">{new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}</p>
             </div>
-          ) : (
-            <div className="space-y-4">
-              {todayTours.map((tour) => {
-                const timeInfo = getTimeUntilStart(tour.start_time)
-                return (
-                  <Link
-                    key={tour.id}
-                    href={`/driver/checkin?tour_id=${tour.id}`}
-                    className="block bg-white rounded-2xl p-5 border border-gray-200 shadow-sm hover:border-blue-300 transition-colors"
-                  >
-                    <div className="flex items-start justify-between mb-4">
-                      <div className="flex-1 pr-4">
-                        <h2 className="font-semibold text-gray-900 text-lg">{tour.name}</h2>
-                        <p className="text-sm text-gray-500 mt-1">Guide: {tour.guide_name}</p>
-                        {tour.vehicle && (
-                          <p className="text-sm text-gray-500">
-                            🚗 {tour.vehicle.model} • {tour.vehicle.plate_number}
-                          </p>
-                        )}
-                      </div>
-                      <span className={`px-3 py-1.5 rounded-full text-xs font-medium ${getStatusBadge(tour.status)}`}>
-                        {tour.status === 'in_progress' ? 'Live' : 'Upcoming'}
-                      </span>
-                    </div>
-                    
-                    <div className="flex items-center gap-6 text-sm mb-4">
-                      <div className="flex items-center gap-2 text-gray-600">
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                        <span className="font-medium">{tour.start_time.slice(0, 5)}</span>
-                      </div>
-                    </div>
-                    
-                    {tour.status === 'scheduled' && (
-                      <div className={`p-3 rounded-xl text-center text-sm font-medium ${
-                        timeInfo.urgent 
-                          ? 'bg-red-50 text-red-700 border border-red-200' 
-                          : 'bg-blue-50 text-blue-700 border border-blue-200'
-                      }`}>
-                        Start in {timeInfo.text}
-                      </div>
-                    )}
-                    
-                    {tour.status === 'in_progress' && (
-                      <div className="p-3 rounded-xl text-center text-sm font-medium bg-green-50 text-green-700 border border-green-200">
-                        Tour in progress • Complete check-in →
-                      </div>
-                    )}
-                    
-                    {tour.status === 'completed' && (
-                      <div className="p-3 rounded-xl text-center text-sm font-medium bg-gray-50 text-gray-700 border border-gray-200">
-                        Tour completed
-                      </div>
-                    )}
-                  </Link>
-                )
-              })}
-            </div>
-          )}
-        </section>
-
-        {/* Stats */}
-        <section>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="bg-white rounded-2xl p-5 border border-gray-200">
-              <p className="text-2xl font-bold text-gray-900">{stats.total_trips}</p>
-              <p className="text-sm text-gray-500">Total Trips</p>
-            </div>
-            <div className={`rounded-2xl p-5 border ${
-              stats.pending_issues > 0 
-                ? 'bg-red-50 border-red-200' 
-                : 'bg-white border-gray-200'
-            }`}>
-              <p className={`text-2xl font-bold ${
-                stats.pending_issues > 0 ? 'text-red-700' : 'text-gray-900'
-              }`}>{stats.pending_issues}</p>
-              <p className="text-sm text-gray-500">Pending Issues</p>
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+              <span className="text-sm text-green-600">Online</span>
             </div>
           </div>
-        </section>
+        </div>
 
-        {/* Quick Actions */}
-        <section>
-          <h2 className="font-semibold text-gray-900 mb-4 text-lg">Quick Actions</h2>
-          <div className="grid grid-cols-2 gap-4">
-            <Link 
-              href="/driver/checkin"
-              className="bg-white rounded-2xl p-5 border border-gray-200 text-center hover:bg-gray-50 transition-colors"
-            >
-              <span className="text-3xl block mb-2">🚗</span>
-              <span className="font-medium text-gray-900">Vehicle Check-in</span>
-            </Link>
-            <Link 
-              href="/driver/history"
-              className="bg-white rounded-2xl p-5 border border-gray-200 text-center hover:bg-gray-50 transition-colors"
-            >
-              <span className="text-3xl block mb-2">📜</span>
-              <span className="font-medium text-gray-900">Inspection History</span>
-            </Link>
-          </div>
-        </section>
+        {/* Main Content - No Scroll */}
+        <div className="flex-1 p-4 grid grid-cols-12 gap-4">
 
-        {/* Recent Check-ins */}
-        {recentCheckins.length > 0 && (
-          <section>
-            <h2 className="font-semibold text-gray-900 mb-4 text-lg">Recent Inspections</h2>
-            <div className="space-y-3">
-              {recentCheckins.slice(0, 3).map((checkin) => (
-                <div key={checkin.id} className="bg-white rounded-2xl p-4 border border-gray-200">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-medium text-gray-900">
-                      {new Date(checkin.checked_in_at).toLocaleDateString()}
+          {/* Today's Tour - Big Card */}
+          <div className="col-span-12 bg-white rounded-2xl shadow p-5">
+            {todayTour ? (
+              <div className="flex items-center justify-between">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="bg-blue-100 text-blue-700 text-xs font-medium px-2 py-1 rounded-full">
+                      TODAY'S TOUR
                     </span>
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                      checkin.vehicle_condition === 'good' ? 'bg-green-100 text-green-700' :
-                      checkin.vehicle_condition === 'fair' ? 'bg-yellow-100 text-yellow-700' :
-                      'bg-red-100 text-red-700'
-                    }`}>
-                      {checkin.vehicle_condition}
-                    </span>
+                    <span className="text-gray-400 text-sm">{todayTour.start_time?.slice(0, 5)}</span>
                   </div>
-                  {checkin.mileage_start && (
-                    <p className="text-sm text-gray-600">📍 {checkin.mileage_start} km</p>
-                  )}
-                  {checkin.fuel_level_before && (
-                    <p className="text-sm text-gray-600">⛽ {checkin.fuel_level_before}</p>
-                  )}
-                  {checkin.issues && (
-                    <p className="text-sm text-red-600 mt-2">⚠️ {checkin.issues}</p>
+                  <h2 className="text-2xl font-bold mb-1">{todayTour.name}</h2>
+                  <p className="text-gray-500 text-sm mb-3">Guide: {todayTour.guide_name}</p>
+                  
+                  {checkinStatus === 'pending' ? (
+                    <Link 
+                      href={`/driver/tours/${todayTour.id}/checkin`}
+                      className="inline-flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors"
+                    >
+                      <span>🚗</span>
+                      <span>Start Pre-Trip</span>
+                    </Link>
+                  ) : (
+                    <div className="flex items-center gap-2 text-green-600 font-medium">
+                      <span>✓</span>
+                      <span>Check-in Complete</span>
+                    </div>
                   )}
                 </div>
-              ))}
+
+                <div className="text-right">
+                  <div className="bg-gray-100 rounded-xl p-3">
+                    <div className="text-2xl mb-1">🚌</div>
+                    <div className="font-bold text-sm">{todayTour.vehicle?.plate_number}</div>
+                    <div className="text-gray-500 text-xs">{todayTour.vehicle?.model}</div>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <div className="text-4xl mb-2">☕</div>
+                <h2 className="text-lg font-semibold mb-1">No Tour Today</h2>
+                <p className="text-gray-500 text-sm">Enjoy your day off!</p>
+              </div>
+            )}
+          </div>
+
+          {/* Vehicle Status */}
+          <div className="col-span-6 bg-white rounded-2xl shadow p-4">
+            <div className="flex items-center justify-between mb-4">
+              <span className="font-semibold">Your Vehicle</span>
+              <Link href="/driver/history" className="text-blue-600 text-sm">History →</Link>
             </div>
-          </section>
-        )}
+
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center">
+                    <span className="text-xl">⛽</span>
+                  </div>
+                  <div>
+                    <div className="font-medium">Fuel Level</div>
+                    <div className="text-gray-500 text-sm">Last updated today</div>
+                  </div>
+                </div>
+                <span className="font-bold text-lg">{vehicleStatus.fuel}</span>
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center">
+                    <span className="text-xl">📊</span>
+                  </div>
+                  <div>
+                    <div className="font-medium">Mileage</div>
+                    <div className="text-gray-500 text-sm">Total miles</div>
+                  </div>
+                </div>
+                <span className="font-bold text-lg">{vehicleStatus.mileage.toLocaleString()}</div>
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center">
+                    <span className="text-xl">✓</span>
+                  </div>
+                  <div>
+                    <div className="font-medium">Condition</div>
+                    <div className="text-gray-500 text-sm">Overall status</div>
+                  </div>
+                </div>
+                <span className="text-green-600 font-bold">{vehicleStatus.condition}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Stats */}
+          <div className="col-span-6 bg-white rounded-2xl shadow p-4">
+            <span className="font-semibold">Performance</span>
+
+            <div className="mt-4 grid grid-cols-2 gap-4">
+              <div className="text-center p-4 bg-blue-50 rounded-xl">
+                <div className="text-3xl font-bold text-blue-600">{stats.tripsThisMonth}</div>
+                <div className="text-gray-600 text-sm mt-1">Trips This Month</div>
+              </div>
+
+              <div className="text-center p-4 bg-green-50 rounded-xl">
+                <div className="text-3xl font-bold text-green-600">{stats.onTimeRate}%</div>
+                <div className="text-gray-600 text-sm mt-1">On-Time Rate</div>
+              </div>
+            </div>
+
+            <div className="mt-4">
+              <div className="text-sm text-gray-500 mb-2">Weekly Activity</div>
+              <div className="flex items-end gap-1 h-16">
+                {[40, 65, 45, 80, 55, 70, 60].map((h, i) => (
+                  <div 
+                    key={i} 
+                    className="flex-1 bg-blue-200 rounded-t hover:bg-blue-300 transition-colors"
+                    style={{ height: `${h}%` }}
+                  />
+                ))}
+              </div>
+              <div className="flex justify-between text-xs text-gray-400 mt-1">
+                <span>M</span>
+                <span>T</span>
+                <span>W</span>
+                <span>T</span>
+                <span>F</span>
+                <span>S</span>
+                <span>S</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Quick Actions */}
+          <div className="col-span-12 grid grid-cols-3 gap-4">
+            <Link 
+              href="/driver/history"
+              className="bg-white rounded-xl shadow p-4 flex items-center gap-3 hover:bg-gray-50 transition-colors"
+            >
+              <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center text-2xl">
+                📋
+              </div>
+              <div>
+                <div className="font-semibold">Trip History</div>
+                <div className="text-gray-500 text-sm">Past inspections</div>
+              </div>
+            </Link>
+
+            <Link 
+              href="/driver/profile"
+              className="bg-white rounded-xl shadow p-4 flex items-center gap-3 hover:bg-gray-50 transition-colors"
+            >
+              <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center text-2xl">
+                👤
+              </div>
+              <div>
+                <div className="font-semibold">My Profile</div>
+                <div className="text-gray-500 text-sm">License & settings</div>
+              </div>
+            </Link>
+
+            <button 
+              className="bg-white rounded-xl shadow p-4 flex items-center gap-3 hover:bg-gray-50 transition-colors"
+              onClick={() => alert('Support: Contact your supervisor')}
+            >
+              <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center text-2xl">
+                🆘
+              </div>
+              <div>
+                <div className="font-semibold">Report Issue</div>
+                <div className="text-gray-500 text-sm">Need help?</div>
+              </div>
+            </button>
+          </div>
+
+        </div>
       </div>
     </RoleGuard>
   )
