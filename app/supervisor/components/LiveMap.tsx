@@ -6,6 +6,7 @@ import { supabase } from '@/lib/supabase/client'
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
+import { getLocalDate } from '@/lib/timezone'
 
 // Fix Leaflet default marker icons
 import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png'
@@ -173,13 +174,14 @@ export default function LiveMap() {
   }, [])
 
   async function loadAllData() {
-    const today = new Date().toISOString().split('T')[0]
+    const today = getLocalDate()
+    const tomorrow = new Date(new Date().getTime() + 86400000).toISOString().split('T')[0]
     
-    // Get all tours
+    // Get all tours (query both today and tomorrow for timezone)
     const { data: tours } = await supabase
       .from('tours')
       .select('id, name, start_time, status, guide_id, pickup_location')
-      .eq('tour_date', today)
+      .in('tour_date', [today, tomorrow])
       .in('status', ['in_progress', 'scheduled'])
     
     if (!tours || tours.length === 0) {
