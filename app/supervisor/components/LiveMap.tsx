@@ -194,11 +194,17 @@ export default function LiveMap() {
     const tourIds = tours.map((t: any) => t.id)
     
     // Get check-ins
-    const { data: checkins } = await supabase
+    const { data: checkins, error: checkinsError } = await supabase
       .from('guide_checkins')
       .select('tour_id, latitude, longitude, checked_in_at, minutes_early_or_late')
       .in('tour_id', tourIds)
       .order('checked_in_at', { ascending: false })
+    
+    console.log('LiveMap: Found', checkins?.length || 0, 'check-ins for', tourIds.length, 'tours')
+    if (checkinsError) console.error('LiveMap: Check-ins error:', checkinsError)
+    if (checkins && checkins.length > 0) {
+      console.log('LiveMap: First check-in:', checkins[0])
+    }
 
     // Get incidents
     const { data: incidentsData } = await supabase
