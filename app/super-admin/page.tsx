@@ -139,6 +139,20 @@ export default function SuperAdminDashboard() {
   return (
     <RoleGuard requiredRole='super_admin'>
       <div className="max-w-7xl mx-auto">
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">Platform Dashboard</h1>
+            <p className="text-gray-500">Overview of all clients and companies</p>
+          </div>
+          <div className="flex items-center gap-4">
+            <Link 
+              href="/admin" 
+              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              🏢 Switch to Company Admin
+            </Link>
+          </div>
+        </div>
 
         {loading ? (
           <div className="flex items-center justify-center h-64">
