@@ -5,193 +5,158 @@ export const dynamic = 'force-dynamic'
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase/client'
-import { Profile } from '@/lib/supabase/types'
+
+interface User {
+  id: string
+  first_name: string
+  last_name: string
+  email: string
+  role: string
+  status: string
+}
 
 export default function UsersPage() {
-  const [users, setUsers] = useState<Profile[]>([])
+  const [users, setUsers] = useState<User[]>([])
+  const [stats, setStats] = useState({ total: 0, guides: 0, drivers: 0 })
   const [loading, setLoading] = useState(true)
-  const [filter, setFilter] = useState('')
-  const [roleFilter, setRoleFilter] = useState('all')
 
   useEffect(() => {
     loadUsers()
   }, [])
 
   async function loadUsers() {
-    const { data, error } = await (supabase as any)
+    const { data, error } = await supabase
       .from('profiles')
-      .select('*')
-      .order('created_at', { ascending: false })
+      .select('id, first_name, last_name, email, role, status')
+      .eq('status', 'active')
+      .order('role')
 
     if (error) {
       console.error('Error loading users:', error)
     } else {
       setUsers(data || [])
+      setStats({
+        total: data?.length || 0,
+        guides: data?.filter((u: User) => u.role === 'guide').length || 0,
+        drivers: data?.filter((u: User) => u.role === 'driver').length || 0
+      })
     }
     setLoading(false)
   }
 
-  const filteredUsers = users.filter((user) => {
-    const matchesSearch =
-      user.first_name?.toLowerCase().includes(filter.toLowerCase()) ||
-      user.last_name?.toLowerCase().includes(filter.toLowerCase()) ||
-      user.phone?.toLowerCase().includes(filter.toLowerCase())
-    const matchesRole = roleFilter === 'all' || user.role === roleFilter
-    return matchesSearch && matchesRole
-  })
-
-  const roles = [
-    { value: 'all', label: 'All Roles' },
-    { value: 'super_admin', label: 'Super Admin' },
-    { value: 'company_admin', label: 'Company Admin' },
-    { value: 'supervisor', label: 'Supervisor' },
-    { value: 'manager', label: 'Manager' },
-    { value: 'operations', label: 'Operations' },
-    { value: 'guide', label: 'Guide' },
-  ]
-
-  function getRoleBadgeColor(role: string) {
+  function getRoleIcon(role: string) {
     switch (role) {
-      case 'super_admin':
-        return 'bg-red-100 text-red-700'
-      case 'company_admin':
-        return 'bg-orange-100 text-orange-700'
-      case 'supervisor':
-      case 'manager':
-        return 'bg-blue-100 text-blue-700'
-      case 'operations':
-        return 'bg-green-100 text-green-700'
-      case 'guide':
-        return 'bg-gray-100 text-gray-700'
-      default:
-        return 'bg-gray-100 text-gray-700'
+      case 'guide': return '🎯'
+      case 'driver': return '🚗'
+      case 'supervisor': return '👁️'
+      case 'operations': return '📊'
+      case 'company_admin': return '⚡'
+      default: return '👤'
+    }
+  }
+
+  function getRoleColor(role: string) {
+    switch (role) {
+      case 'guide': return 'bg-green-100 text-green-700'
+      case 'driver': return 'bg-blue-100 text-blue-700'
+      case 'supervisor': return 'bg-purple-100 text-purple-700'
+      case 'operations': return 'bg-orange-100 text-orange-700'
+      default: return 'bg-gray-100 text-gray-700'
     }
   }
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-gray-500">Loading users...</div>
+      <div className="h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-gray-500">Loading team...</div>
       </div>
     )
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 px-4">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Users</h1>
-          <p className="text-gray-500 mt-1">Manage staff and guides</p>
-        </div>
-        <Link
-          href="/admin/users/new"
-          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
-        >
-          <span>➕</span>
-          <span>Create User</span>
-        </Link>
-      </div>
-
-      {/* Filters */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <div className="flex flex-col sm:flex-row gap-4">
-          <div className="flex-1">
-            <input
-              type="text"
-              placeholder="Search by name or phone..."
-              value={filter}
-              onChange={(e) => setFilter(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
+    <div className="h-screen flex flex-col bg-gray-50 overflow-hidden">
+      {/* Header */}
+      <div className="bg-white border-b px-4 py-4 flex-shrink-0">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-xl font-bold">Team</h1>
+            <p className="text-gray-500 text-sm">Manage staff</p>
           </div>
-          <select
-            value={roleFilter}
-            onChange={(e) => setRoleFilter(e.target.value)}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          <Link 
+            href="/admin/users/new"
+            className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium text-sm"
           >
-            {roles.map((role) => (
-              <option key={role.value} value={role.value}>
-                {role.label}
-              </option>
-            ))}
-          </select>
+            + Add
+          </Link>
         </div>
       </div>
 
-      {/* Users Table */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-        {filteredUsers.length === 0 ? (
-          <div className="p-8 text-center text-gray-500">
-            <p className="text-lg mb-2">No users found</p>
-            <p className="text-sm">Try adjusting your filters or create a new user.</p>
+      {/* Stats */}
+      <div className="px-4 py-3 flex-shrink-0">
+        <div className="grid grid-cols-3 gap-3">
+          <div className="bg-white rounded-xl shadow p-3 text-center">
+            <div className="text-2xl font-bold">{stats.total}</div>
+            <div className="text-gray-500 text-xs">Total</div>
           </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50 border-b border-gray-200">
-                <tr>
-                  <th className="text-left py-4 px-6 text-sm font-medium text-gray-700">Name</th>
-                  <th className="text-left py-4 px-6 text-sm font-medium text-gray-700">Role</th>
-                  <th className="text-left py-4 px-6 text-sm font-medium text-gray-700">Phone</th>
-                  <th className="text-left py-4 px-6 text-sm font-medium text-gray-700">Status</th>
-                  <th className="text-left py-4 px-6 text-sm font-medium text-gray-700">Joined</th>
-                  <th className="text-right py-4 px-6 text-sm font-medium text-gray-700">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200">
-                {filteredUsers.map((user) => (
-                  <tr key={user.id} className="hover:bg-gray-50">
-                    <td className="py-4 px-6">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-semibold">
-                          {user.first_name?.[0]}{user.last_name?.[0]}
-                        </div>
-                        <div>
-                          <p className="font-medium text-gray-900">
-                            {user.first_name} {user.last_name}
-                          </p>
-                          {user.employee_id && (
-                            <p className="text-xs text-gray-500">ID: {user.employee_id}</p>
-                          )}
-                        </div>
-                      </div>
-                    </td>
-                    <td className="py-4 px-6">
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium capitalize ${getRoleBadgeColor(user.role)}`}>
-                        {user.role?.replace('_', ' ')}
-                      </span>
-                    </td>
-                    <td className="py-4 px-6 text-gray-600">{user.phone || '-'}</td>
-                    <td className="py-4 px-6">
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                        user.is_active
-                          ? 'bg-green-100 text-green-700'
-                          : 'bg-red-100 text-red-700'
-                      }`}>
-                        {user.is_active ? 'Active' : 'Inactive'}
-                      </span>
-                    </td>
-                    <td className="py-4 px-6 text-gray-500 text-sm">
-                      {new Date(user.created_at).toLocaleDateString()}
-                    </td>
-                    <td className="py-4 px-6 text-right">
-                      <Link 
-                        href={`/admin/users/${user.id}`}
-                        className="text-blue-600 hover:text-blue-800 text-sm font-medium"
-                      >
-                        Edit
-                      </Link>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className="bg-white rounded-xl shadow p-3 text-center">
+            <div className="text-2xl font-bold text-green-600">{stats.guides}</div>
+            <div className="text-gray-500 text-xs">Guides</div>
           </div>
-        )}
+          <div className="bg-white rounded-xl shadow p-3 text-center">
+            <div className="text-2xl font-bold text-blue-600">{stats.drivers}</div>
+            <div className="text-gray-500 text-xs">Drivers</div>
+          </div>
+        </div>
       </div>
 
-      <div className="mt-4 text-sm text-gray-500">
-        Showing {filteredUsers.length} of {users.length} users
+      {/* User List */}
+      <div className="flex-1 px-4 pb-20 overflow-y-auto">
+        <div className="space-y-2">
+          {users.map(user => (
+            <Link
+              key={user.id}
+              href={`/admin/users/${user.id}`}
+              className="block bg-white rounded-xl shadow p-4 hover:shadow-md transition-shadow"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center text-2xl">
+                  {getRoleIcon(user.role)}
+                </div>
+                
+                <div className="flex-1">
+                  <h3 className="font-bold">{user.first_name} {user.last_name}</h3>
+                  <p className="text-gray-500 text-sm truncate">{user.email}</p>
+                </div>
+                
+                <span className={`text-xs px-2 py-1 rounded-full ${getRoleColor(user.role)}`}>
+                  {user.role}
+                </span>
+              </div>
+            </Link>
+          ))}
+        </div>
+      </div>
+
+      {/* Bottom Nav */}
+      <div className="bg-white border-t px-4 py-3 flex-shrink-0 fixed bottom-0 left-0 right-0">
+        <div className="flex items-center justify-around">
+          <Link href="/admin" className="flex flex-col items-center text-gray-400">
+            <span className="text-xl">📊</span>
+            <span className="text-xs">Dashboard</span>
+          </Link>
+          <Link href="/admin/tours" className="flex flex-col items-center text-gray-400">
+            <span className="text-xl">🚌</span>
+            <span className="text-xs">Tours</span>
+          </Link>
+          <Link href="/admin/users" className="flex flex-col items-center text-blue-600">
+            <span className="text-xl">👥</span>
+            <span className="text-xs">Team</span>
+          </Link>
+          <Link href="/admin/vehicles" className="flex flex-col items-center text-gray-400">
+            <span className="text-xl">🚗</span>
+            <span className="text-xs">Fleet</span>
+          </Link>
+        </div>
       </div>
     </div>
   )
