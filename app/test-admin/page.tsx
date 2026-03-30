@@ -11,37 +11,31 @@ export default function TestPage() {
           <p className="text-sm text-gray-600">The GREY BORDER shows the container edge. Content inside should have spacing from this edge.</p>
         </div>
 
-        <!-- No margin - touching the grey container edge -->
         <div className="bg-red-100 border-2 border-red-500 rounded-lg p-4">
           <h3 className="font-bold text-red-800 mb-2">NO MARGIN - Touching Container Edge</h3>
           <p className="text-red-700 text-sm">This red box has NO margin. It touches the grey container edge.</p>
         </div>
 
-        <!-- mx-4 margin - 16px from edge -->
         <div className="bg-orange-100 border-2 border-orange-500 rounded-lg p-4 mx-4">
           <h3 className="font-bold text-orange-800 mb-2">mx-4 (16px) margin</h3>
           <p className="text-orange-700 text-sm">This orange box has 16px margin. You should see space between red box and orange box.</p>
         </div>
 
-        <!-- mx-8 margin - 32px from edge -->
         <div className="bg-green-100 border-2 border-green-500 rounded-lg p-4 mx-8">
           <h3 className="font-bold text-green-800 mb-2">mx-8 (32px) margin</h3>
           <p className="text-green-700 text-sm">This green box has 32px margin. More space from edge.</p>
         </div>
 
-        <!-- mx-10 margin - 40px from edge - BLUE -->
         <div className="bg-blue-100 border-2 border-blue-500 rounded-lg p-4 mx-10">
           <h3 className="font-bold text-blue-800 mb-2">mx-10 (40px) margin - EXTRA LARGE</h3>
           <p className="text-blue-700 text-sm">This BLUE box has 40px margin. Most spacing from edge.</p>
         </div>
 
-        <!-- mx-16 margin - 64px from edge -->
         <div className="bg-purple-100 border-2 border-purple-500 rounded-lg p-4 mx-16">
           <h3 className="font-bold text-purple-800 mb-2">mx-16 (64px) margin</h3>
           <p className="text-purple-700 text-sm">This purple box has 64px margin. Very spacious.</p>
         </div>
 
-        <!-- Full width for comparison -->
         <div className="bg-gray-200 border-2 border-gray-500 rounded-lg p-4">
           <h3 className="font-bold text-gray-800 mb-2">No margin (full width inside container)</h3>
           <p className="text-gray-700 text-sm">This grey box has no margin. It stretches to the container edges.</p>
