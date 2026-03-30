@@ -224,13 +224,19 @@ export default function LiveMap() {
       }
     })
 
-    // Build guide locations
+    // Build guide locations (only if they have GPS coordinates)
     const guideLocations: GuideLocation[] = []
     const toursWithCheckins = new Set<string>()
     
     latestCheckins.forEach((checkin: any, tourId: string) => {
       const tour = tourMap.get(tourId)
       if (!tour) return
+      
+      // Skip check-ins without GPS coordinates
+      if (!checkin.latitude || !checkin.longitude) {
+        console.log(`Skipping check-in for tour ${tourId}: no GPS coordinates`)
+        return
+      }
       
       const guide = guideMap.get(tour.guide_id)
       const pickupTime = new Date(`${today}T${tour.start_time}`)
