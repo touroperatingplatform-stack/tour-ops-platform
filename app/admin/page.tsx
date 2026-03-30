@@ -7,7 +7,6 @@ import Link from 'next/link'
 import { supabase } from '@/lib/supabase/client'
 import RoleGuard from '@/lib/auth/RoleGuard'
 import { getLocalDate } from '@/lib/timezone'
-import LanguageToggle from '@/components/LanguageToggle'
 
 interface DashboardStats {
   toursTotal: number
@@ -139,12 +138,6 @@ export default function AdminDashboard() {
             <div>
               <h1 className="text-2xl font-bold">Company Dashboard</h1>
               <p className="text-gray-500">{new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}</p>
-            </div>
-            <div className="flex items-center gap-4">
-              <LanguageToggle />
-              <Link href="/super-admin" className="text-sm text-blue-600 hover:underline">
-                ← Back to Super Admin
-              </Link>
             </div>
           </div>
         </div>
