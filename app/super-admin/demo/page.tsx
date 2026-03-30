@@ -143,7 +143,7 @@ export default function SuperAdminDemoPage() {
     setDemoMessage(null)
 
     try {
-      const today = new Date().toISOString().split('T')[0]
+      const today = getLocalDate()
       const now = new Date()
       
       // Get guides
@@ -299,36 +299,35 @@ export default function SuperAdminDemoPage() {
 
       setDemoProgress(`✅ Created ${createdTourIds.length} tours for today`)
       
-      // Update tour statuses - ensure evening/night tours show as active for demo
+      // Update tour statuses - keep evening tours active for night demo
       setDemoProgress('⏰ Setting realistic tour statuses...')
       const currentHour = now.getHours()
       
       for (let i = 0; i < tourDestinations.length && i < guides.length; i++) {
         const dest = tourDestinations[i]
         const tourId = createdTourIds[i]
-        
-        // Parse tour start hour
         const [tourHour] = dest.start.split(':').map(Number)
         
-        // Determine status based on time of day
-        // For demo: spread statuses so there's always activity visible
         let status = 'scheduled'
         
-        if (tourHour < currentHour - 3) {
-          // Tours that ended 3+ hours ago = completed
-          status = 'completed'
-        } else if (tourHour <= currentHour && tourHour >= currentHour - 2) {
-          // Tours within last 2 hours = in_progress
-          status = 'in_progress'
-        } else if (tourHour > currentHour && tourHour <= currentHour + 2) {
-          // Tours in next 2 hours = scheduled (upcoming)
-          status = 'scheduled'
-        } else if (tourHour > 17) {
-          // Evening/night tours always show as active for demo
-          status = currentHour > 17 ? 'in_progress' : 'scheduled'
+        // Night time (after 6 PM): Evening tours show as in_progress
+        if (currentHour >= 18) {
+          if (tourHour >= 17) {
+            status = 'in_progress'  // Evening/night tours active
+          } else if (tourHour >= 12) {
+            status = 'completed'    // Afternoon tours done
+          } else {
+            status = 'completed'    // Morning tours done
+          }
         } else {
-          // Day tours from earlier = completed
-          status = 'completed'
+          // Day time: normal logic
+          if (tourHour < currentHour - 2) {
+            status = 'completed'
+          } else if (tourHour <= currentHour) {
+            status = 'in_progress'
+          } else {
+            status = 'scheduled'
+          }
         }
         
         await supabase.from('tours').update({ status }).eq('id', tourId)
