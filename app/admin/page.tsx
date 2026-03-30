@@ -4,11 +4,9 @@ export const dynamic = 'force-dynamic'
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase/client'
 import RoleGuard from '@/lib/auth/RoleGuard'
 import { getLocalDate } from '@/lib/timezone'
-import LanguageToggle from '@/components/LanguageToggle'
 import { useTranslation } from '@/lib/i18n/useTranslation'
 
 interface DashboardStats {
@@ -33,7 +31,6 @@ interface AttentionItem {
 }
 
 export default function AdminDashboard() {
-  const router = useRouter()
   const { t, locale } = useTranslation()
   const [stats, setStats] = useState<DashboardStats>({
     toursTotal: 0,
@@ -119,33 +116,11 @@ export default function AdminDashboard() {
     }
   }
 
-  async function handleSignOut() {
-    await supabase.auth.signOut()
-    router.push('/login')
-  }
-
   if (loading) {
     return (
       <RoleGuard requiredRole="company_admin">
-        <div className="h-screen flex flex-col bg-gray-100">
-          {/* Top Nav */}
-          <div className="bg-white border-b px-4 py-3 flex-shrink-0 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold">
-                T
-              </div>
-              <h1 className="text-lg font-bold">{t('adminDashboard.title')}</h1>
-            </div>
-            <div className="flex items-center gap-3">
-              <LanguageToggle />
-              <button className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
-                👤
-              </button>
-            </div>
-          </div>
-          
-          {/* Loading */}
-          <div className="flex-1 flex items-center justify-center">
+        <div className="h-full">
+          <div className="flex items-center justify-center h-full">
             <div className="text-gray-500">{t('common.loading')}</div>
           </div>
         </div>
@@ -155,33 +130,7 @@ export default function AdminDashboard() {
 
   return (
     <RoleGuard requiredRole="company_admin">
-      <div className="h-screen flex flex-col bg-gray-100">
-        {/* Top Nav */}
-        <div className="bg-white border-b px-4 py-3 flex-shrink-0 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold">
-              T
-            </div>
-            <div>
-              <h1 className="text-lg font-bold">{t('adminDashboard.title')}</h1>
-              <p className="text-xs text-gray-500">
-                {new Date().toLocaleDateString(locale === 'es' ? 'es-ES' : 'en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center gap-3">
-            <LanguageToggle />
-            <button 
-              onClick={handleSignOut}
-              className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center hover:bg-gray-300"
-            >
-              👤
-            </button>
-          </div>
-        </div>
-
-        {/* Main Content */}
-        <div className="flex-1 overflow-hidden p-3">
+      <div className="h-full">
           <div className="h-full grid grid-cols-12 grid-rows-[auto_auto_1fr] gap-3">
             
             {/* Row 1: KPI Cards */}
@@ -325,32 +274,6 @@ export default function AdminDashboard() {
               </div>
             </div>
 
-          </div>
-        </div>
-
-        {/* Bottom Nav */}
-        <div className="bg-white border-t px-4 py-3 flex-shrink-0">
-          <div className="flex items-center justify-around">
-            <Link href="/admin" className="flex flex-col items-center text-blue-600">
-              <span className="text-xl">📊</span>
-              <span className="text-xs">{t('nav.dashboard')}</span>
-            </Link>
-            <Link href="/admin/tours" className="flex flex-col items-center text-gray-400">
-              <span className="text-xl">🚌</span>
-              <span className="text-xs">{t('nav.tours')}</span>
-            </Link>
-            <Link href="/admin/guests" className="flex flex-col items-center text-gray-400">
-              <span className="text-xl">👤</span>
-              <span className="text-xs">{t('nav.guests')}</span>
-            </Link>
-            <Link href="/admin/reports" className="flex flex-col items-center text-gray-400">
-              <span className="text-xl">📈</span>
-              <span className="text-xs">{t('nav.reports')}</span>
-            </Link>
-            <Link href="/admin/settings" className="flex flex-col items-center text-gray-400">
-              <span className="text-xl">⚙️</span>
-              <span className="text-xs">{t('common.menu')}</span>
-            </Link>
           </div>
         </div>
       </div>
