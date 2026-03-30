@@ -124,11 +124,6 @@ export default function AdminDashboard() {
     }
   }
 
-  async function handleSignOut() {
-    await supabase.auth.signOut()
-    router.push('/login')
-  }
-
   if (loading) {
     return (
       <RoleGuard requiredRole="company_admin">
