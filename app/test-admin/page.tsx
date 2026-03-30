@@ -6,14 +6,18 @@ export default function TestPage() {
   return (
     <TestLayout>
       <div className="space-y-8">
-        <div className="bg-gray-100 border-2 border-dashed border-gray-400 rounded-lg p-3">
-          <h2 className="font-bold text-gray-800">Container Padding Test</h2>
-          <p className="text-sm text-gray-600">The PINK area is the scrollable container. Content should have space from the pink edges.</p>
+        <div className="px-6">
+          <div className="bg-gray-100 border-2 border-dashed border-gray-400 rounded-lg p-3">
+            <h2 className="font-bold text-gray-800">Container Padding Test</h2>
+            <p className="text-sm text-gray-600">The PINK area is the scrollable container. Content should have space from the pink edges.</p>
+          </div>
         </div>
 
-        <div className="bg-red-100 border-2 border-red-500 rounded-lg p-4">
-          <h3 className="font-bold text-red-800 mb-2">NO MARGIN (mx-0)</h3>
-          <p className="text-red-700 text-sm">This touches the pink container edge. No space on sides.</p>
+        <div className="px-6">
+          <div className="bg-red-100 border-2 border-red-500 rounded-lg p-4">
+            <h3 className="font-bold text-red-800 mb-2">NO MARGIN (mx-0)</h3>
+            <p className="text-red-700 text-sm">Now wrapped with px-6. Should have space from pink edge.</p>
+          </div>
         </div>
 
         <div className="px-4">
@@ -51,16 +55,18 @@ export default function TestPage() {
           </div>
         </div>
 
-        <div className="bg-white rounded-lg border border-gray-200 p-4">
-          <h3 className="font-semibold mb-2">Long Content Test</h3>
-          <p className="text-gray-600 text-sm leading-relaxed">
-            Testing scroll behavior within the pink container area.
-            The container has px-6 padding (24px) by default.
-            Content inside can add more margin if needed.
-          </p>
-          <p className="text-gray-600 text-sm leading-relaxed mt-4">
-            More content here to test scrolling. The pink border shows the container boundary.
-          </p>
+        <div className="px-6">
+          <div className="bg-white rounded-lg border border-gray-200 p-4">
+            <h3 className="font-semibold mb-2">Long Content Test</h3>
+            <p className="text-gray-600 text-sm leading-relaxed">
+              Testing scroll behavior within the pink container area.
+              The container has px-10 padding (40px) + mx-6 margin (24px) = 64px total space.
+              Content inside can add more margin if needed.
+            </p>
+            <p className="text-gray-600 text-sm leading-relaxed mt-4">
+              More content here to test scrolling. The pink border shows the container boundary.
+            </p>
+          </div>
         </div>
       </div>
     </TestLayout>
