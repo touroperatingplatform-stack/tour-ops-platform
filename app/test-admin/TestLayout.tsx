@@ -52,10 +52,10 @@ export default function TestLayout({ children }: { children: React.ReactNode }) 
         </div>
       </header>
 
-      {/* Main Content - DEBUG: Pink border to show container boundary */}
+      {/* Main Content */}
       <main className="flex-1 overflow-hidden bg-green-200">
-        <div className="w-full h-full overflow-auto px-20 py-10 border-8 border-transparent">
-          <div className="mx-10">
+        <div className="w-full h-full overflow-auto px-10 py-6 border-8 border-transparent">
+          <div className="h-full flex flex-col">
             {children}
           </div>
         </div>

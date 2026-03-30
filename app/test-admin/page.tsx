@@ -5,9 +5,9 @@ import TestLayout from './TestLayout'
 export default function TestPage() {
   return (
     <TestLayout>
-      <div className="space-y-6">
-        {/* HEADER SECTION - RED BORDER */}
-        <div className="border-4 border-red-400 border-dashed p-2">
+      <div className="h-full flex flex-col gap-4">
+        {/* HEADER SECTION - RED BORDER - Fixed height */}
+        <div className="flex-none border-4 border-red-400 border-dashed p-2">
           <div className="mb-2">
             <h1 className="text-xl font-bold text-gray-900">Dashboard</h1>
             <p className="text-sm text-gray-500">
@@ -16,8 +16,8 @@ export default function TestPage() {
           </div>
         </div>
 
-        {/* KPI CARDS ROW - BLUE BORDER */}
-        <div className="border-4 border-blue-400 border-dashed p-2">
+        {/* KPI CARDS ROW - BLUE BORDER - Fixed height */}
+        <div className="flex-none border-4 border-blue-400 border-dashed p-2">
           <div className="grid grid-cols-4 gap-3">
             <div className="bg-white rounded-lg border border-gray-200 p-3">
               <p className="text-xs text-gray-500 uppercase font-medium">Tours Today</p>
@@ -44,36 +44,49 @@ export default function TestPage() {
           </div>
         </div>
 
-        {/* MIDDLE SECTION - GREEN BORDER */}
-        <div className="border-4 border-green-400 border-dashed p-2">
-          <div className="grid grid-cols-12 gap-3">
-            {/* Active Tours + Team - Left */}
-            <div className="col-span-4 grid grid-rows-2 gap-3 border-2 border-purple-300 border-dotted p-1">
-              <div className="bg-white rounded-lg border border-gray-200 p-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-gray-500 uppercase font-medium">Active Tours</span>
-                  <span className="bg-green-100 text-green-700 text-xs px-2 py-0.5 rounded-full">2 LIVE</span>
+        {/* MIDDLE SECTION - GREEN BORDER - Flex-1 with scroll */}
+        <div className="flex-1 min-h-0 border-4 border-green-400 border-dashed p-2 overflow-hidden">
+          <div className="h-full grid grid-cols-12 gap-3">
+            {/* Active Tours + Team - Left - Scrollable */}
+            <div className="col-span-4 h-full overflow-auto border-2 border-purple-300 border-dotted p-1">
+              <div className="space-y-3">
+                <div className="bg-white rounded-lg border border-gray-200 p-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-gray-500 uppercase font-medium">Active Tours</span>
+                    <span className="bg-green-100 text-green-700 text-xs px-2 py-0.5 rounded-full">2 LIVE</span>
+                  </div>
+                  <p className="text-3xl font-bold text-blue-600 mt-1">2</p>
                 </div>
-                <p className="text-3xl font-bold text-blue-600 mt-1">2</p>
-              </div>
 
-              <div className="bg-white rounded-lg border border-gray-200 p-3">
-                <p className="text-xs text-gray-500 uppercase font-medium">Team Status</p>
-                <div className="mt-2 grid grid-cols-2 gap-2">
-                  <div className="text-center">
-                    <p className="text-xl font-bold">2/19</p>
-                    <p className="text-xs text-gray-500">Guides</p>
+                <div className="bg-white rounded-lg border border-gray-200 p-3">
+                  <p className="text-xs text-gray-500 uppercase font-medium">Team Status</p>
+                  <div className="mt-2 grid grid-cols-2 gap-2">
+                    <div className="text-center">
+                      <p className="text-xl font-bold">2/19</p>
+                      <p className="text-xs text-gray-500">Guides</p>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-xl font-bold">6</p>
+                      <p className="text-xs text-gray-500">Vehicles</p>
+                    </div>
                   </div>
-                  <div className="text-center">
-                    <p className="text-xl font-bold">6</p>
-                    <p className="text-xs text-gray-500">Vehicles</p>
-                  </div>
+                </div>
+
+                {/* Extra content to test scrolling */}
+                <div className="bg-gray-50 rounded-lg border border-gray-200 p-3">
+                  <p className="text-xs text-gray-500">Extra content to test scrolling in this section...</p>
+                </div>
+                <div className="bg-gray-50 rounded-lg border border-gray-200 p-3">
+                  <p className="text-xs text-gray-500">More content here...</p>
+                </div>
+                <div className="bg-gray-50 rounded-lg border border-gray-200 p-3">
+                  <p className="text-xs text-gray-500">Even more content to force scroll...</p>
                 </div>
               </div>
             </div>
 
-            {/* Attention Required - Center */}
-            <div className="col-span-5 bg-white rounded-lg border border-gray-200 p-3 flex flex-col border-2 border-orange-300 border-dotted">
+            {/* Attention Required - Center - Scrollable */}
+            <div className="col-span-5 h-full overflow-auto bg-white rounded-lg border border-gray-200 p-3 border-2 border-orange-300 border-dotted flex flex-col">
               <div className="flex items-center justify-between mb-2">
                 <span className="font-semibold text-sm">⚠️ Attention Required</span>
                 <span className="text-gray-400 text-xs">0 items</span>
@@ -83,10 +96,10 @@ export default function TestPage() {
               </div>
             </div>
 
-            {/* Quick Actions - Right */}
-            <div className="col-span-3 bg-white rounded-lg border border-gray-200 p-3 flex flex-col border-2 border-teal-300 border-dotted">
+            {/* Quick Actions - Right - Scrollable */}
+            <div className="col-span-3 h-full overflow-auto bg-white rounded-lg border border-gray-200 p-3 border-2 border-teal-300 border-dotted flex flex-col">
               <span className="font-semibold text-sm mb-2">Quick Actions</span>
-              <div className="flex-1 grid grid-cols-2 gap-2">
+              <div className="flex-1 grid grid-cols-2 gap-2 content-start">
                 <button className="flex flex-col items-center justify-center p-2 bg-blue-50 hover:bg-blue-100 rounded transition-colors">
                   <span className="text-xl mb-1">🚌</span>
                   <span className="text-xs font-medium">New Tour</span>
@@ -108,11 +121,11 @@ export default function TestPage() {
           </div>
         </div>
 
-        {/* BOTTOM SECTION - YELLOW BORDER */}
-        <div className="border-4 border-yellow-400 border-dashed p-2">
-          <div className="grid grid-cols-12 gap-3">
+        {/* BOTTOM SECTION - YELLOW BORDER - Flex-1 with scroll */}
+        <div className="flex-1 min-h-0 border-4 border-yellow-400 border-dashed p-2 overflow-hidden">
+          <div className="h-full grid grid-cols-12 gap-3">
             {/* Timeline */}
-            <div className="col-span-9 bg-white rounded-lg border border-gray-200 p-3 border-2 border-indigo-300 border-dotted">
+            <div className="col-span-9 h-full overflow-auto bg-white rounded-lg border border-gray-200 p-3 border-2 border-indigo-300 border-dotted">
               <div className="flex items-center justify-between mb-2">
                 <span className="font-semibold text-sm">Today's Timeline</span>
                 <span className="text-gray-400 text-xs">19 tours</span>
@@ -131,7 +144,7 @@ export default function TestPage() {
             </div>
 
             {/* Fleet Status */}
-            <div className="col-span-3 bg-white rounded-lg border border-gray-200 p-3 border-2 border-pink-300 border-dotted">
+            <div className="col-span-3 h-full overflow-auto bg-white rounded-lg border border-gray-200 p-3 border-2 border-pink-300 border-dotted">
               <span className="font-semibold text-sm">Fleet Status</span>
               <div className="mt-2 space-y-1">
                 <div className="flex items-center justify-between text-sm">
