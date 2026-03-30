@@ -273,6 +273,216 @@ export default function SuperAdminClientsPage() {
     alert('Delete functionality needs careful implementation - contact developer')
   }
 
+  async function loadClientForEdit(clientId: string) {
+    try {
+      // Load profile
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', clientId)
+        .single()
+      
+      if (!profile) throw new Error('Client not found')
+      
+      // Load companies for this client
+      const { data: companies } = await supabase
+        .from('companies')
+        .select('*')
+        .eq('company_admin_id', clientId)
+      
+      const company = companies && companies.length > 0 ? companies[0] : null
+      
+      // Load company_configs
+      let config = null
+      if (company) {
+        const { data: configData } = await supabase
+          .from('company_configs')
+          .select('*')
+          .eq('company_id', company.id)
+          .single()
+        config = configData
+      }
+      
+      // Set form data
+      setFormData({
+        email: profile.email || '',
+        first_name: profile.first_name || '',
+        last_name: profile.last_name || '',
+        phone: profile.phone || '',
+        password: '',
+        company_name: company?.name || '',
+        company_slug: company?.slug || '',
+        status: (profile.status as any) || 'active',
+        features: {
+          enableGuides: config?.enable_guides ?? true,
+          enableDrivers: config?.enable_drivers ?? true,
+          enableOperations: config?.enable_operations ?? true,
+          enableSupervisor: config?.enable_supervisor ?? true,
+          enableManager: config?.enable_manager ?? true,
+          enableIncidents: config?.enable_incidents ?? true,
+          enableExpenses: config?.enable_expenses ?? true,
+          enableReports: config?.enable_reports ?? true,
+          enableGuestFeedback: config?.enable_guest_feedback ?? true,
+          enableActivityFeed: config?.enable_activity_feed ?? true,
+          enableDriverCheckin: config?.enable_driver_checkin ?? true,
+          enablePickupStops: config?.enable_pickup_stops ?? true,
+          enableExternalBookings: config?.enable_external_bookings ?? true,
+          enableMultiCompany: config?.enable_multi_company ?? true,
+          enableCustomBranding: config?.enable_custom_branding ?? true,
+          enableApiIntegrations: config?.enable_api_integrations ?? true
+        },
+        limits: {
+          maxCompanies: config?.max_companies ?? 5,
+          maxUsers: config?.max_users ?? 50,
+          maxGuides: config?.max_guides ?? 20,
+          maxDrivers: config?.max_drivers ?? 10,
+          maxToursPerDay: config?.max_tours_per_day ?? 100,
+          maxGuestsPerMonth: config?.max_guests_per_month ?? 10000,
+          maxVehicles: config?.max_vehicles ?? 20
+        }
+      })
+      
+      setSelectedClient({
+        id: profile.id,
+        email: profile.email,
+        first_name: profile.first_name,
+        last_name: profile.last_name,
+        phone: profile.phone,
+        status: (profile.status as any) || 'active',
+        created_at: profile.created_at || '',
+        companies_count: companies?.length || 0,
+        users_count: 0
+      })
+    } catch (error) {
+      console.error('Error loading client:', error)
+      alert('Error loading client data: ' + (error as Error).message)
+    }
+  }
+
+  async function handleSaveClient(e: React.FormEvent) {
+    e.preventDefault()
+    
+    if (!selectedClient) return
+    
+    try {
+      // 1. Update profile
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .update({
+          first_name: formData.first_name,
+          last_name: formData.last_name,
+          phone: formData.phone,
+          status: formData.status
+        })
+        .eq('id', selectedClient.id)
+      
+      if (profileError) throw profileError
+      
+      // 2. Update company (if exists)
+      const { data: existingCompanies } = await supabase
+        .from('companies')
+        .select('id')
+        .eq('company_admin_id', selectedClient.id)
+      
+      let companyId = existingCompanies && existingCompanies.length > 0 ? existingCompanies[0].id : null
+      
+      if (companyId) {
+        const { error: companyError } = await supabase
+          .from('companies')
+          .update({
+            name: formData.company_name,
+            slug: formData.company_slug || formData.company_name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
+          })
+          .eq('id', companyId)
+        
+        if (companyError) throw companyError
+      } else {
+        // Create company if none exists
+        const { data: newCompany } = await supabase
+          .from('companies')
+          .insert({
+            name: formData.company_name,
+            slug: formData.company_slug || formData.company_name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''),
+            company_admin_id: selectedClient.id
+          })
+          .select('id')
+          .single()
+        
+        companyId = newCompany?.id || null
+        
+        // Create company_configs for new company
+        if (companyId) {
+          await supabase.from('company_configs').insert({
+            company_id: companyId,
+            enable_guides: formData.features.enableGuides,
+            enable_drivers: formData.features.enableDrivers,
+            enable_operations: formData.features.enableOperations,
+            enable_supervisor: formData.features.enableSupervisor,
+            enable_manager: formData.features.enableManager,
+            enable_incidents: formData.features.enableIncidents,
+            enable_expenses: formData.features.enableExpenses,
+            enable_reports: formData.features.enableReports,
+            enable_guest_feedback: formData.features.enableGuestFeedback,
+            enable_activity_feed: formData.features.enableActivityFeed,
+            enable_driver_checkin: formData.features.enableDriverCheckin,
+            enable_pickup_stops: formData.features.enablePickupStops,
+            enable_external_bookings: formData.features.enableExternalBookings,
+            enable_multi_company: formData.features.enableMultiCompany,
+            enable_custom_branding: formData.features.enableCustomBranding,
+            enable_api_integrations: formData.features.enableApiIntegrations,
+            max_companies: formData.limits.maxCompanies,
+            max_users: formData.limits.maxUsers,
+            max_guides: formData.limits.maxGuides,
+            max_drivers: formData.limits.maxDrivers,
+            max_tours_per_day: formData.limits.maxToursPerDay,
+            max_guests_per_month: formData.limits.maxGuestsPerMonth,
+            max_vehicles: formData.limits.maxVehicles
+          })
+        }
+      }
+      
+      // 3. Update company_configs (if company exists)
+      if (companyId) {
+        const { error: configError } = await supabase
+          .from('company_configs')
+          .upsert({
+            company_id: companyId,
+            enable_guides: formData.features.enableGuides,
+            enable_drivers: formData.features.enableDrivers,
+            enable_operations: formData.features.enableOperations,
+            enable_supervisor: formData.features.enableSupervisor,
+            enable_manager: formData.features.enableManager,
+            enable_incidents: formData.features.enableIncidents,
+            enable_expenses: formData.features.enableExpenses,
+            enable_reports: formData.features.enableReports,
+            enable_guest_feedback: formData.features.enableGuestFeedback,
+            enable_activity_feed: formData.features.enableActivityFeed,
+            enable_driver_checkin: formData.features.enableDriverCheckin,
+            enable_pickup_stops: formData.features.enablePickupStops,
+            enable_external_bookings: formData.features.enableExternalBookings,
+            enable_multi_company: formData.features.enableMultiCompany,
+            enable_custom_branding: formData.features.enableCustomBranding,
+            enable_api_integrations: formData.features.enableApiIntegrations,
+            max_companies: formData.limits.maxCompanies,
+            max_users: formData.limits.maxUsers,
+            max_guides: formData.limits.maxGuides,
+            max_drivers: formData.limits.maxDrivers,
+            max_tours_per_day: formData.limits.maxToursPerDay,
+            max_guests_per_month: formData.limits.maxGuestsPerMonth,
+            max_vehicles: formData.limits.maxVehicles
+          })
+        
+        if (configError) throw configError
+      }
+      
+      alert('✅ Client saved successfully!')
+      setShowEditModal(false)
+      loadClients()
+    } catch (error: any) {
+      alert('❌ Error saving client: ' + error.message)
+    }
+  }
+
   return (
     <RoleGuard requiredRole='super_admin'>
       <AdminNav />
@@ -360,8 +570,8 @@ export default function SuperAdminClientsPage() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <button
-                        onClick={() => {
-                          setSelectedClient(client)
+                        onClick={async () => {
+                          await loadClientForEdit(client.id)
                           setShowEditModal(true)
                         }}
                         className="text-blue-600 hover:text-blue-900 mr-4"
@@ -695,23 +905,297 @@ export default function SuperAdminClientsPage() {
         </div>
       )}
 
-      {/* Edit Client Modal (placeholder) */}
+      {/* Edit Client Modal */}
       {showEditModal && selectedClient && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-2xl w-full p-6">
-            <h2 className="text-2xl font-bold mb-4">Edit Client</h2>
-            <p className="text-gray-600 mb-4">{selectedClient.email}</p>
-            <p className="text-sm text-gray-500 mb-6">
-              Full edit functionality coming soon. For now, you can suspend or delete this client.
-            </p>
-            <div className="flex justify-end gap-4">
-              <button
-                onClick={() => setShowEditModal(false)}
-                className="px-6 py-2 border rounded-lg hover:bg-gray-50"
-              >
-                Close
-              </button>
+          <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b sticky top-0 bg-white">
+              <h2 className="text-2xl font-bold">Edit Client</h2>
+              <p className="text-gray-600">Update client info, company, and settings</p>
             </div>
+            
+            <form onSubmit={handleSaveClient} className="p-6">
+              {/* Basic Info */}
+              <div className="mb-8">
+                <h3 className="text-lg font-semibold mb-4">Basic Information</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Email (read-only)
+                    </label>
+                    <input
+                      type="email"
+                      value={formData.email}
+                      disabled
+                      className="w-full border rounded-lg px-3 py-2 bg-gray-100 text-gray-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Password (leave blank to keep current)
+                    </label>
+                    <input
+                      type="password"
+                      value={formData.password}
+                      onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                      className="w-full border rounded-lg px-3 py-2"
+                      placeholder="Enter new password to change"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      First Name
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.first_name}
+                      onChange={(e) => setFormData({ ...formData, first_name: e.target.value })}
+                      className="w-full border rounded-lg px-3 py-2"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Last Name
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.last_name}
+                      onChange={(e) => setFormData({ ...formData, last_name: e.target.value })}
+                      className="w-full border rounded-lg px-3 py-2"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Phone
+                    </label>
+                    <input
+                      type="tel"
+                      value={formData.phone}
+                      onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                      className="w-full border rounded-lg px-3 py-2"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Status
+                    </label>
+                    <select
+                      value={formData.status}
+                      onChange={(e) => setFormData({ ...formData, status: e.target.value as any })}
+                      className="w-full border rounded-lg px-3 py-2"
+                    >
+                      <option value="active">Active</option>
+                      <option value="trial">Trial</option>
+                      <option value="suspended">Suspended</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              {/* Company Information */}
+              <div className="mb-8">
+                <h3 className="text-lg font-semibold mb-4">Company Information</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Company Name *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.company_name}
+                      onChange={(e) => setFormData({ ...formData, company_name: e.target.value })}
+                      className="w-full border rounded-lg px-3 py-2"
+                      placeholder="e.g., Gavin Eco Adventures"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Company Slug
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.company_slug}
+                      onChange={(e) => setFormData({ ...formData, company_slug: e.target.value })}
+                      className="w-full border rounded-lg px-3 py-2"
+                      placeholder="e.g., gavin-eco-adventures"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">Leave blank to auto-generate</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Feature Flags */}
+              <div className="mb-8">
+                <h3 className="text-lg font-semibold mb-4">Enabled Features</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <h4 className="font-medium mb-3">Core Roles</h4>
+                    {Object.entries(formData.features)
+                      .filter(([key]) => key.startsWith('enableGuides') || key.startsWith('enableDrivers') || key.startsWith('enableOperations') || key.startsWith('enableSupervisor') || key.startsWith('enableManager'))
+                      .map(([key, value]) => (
+                        <label key={key} className="flex items-center mb-2">
+                          <input
+                            type="checkbox"
+                            checked={value}
+                            onChange={(e) => setFormData({ 
+                              ...formData, 
+                              features: { ...formData.features, [key]: e.target.checked }
+                            })}
+                            className="mr-2"
+                          />
+                          <span className="text-sm">{key.replace('enable', '').replace(/([A-Z])/g, ' $1').trim()}</span>
+                        </label>
+                      ))}
+                  </div>
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <h4 className="font-medium mb-3">Features</h4>
+                    {Object.entries(formData.features)
+                      .filter(([key]) => ['enableIncidents', 'enableExpenses', 'enableReports', 'enableGuestFeedback', 'enableActivityFeed', 'enableDriverCheckin', 'enablePickupStops'].includes(key))
+                      .map(([key, value]) => (
+                        <label key={key} className="flex items-center mb-2">
+                          <input
+                            type="checkbox"
+                            checked={value}
+                            onChange={(e) => setFormData({ 
+                              ...formData, 
+                              features: { ...formData.features, [key]: e.target.checked }
+                            })}
+                            className="mr-2"
+                          />
+                          <span className="text-sm">{key.replace('enable', '').replace(/([A-Z])/g, ' $1').trim()}</span>
+                        </label>
+                      ))}
+                  </div>
+                  <div className="bg-gray-50 p-4 rounded-lg md:col-span-2">
+                    <h4 className="font-medium mb-3">Advanced Features</h4>
+                    {Object.entries(formData.features)
+                      .filter(([key]) => ['enableExternalBookings', 'enableMultiCompany', 'enableCustomBranding', 'enableApiIntegrations'].includes(key))
+                      .map(([key, value]) => (
+                        <label key={key} className="flex items-center mb-2">
+                          <input
+                            type="checkbox"
+                            checked={value}
+                            onChange={(e) => setFormData({ 
+                              ...formData, 
+                              features: { ...formData.features, [key]: e.target.checked }
+                            })}
+                            className="mr-2"
+                          />
+                          <span className="text-sm">{key.replace('enable', '').replace(/([A-Z])/g, ' $1').trim()}</span>
+                        </label>
+                      ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Usage Limits */}
+              <div className="mb-8">
+                <h3 className="text-lg font-semibold mb-4">Usage Limits</h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Max Companies
+                    </label>
+                    <input
+                      type="number"
+                      value={formData.limits.maxCompanies}
+                      onChange={(e) => setFormData({ 
+                        ...formData, 
+                        limits: { ...formData.limits, maxCompanies: parseInt(e.target.value) }
+                      })}
+                      className="w-full border rounded-lg px-3 py-2"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Max Users
+                    </label>
+                    <input
+                      type="number"
+                      value={formData.limits.maxUsers}
+                      onChange={(e) => setFormData({ 
+                        ...formData, 
+                        limits: { ...formData.limits, maxUsers: parseInt(e.target.value) }
+                      })}
+                      className="w-full border rounded-lg px-3 py-2"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Max Guides
+                    </label>
+                    <input
+                      type="number"
+                      value={formData.limits.maxGuides}
+                      onChange={(e) => setFormData({ 
+                        ...formData, 
+                        limits: { ...formData.limits, maxGuides: parseInt(e.target.value) }
+                      })}
+                      className="w-full border rounded-lg px-3 py-2"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Max Drivers
+                    </label>
+                    <input
+                      type="number"
+                      value={formData.limits.maxDrivers}
+                      onChange={(e) => setFormData({ 
+                        ...formData, 
+                        limits: { ...formData.limits, maxDrivers: parseInt(e.target.value) }
+                      })}
+                      className="w-full border rounded-lg px-3 py-2"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Max Tours/Day
+                    </label>
+                    <input
+                      type="number"
+                      value={formData.limits.maxToursPerDay}
+                      onChange={(e) => setFormData({ 
+                        ...formData, 
+                        limits: { ...formData.limits, maxToursPerDay: parseInt(e.target.value) }
+                      })}
+                      className="w-full border rounded-lg px-3 py-2"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Max Guests/Month
+                    </label>
+                    <input
+                      type="number"
+                      value={formData.limits.maxGuestsPerMonth}
+                      onChange={(e) => setFormData({ 
+                        ...formData, 
+                        limits: { ...formData.limits, maxGuestsPerMonth: parseInt(e.target.value) }
+                      })}
+                      className="w-full border rounded-lg px-3 py-2"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-4 pt-4 border-t">
+                <button
+                  type="button"
+                  onClick={() => setShowEditModal(false)}
+                  className="px-6 py-2 border rounded-lg hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                >
+                  Save Changes
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
