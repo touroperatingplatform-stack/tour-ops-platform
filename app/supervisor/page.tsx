@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { supabase } from '@/lib/supabase/client'
 import RoleGuard from '@/lib/auth/RoleGuard'
 import LiveMap from './components/LiveMap'
+import { getLocalDate } from '@/lib/timezone'
 
 interface TourWithDetails {
   id: string
@@ -71,11 +72,9 @@ export default function SupervisorDashboard() {
   }, [])
 
   async function loadDashboardData() {
-    // Query for both today and tomorrow to handle timezone mismatch
-    // Tours created in Cancun (UTC-5) may be stored as next day in UTC
-    const now = new Date()
-    const today = now.toISOString().split('T')[0]
-    const tomorrow = new Date(now.getTime() + 86400000).toISOString().split('T')[0]
+    // Use Cancun local date for timezone consistency
+    const today = getLocalDate()
+    const tomorrow = new Date(new Date().getTime() + 86400000).toISOString().split('T')[0]
 
     const { data: toursData } = await supabase
       .from('tours')
