@@ -124,9 +124,9 @@ export default function AdminLayoutNew({ children }: { children: React.ReactNode
         </div>
       </header>
 
-      {/* Main Content */}
+      {/* Main Content - DEBUG: Pink background to show container boundary */}
       <main className="flex-1 overflow-hidden">
-        <div className="w-full h-full overflow-auto px-6 py-4">
+        <div className="w-full h-full overflow-auto px-6 py-4 bg-pink-100 border-4 border-pink-400 border-dashed">
           {children}
         </div>
       </main>
