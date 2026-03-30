@@ -4,9 +4,11 @@ export const dynamic = 'force-dynamic'
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase/client'
 import RoleGuard from '@/lib/auth/RoleGuard'
 import { getLocalDate } from '@/lib/timezone'
+import LanguageToggle from '@/components/LanguageToggle'
 import { useTranslation } from '@/lib/i18n/useTranslation'
 
 interface DashboardStats {
@@ -31,7 +33,8 @@ interface AttentionItem {
 }
 
 export default function AdminDashboard() {
-  const { t } = useTranslation()
+  const router = useRouter()
+  const { t, locale } = useTranslation()
   const [stats, setStats] = useState<DashboardStats>({
     toursTotal: 0,
     toursActive: 0,
@@ -39,7 +42,7 @@ export default function AdminDashboard() {
     guestsToday: 0,
     incidentsOpen: 0,
     incidentsTotal: 0,
-    onTimeRate: 94,
+    onTimeRate: 0,
     guidesActive: 0,
     guidesTotal: 0
   })
@@ -64,7 +67,7 @@ export default function AdminDashboard() {
     const { data: incidents } = await supabase
       .from('incidents')
       .select('id, type, severity, tour_name, created_at, status')
-      .gte('created_at', today)
+      .eq('created_at', today)
       .order('created_at', { ascending: false })
 
     const { count: guidesCount } = await supabase
@@ -114,6 +117,11 @@ export default function AdminDashboard() {
       case 'medium': return 'bg-yellow-500'
       default: return 'bg-blue-500'
     }
+  }
+
+  async function handleSignOut() {
+    await supabase.auth.signOut()
+    router.push('/login')
   }
 
   if (loading) {
@@ -276,7 +284,7 @@ export default function AdminDashboard() {
               </div>
             </div>
 
-            {/* Fleet Status */}
+            {/* Fleet Status - Evenly distributed items */}
             <div className="col-span-3 h-full overflow-auto bg-white rounded-lg border border-gray-200 p-5 flex flex-col">
               <span className="font-semibold text-sm block text-center mb-6">{t('adminDashboard.fleetStatus')}</span>
               <div className="flex-1 flex flex-col justify-between">

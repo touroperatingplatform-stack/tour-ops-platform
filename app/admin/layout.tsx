@@ -56,9 +56,9 @@ export default function AdminLayout({
 
   return (
     <div className="h-screen flex flex-col bg-gray-50 overflow-hidden">
-      {/* Top Navigation */}
+      {/* Top Navigation - With invisible border padding */}
       <header className="bg-white flex-shrink-0">
-        <div className="px-4 py-3">
+        <div className="px-4 py-3 border-8 border-transparent">
           <div className="flex items-center justify-between">
             {/* Logo + Title */}
             <div className="flex items-center gap-3">
