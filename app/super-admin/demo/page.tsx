@@ -436,51 +436,72 @@ export default function SuperAdminDemoPage() {
       setDemoProgress(`✅ Created ${stopCount} pickup stops`)
       await new Promise(resolve => setTimeout(resolve, 500))
 
-      // Step 5: Create guide check-ins
+      // Step 5: Create guide check-ins with realistic GPS coordinates
       setDemoProgress('📍 Simulating guide check-ins...')
-      console.log('V2 DEBUG: Starting guide check-in creation, tours:', createdTourIds.length)
+      
+      // GPS coordinates for popular destinations
+      const destinationCoords: Record<string, { lat: number, lng: number }> = {
+        'Chichen Itza': { lat: 20.6843, lng: -88.5678 },
+        'Valladolid': { lat: 20.6897, lng: -88.2037 },
+        'Coba': { lat: 20.4933, lng: -87.7322 },
+        'Tulum': { lat: 20.2114, lng: -87.4654 },
+        'Akumal': { lat: 20.3951, lng: -87.3158 },
+        'Xcaret': { lat: 20.5793, lng: -87.1206 },
+        'Isla Mujeres': { lat: 21.2311, lng: -86.7315 },
+        'Playa del Carmen': { lat: 20.6296, lng: -87.0739 },
+        'Gran Cenote': { lat: 20.2356, lng: -87.4519 },
+        'Cancun': { lat: 21.1619, lng: -86.8515 },
+        'Puerto Morelos': { lat: 20.8485, lng: -86.8719 },
+        'Cenote': { lat: 20.4500, lng: -87.3500 }
+      }
+      
       let checkinCount = 0
-      for (const tourId of createdTourIds.slice(0, Math.min(createdTourIds.length, 5))) {
-        console.log('V2 DEBUG: Creating check-in for tour:', tourId)
-        const { data: tour, error: tourError } = await supabase.from('tours').select('guide_id, brand_id, start_time').eq('id', tourId).single()
-        if (tourError) {
-          console.error('V2 DEBUG: Error fetching tour for checkin:', tourError)
-          continue
-        }
-        console.log('V2 DEBUG: Tour data:', tour)
-        if (tour) {
-          const startTime = tour.start_time || '08:00'
-          const [hours, minutes] = startTime.split(':').map(Number)
-          const checkinTime = new Date()
-          checkinTime.setHours(hours, minutes - 20, 0)
-          
-          const minutesEarly = Math.floor(Math.random() * 15) - 5
-          
-          console.log('V2 DEBUG: Inserting check-in with guide_id:', tour.guide_id, 'brand_id:', tour.brand_id)
-          
-          const { error: insertError } = await supabase.from('guide_checkins').insert({
-            tour_id: tourId,
-            brand_id: tour.brand_id,
-            guide_id: tour.guide_id,
-            checkin_type: 'pre_pickup',
-            checked_in_at: checkinTime.toISOString(),
-            latitude: 20.6 + Math.random() * 0.5,
-            longitude: -87.0 + Math.random() * 0.3,
-            location_accuracy: 10 + Math.random() * 20,
-            gps_alert_triggered: false,
-            scheduled_time: startTime,
-            minutes_early_or_late: minutesEarly,
-            notes: minutesEarly >= 0 ? 'Arrived early' : 'Slightly delayed due to traffic',
-            selfie_url: 'https://cloudinary.com/dorhbpsxy/tour-ops/demo-selfie.jpg'
-          })
-          
-          if (insertError) {
-            console.error('V2 DEBUG: Failed to create guide checkin:', insertError)
-          } else {
-            console.log('V2 DEBUG: Check-in created successfully')
-            checkinCount++
+      for (const tourId of createdTourIds.slice(0, Math.min(createdTourIds.length, 8))) {
+        const { data: tour, error: tourError } = await supabase
+          .from('tours')
+          .select('guide_id, brand_id, start_time, name')
+          .eq('id', tourId)
+          .single()
+        
+        if (tourError || !tour) continue
+        
+        const startTime = tour.start_time || '08:00'
+        const [hours, minutes] = startTime.split(':').map(Number)
+        const checkinTime = new Date()
+        checkinTime.setHours(hours, minutes - 20, 0)
+        
+        const minutesEarly = Math.floor(Math.random() * 15) - 5
+        
+        // Find destination coordinates based on tour name
+        let coords = destinationCoords['Cancun']
+        for (const [key, value] of Object.entries(destinationCoords)) {
+          if (tour.name.toLowerCase().includes(key.toLowerCase())) {
+            coords = value
+            break
           }
         }
+        
+        // Add small random offset (50-200m) for realistic GPS variation
+        const latOffset = (Math.random() - 0.5) * 0.002
+        const lngOffset = (Math.random() - 0.5) * 0.002
+        
+        const { error: insertError } = await supabase.from('guide_checkins').insert({
+          tour_id: tourId,
+          brand_id: tour.brand_id,
+          guide_id: tour.guide_id,
+          checkin_type: 'pre_pickup',
+          checked_in_at: checkinTime.toISOString(),
+          latitude: coords.lat + latOffset,
+          longitude: coords.lng + lngOffset,
+          location_accuracy: 10 + Math.random() * 20,
+          gps_alert_triggered: false,
+          scheduled_time: startTime,
+          minutes_early_or_late: minutesEarly,
+          notes: minutesEarly >= 0 ? 'Arrived early' : 'Slightly delayed due to traffic',
+          selfie_url: 'https://cloudinary.com/dorhbpsxy/tour-ops/demo-selfie.jpg'
+        })
+        
+        if (!insertError) checkinCount++
       }
 
       setDemoProgress(`✅ Created ${checkinCount} guide check-ins`)
