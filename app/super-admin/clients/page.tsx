@@ -66,6 +66,8 @@ export default function SuperAdminClientsPage() {
     last_name: '',
     phone: '',
     password: '',
+    company_name: '',
+    company_slug: '',
     status: 'active' as 'active' | 'suspended' | 'trial',
     features: {
       enableGuides: true,
@@ -175,17 +177,64 @@ export default function SuperAdminClientsPage() {
           role: 'company_admin',
           first_name: formData.first_name,
           last_name: formData.last_name,
-          phone: formData.phone,
-          company_admin_id: authData.user.id
+          phone: formData.phone
         })
         .eq('id', authData.user.id)
       
       if (profileError) throw profileError
       
-      // 3. TODO: Create company_config entry with features/limits
-      // For now, features/limits are in form but not stored
+      // 3. Create company
+      const companyName = formData.company_name || `${formData.first_name || ''} ${formData.last_name || ''} Tours`.trim() || 'New Company'
+      const companySlug = formData.company_slug || companyName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
       
-      alert('Client created successfully!')
+      const { data: companyData, error: companyError } = await supabase
+        .from('companies')
+        .insert({
+          name: companyName,
+          slug: companySlug,
+          company_admin_id: authData.user.id
+        })
+        .select('id')
+        .single()
+      
+      if (companyError) throw companyError
+      const companyId = companyData.id
+      
+      // 4. Create company_configs entry with feature flags and limits
+      const { error: configError } = await supabase
+        .from('company_configs')
+        .insert({
+          company_id: companyId,
+          // Feature flags
+          enable_guides: formData.features.enableGuides,
+          enable_drivers: formData.features.enableDrivers,
+          enable_operations: formData.features.enableOperations,
+          enable_supervisor: formData.features.enableSupervisor,
+          enable_manager: formData.features.enableManager,
+          enable_incidents: formData.features.enableIncidents,
+          enable_expenses: formData.features.enableExpenses,
+          enable_reports: formData.features.enableReports,
+          enable_guest_feedback: formData.features.enableGuestFeedback,
+          enable_activity_feed: formData.features.enableActivityFeed,
+          enable_driver_checkin: formData.features.enableDriverCheckin,
+          enable_pickup_stops: formData.features.enablePickupStops,
+          enable_external_bookings: formData.features.enableExternalBookings,
+          enable_multi_company: formData.features.enableMultiCompany,
+          enable_custom_branding: formData.features.enableCustomBranding,
+          enable_api_integrations: formData.features.enableApiIntegrations,
+          // Usage limits
+          max_companies: formData.limits.maxCompanies,
+          max_users: formData.limits.maxUsers,
+          max_guides: formData.limits.maxGuides,
+          max_drivers: formData.limits.maxDrivers,
+          max_tours_per_day: formData.limits.maxToursPerDay,
+          max_guests_per_month: formData.limits.maxGuestsPerMonth,
+          max_vehicles: formData.limits.maxVehicles
+        })
+      
+      if (configError) throw configError
+      
+      alert('✅ Client created with company and config!')
       setShowCreateModal(false)
       setFormData({
         email: '',
@@ -193,13 +242,15 @@ export default function SuperAdminClientsPage() {
         last_name: '',
         phone: '',
         password: '',
+        company_name: '',
+        company_slug: '',
         status: 'active',
         features: { ...formData.features },
         limits: { ...formData.limits }
       })
       loadClients()
     } catch (error: any) {
-      alert('Error creating client: ' + error.message)
+      alert('❌ Error creating client: ' + error.message)
     }
   }
 
@@ -432,6 +483,39 @@ export default function SuperAdminClientsPage() {
                       <option value="trial">Trial</option>
                       <option value="suspended">Suspended</option>
                     </select>
+                  </div>
+                </div>
+              </div>
+
+              {/* Company Information */}
+              <div className="mb-8">
+                <h3 className="text-lg font-semibold mb-4">Company Information</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Company Name *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.company_name}
+                      onChange={(e) => setFormData({ ...formData, company_name: e.target.value })}
+                      className="w-full border rounded-lg px-3 py-2"
+                      placeholder="e.g., Gavin Eco Adventures"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Company Slug
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.company_slug}
+                      onChange={(e) => setFormData({ ...formData, company_slug: e.target.value })}
+                      className="w-full border rounded-lg px-3 py-2"
+                      placeholder="e.g., gavin-eco-adventures"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">Leave blank to auto-generate from company name</p>
                   </div>
                 </div>
               </div>
