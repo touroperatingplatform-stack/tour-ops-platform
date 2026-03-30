@@ -126,7 +126,7 @@ export default function AdminDashboard() {
 
   return (
     <RoleGuard requiredRole="company_admin">
-      <div className="h-screen flex flex-col bg-gray-100">
+      <div className="h-screen flex flex-col bg-gray-100 pb-20">
         {/* Header */}
         <div className="bg-white border-b px-6 py-4 flex-shrink-0">
           <div>
@@ -136,7 +136,7 @@ export default function AdminDashboard() {
         </div>
 
         {/* Main Content - RED BORDER with MARGIN */}
-        <div className="flex-1 overflow-hidden m-4 border-4 border-red-500 rounded-xl">
+        <div className="flex-1 overflow-hidden m-4 mb-24 border-4 border-red-500 rounded-xl">
           <div className="h-full p-6 grid grid-cols-12 grid-rows-[auto_auto_1fr] gap-6">
             
             {/* Row 1: KPI Cards - BLUE */}
