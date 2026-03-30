@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase/client'
 import RoleGuard from '@/lib/auth/RoleGuard'
+import { getLocalDate } from '@/lib/timezone'
 
 interface Tour {
   id: string
@@ -25,7 +26,7 @@ export default function AdminDashboard() {
   }, [])
 
   async function loadData() {
-    const today = new Date().toISOString().split('T')[0]
+    const today = getLocalDate()
 
     const { data: tours } = await supabase
       .from('tours')
