@@ -100,13 +100,13 @@ export default function TestLayout({ children }: { children: React.ReactNode }) 
           />
           <div className="fixed inset-4 bg-white rounded-2xl shadow-2xl z-50 border-8 border-pink-400 flex flex-col">
             <div className="p-4 border-8 border-transparent flex flex-col h-full">
-              <div className="flex items-center justify-center mb-4 border-2 border-dashed border-cyan-400 p-2">
-                <span className="font-bold text-lg">Menu</span>
+              <div className="flex items-center justify-center mb-4 border-2 border-dashed border-cyan-400 p-4">
+                <span className="font-bold text-2xl">Menu</span>
                 <button 
                   onClick={() => setShowMore(false)}
-                  className="absolute right-10 p-2 hover:bg-gray-100 rounded-lg border-2 border-dashed border-red-400"
+                  className="absolute right-10 p-4 hover:bg-gray-100 rounded-lg border-2 border-dashed border-red-400"
                 >
-                  ✕
+                  <span className="text-2xl">✕</span>
                 </button>
               </div>
               <div className="flex-1 grid grid-cols-3 grid-rows-3 gap-4 border-2 border-dashed border-indigo-400 p-2">
