@@ -44,7 +44,7 @@ export default function TestLayout({ children }: { children: React.ReactNode }) 
     <div className="h-screen flex flex-col bg-gray-50 overflow-hidden">
       {/* Top Navigation */}
       <header className="bg-white border-b flex-shrink-0">
-        <div className="px-4 py-3">
+        <div className="px-4 py-3 border-8 border-transparent">
           <div className="flex items-center justify-between px-4 py-3">
             {/* Logo/Brand */}
             <div className="flex items-center gap-3">
@@ -114,8 +114,8 @@ export default function TestLayout({ children }: { children: React.ReactNode }) 
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 overflow-hidden bg-white">
-        <div className="w-full h-full overflow-auto px-10 py-6">
+      <main className="flex-1 overflow-hidden bg-white border-8 border-transparent">
+        <div className="w-full h-full overflow-auto px-10 py-6 border-8 border-transparent">
           <div className="h-full flex flex-col">
             {children}
           </div>
