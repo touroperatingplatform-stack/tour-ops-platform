@@ -4,9 +4,12 @@ export const dynamic = 'force-dynamic'
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase/client'
 import RoleGuard from '@/lib/auth/RoleGuard'
 import { getLocalDate } from '@/lib/timezone'
+import LanguageToggle from '@/components/LanguageToggle'
+import { useTranslation } from '@/lib/i18n/useTranslation'
 
 interface DashboardStats {
   toursTotal: number
@@ -30,6 +33,8 @@ interface AttentionItem {
 }
 
 export default function AdminDashboard() {
+  const router = useRouter()
+  const { t, lang } = useTranslation()
   const [stats, setStats] = useState<DashboardStats>({
     toursTotal: 0,
     toursActive: 0,
@@ -114,11 +119,35 @@ export default function AdminDashboard() {
     }
   }
 
+  async function handleSignOut() {
+    await supabase.auth.signOut()
+    router.push('/login')
+  }
+
   if (loading) {
     return (
       <RoleGuard requiredRole="company_admin">
-        <div className="h-screen flex items-center justify-center">
-          <div className="text-gray-500">Loading dashboard...</div>
+        <div className="h-screen flex flex-col bg-gray-100">
+          {/* Top Nav */}
+          <div className="bg-white border-b px-4 py-3 flex-shrink-0 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold">
+                T
+              </div>
+              <h1 className="text-lg font-bold">{t('adminDashboard.title')}</h1>
+            </div>
+            <div className="flex items-center gap-3">
+              <LanguageToggle />
+              <button className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
+                👤
+              </button>
+            </div>
+          </div>
+          
+          {/* Loading */}
+          <div className="flex-1 flex items-center justify-center">
+            <div className="text-gray-500">{t('common.loading')}</div>
+          </div>
         </div>
       </RoleGuard>
     )
@@ -126,41 +155,57 @@ export default function AdminDashboard() {
 
   return (
     <RoleGuard requiredRole="company_admin">
-      <div className="h-screen flex flex-col bg-gray-100 pb-20">
-        {/* Compact Header */}
-        <div className="bg-white border-b px-4 py-3 flex-shrink-0">
-          <div className="flex items-center justify-between">
-            <h1 className="text-lg font-bold">Company Dashboard</h1>
-            <p className="text-sm text-gray-500">{new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}</p>
+      <div className="h-screen flex flex-col bg-gray-100">
+        {/* Top Nav */}
+        <div className="bg-white border-b px-4 py-3 flex-shrink-0 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold">
+              T
+            </div>
+            <div>
+              <h1 className="text-lg font-bold">{t('adminDashboard.title')}</h1>
+              <p className="text-xs text-gray-500">
+                {new Date().toLocaleDateString(lang === 'es' ? 'es-ES' : 'en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <LanguageToggle />
+            <button 
+              onClick={handleSignOut}
+              className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center hover:bg-gray-300"
+            >
+              👤
+            </button>
           </div>
         </div>
 
         {/* Main Content */}
-        <div className="flex-1 overflow-hidden">
-          <div className="h-full p-3 grid grid-cols-12 grid-rows-[auto_auto_1fr] gap-3">
+        <div className="flex-1 overflow-hidden p-3">
+          <div className="h-full grid grid-cols-12 grid-rows-[auto_auto_1fr] gap-3">
             
             {/* Row 1: KPI Cards */}
             <div className="col-span-12 grid grid-cols-4 gap-3">
               <div className="bg-white rounded-lg border border-gray-200 p-3">
-                <p className="text-xs text-gray-500 uppercase font-medium">Tours Today</p>
+                <p className="text-xs text-gray-500 uppercase font-medium">{t('adminDashboard.toursToday')}</p>
                 <div className="flex items-baseline gap-2 mt-1">
                   <span className="text-2xl font-bold">{stats.toursCompleted}/{stats.toursTotal}</span>
-                  <span className="text-xs text-green-600 font-medium">LIVE</span>
+                  <span className="text-xs text-green-600 font-medium">{t('adminDashboard.live')}</span>
                 </div>
               </div>
 
               <div className="bg-white rounded-lg border border-gray-200 p-3">
-                <p className="text-xs text-blue-600 uppercase font-medium">Guests Today</p>
+                <p className="text-xs text-blue-600 uppercase font-medium">{t('adminDashboard.guestsToday')}</p>
                 <p className="text-2xl font-bold text-blue-600 mt-1">{stats.guestsToday}</p>
               </div>
 
               <div className="bg-white rounded-lg border border-gray-200 p-3">
-                <p className="text-xs text-green-600 uppercase font-medium">On-Time %</p>
+                <p className="text-xs text-green-600 uppercase font-medium">{t('adminDashboard.onTimeRate')}</p>
                 <p className="text-2xl font-bold text-green-600 mt-1">{stats.onTimeRate}%</p>
               </div>
 
               <div className="bg-white rounded-lg border border-gray-200 p-3">
-                <p className="text-xs text-red-600 uppercase font-medium">Incidents</p>
+                <p className="text-xs text-red-600 uppercase font-medium">{t('adminDashboard.incidents')}</p>
                 <p className="text-2xl font-bold text-red-600 mt-1">{stats.incidentsOpen}</p>
               </div>
             </div>
@@ -171,22 +216,22 @@ export default function AdminDashboard() {
               <div className="col-span-4 grid grid-rows-2 gap-3">
                 <div className="bg-white rounded-lg border border-gray-200 p-3">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs text-gray-500 uppercase font-medium">Active Tours</span>
-                    <span className="bg-green-100 text-green-700 text-xs px-2 py-0.5 rounded-full">{stats.toursActive} Live</span>
+                    <span className="text-xs text-gray-500 uppercase font-medium">{t('adminDashboard.activeTours')}</span>
+                    <span className="bg-green-100 text-green-700 text-xs px-2 py-0.5 rounded-full">{stats.toursActive} {t('adminDashboard.live')}</span>
                   </div>
                   <p className="text-3xl font-bold text-blue-600 mt-1">{stats.toursActive}</p>
                 </div>
 
                 <div className="bg-white rounded-lg border border-gray-200 p-3">
-                  <p className="text-xs text-gray-500 uppercase font-medium">Team Status</p>
+                  <p className="text-xs text-gray-500 uppercase font-medium">{t('adminDashboard.teamStatus')}</p>
                   <div className="mt-2 grid grid-cols-2 gap-2">
                     <div className="text-center">
                       <p className="text-xl font-bold">{stats.guidesActive}/{stats.guidesTotal}</p>
-                      <p className="text-xs text-gray-500">Guides</p>
+                      <p className="text-xs text-gray-500">{t('adminDashboard.guides')}</p>
                     </div>
                     <div className="text-center">
                       <p className="text-xl font-bold">6</p>
-                      <p className="text-xs text-gray-500">Vehicles</p>
+                      <p className="text-xs text-gray-500">{t('adminDashboard.vehicles')}</p>
                     </div>
                   </div>
                 </div>
@@ -195,13 +240,13 @@ export default function AdminDashboard() {
               {/* Attention Required - Center */}
               <div className="col-span-5 bg-white rounded-lg border border-gray-200 p-3 flex flex-col">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="font-semibold text-sm">⚠️ Attention Required</span>
-                  <span className="text-gray-400 text-xs">{attentionItems.length} items</span>
+                  <span className="font-semibold text-sm">⚠️ {t('adminDashboard.attentionRequired')}</span>
+                  <span className="text-gray-400 text-xs">{attentionItems.length} {t('adminDashboard.items')}</span>
                 </div>
                 
                 <div className="flex-1 space-y-2 overflow-hidden">
                   {attentionItems.length === 0 ? (
-                    <div className="text-center text-gray-400 py-6 text-sm">✓ All clear</div>
+                    <div className="text-center text-gray-400 py-6 text-sm">{t('adminDashboard.allClear')}</div>
                   ) : (
                     attentionItems.map(item => (
                       <div key={item.id} className="flex items-start gap-2 p-2 bg-gray-50 rounded">
@@ -210,7 +255,7 @@ export default function AdminDashboard() {
                           <p className="font-medium text-sm truncate">{item.title}</p>
                           <p className="text-gray-500 text-xs truncate">{item.tour} • {item.time}</p>
                         </div>
-                        <button className="text-blue-600 text-xs whitespace-nowrap">Review →</button>
+                        <button className="text-blue-600 text-xs whitespace-nowrap">{t('common.view')} →</button>
                       </div>
                     ))
                   )}
@@ -219,23 +264,23 @@ export default function AdminDashboard() {
 
               {/* Quick Actions - Right */}
               <div className="col-span-3 bg-white rounded-lg border border-gray-200 p-3 flex flex-col">
-                <span className="font-semibold text-sm mb-2">Quick Actions</span>
+                <span className="font-semibold text-sm mb-2">{t('adminDashboard.quickActions')}</span>
                 <div className="flex-1 grid grid-cols-2 gap-2">
-                  <Link href="/admin/tours" className="flex flex-col items-center justify-center p-2 bg-blue-50 hover:bg-blue-100 rounded transition-colors">
+                  <Link href="/admin/tours/new" className="flex flex-col items-center justify-center p-2 bg-blue-50 hover:bg-blue-100 rounded transition-colors">
                     <span className="text-xl mb-1">🚌</span>
-                    <span className="text-xs font-medium">New Tour</span>
+                    <span className="text-xs font-medium">{t('adminDashboard.newTour')}</span>
                   </Link>
-                  <Link href="/admin/users" className="flex flex-col items-center justify-center p-2 bg-green-50 hover:bg-green-100 rounded transition-colors">
+                  <Link href="/admin/users/new" className="flex flex-col items-center justify-center p-2 bg-green-50 hover:bg-green-100 rounded transition-colors">
                     <span className="text-xl mb-1">👤</span>
-                    <span className="text-xs font-medium">Add User</span>
+                    <span className="text-xs font-medium">{t('adminDashboard.addUser')}</span>
                   </Link>
                   <Link href="/admin/reports" className="flex flex-col items-center justify-center p-2 bg-purple-50 hover:bg-purple-100 rounded transition-colors">
                     <span className="text-xl mb-1">📊</span>
-                    <span className="text-xs font-medium">Reports</span>
+                    <span className="text-xs font-medium">{t('nav.reports')}</span>
                   </Link>
                   <Link href="/admin/vehicles" className="flex flex-col items-center justify-center p-2 bg-orange-50 hover:bg-orange-100 rounded transition-colors">
                     <span className="text-xl mb-1">🚗</span>
-                    <span className="text-xs font-medium">Fleet</span>
+                    <span className="text-xs font-medium">{t('adminDashboard.fleet')}</span>
                   </Link>
                 </div>
               </div>
@@ -246,8 +291,8 @@ export default function AdminDashboard() {
               {/* Timeline */}
               <div className="col-span-9 bg-white rounded-lg border border-gray-200 p-3">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="font-semibold text-sm">Today's Timeline</span>
-                  <span className="text-gray-400 text-xs">{stats.toursTotal} tours</span>
+                  <span className="font-semibold text-sm">{t('adminDashboard.todaysTimeline')}</span>
+                  <span className="text-gray-400 text-xs">{stats.toursTotal} {t('nav.tours').toLowerCase()}</span>
                 </div>
                 <div className="flex items-end gap-1 h-12">
                   {['06:00', '09:00', '12:00', '15:00', '18:00', '21:00'].map((time, i) => (
@@ -262,24 +307,50 @@ export default function AdminDashboard() {
 
               {/* Fleet Status */}
               <div className="col-span-3 bg-white rounded-lg border border-gray-200 p-3">
-                <span className="font-semibold text-sm">Fleet Status</span>
+                <span className="font-semibold text-sm">{t('adminDashboard.fleetStatus')}</span>
                 <div className="mt-2 space-y-1">
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-xs">In Use</span>
+                    <span className="text-xs">{t('adminDashboard.inUse')}</span>
                     <span className="font-bold">4</span>
                   </div>
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-xs">Available</span>
+                    <span className="text-xs">{t('adminDashboard.available')}</span>
                     <span className="font-bold">2</span>
                   </div>
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-xs">Maintenance</span>
+                    <span className="text-xs">{t('adminDashboard.maintenance')}</span>
                     <span className="font-bold text-red-600">0</span>
                   </div>
                 </div>
               </div>
             </div>
 
+          </div>
+        </div>
+
+        {/* Bottom Nav */}
+        <div className="bg-white border-t px-4 py-3 flex-shrink-0">
+          <div className="flex items-center justify-around">
+            <Link href="/admin" className="flex flex-col items-center text-blue-600">
+              <span className="text-xl">📊</span>
+              <span className="text-xs">{t('nav.dashboard')}</span>
+            </Link>
+            <Link href="/admin/tours" className="flex flex-col items-center text-gray-400">
+              <span className="text-xl">🚌</span>
+              <span className="text-xs">{t('nav.tours')}</span>
+            </Link>
+            <Link href="/admin/guests" className="flex flex-col items-center text-gray-400">
+              <span className="text-xl">👤</span>
+              <span className="text-xs">{t('nav.guests')}</span>
+            </Link>
+            <Link href="/admin/reports" className="flex flex-col items-center text-gray-400">
+              <span className="text-xl">📈</span>
+              <span className="text-xs">{t('nav.reports')}</span>
+            </Link>
+            <Link href="/admin/settings" className="flex flex-col items-center text-gray-400">
+              <span className="text-xl">⚙️</span>
+              <span className="text-xs">{t('common.menu')}</span>
+            </Link>
           </div>
         </div>
       </div>

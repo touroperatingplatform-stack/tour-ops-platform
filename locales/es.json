@@ -1,4 +1,28 @@
 {
+  "adminDashboard": {
+    "title": "Dashboard de Empresa",
+    "toursToday": "Tours Hoy",
+    "guestsToday": "Huéspedes Hoy",
+    "onTimeRate": "Puntualidad %",
+    "incidents": "Incidentes",
+    "activeTours": "Tours Activos",
+    "teamStatus": "Estado del Equipo",
+    "guides": "Guías",
+    "vehicles": "Vehículos",
+    "attentionRequired": "Atención Requerida",
+    "items": "elementos",
+    "allClear": "✓ Todo bien",
+    "quickActions": "Acciones Rápidas",
+    "newTour": "Nuevo Tour",
+    "addUser": "Agregar Usuario",
+    "fleet": "Flotilla",
+    "todaysTimeline": "Cronograma de Hoy",
+    "fleetStatus": "Estado de Flotilla",
+    "inUse": "En Uso",
+    "available": "Disponible",
+    "maintenance": "Mantenimiento",
+    "live": "EN VIVO"
+  },
   "nav": {
     "dashboard": "Dashboard",
     "incidents": "Incidentes",
