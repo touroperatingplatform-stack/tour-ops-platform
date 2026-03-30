@@ -6,130 +6,333 @@ import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase/client'
 import RoleGuard from '@/lib/auth/RoleGuard'
 import AdminNav from '@/components/navigation/AdminNav'
+import Link from 'next/link'
 
-interface DemoStats {
-  tours: number
-  guests: number
-  pickup_stops: number
-  checkins: number
-  incidents: number
-  expenses: number
-  feedback: number
-  activity: number
-  vehicles: number
+interface PlatformStats {
+  totalClients: number
+  totalCompanies: number
+  totalUsers: number
+  activeToursToday: number
+  totalGuestsToday: number
+  openIncidents: number
+  platformRevenue?: number
 }
 
-export default function SuperAdminPage() {
-  const [demoStats, setDemoStats] = useState<DemoStats>({
-    tours: 0, guests: 0, pickup_stops: 0, checkins: 0, incidents: 0, expenses: 0, feedback: 0, activity: 0, vehicles: 0
+interface ClientSummary {
+  id: string
+  name: string
+  email: string
+  companies_count: number
+  users_count: number
+  status: string
+  created_at: string
+}
+
+export default function SuperAdminDashboard() {
+  const [stats, setStats] = useState<PlatformStats>({
+    totalClients: 0,
+    totalCompanies: 0,
+    totalUsers: 0,
+    activeToursToday: 0,
+    totalGuestsToday: 0,
+    openIncidents: 0
   })
+  const [recentClients, setRecentClients] = useState<ClientSummary[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    loadDemoStats()
+    loadPlatformStats()
   }, [])
 
-  async function loadDemoStats() {
-    const tables = ['tours', 'guests', 'pickup_stops', 'guide_checkins', 'incidents', 'tour_expenses', 'guest_feedback', 'activity_feed', 'vehicles']
-    const stats: any = {}
-    
-    for (const table of tables) {
-      const { count, error } = await supabase.from(table).select('*', { count: 'exact', head: true })
-      if (error) console.error(`Failed to count ${table}:`, error)
-      stats[table] = count || 0
+  async function loadPlatformStats() {
+    try {
+      // Count clients (company_admin users)
+      const { count: clientsCount } = await supabase
+        .from('profiles')
+        .select('*', { count: 'exact', head: true })
+        .eq('role', 'company_admin')
+      
+      // Count companies
+      const { count: companiesCount } = await supabase
+        .from('companies')
+        .select('*', { count: 'exact', head: true })
+      
+      // Count all users
+      const { count: usersCount } = await supabase
+        .from('profiles')
+        .select('*', { count: 'exact', head: true })
+      
+      // Count today's tours
+      const today = new Date().toISOString().split('T')[0]
+      const { count: toursCount } = await supabase
+        .from('tours')
+        .select('*', { count: 'exact', head: true })
+        .eq('tour_date', today)
+      
+      // Count today's guests
+      const { data: todaysTours } = await supabase
+        .from('tours')
+        .select('id')
+        .eq('tour_date', today)
+      
+      let guestsCount = 0
+      if (todaysTours && todaysTours.length > 0) {
+        const tourIds = todaysTours.map(t => t.id)
+        const { count } = await supabase
+          .from('guests')
+          .select('*', { count: 'exact', head: true })
+          .in('tour_id', tourIds)
+        guestsCount = count || 0
+      }
+      
+      // Count open incidents
+      const { count: incidentsCount } = await supabase
+        .from('incidents')
+        .select('*', { count: 'exact', head: true })
+        .in('status', ['reported', 'acknowledged'])
+      
+      // Get recent clients
+      const { data: clientsData } = await supabase
+        .from('profiles')
+        .select('id, email, first_name, last_name, created_at')
+        .eq('role', 'company_admin')
+        .order('created_at', { ascending: false })
+        .limit(5)
+      
+      const clientSummaries: ClientSummary[] = clientsData?.map(c => ({
+        id: c.id,
+        name: `${c.first_name || ''} ${c.last_name || ''}`.trim() || c.email,
+        email: c.email,
+        companies_count: 0, // Will fetch separately
+        users_count: 0,     // Will fetch separately
+        status: 'active',
+        created_at: c.created_at || ''
+      })) || []
+      
+      // Fetch company counts per client
+      for (let i = 0; i < clientSummaries.length; i++) {
+        const { count } = await supabase
+          .from('companies')
+          .select('*', { count: 'exact', head: true })
+          .eq('company_admin_id', clientSummaries[i].id)
+        clientSummaries[i].companies_count = count || 0
+      }
+      
+      setStats({
+        totalClients: clientsCount || 0,
+        totalCompanies: companiesCount || 0,
+        totalUsers: usersCount || 0,
+        activeToursToday: toursCount || 0,
+        totalGuestsToday: guestsCount,
+        openIncidents: incidentsCount || 0
+      })
+      
+      setRecentClients(clientSummaries)
+    } catch (error) {
+      console.error('Error loading platform stats:', error)
+    } finally {
+      setLoading(false)
     }
-    
-    setDemoStats({
-      tours: stats.tours || 0,
-      guests: stats.guests || 0,
-      pickup_stops: stats.pickup_stops || 0,
-      checkins: stats.guide_checkins || 0,
-      incidents: stats.incidents || 0,
-      expenses: stats.tour_expenses || 0,
-      feedback: stats.guest_feedback || 0,
-      activity: stats.activity_feed || 0,
-      vehicles: stats.vehicles || 0
-    })
-    setLoading(false)
   }
 
   return (
-    <RoleGuard requiredRole="super_admin">
+    <RoleGuard allowedRoles={['super_admin']}>
       <AdminNav />
-      <div className="min-h-screen bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="mb-8">
-            <h1 className="text-2xl font-bold text-gray-900">Super Admin Dashboard</h1>
-            <p className="text-gray-500 mt-1">Platform overview and quick stats</p>
-          </div>
+      
+      <div className="p-8">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold mb-2">Platform Dashboard</h1>
+          <p className="text-gray-600">Overview of all clients and companies</p>
+        </div>
 
-          {loading ? (
-            <div className="text-center py-12 text-gray-500">Loading...</div>
-          ) : (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-              <div className="text-center p-4 bg-white rounded-xl border border-gray-200">
-                <div className="text-2xl font-bold text-blue-600">{demoStats.tours}</div>
-                <div className="text-sm text-gray-600">Tours</div>
+        {loading ? (
+          <div className="flex items-center justify-center h-64">
+            <div className="text-gray-500">Loading platform stats...</div>
+          </div>
+        ) : (
+          <>
+            {/* Platform Metrics */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+              <div className="bg-white rounded-lg shadow p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-gray-600 mb-1">Total Clients</p>
+                    <p className="text-3xl font-bold">{stats.totalClients}</p>
+                  </div>
+                  <div className="text-4xl">👥</div>
+                </div>
               </div>
-              <div className="text-center p-4 bg-white rounded-xl border border-gray-200">
-                <div className="text-2xl font-bold text-green-600">{demoStats.guests}</div>
-                <div className="text-sm text-gray-600">Guests</div>
+
+              <div className="bg-white rounded-lg shadow p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-gray-600 mb-1">Total Companies</p>
+                    <p className="text-3xl font-bold">{stats.totalCompanies}</p>
+                  </div>
+                  <div className="text-4xl">🏢</div>
+                </div>
               </div>
-              <div className="text-center p-4 bg-white rounded-xl border border-gray-200">
-                <div className="text-2xl font-bold text-purple-600">{demoStats.checkins}</div>
-                <div className="text-sm text-gray-600">Check-ins</div>
+
+              <div className="bg-white rounded-lg shadow p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-gray-600 mb-1">Total Users</p>
+                    <p className="text-3xl font-bold">{stats.totalUsers}</p>
+                  </div>
+                  <div className="text-4xl">👤</div>
+                </div>
               </div>
-              <div className="text-center p-4 bg-white rounded-xl border border-gray-200">
-                <div className="text-2xl font-bold text-orange-600">{demoStats.incidents}</div>
-                <div className="text-sm text-gray-600">Incidents</div>
+
+              <div className="bg-white rounded-lg shadow p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-gray-600 mb-1">Tours Today</p>
+                    <p className="text-3xl font-bold">{stats.activeToursToday}</p>
+                  </div>
+                  <div className="text-4xl">🚌</div>
+                </div>
               </div>
-              <div className="text-center p-4 bg-white rounded-xl border border-gray-200">
-                <div className="text-2xl font-bold text-red-600">{demoStats.expenses}</div>
-                <div className="text-sm text-gray-600">Expenses</div>
+
+              <div className="bg-white rounded-lg shadow p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-gray-600 mb-1">Guests Today</p>
+                    <p className="text-3xl font-bold">{stats.totalGuestsToday}</p>
+                  </div>
+                  <div className="text-4xl">👨‍👩‍👧‍👦</div>
+                </div>
               </div>
-              <div className="text-center p-4 bg-white rounded-xl border border-gray-200">
-                <div className="text-2xl font-bold text-pink-600">{demoStats.feedback}</div>
-                <div className="text-sm text-gray-600">Feedback</div>
-              </div>
-              <div className="text-center p-4 bg-white rounded-xl border border-gray-200">
-                <div className="text-2xl font-bold text-indigo-600">{demoStats.vehicles}</div>
-                <div className="text-sm text-gray-600">Vehicles</div>
-              </div>
-              <div className="text-center p-4 bg-white rounded-xl border border-gray-200">
-                <div className="text-2xl font-bold text-yellow-600">{demoStats.pickup_stops}</div>
-                <div className="text-sm text-gray-600">Stops</div>
-              </div>
-              <div className="text-center p-4 bg-white rounded-xl border border-gray-200">
-                <div className="text-2xl font-bold text-teal-600">{demoStats.activity}</div>
-                <div className="text-sm text-gray-600">Activity</div>
+
+              <div className="bg-white rounded-lg shadow p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-gray-600 mb-1">Open Incidents</p>
+                    <p className="text-3xl font-bold text-red-600">{stats.openIncidents}</p>
+                  </div>
+                  <div className="text-4xl">⚠️</div>
+                </div>
               </div>
             </div>
-          )}
 
-          {/* Quick Links */}
-          <div className="mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            <a href="/super-admin/companies" className="p-4 bg-white rounded-xl border border-gray-200 hover:border-blue-300 hover:shadow-md transition">
-              <h3 className="font-semibold text-gray-900">🏢 Companies</h3>
-              <p className="text-sm text-gray-500 mt-1">Manage tour companies</p>
-            </a>
-            <a href="/super-admin/brands" className="p-4 bg-white rounded-xl border border-gray-200 hover:border-blue-300 hover:shadow-md transition">
-              <h3 className="font-semibold text-gray-900">🏷️ Brands</h3>
-              <p className="text-sm text-gray-500 mt-1">Configure brand identities</p>
-            </a>
-            <a href="/super-admin/users" className="p-4 bg-white rounded-xl border border-gray-200 hover:border-blue-300 hover:shadow-md transition">
-              <h3 className="font-semibold text-gray-900">👥 Users</h3>
-              <p className="text-sm text-gray-500 mt-1">Manage user accounts</p>
-            </a>
-            <a href="/super-admin/demo" className="p-4 bg-white rounded-xl border border-gray-200 hover:border-blue-300 hover:shadow-md transition">
-              <h3 className="font-semibold text-gray-900">📦 Demo Data</h3>
-              <p className="text-sm text-gray-500 mt-1">Generate or clear test data</p>
-            </a>
-            <a href="/super-admin/settings" className="p-4 bg-white rounded-xl border border-gray-200 hover:border-blue-300 hover:shadow-md transition">
-              <h3 className="font-semibold text-gray-900">⚙️ Settings</h3>
-              <p className="text-sm text-gray-500 mt-1">API and system config</p>
-            </a>
-          </div>
-        </div>
+            {/* Recent Clients */}
+            <div className="bg-white rounded-lg shadow mb-8">
+              <div className="p-6 border-b">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-xl font-semibold">Recent Clients</h2>
+                  <Link 
+                    href="/super-admin/clients"
+                    className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                  >
+                    View All →
+                  </Link>
+                </div>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Client
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Companies
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Status
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Joined
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200">
+                    {recentClients.map((client) => (
+                      <tr key={client.id} className="hover:bg-gray-50">
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm font-medium text-gray-900">{client.name}</div>
+                          <div className="text-sm text-gray-500">{client.email}</div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                            {client.companies_count} companies
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                            {client.status}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {new Date(client.created_at).toLocaleDateString()}
+                        </td>
+                      </tr>
+                    ))}
+                    {recentClients.length === 0 && (
+                      <tr>
+                        <td colSpan={4} className="px-6 py-8 text-center text-gray-500">
+                          No clients yet. Create your first client to get started.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Quick Actions */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <Link href="/super-admin/clients" className="bg-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow">
+                <div className="flex items-center mb-4">
+                  <div className="text-3xl mr-3">👥</div>
+                  <h3 className="text-lg font-semibold">Manage Clients</h3>
+                </div>
+                <p className="text-gray-600 text-sm">
+                  Create and manage client accounts. Set feature flags and usage limits.
+                </p>
+              </Link>
+
+              <Link href="/super-admin/companies" className="bg-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow">
+                <div className="flex items-center mb-4">
+                  <div className="text-3xl mr-3">🏢</div>
+                  <h3 className="text-lg font-semibold">Company Registry</h3>
+                </div>
+                <p className="text-gray-600 text-sm">
+                  View all companies across the platform. Read-only overview.
+                </p>
+              </Link>
+
+              <Link href="/super-admin/users" className="bg-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow">
+                <div className="flex items-center mb-4">
+                  <div className="text-3xl mr-3">👤</div>
+                  <h3 className="text-lg font-semibold">Platform Users</h3>
+                </div>
+                <p className="text-gray-600 text-sm">
+                  Manage super admin users and platform access.
+                </p>
+              </Link>
+
+              <Link href="/super-admin/demo" className="bg-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow">
+                <div className="flex items-center mb-4">
+                  <div className="text-3xl mr-3">📦</div>
+                  <h3 className="text-lg font-semibold">Demo Data</h3>
+                </div>
+                <p className="text-gray-600 text-sm">
+                  Generate or clear demo data for client trials.
+                </p>
+              </Link>
+
+              <Link href="/super-admin/settings" className="bg-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow">
+                <div className="flex items-center mb-4">
+                  <div className="text-3xl mr-3">⚙️</div>
+                  <h3 className="text-lg font-semibold">Platform Settings</h3>
+                </div>
+                <p className="text-gray-600 text-sm">
+                  Configure platform-wide defaults and settings.
+                </p>
+              </Link>
+            </div>
+          </>
+        )}
       </div>
     </RoleGuard>
   )
