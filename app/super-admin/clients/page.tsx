@@ -223,7 +223,7 @@ export default function SuperAdminClientsPage() {
   }
 
   return (
-    <RoleGuard allowedRoles={['super_admin']}>
+    <RoleGuard requiredRole='super_admin'>
       <AdminNav />
       
       <div className="p-8">
