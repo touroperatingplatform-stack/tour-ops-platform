@@ -146,6 +146,9 @@ export default function SuperAdminDemoPage() {
       const today = getLocalDate()
       const now = new Date()
       
+      console.log('DEMO V2: Creating tours for date:', today)
+      console.log('DEMO V2: Current time:', now.toISOString())
+      
       // Get guides
       const { data: guides } = await supabase
         .from('profiles')
