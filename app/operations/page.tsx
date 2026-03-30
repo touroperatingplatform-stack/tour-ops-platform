@@ -7,6 +7,7 @@ import RoleGuard from '@/lib/auth/RoleGuard'
 import LiveMap from '../supervisor/components/LiveMap'
 import { IncidentAlerts, GuideCheckinStatus, OperationsMetrics } from './components/OperationsEnhancements'
 import { useTranslation } from '@/lib/i18n/useTranslation'
+import { getLocalDate } from '@/lib/timezone'
 
 interface TourWithDetails {
   id: string
@@ -56,8 +57,8 @@ export default function OperationsDashboard() {
     // Query for both today and tomorrow to handle timezone mismatch
     // Tours created in Cancun (UTC-5) may be stored as next day in UTC
     const now = new Date()
-    const today = now.toISOString().split('T')[0]
-    const tomorrow = new Date(now.getTime() + 86400000).toISOString().split('T')[0]
+    const today = getLocalDate()
+    const tomorrow = new Date(new Date().getTime() + 86400000).toISOString().split('T')[0]
 
     // Load tours without JOIN (RLS-friendly)
     const { data: toursData } = await supabase
