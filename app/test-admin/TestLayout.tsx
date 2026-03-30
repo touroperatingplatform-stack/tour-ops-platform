@@ -32,9 +32,9 @@ export default function TestLayout({ children }: { children: React.ReactNode }) 
 
   return (
     <div className="h-screen flex flex-col bg-gray-50 overflow-hidden">
-      {/* Top Navigation - DEBUG: Outer red border */}
-      <header className="bg-white border-b-4 border-red-400 flex-shrink-0">
-        <div className="px-4 py-3">
+      {/* Top Navigation - DEBUG: Invisible outer, red inner */}
+      <header className="bg-white border-8 border-transparent flex-shrink-0">
+        <div className="border-b-4 border-red-400 px-4 py-3">
           <div className="flex items-center justify-between px-4 py-3">
             {/* Logo/Brand - DEBUG: Blue background */}
             <div className="flex items-center gap-3 border-4 border-blue-400 border-dashed p-2 mx-2">
