@@ -402,19 +402,20 @@ export function OperationsMetrics() {
   }, [])
 
   async function loadMetrics() {
-    const today = new Date().toISOString().split('T')[0]
+    const today = getLocalDate()
+    const tomorrow = new Date(new Date().getTime() + 86400000).toISOString().split('T')[0]
 
-    // Total guests
+    // Total guests (query both today and tomorrow for timezone)
     const { count: guestCount } = await supabase
       .from('guests')
       .select('*', { count: 'exact', head: true })
       .gte('created_at', `${today}T00:00:00`)
 
-    // Tour capacity utilization
+    // Tour capacity utilization (query both dates)
     const { data: tours } = await supabase
       .from('tours')
       .select('guest_count, capacity')
-      .eq('tour_date', today)
+      .in('tour_date', [today, tomorrow])
 
     let totalGuests = 0
     let totalCapacity = 0
