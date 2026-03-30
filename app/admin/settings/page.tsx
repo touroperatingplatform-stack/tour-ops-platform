@@ -3,168 +3,150 @@
 export const dynamic = 'force-dynamic'
 
 import { useState, useEffect } from 'react'
+import Link from 'next/link'
 import { supabase } from '@/lib/supabase/client'
 
+interface SettingItem {
+  id: string
+  label: string
+  value: string
+  icon: string
+}
+
 export default function SettingsPage() {
+  const [settings, setSettings] = useState<SettingItem[]>([
+    { id: 'company', label: 'Company Name', value: 'Tour Ops Platform', icon: '🏢' },
+    { id: 'timezone', label: 'Timezone', value: 'America/Cancun', icon: '🌎' },
+    { id: 'currency', label: 'Currency', value: 'USD', icon: '💵' },
+    { id: 'language', label: 'Language', value: 'English', icon: '🌐' },
+  ])
+  const [actions] = useState([
+    { id: 'notifications', label: 'Notifications', icon: '🔔', hasToggle: true },
+    { id: 'auto_dispatch', label: 'Auto Dispatch', icon: '🤖', hasToggle: false },
+    { id: 'checklist', label: 'Require Checklist', icon: '✓', hasToggle: true },
+  ])
   const [loading, setLoading] = useState(false)
-  const [settings, setSettings] = useState({
-    company_name: '',
-    timezone: 'America/Cancun',
-    currency: 'USD',
-    notification_email: '',
-    auto_dispatch: false,
-    require_checklist: true,
-  })
 
   useEffect(() => {
     loadSettings()
   }, [])
 
   async function loadSettings() {
-    // In production, load from settings table
-    // For now, use defaults
-    setSettings({
-      company_name: 'Tour Ops Platform',
-      timezone: 'America/Cancun',
-      currency: 'USD',
-      notification_email: '',
-      auto_dispatch: false,
-      require_checklist: true,
-    })
-  }
-
-  function handleChange(field: string, value: string | boolean) {
-    setSettings(prev => ({ ...prev, [field]: value }))
-  }
-
-  async function handleSave(e: React.FormEvent) {
-    e.preventDefault()
-    setLoading(true)
-    
-    // TODO: Save to settings table
-    // await supabase.from('settings').upsert(settings)
-    
-    alert('Settings saved!')
+    // Load from database
     setLoading(false)
   }
 
+  if (loading) {
+    return (
+      <div className="h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-gray-500">Loading settings...</div>
+      </div>
+    )
+  }
+
   return (
-    <div className="max-w-2xl mx-auto space-y-6">
+    <div className="h-screen flex flex-col bg-gray-50 overflow-hidden">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Settings</h1>
-        <p className="text-gray-500 mt-1">Configure system preferences</p>
+      <div className="bg-white border-b px-4 py-4 flex-shrink-0">
+        <h1 className="text-xl font-bold">Settings</h1>
+        <p className="text-gray-500 text-sm">Configure your account</p>
       </div>
 
-      {/* Company Settings */}
-      <div className="bg-white rounded-2xl border border-gray-200 p-6">
-        <h2 className="font-semibold text-gray-900 mb-4">Company</h2>
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Company Name</label>
-            <input
-              type="text"
-              value={settings.company_name}
-              onChange={(e) => handleChange('company_name', e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-          <div className="grid grid-cols-2 gap-4">
+      {/* Settings List */}
+      <div className="flex-1 px-4 py-4 overflow-y-auto">
+        {/* Profile Section */}
+        <div className="mb-6">
+          <div className="flex items-center gap-4 mb-4">
+            <div className="w-16 h-16 bg-blue-500 rounded-full flex items-center justify-center text-3xl">
+              👤
+            </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Timezone</label>
-              <select
-                value={settings.timezone}
-                onChange={(e) => handleChange('timezone', e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              <div className="font-bold text-lg">Company Admin</div>
+              <div className="text-gray-500 text-sm">admin@lifeoperations.com</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Company Settings */}
+        <div className="mb-6">
+          <h2 className="text-gray-500 text-xs font-semibold uppercase mb-2">Company</h2>
+          <div className="bg-white rounded-xl shadow overflow-hidden">
+            {settings.map((setting, i) => (
+              <button
+                key={setting.id}
+                className={`w-full px-4 py-3 flex items-center gap-3 ${
+                  i !== settings.length - 1 ? 'border-b' : ''
+                }`}
               >
-                <option value="America/Cancun">Cancun (EST)</option>
-                <option value="America/Mexico_City">Mexico City (CST)</option>
-                <option value="America/New_York">New York (EST)</option>
-                <option value="America/Chicago">Chicago (CST)</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Currency</label>
-              <select
-                value={settings.currency}
-                onChange={(e) => handleChange('currency', e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                <span className="text-xl">{setting.icon}</span>
+                <div className="flex-1 text-left">
+                  <div className="font-medium">{setting.label}</div>
+                  <div className="text-gray-500 text-sm">{setting.value}</div>
+                </div>
+                <span className="text-gray-400">→</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Actions */}
+        <div className="mb-6">
+          <h2 className="text-gray-500 text-xs font-semibold uppercase mb-2">Preferences</h2>
+          <div className="bg-white rounded-xl shadow overflow-hidden">
+            {actions.map((action, i) => (
+              <div
+                key={action.id}
+                className={`px-4 py-3 flex items-center gap-3 ${
+                  i !== actions.length - 1 ? 'border-b' : ''
+                }`}
               >
-                <option value="USD">USD ($)</option>
-                <option value="MXN">MXN ($)</option>
-                <option value="EUR">EUR (€)</option>
-              </select>
-            </div>
+                <span className="text-xl">{action.icon}</span>
+                <div className="flex-1">
+                  <div className="font-medium">{action.label}</div>
+                </div>
+                {action.hasToggle && (
+                  <div className="w-10 h-6 bg-blue-500 rounded-full relative">
+                    <div className="absolute right-1 top-1 w-4 h-4 bg-white rounded-full"></div>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Account Actions */}
+        <div className="mb-6">
+          <h2 className="text-gray-500 text-xs font-semibold uppercase mb-2">Account</h2>
+          <div className="bg-white rounded-xl shadow overflow-hidden">
+            <button className="w-full px-4 py-3 flex items-center gap-3 border-b text-red-600">
+              <span className="text-xl">🚪</span>
+              <div className="font-medium">Sign Out</div>
+            </button>
           </div>
         </div>
       </div>
 
-      {/* Notifications */}
-      <div className="bg-white rounded-2xl border border-gray-200 p-6">
-        <h2 className="font-semibold text-gray-900 mb-4">Notifications</h2>
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Notification Email</label>
-            <input
-              type="email"
-              value={settings.notification_email}
-              onChange={(e) => handleChange('notification_email', e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="alerts@company.com"
-            />
-          </div>
+      {/* Bottom Nav */}
+      <div className="bg-white border-t px-4 py-3 flex-shrink-0">
+        <div className="flex items-center justify-around">
+          <Link href="/admin" className="flex flex-col items-center text-gray-400">
+            <span className="text-xl">📊</span>
+            <span className="text-xs">Dashboard</span>
+          </Link>
+          <Link href="/admin/tours" className="flex flex-col items-center text-gray-400">
+            <span className="text-xl">🚌</span>
+            <span className="text-xs">Tours</span>
+          </Link>
+          <Link href="/admin/users" className="flex flex-col items-center text-gray-400">
+            <span className="text-xl">👥</span>
+            <span className="text-xs">Team</span>
+          </Link>
+          <Link href="/admin/settings" className="flex flex-col items-center text-blue-600">
+            <span className="text-xl">⚙️</span>
+            <span className="text-xs">Settings</span>
+          </Link>
         </div>
       </div>
-
-      {/* Operations */}
-      <div className="bg-white rounded-2xl border border-gray-200 p-6">
-        <h2 className="font-semibold text-gray-900 mb-4">Operations</h2>
-        <div className="space-y-4">
-          <label className="flex items-center justify-between">
-            <div>
-              <p className="font-medium text-gray-900">Auto Dispatch</p>
-              <p className="text-sm text-gray-500">Automatically assign guides to tours</p>
-            </div>
-            <button
-              type="button"
-              onClick={() => handleChange('auto_dispatch', !settings.auto_dispatch)}
-              className={`w-12 h-6 rounded-full transition-colors relative ${
-                settings.auto_dispatch ? 'bg-blue-500' : 'bg-gray-300'
-              }`}
-            >
-              <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-transform ${
-                settings.auto_dispatch ? 'left-7' : 'left-1'
-              }`} />
-            </button>
-          </label>
-          <label className="flex items-center justify-between">
-            <div>
-              <p className="font-medium text-gray-900">Require Checklist</p>
-              <p className="text-sm text-gray-500">Guides must complete checklist before starting</p>
-            </div>
-            <button
-              type="button"
-              onClick={() => handleChange('require_checklist', !settings.require_checklist)}
-              className={`w-12 h-6 rounded-full transition-colors relative ${
-                settings.require_checklist ? 'bg-blue-500' : 'bg-gray-300'
-              }`}
-            >
-              <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-transform ${
-                settings.require_checklist ? 'left-7' : 'left-1'
-              }`} />
-            </button>
-          </label>
-        </div>
-      </div>
-
-      {/* Save */}
-      <button
-        onClick={handleSave}
-        disabled={loading}
-        className="w-full bg-blue-600 text-white px-4 py-3 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
-      >
-        {loading ? 'Saving...' : 'Save Settings'}
-      </button>
     </div>
   )
 }
