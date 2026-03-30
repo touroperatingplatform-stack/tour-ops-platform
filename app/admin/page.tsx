@@ -162,10 +162,48 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        {/* MIDDLE SECTION - flex-1, gap-6 */}
+        {/* MIDDLE SECTION - Timeline | Fleet Status | Active Tours + Team */}
         <div className="flex-1 min-h-0 overflow-hidden">
           <div className="h-full grid grid-cols-12 gap-6">
-            {/* Active Tours + Team - Left */}
+            {/* Timeline - Left */}
+            <div className="col-span-4 h-full overflow-auto bg-white rounded-lg border border-gray-200 p-3 flex flex-col border-8 border-transparent">
+              <div className="flex items-center justify-center gap-2 mb-4">
+                <span className="font-semibold text-sm">{t('adminDashboard.todaysTimeline')}</span>
+                <span className="text-gray-400 text-xs">{stats.toursTotal} {t('nav.tours').toLowerCase()}</span>
+              </div>
+              <div className="flex-1 flex items-end gap-1">
+                {['06:00', '09:00', '12:00', '15:00', '18:00', '21:00'].map((time, i) => (
+                  <div key={time} className="flex-1 text-center">
+                    <div 
+                      className={`w-full rounded-t ${i < 3 ? 'bg-green-500' : i === 3 ? 'bg-blue-500' : 'bg-gray-200'}`}
+                      style={{ height: `${30 + Math.random() * 20}px` }} 
+                    />
+                    <div className="text-xs text-gray-400 mt-1">{time}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Fleet Status - Center */}
+            <div className="col-span-4 h-full overflow-auto bg-white rounded-lg border border-gray-200 p-3 flex flex-col border-8 border-transparent">
+              <span className="font-semibold text-sm text-center mb-4">{t('adminDashboard.fleetStatus')}</span>
+              <div className="flex-1 flex flex-col justify-between">
+                <div className="flex items-center justify-between px-4 py-3 bg-gray-50 rounded-lg">
+                  <span className="text-sm">{t('adminDashboard.inUse')}</span>
+                  <span className="font-bold text-xl">4</span>
+                </div>
+                <div className="flex items-center justify-between px-4 py-3 bg-gray-50 rounded-lg">
+                  <span className="text-sm">{t('adminDashboard.available')}</span>
+                  <span className="font-bold text-xl">2</span>
+                </div>
+                <div className="flex items-center justify-between px-4 py-3 bg-gray-50 rounded-lg">
+                  <span className="text-sm">{t('adminDashboard.maintenance')}</span>
+                  <span className="font-bold text-xl text-red-600">0</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Active Tours + Team - Right */}
             <div className="col-span-4 h-full overflow-auto">
               <div className="space-y-6">
                 <div className="bg-white rounded-lg border border-gray-200 p-3 text-center border-8 border-transparent">
@@ -191,9 +229,14 @@ export default function AdminDashboard() {
                 </div>
               </div>
             </div>
+          </div>
+        </div>
 
-            {/* Attention Required - Center - p-3, invisible border */}
-            <div className="col-span-5 h-full overflow-auto bg-white rounded-lg border border-gray-200 p-3 flex flex-col border-8 border-transparent">
+        {/* BOTTOM SECTION - Attention Required | Quick Actions */}
+        <div className="flex-1 min-h-0 overflow-hidden">
+          <div className="h-full grid grid-cols-12 gap-6">
+            {/* Attention Required - Left */}
+            <div className="col-span-6 h-full overflow-auto bg-white rounded-lg border border-gray-200 p-3 flex flex-col border-8 border-transparent">
               <div className="flex items-center justify-center gap-2 mb-4">
                 <span className="font-semibold text-sm">⚠️ {t('adminDashboard.attentionRequired')}</span>
                 <span className="text-gray-400 text-xs">{attentionItems.length} {t('adminDashboard.items')}</span>
@@ -222,8 +265,8 @@ export default function AdminDashboard() {
               </div>
             </div>
 
-            {/* Quick Actions - Right - p-3, invisible border */}
-            <div className="col-span-3 h-full overflow-auto bg-white rounded-lg border border-gray-200 p-3 flex flex-col border-8 border-transparent">
+            {/* Quick Actions - Right */}
+            <div className="col-span-6 h-full overflow-auto bg-white rounded-lg border border-gray-200 p-3 flex flex-col border-8 border-transparent">
               <span className="font-semibold text-sm text-center mb-4">{t('adminDashboard.quickActions')}</span>
               <div className="flex-1 grid grid-cols-2 gap-4">
                 <Link 
@@ -254,51 +297,6 @@ export default function AdminDashboard() {
                   <span className="text-xl mb-1">🚗</span>
                   <span className="text-xs font-medium">{t('adminDashboard.fleet')}</span>
                 </Link>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* BOTTOM SECTION - flex-1, gap-6 */}
-        <div className="flex-1 min-h-0 overflow-hidden">
-          <div className="h-full grid grid-cols-12 gap-6">
-            {/* Timeline - p-3, invisible border */}
-            <div className="col-span-9 h-full overflow-auto bg-white rounded-lg border border-gray-200 p-3 flex flex-col border-8 border-transparent">
-              <div className="flex items-center justify-center gap-2 mb-4">
-                <span className="font-semibold text-sm">{t('adminDashboard.todaysTimeline')}</span>
-                <span className="text-gray-400 text-xs">{stats.toursTotal} {t('nav.tours').toLowerCase()}</span>
-              </div>
-              <div className="flex-1 flex items-end gap-1">
-                {['06:00', '09:00', '12:00', '15:00', '18:00', '21:00'].map((time, i) => (
-                  <div key={time} className="flex-1 text-center">
-                    <div 
-                      className={`w-full rounded-t ${i < 3 ? 'bg-green-500' : i === 3 ? 'bg-blue-500' : 'bg-gray-200'}`}
-                      style={{ height: `${30 + Math.random() * 20}px` }} 
-                    />
-                    <div className="text-xs text-gray-400 mt-1">{time}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Fleet Status - invisible border */}
-            <div className="col-span-3 h-full overflow-auto bg-white rounded-lg border-8 border-transparent">
-              <div className="p-3 h-full flex flex-col border-8 border-transparent">
-                <span className="font-semibold text-sm block text-center mb-6 border-8 border-transparent">{t('adminDashboard.fleetStatus')}</span>
-                <div className="flex-1 flex flex-col justify-between border-8 border-transparent">
-                  <div className="flex items-center justify-between px-4 py-3 bg-gray-50 rounded-lg">
-                    <span className="text-sm">{t('adminDashboard.inUse')}</span>
-                    <span className="font-bold text-xl">4</span>
-                  </div>
-                  <div className="flex items-center justify-between px-4 py-3 bg-gray-50 rounded-lg">
-                    <span className="text-sm">{t('adminDashboard.available')}</span>
-                    <span className="font-bold text-xl">2</span>
-                  </div>
-                  <div className="flex items-center justify-between px-4 py-3 bg-gray-50 rounded-lg">
-                    <span className="text-sm">{t('adminDashboard.maintenance')}</span>
-                    <span className="font-bold text-xl text-red-600">0</span>
-                  </div>
-                </div>
               </div>
             </div>
           </div>
