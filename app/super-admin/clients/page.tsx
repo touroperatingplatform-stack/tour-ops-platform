@@ -403,13 +403,6 @@ export default function SuperAdminClientsPage() {
     alert('Delete functionality requires careful cascade implementation.\n\nFor now:\n1. Export the client data first\n2. Manually suspend the client\n3. Contact developer for full deletion\n\nThis prevents accidental data loss.')
   }
 
-  async function handleDeleteClient(clientId: string) {
-    if (!confirm('DELETE this client and ALL their data? This cannot be undone!')) return
-    if (!confirm('Are you absolutely sure? This will delete companies, tours, users, everything!')) return
-    
-    alert('Delete functionality needs careful implementation - contact developer')
-  }
-
   async function loadClientForEdit(clientId: string) {
     try {
       // Load profile
