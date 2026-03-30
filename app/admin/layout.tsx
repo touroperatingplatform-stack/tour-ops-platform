@@ -61,8 +61,8 @@ export default function AdminLayout({
 
   return (
     <div className="min-h-screen bg-gray-100 pb-20">
-      {/* Top Bar */}
-      <nav className="bg-white border-b border-gray-200 sticky top-0 z-50">
+      {/* Top Bar - GREEN BORDER */}
+      <nav className="bg-white border-b border-gray-200 border-2 border-green-500 sticky top-0 z-50">
         <div className="px-4">
           <div className="flex items-center justify-between h-14">
             {/* Logo */}
@@ -195,8 +195,8 @@ export default function AdminLayout({
         {children}
       </main>
 
-      {/* Bottom Navigation - Full Width */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50 h-16">
+      {/* Bottom Navigation - PURPLE BORDER */}
+      <nav className="fixed bottom-0 left-0 right-0 bg-white border-2 border-purple-500 z-50 h-16">
         <div className="flex items-center h-full">
           {bottomNavItems.map((item) => {
             const active = isActive(item.href)
