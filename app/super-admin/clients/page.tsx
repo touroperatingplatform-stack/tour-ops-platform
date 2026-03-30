@@ -255,15 +255,152 @@ export default function SuperAdminClientsPage() {
   }
 
   async function handleSuspendClient(clientId: string) {
-    if (!confirm('Suspend this client? They will lose access to the platform.')) return
+    if (!confirm('Suspend this client? They will lose access to the platform.\n\nTheir data will be preserved and they can be reactivated later.')) return
     
     try {
-      // Update profile status (would need a status field)
-      alert('Client suspended (placeholder - needs implementation)')
+      // Update profile status to suspended
+      const { error } = await supabase
+        .from('profiles')
+        .update({ status: 'suspended' })
+        .eq('id', clientId)
+      
+      if (error) throw error
+      
+      alert('✅ Client suspended. They cannot access the platform until reactivated.')
       loadClients()
     } catch (error: any) {
-      alert('Error: ' + error.message)
+      alert('❌ Error suspending client: ' + error.message)
     }
+  }
+
+  async function handleExportClientData(clientId: string) {
+    try {
+      // Fetch all client data
+      const exportData: any = {
+        exported_at: new Date().toISOString(),
+        version: '1.0',
+        client: null,
+        companies: [],
+        configs: [],
+        users: [],
+        tours: [],
+        guests: [],
+        vehicles: [],
+        incidents: [],
+        expenses: [],
+        checkins: [],
+        feedback: []
+      }
+      
+      // 1. Client profile
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', clientId)
+        .single()
+      exportData.client = profile
+      
+      // 2. Companies
+      const { data: companies } = await supabase
+        .from('companies')
+        .select('*')
+        .eq('company_admin_id', clientId)
+      exportData.companies = companies || []
+      
+      // 3. Company configs
+      if (companies && companies.length > 0) {
+        const companyIds = companies.map(c => c.id)
+        const { data: configs } = await supabase
+          .from('company_configs')
+          .select('*')
+          .in('company_id', companyIds)
+        exportData.configs = configs || []
+        
+        // 4. Users in these companies
+        const { data: users } = await supabase
+          .from('profiles')
+          .select('*')
+          .in('company_id', companyIds)
+        exportData.users = users || []
+        
+        // 5. Tours
+        const { data: tours } = await supabase
+          .from('tours')
+          .select('*')
+          .in('company_id', companyIds)
+        exportData.tours = tours || []
+        
+        if (tours && tours.length > 0) {
+          const tourIds = tours.map(t => t.id)
+          
+          // 6. Guests
+          const { data: guests } = await supabase
+            .from('guests')
+            .select('*')
+            .in('tour_id', tourIds)
+          exportData.guests = guests || []
+          
+          // 7. Incidents
+          const { data: incidents } = await supabase
+            .from('incidents')
+            .select('*')
+            .in('tour_id', tourIds)
+          exportData.incidents = incidents || []
+          
+          // 8. Expenses
+          const { data: expenses } = await supabase
+            .from('tour_expenses')
+            .select('*')
+            .in('tour_id', tourIds)
+          exportData.expenses = expenses || []
+          
+          // 9. Guide check-ins
+          const { data: checkins } = await supabase
+            .from('guide_checkins')
+            .select('*')
+            .in('tour_id', tourIds)
+          exportData.checkins = checkins || []
+          
+          // 10. Guest feedback
+          const { data: feedback } = await supabase
+            .from('guest_feedback')
+            .select('*')
+            .in('tour_id', tourIds)
+          exportData.feedback = feedback || []
+        }
+        
+        // 11. Vehicles
+        const { data: vehicles } = await supabase
+          .from('vehicles')
+          .select('*')
+          .in('company_id', companyIds)
+        exportData.vehicles = vehicles || []
+      }
+      
+      // Download as JSON
+      const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `${profile?.email || 'client'}-export-${new Date().toISOString().split('T')[0]}.json`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      URL.revokeObjectURL(url)
+      
+      alert(`✅ Export complete!\n\nIncluded:\n- 1 client\n- ${exportData.companies.length} companies\n- ${exportData.users.length} users\n- ${exportData.tours.length} tours\n- ${exportData.guests.length} guests\n- ${exportData.vehicles.length} vehicles\n- ${exportData.incidents.length} incidents\n- ${exportData.expenses.length} expenses\n- ${exportData.checkins.length} check-ins\n- ${exportData.feedback.length} feedback entries`
+      
+    } catch (error: any) {
+      alert('❌ Error exporting data: ' + error.message)
+    }
+  }
+
+  async function handleDeleteClient(clientId: string) {
+    // First, remind user to export
+    if (!confirm('⚠️ WARNING: This will permanently delete this client and ALL their data!\n\n1. Make sure you have exported their data first\n2. This action CANNOT be undone\n3. All companies, tours, users, and data will be deleted\n\nHave you exported their data already?')) return
+    if (!confirm('Are you ABSOLUTELY sure? This will delete:\n- Client account\n- All companies\n- All users\n- All tours\n- All guests\n- All vehicles\n- All incidents, expenses, check-ins, feedback\n\nThis CANNOT be undone!')) return
+    
+    alert('Delete functionality requires careful cascade implementation.\n\nFor now:\n1. Export the client data first\n2. Manually suspend the client\n3. Contact developer for full deletion\n\nThis prevents accidental data loss.')
   }
 
   async function handleDeleteClient(clientId: string) {
@@ -574,13 +711,19 @@ export default function SuperAdminClientsPage() {
                           await loadClientForEdit(client.id)
                           setShowEditModal(true)
                         }}
-                        className="text-blue-600 hover:text-blue-900 mr-4"
+                        className="text-blue-600 hover:text-blue-900 mr-3"
                       >
                         Edit
                       </button>
                       <button
+                        onClick={() => handleExportClientData(client.id)}
+                        className="text-green-600 hover:text-green-900 mr-3"
+                      >
+                        Export
+                      </button>
+                      <button
                         onClick={() => handleSuspendClient(client.id)}
-                        className="text-yellow-600 hover:text-yellow-900 mr-4"
+                        className="text-yellow-600 hover:text-yellow-900 mr-3"
                       >
                         Suspend
                       </button>

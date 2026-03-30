@@ -9,6 +9,7 @@ const navItems = [
   { href: '/super-admin', label: 'Dashboard', icon: '📊' },
   { href: '/super-admin/clients', label: 'Clients', icon: '👥' },
   { href: '/super-admin/companies', label: 'Companies', icon: '🏢' },
+  { href: '/super-admin/import', label: 'Import', icon: '📥' },
   { href: '/super-admin/demo', label: 'Demo Data', icon: '📦' },
   { href: '/super-admin/settings', label: 'Settings', icon: '⚙️' },
 ]
