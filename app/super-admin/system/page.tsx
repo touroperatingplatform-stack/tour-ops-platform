@@ -245,7 +245,7 @@ export default function SuperAdminSystemPage() {
     }
   }
 
-  function getHealthIcon(status: string) {
+  function getHealthIcon(status: string | undefined) {
     switch (status) {
       case 'healthy': return '✅'
       case 'degraded': return '⚠️'
