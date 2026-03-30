@@ -130,8 +130,7 @@ export default function AdminDashboard() {
 
   return (
     <RoleGuard requiredRole="company_admin">
-      <div className="h-full">
-          <div className="h-full grid grid-cols-12 grid-rows-[auto_auto_1fr] gap-3">
+      <div className="h-full grid grid-cols-12 grid-rows-[auto_auto_1fr] gap-3">
             
             {/* Row 1: KPI Cards */}
             <div className="col-span-12 grid grid-cols-4 gap-3">
