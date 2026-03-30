@@ -180,13 +180,13 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        {/* Main Content - Template spacing: gap-6, p-6 */}
-        <div className="flex-1 overflow-hidden p-6">
-          <div className="h-full grid grid-cols-12 grid-rows-[auto_auto_1fr] gap-6">
+        {/* Main Content */}
+        <div className="flex-1 overflow-hidden p-3">
+          <div className="h-full grid grid-cols-12 grid-rows-[auto_auto_1fr] gap-3">
             
-            {/* Row 1: KPI Cards - gap-6 */}
-            <div className="col-span-12 grid grid-cols-4 gap-6">
-              <div className="bg-white rounded-lg border border-gray-200 p-6">
+            {/* Row 1: KPI Cards */}
+            <div className="col-span-12 grid grid-cols-4 gap-3">
+              <div className="bg-white rounded-lg border border-gray-200 p-3">
                 <p className="text-xs text-gray-500 uppercase font-medium">{t('adminDashboard.toursToday')}</p>
                 <div className="flex items-baseline gap-2 mt-1">
                   <span className="text-2xl font-bold">{stats.toursCompleted}/{stats.toursTotal}</span>
@@ -194,27 +194,27 @@ export default function AdminDashboard() {
                 </div>
               </div>
 
-              <div className="bg-white rounded-lg border border-gray-200 p-6">
+              <div className="bg-white rounded-lg border border-gray-200 p-3">
                 <p className="text-xs text-blue-600 uppercase font-medium">{t('adminDashboard.guestsToday')}</p>
                 <p className="text-2xl font-bold text-blue-600 mt-1">{stats.guestsToday}</p>
               </div>
 
-              <div className="bg-white rounded-lg border border-gray-200 p-6">
+              <div className="bg-white rounded-lg border border-gray-200 p-3">
                 <p className="text-xs text-green-600 uppercase font-medium">{t('adminDashboard.onTimeRate')}</p>
                 <p className="text-2xl font-bold text-green-600 mt-1">{stats.onTimeRate}%</p>
               </div>
 
-              <div className="bg-white rounded-lg border border-gray-200 p-6">
+              <div className="bg-white rounded-lg border border-gray-200 p-3">
                 <p className="text-xs text-red-600 uppercase font-medium">{t('adminDashboard.incidents')}</p>
                 <p className="text-2xl font-bold text-red-600 mt-1">{stats.incidentsOpen}</p>
               </div>
             </div>
 
-            {/* Row 2: Middle Section - gap-6 */}
-            <div className="col-span-12 grid grid-cols-12 gap-6">
-              {/* Active Tours + Team - Left - gap-6 */}
-              <div className="col-span-4 grid grid-rows-2 gap-6">
-                <div className="bg-white rounded-lg border border-gray-200 p-6">
+            {/* Row 2: Middle Section */}
+            <div className="col-span-12 grid grid-cols-12 gap-3">
+              {/* Active Tours + Team - Left */}
+              <div className="col-span-4 grid grid-rows-2 gap-3">
+                <div className="bg-white rounded-lg border border-gray-200 p-3">
                   <div className="flex items-center justify-between">
                     <span className="text-xs text-gray-500 uppercase font-medium">{t('adminDashboard.activeTours')}</span>
                     <span className="bg-green-100 text-green-700 text-xs px-2 py-0.5 rounded-full">{stats.toursActive} {t('adminDashboard.live')}</span>
@@ -222,9 +222,9 @@ export default function AdminDashboard() {
                   <p className="text-3xl font-bold text-blue-600 mt-1">{stats.toursActive}</p>
                 </div>
 
-                <div className="bg-white rounded-lg border border-gray-200 p-6">
+                <div className="bg-white rounded-lg border border-gray-200 p-3">
                   <p className="text-xs text-gray-500 uppercase font-medium">{t('adminDashboard.teamStatus')}</p>
-                  <div className="mt-2 grid grid-cols-2 gap-4">
+                  <div className="mt-2 grid grid-cols-2 gap-2">
                     <div className="text-center">
                       <p className="text-xl font-bold">{stats.guidesActive}/{stats.guidesTotal}</p>
                       <p className="text-xs text-gray-500">{t('adminDashboard.guides')}</p>
@@ -237,8 +237,8 @@ export default function AdminDashboard() {
                 </div>
               </div>
 
-              {/* Attention Required - Center - p-6 */}
-              <div className="col-span-5 bg-white rounded-lg border border-gray-200 p-6 flex flex-col">
+              {/* Attention Required - Center */}
+              <div className="col-span-5 bg-white rounded-lg border border-gray-200 p-3 flex flex-col">
                 <div className="flex items-center justify-between mb-2">
                   <span className="font-semibold text-sm">⚠️ {t('adminDashboard.attentionRequired')}</span>
                   <span className="text-gray-400 text-xs">{attentionItems.length} {t('adminDashboard.items')}</span>
@@ -262,10 +262,10 @@ export default function AdminDashboard() {
                 </div>
               </div>
 
-              {/* Quick Actions - Right - p-6 */}
-              <div className="col-span-3 bg-white rounded-lg border border-gray-200 p-6 flex flex-col">
+              {/* Quick Actions - Right */}
+              <div className="col-span-3 bg-white rounded-lg border border-gray-200 p-3 flex flex-col">
                 <span className="font-semibold text-sm mb-2">{t('adminDashboard.quickActions')}</span>
-                <div className="flex-1 grid grid-cols-2 gap-4">
+                <div className="flex-1 grid grid-cols-2 gap-2">
                   <Link href="/admin/tours/new" className="flex flex-col items-center justify-center p-2 bg-blue-50 hover:bg-blue-100 rounded transition-colors">
                     <span className="text-xl mb-1">🚌</span>
                     <span className="text-xs font-medium">{t('adminDashboard.newTour')}</span>
@@ -286,10 +286,10 @@ export default function AdminDashboard() {
               </div>
             </div>
 
-            {/* Row 3: Bottom Section - gap-6 */}
-            <div className="col-span-12 grid grid-cols-12 gap-6">
-              {/* Timeline - p-6 */}
-              <div className="col-span-9 bg-white rounded-lg border border-gray-200 p-6">
+            {/* Row 3: Bottom Section */}
+            <div className="col-span-12 grid grid-cols-12 gap-3">
+              {/* Timeline */}
+              <div className="col-span-9 bg-white rounded-lg border border-gray-200 p-3">
                 <div className="flex items-center justify-between mb-2">
                   <span className="font-semibold text-sm">{t('adminDashboard.todaysTimeline')}</span>
                   <span className="text-gray-400 text-xs">{stats.toursTotal} {t('nav.tours').toLowerCase()}</span>
@@ -305,8 +305,8 @@ export default function AdminDashboard() {
                 </div>
               </div>
 
-              {/* Fleet Status - p-6 */}
-              <div className="col-span-3 bg-white rounded-lg border border-gray-200 p-6">
+              {/* Fleet Status */}
+              <div className="col-span-3 bg-white rounded-lg border border-gray-200 p-3">
                 <span className="font-semibold text-sm">{t('adminDashboard.fleetStatus')}</span>
                 <div className="mt-2 space-y-1">
                   <div className="flex items-center justify-between text-sm">
