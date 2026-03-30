@@ -5,8 +5,8 @@ export const dynamic = 'force-dynamic'
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase/client'
 import RoleGuard from '@/lib/auth/RoleGuard'
-import AdminNav from '@/components/navigation/AdminNav'
 import Link from 'next/link'
+import { getLocalDate } from '@/lib/timezone'
 
 interface PlatformStats {
   totalClients: number
@@ -62,18 +62,19 @@ export default function SuperAdminDashboard() {
         .from('profiles')
         .select('*', { count: 'exact', head: true })
       
-      // Count today's tours
-      const today = new Date().toISOString().split('T')[0]
+      // Count today's tours (use local date for Cancun timezone)
+      const today = getLocalDate()
+      const tomorrow = new Date(new Date().getTime() + 86400000).toISOString().split('T')[0]
       const { count: toursCount } = await supabase
         .from('tours')
         .select('*', { count: 'exact', head: true })
-        .eq('tour_date', today)
+        .in('tour_date', [today, tomorrow])
       
       // Count today's guests
       const { data: todaysTours } = await supabase
         .from('tours')
         .select('id')
-        .eq('tour_date', today)
+        .in('tour_date', [today, tomorrow])
       
       let guestsCount = 0
       if (todaysTours && todaysTours.length > 0) {
@@ -137,13 +138,30 @@ export default function SuperAdminDashboard() {
 
   return (
     <RoleGuard requiredRole='super_admin'>
-      <AdminNav />
-      
-      <div className="p-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">Platform Dashboard</h1>
-          <p className="text-gray-600">Overview of all clients and companies</p>
+      <div className="min-h-screen bg-gray-50">
+        {/* Header */}
+        <div className="bg-white border-b">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900">Platform Dashboard</h1>
+                <p className="text-sm text-gray-600 mt-1">
+                  {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
+                </p>
+              </div>
+              <div className="flex items-center gap-4">
+                <Link
+                  href="/operations"
+                  className="text-sm text-gray-600 hover:text-gray-900"
+                >
+                  ← Back to Operations
+                </Link>
+              </div>
+            </div>
+          </div>
         </div>
+
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
         {loading ? (
           <div className="flex items-center justify-center h-64">
@@ -334,6 +352,7 @@ export default function SuperAdminDashboard() {
           </>
         )}
       </div>
+    </div>
     </RoleGuard>
   )
 }
