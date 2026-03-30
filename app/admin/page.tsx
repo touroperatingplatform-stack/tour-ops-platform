@@ -137,10 +137,10 @@ export default function AdminDashboard() {
 
         {/* Main Content - RED BORDER with MARGIN */}
         <div className="flex-1 overflow-hidden m-4 border-4 border-red-500 rounded-xl">
-          <div className="h-full p-4 grid grid-cols-12 grid-rows-[auto_auto_1fr] gap-4">
+          <div className="h-full p-6 grid grid-cols-12 grid-rows-[auto_auto_1fr] gap-6">
             
             {/* Row 1: KPI Cards - BLUE */}
-            <div className="col-span-12 grid grid-cols-4 gap-4 border-2 border-blue-500 rounded-lg p-1">
+            <div className="col-span-12 grid grid-cols-4 gap-6 border-2 border-blue-500 rounded-lg p-3">
               {/* Tours */}
               <div className="bg-white rounded-xl shadow p-4 flex flex-col justify-between">
                 <div className="flex items-center justify-between mb-2">
@@ -208,9 +208,9 @@ export default function AdminDashboard() {
             </div>
 
             {/* Row 2: Middle Section - GREEN */}
-            <div className="col-span-12 grid grid-cols-12 gap-4 border-2 border-green-500 rounded-lg p-1">
+            <div className="col-span-12 grid grid-cols-12 gap-6 border-2 border-green-500 rounded-lg p-3">
               {/* Active Tours + Team - Left - YELLOW */}
-              <div className="col-span-4 grid grid-rows-2 gap-4 border-2 border-yellow-500 rounded-lg p-1">
+              <div className="col-span-4 grid grid-rows-2 gap-6 border-2 border-yellow-500 rounded-lg p-3">
                 {/* Active Tours */}
                 <div className="bg-white rounded-xl shadow p-4 flex flex-col justify-between">
                   <div className="flex items-center justify-between mb-2">
@@ -289,7 +289,7 @@ export default function AdminDashboard() {
             </div>
 
             {/* Row 3: Bottom Section - CYAN */}
-            <div className="col-span-12 grid grid-cols-12 gap-4 border-2 border-cyan-500 rounded-lg p-1">
+            <div className="col-span-12 grid grid-cols-12 gap-6 border-2 border-cyan-500 rounded-lg p-3">
               {/* Timeline - PINK */}
               <div className="col-span-9 bg-white rounded-xl shadow p-4 border-2 border-pink-500">
                 <div className="flex items-center justify-between mb-3">
