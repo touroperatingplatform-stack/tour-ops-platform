@@ -34,7 +34,7 @@ interface AttentionItem {
 
 export default function AdminDashboard() {
   const router = useRouter()
-  const { t, lang } = useTranslation()
+  const { t, locale } = useTranslation()
   const [stats, setStats] = useState<DashboardStats>({
     toursTotal: 0,
     toursActive: 0,
@@ -165,7 +165,7 @@ export default function AdminDashboard() {
             <div>
               <h1 className="text-lg font-bold">{t('adminDashboard.title')}</h1>
               <p className="text-xs text-gray-500">
-                {new Date().toLocaleDateString(lang === 'es' ? 'es-ES' : 'en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
+                {new Date().toLocaleDateString(locale === 'es' ? 'es-ES' : 'en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
               </p>
             </div>
           </div>
