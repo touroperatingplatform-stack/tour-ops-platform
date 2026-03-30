@@ -455,8 +455,9 @@ export default function SuperAdminDemoPage() {
         'Cenote': { lat: 20.4500, lng: -87.3500 }
       }
       
+      // Create check-ins for ALL tours (not just first 8)
       let checkinCount = 0
-      for (const tourId of createdTourIds.slice(0, Math.min(createdTourIds.length, 8))) {
+      for (const tourId of createdTourIds) {
         const { data: tour, error: tourError } = await supabase
           .from('tours')
           .select('guide_id, brand_id, start_time, name')
@@ -507,10 +508,10 @@ export default function SuperAdminDemoPage() {
       setDemoProgress(`✅ Created ${checkinCount} guide check-ins`)
       await new Promise(resolve => setTimeout(resolve, 500))
 
-      // Step 5b: Create driver check-ins (vehicle inspections)
+      // Step 5b: Create driver check-ins for ALL tours with drivers
       setDemoProgress('🚗 Creating driver vehicle inspections...')
       let driverCheckinCount = 0
-      for (const tourId of createdTourIds.slice(0, Math.min(createdTourIds.length, 5))) {
+      for (const tourId of createdTourIds) {
         const { data: tour, error: tourError } = await supabase
           .from('tours')
           .select('driver_id, vehicle_id, start_time')
