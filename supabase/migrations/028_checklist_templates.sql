@@ -1,5 +1,19 @@
--- Migration: Create checklist_templates table
+-- Migration: Create checklist_templates table and booking functions
 -- Created: 2026-03-30
+
+-- Function to update tour guest count
+CREATE OR REPLACE FUNCTION update_tour_guest_count(tour_id UUID)
+RETURNS VOID AS $$
+BEGIN
+  UPDATE tours
+  SET guest_count = (
+    SELECT COALESCE(SUM(adults + children), 0)
+    FROM guests
+    WHERE guests.tour_id = tour_id
+  )
+  WHERE tours.id = tour_id;
+END;
+$$ LANGUAGE plpgsql;
 
 CREATE TABLE IF NOT EXISTS checklist_templates (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
