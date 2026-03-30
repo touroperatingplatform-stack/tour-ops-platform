@@ -135,12 +135,12 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        {/* Main Content - Fixed Height, No Scroll */}
-        <div className="flex-1 overflow-hidden">
+        {/* Main Content - Fixed Height, No Scroll - RED OUTER */}
+        <div className="flex-1 overflow-hidden border-4 border-red-500">
           <div className="h-full p-4 grid grid-cols-12 grid-rows-[auto_auto_1fr] gap-4">
             
-            {/* Row 1: KPI Cards */}
-            <div className="col-span-12 grid grid-cols-4 gap-4">
+            {/* Row 1: KPI Cards - BLUE */}
+            <div className="col-span-12 grid grid-cols-4 gap-4 border-2 border-blue-500 rounded-lg p-1">
               {/* Tours */}
               <div className="bg-white rounded-xl shadow p-4 flex flex-col justify-between">
                 <div className="flex items-center justify-between mb-2">
@@ -207,10 +207,10 @@ export default function AdminDashboard() {
               </div>
             </div>
 
-            {/* Row 2: Middle Section */}
-            <div className="col-span-12 grid grid-cols-12 gap-4">
-              {/* Active Tours + Team - Left */}
-              <div className="col-span-4 grid grid-rows-2 gap-4">
+            {/* Row 2: Middle Section - GREEN */}
+            <div className="col-span-12 grid grid-cols-12 gap-4 border-2 border-green-500 rounded-lg p-1">
+              {/* Active Tours + Team - Left - YELLOW */}
+              <div className="col-span-4 grid grid-rows-2 gap-4 border-2 border-yellow-500 rounded-lg p-1">
                 {/* Active Tours */}
                 <div className="bg-white rounded-xl shadow p-4 flex flex-col justify-between">
                   <div className="flex items-center justify-between mb-2">
@@ -239,8 +239,8 @@ export default function AdminDashboard() {
                 </div>
               </div>
 
-              {/* Attention Required - Center */}
-              <div className="col-span-5 bg-white rounded-xl shadow p-4 flex flex-col">
+              {/* Attention Required - Center - ORANGE */}
+              <div className="col-span-5 bg-white rounded-xl shadow p-4 flex flex-col border-2 border-orange-500">
                 <div className="flex items-center justify-between mb-3">
                   <span className="font-semibold">⚠️ Attention Required</span>
                   <span className="text-gray-400 text-sm">{attentionItems.length} items</span>
@@ -264,8 +264,8 @@ export default function AdminDashboard() {
                 </div>
               </div>
 
-              {/* Quick Actions - Right */}
-              <div className="col-span-3 bg-white rounded-xl shadow p-4 flex flex-col">
+              {/* Quick Actions - Right - PURPLE */}
+              <div className="col-span-3 bg-white rounded-xl shadow p-4 flex flex-col border-2 border-purple-500">
                 <span className="font-semibold mb-3">Quick Actions</span>
                 <div className="flex-1 grid grid-cols-2 gap-2">
                   <Link href="/admin/tours" className="flex flex-col items-center justify-center p-2 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors">
@@ -288,10 +288,10 @@ export default function AdminDashboard() {
               </div>
             </div>
 
-            {/* Row 3: Bottom Section */}
-            <div className="col-span-12 grid grid-cols-12 gap-4">
-              {/* Timeline */}
-              <div className="col-span-9 bg-white rounded-xl shadow p-4">
+            {/* Row 3: Bottom Section - CYAN */}
+            <div className="col-span-12 grid grid-cols-12 gap-4 border-2 border-cyan-500 rounded-lg p-1">
+              {/* Timeline - PINK */}
+              <div className="col-span-9 bg-white rounded-xl shadow p-4 border-2 border-pink-500">
                 <div className="flex items-center justify-between mb-3">
                   <span className="font-semibold">Today's Timeline</span>
                   <span className="text-gray-400 text-sm">{stats.toursTotal} tours</span>
@@ -307,8 +307,8 @@ export default function AdminDashboard() {
                 </div>
               </div>
 
-              {/* Fleet Status */}
-              <div className="col-span-3 bg-white rounded-xl shadow p-4">
+              {/* Fleet Status - TEAL */}
+              <div className="col-span-3 bg-white rounded-xl shadow p-4 border-2 border-teal-500">
                 <span className="font-semibold">Fleet Status</span>
                 <div className="mt-3 space-y-2">
                   <div className="flex items-center justify-between text-sm">
