@@ -26,23 +26,29 @@ export default function AdminGuestsPage() {
   const [stats, setStats] = useState({ total: 0, checkedIn: 0, noShow: 0 })
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState<'all' | 'checked_in' | 'no_show'>('all')
+  const [showAll, setShowAll] = useState(true)
 
   useEffect(() => {
     loadGuests()
-  }, [])
+  }, [showAll])
 
   async function loadGuests() {
     const today = getLocalDate()
     
-    const { data } = await supabase
+    let query = supabase
       .from('guests')
       .select(`
         id, first_name, last_name, hotel, room_number, adults, children, checked_in, no_show,
         tour:tours(name, tour_date)
       `)
-      .eq('tour.tour_date', today)
       .order('created_at', { ascending: false })
-      .limit(50)
+    
+    // Only filter by today's date if showAll is false
+    if (!showAll) {
+      query = query.eq('tour.tour_date', today)
+    }
+    
+    const { data } = await query.limit(100)
 
     if (data) {
       const formatted = data.map((g: any) => ({
@@ -79,8 +85,18 @@ export default function AdminGuestsPage() {
     <div className="h-screen flex flex-col bg-gray-50 overflow-hidden">
       {/* Header */}
       <div className="bg-white border-b px-4 py-4 flex-shrink-0">
-        <h1 className="text-xl font-bold">Today's Guests</h1>
-        <p className="text-gray-500 text-sm">{getLocalDate()}</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-xl font-bold">{showAll ? 'All Guests' : "Today's Guests"}</h1>
+            <p className="text-gray-500 text-sm">{showAll ? '132 total guests' : getLocalDate()}</p>
+          </div>
+          <button
+            onClick={() => setShowAll(!showAll)}
+            className="text-sm text-blue-600 font-medium"
+          >
+            {showAll ? 'Show Today Only' : 'Show All'}
+          </button>
+        </div>
       </div>
 
       {/* Stats */}
