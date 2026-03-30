@@ -428,7 +428,7 @@ export function OperationsMetrics() {
     // On-time percentage from check-ins
     const { data: checkins } = await supabase
       .from('guide_checkins')
-      .select('minutes_early_or_late')
+      .select('minutes_early_or_late, location_accuracy')
       .gte('checked_in_at', `${today}T00:00:00`)
 
     const onTimeCount = checkins?.filter((c: any) => (c.minutes_early_or_late || 0) >= -5).length || 0
