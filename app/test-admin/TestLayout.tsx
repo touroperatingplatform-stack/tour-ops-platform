@@ -29,6 +29,7 @@ export default function TestLayout({ children }: { children: React.ReactNode }) 
   const pathname = usePathname()
   const [showMore, setShowMore] = useState(false)
   const [showUserMenu, setShowUserMenu] = useState(false)
+  const [showLangMenu, setShowLangMenu] = useState(false)
   const [language, setLanguage] = useState('EN')
   const [notifications, setNotifications] = useState(3)
 
@@ -37,10 +38,6 @@ export default function TestLayout({ children }: { children: React.ReactNode }) 
   const isActive = (href: string) => {
     if (href === '/admin') return pathname === '/admin'
     return pathname.startsWith(href)
-  }
-
-  const toggleLanguage = () => {
-    setLanguage(prev => prev === 'EN' ? 'ES' : 'EN')
   }
 
   return (
@@ -59,13 +56,40 @@ export default function TestLayout({ children }: { children: React.ReactNode }) 
 
             {/* Right side - DEBUG: Purple background */}
             <div className="flex items-center gap-3 border-4 border-purple-400 border-dashed p-2 mx-2">
-              {/* Language Toggle */}
-              <button 
-                onClick={toggleLanguage}
-                className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center hover:bg-gray-200 text-xs font-bold"
-              >
-                {language}
-              </button>
+              {/* Language Toggle - Flag Dropdown */}
+              <div className="relative">
+                <button 
+                  onClick={() => setShowLangMenu(!showLangMenu)}
+                  className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center hover:bg-gray-200"
+                >
+                  {language === 'EN' ? '🇺🇸' : '🇲🇽'}
+                </button>
+                
+                {showLangMenu && (
+                  <>
+                    <div 
+                      className="fixed inset-0 z-50"
+                      onClick={() => setShowLangMenu(false)}
+                    />
+                    <div className="absolute top-10 right-0 bg-white rounded-lg shadow-xl z-50 border-4 border-yellow-400 p-2">
+                      <button 
+                        onClick={() => { setLanguage('EN'); setShowLangMenu(false); }}
+                        className={`flex items-center gap-2 px-4 py-2 rounded-lg w-full ${language === 'EN' ? 'bg-blue-100' : 'hover:bg-gray-100'}`}
+                      >
+                        <span>🇺🇸</span>
+                        <span>English</span>
+                      </button>
+                      <button 
+                        onClick={() => { setLanguage('ES'); setShowLangMenu(false); }}
+                        className={`flex items-center gap-2 px-4 py-2 rounded-lg w-full mt-1 ${language === 'ES' ? 'bg-blue-100' : 'hover:bg-gray-100'}`}
+                      >
+                        <span>🇲🇽</span>
+                        <span>Español</span>
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
               
               {/* Notifications */}
               <button className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center hover:bg-gray-200 relative">
