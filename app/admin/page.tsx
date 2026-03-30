@@ -135,8 +135,8 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        {/* Main Content - Fixed Height, No Scroll - RED OUTER */}
-        <div className="flex-1 overflow-hidden border-4 border-red-500">
+        {/* Main Content - RED BORDER with MARGIN */}
+        <div className="flex-1 overflow-hidden m-4 border-4 border-red-500 rounded-xl">
           <div className="h-full p-4 grid grid-cols-12 grid-rows-[auto_auto_1fr] gap-4">
             
             {/* Row 1: KPI Cards - BLUE */}
