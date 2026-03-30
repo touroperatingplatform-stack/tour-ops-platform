@@ -6,7 +6,21 @@ import { usePathname } from 'next/navigation'
 import { supabase } from '@/lib/supabase/client'
 import LanguageToggle from '@/components/LanguageToggle'
 
-const navItems = [
+const topNavItems = [
+  { href: '/admin/tours', label: 'Tours', icon: '🚌' },
+  { href: '/admin/users', label: 'Team', icon: '👥' },
+  { href: '/admin/reports', label: 'Reports', icon: '📈' },
+]
+
+const bottomNavItems = [
+  { href: '/admin', label: 'Dashboard', icon: '📊' },
+  { href: '/admin/vehicles', label: 'Fleet', icon: '🚐' },
+  { href: '/admin/guests', label: 'Guests', icon: '👤' },
+  { href: '/admin/expenses', label: 'Expenses', icon: '💵' },
+  { href: '/admin/settings', label: 'More', icon: '☰' },
+]
+
+const allMenuItems = [
   { href: '/admin', label: 'Dashboard', icon: '📊' },
   { href: '/admin/tours', label: 'Tours', icon: '🚌' },
   { href: '/admin/users', label: 'Team', icon: '👥' },
@@ -22,14 +36,6 @@ const navItems = [
   { href: '/admin/settings', label: 'Settings', icon: '⚙️' },
 ]
 
-const bottomNavItems = [
-  { href: '/admin', label: 'Dashboard', icon: '📊' },
-  { href: '/admin/tours', label: 'Tours', icon: '🚌' },
-  { href: '/admin/users', label: 'Team', icon: '👥' },
-  { href: '/admin/vehicles', label: 'Fleet', icon: '🚐' },
-  { href: '/admin/settings', label: 'More', icon: '☰' },
-]
-
 export default function AdminLayout({
   children,
 }: {
@@ -39,7 +45,7 @@ export default function AdminLayout({
   const [showMenu, setShowMenu] = useState(false)
   const [showUserMenu, setShowUserMenu] = useState(false)
 
-  const currentPage = navItems.find(item => 
+  const currentPage = allMenuItems.find(item => 
     pathname === item.href || pathname.startsWith(`${item.href}/`)
   )?.label || 'Dashboard'
 
@@ -55,21 +61,36 @@ export default function AdminLayout({
 
   return (
     <div className="min-h-screen bg-gray-100 pb-20">
-      {/* Simple Top Bar */}
+      {/* Top Bar */}
       <nav className="bg-white border-b border-gray-200 sticky top-0 z-50">
         <div className="px-4">
           <div className="flex items-center justify-between h-14">
-            {/* Logo + Title */}
-            <div className="flex items-center gap-3">
-              <Link href="/admin" className="flex items-center gap-2">
-                <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold">
-                  C
-                </div>
-                <span className="font-bold text-gray-900">{currentPage}</span>
-              </Link>
+            {/* Logo */}
+            <Link href="/admin" className="flex items-center gap-2">
+              <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold">
+                C
+              </div>
+              <span className="font-bold text-gray-900">{currentPage}</span>
+            </Link>
+
+            {/* Top Nav */}
+            <div className="flex items-center gap-1">
+              {topNavItems.map((item) => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    isActive(item.href)
+                      ? 'bg-blue-100 text-blue-700'
+                      : 'text-gray-600 hover:bg-gray-100'
+                  }`}
+                >
+                  {item.label}
+                </Link>
+              ))}
             </div>
 
-            {/* Right - Actions */}
+            {/* Right */}
             <div className="flex items-center gap-2">
               <LanguageToggle />
               
@@ -127,7 +148,7 @@ export default function AdminLayout({
         </>
       )}
 
-      {/* Full Menu (when "More" clicked) */}
+      {/* Full Menu */}
       {showMenu && (
         <>
           <div 
@@ -148,7 +169,7 @@ export default function AdminLayout({
                 </button>
               </div>
               <div className="grid grid-cols-3 gap-2">
-                {navItems.map((item) => (
+                {allMenuItems.map((item) => (
                   <Link
                     key={item.href}
                     href={item.href}
@@ -174,9 +195,9 @@ export default function AdminLayout({
         {children}
       </main>
 
-      {/* Bottom Navigation - All Screens */}
+      {/* Bottom Navigation - Full Width */}
       <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50 h-16">
-        <div className="flex justify-around items-center h-full max-w-2xl mx-auto">
+        <div className="flex items-center h-full">
           {bottomNavItems.map((item) => {
             const active = isActive(item.href)
             const isMore = item.label === 'More'
