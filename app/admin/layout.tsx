@@ -22,6 +22,14 @@ const navItems = [
   { href: '/admin/settings', label: 'Settings', icon: '⚙️' },
 ]
 
+const bottomNavItems = [
+  { href: '/admin', label: 'Dashboard', icon: '📊' },
+  { href: '/admin/tours', label: 'Tours', icon: '🚌' },
+  { href: '/admin/users', label: 'Team', icon: '👥' },
+  { href: '/admin/vehicles', label: 'Fleet', icon: '🚐' },
+  { href: '/admin/settings', label: 'More', icon: '☰' },
+]
+
 export default function AdminLayout({
   children,
 }: {
@@ -46,48 +54,19 @@ export default function AdminLayout({
   }
 
   return (
-    <div className="min-h-screen bg-gray-100">
-      {/* Top Navigation Bar */}
+    <div className="min-h-screen bg-gray-100 pb-20">
+      {/* Simple Top Bar */}
       <nav className="bg-white border-b border-gray-200 sticky top-0 z-50">
         <div className="px-4">
           <div className="flex items-center justify-between h-14">
-            {/* Left - Logo */}
+            {/* Logo + Title */}
             <div className="flex items-center gap-3">
-              <button 
-                onClick={() => setShowMenu(true)}
-                className="p-2 -ml-2 rounded-lg hover:bg-gray-100 lg:hidden"
-              >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                </svg>
-              </button>
               <Link href="/admin" className="flex items-center gap-2">
                 <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold">
                   C
                 </div>
-                <span className="font-bold text-gray-900 hidden sm:block">Company</span>
+                <span className="font-bold text-gray-900">{currentPage}</span>
               </Link>
-            </div>
-
-            {/* Center - Page Title */}
-            <h1 className="font-semibold text-gray-900 lg:hidden">{currentPage}</h1>
-
-            {/* Desktop Nav */}
-            <div className="hidden lg:flex items-center gap-1">
-              {navItems.map((item) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                    isActive(item.href)
-                      ? 'bg-blue-100 text-blue-700'
-                      : 'text-gray-600 hover:bg-gray-100'
-                  }`}
-                >
-                  <span className="mr-1">{item.icon}</span>
-                  {item.label}
-                </Link>
-              ))}
             </div>
 
             {/* Right - Actions */}
@@ -148,78 +127,71 @@ export default function AdminLayout({
         </>
       )}
 
-      {/* Mobile Side Menu */}
+      {/* Full Menu (when "More" clicked) */}
       {showMenu && (
         <>
           <div 
             className="fixed inset-0 bg-black bg-opacity-50 z-50"
             onClick={() => setShowMenu(false)}
           />
-          <aside className="fixed top-0 left-0 bottom-0 w-64 bg-white z-50 shadow-xl">
-            <div className="flex items-center justify-between p-4 border-b border-gray-200">
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold">
-                  C
-                </div>
-                <span className="font-bold">Company Admin</span>
-              </div>
-              <button 
-                onClick={() => setShowMenu(false)}
-                className="p-2 rounded-lg hover:bg-gray-100"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-
-            <nav className="p-2 overflow-y-auto" style={{ maxHeight: 'calc(100vh - 140px)' }}>
-              {navItems.map((item) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
+          <aside className="fixed bottom-20 left-4 right-4 bg-white rounded-2xl shadow-2xl z-50 max-h-[70vh] overflow-y-auto">
+            <div className="p-4">
+              <div className="flex items-center justify-between mb-4">
+                <span className="font-bold text-lg">Menu</span>
+                <button 
                   onClick={() => setShowMenu(false)}
-                  className={`flex items-center gap-3 px-4 py-3 rounded-xl mb-1 ${
-                    isActive(item.href) 
-                      ? 'bg-blue-50 text-blue-600' 
-                      : 'text-gray-600 hover:bg-gray-50'
-                  }`}
+                  className="p-2 rounded-lg hover:bg-gray-100"
                 >
-                  <span className="text-xl">{item.icon}</span>
-                  <span className="font-medium">{item.label}</span>
-                </Link>
-              ))}
-            </nav>
-
-            <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-200 bg-white">
-              <button 
-                onClick={() => { handleSignOut(); setShowMenu(false); }}
-                className="flex items-center gap-3 px-4 py-3 text-gray-600 w-full rounded-xl hover:bg-gray-50"
-              >
-                <span>🚪</span>
-                <span>Sign Out</span>
-              </button>
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              <div className="grid grid-cols-3 gap-2">
+                {navItems.map((item) => (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    onClick={() => setShowMenu(false)}
+                    className={`flex flex-col items-center gap-1 p-3 rounded-xl ${
+                      isActive(item.href) 
+                        ? 'bg-blue-50 text-blue-600' 
+                        : 'text-gray-600 hover:bg-gray-50'
+                    }`}
+                  >
+                    <span className="text-2xl">{item.icon}</span>
+                    <span className="text-xs font-medium">{item.label}</span>
+                  </Link>
+                ))}
+              </div>
             </div>
           </aside>
         </>
       )}
 
-      {/* Bottom Navigation - Mobile/Tablet */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50 h-16 md:hidden">
-        <div className="flex justify-around items-center h-full">
-          {navItems.slice(0, 5).map((item) => {
+      {/* Main Content */}
+      <main className="p-4">
+        {children}
+      </main>
+
+      {/* Bottom Navigation - All Screens */}
+      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50 h-16">
+        <div className="flex justify-around items-center h-full max-w-2xl mx-auto">
+          {bottomNavItems.map((item) => {
             const active = isActive(item.href)
+            const isMore = item.label === 'More'
             return (
               <Link
                 key={item.href}
-                href={item.href}
-                className={`flex flex-col items-center justify-center flex-1 h-full ${
+                href={isMore ? '#' : item.href}
+                onClick={isMore ? () => setShowMenu(true) : undefined}
+                className={`flex flex-col items-center justify-center flex-1 h-full relative ${
                   active ? 'text-blue-600' : 'text-gray-400'
                 }`}
               >
                 <span className="text-xl">{item.icon}</span>
                 <span className="text-[10px] font-medium mt-0.5">{item.label}</span>
-                {active && (
+                {active && !isMore && (
                   <div className="absolute bottom-1 w-8 h-0.5 bg-blue-600 rounded-full" />
                 )}
               </Link>
@@ -227,11 +199,6 @@ export default function AdminLayout({
           })}
         </div>
       </nav>
-
-      {/* Main Content */}
-      <main className="p-4 pb-20 md:pb-4">
-        {children}
-      </main>
     </div>
   )
 }
