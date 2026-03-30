@@ -33,8 +33,10 @@ export default function AdminGuestsPage() {
   }, [showAll])
 
   async function loadGuests() {
+    setLoading(true)
     const today = getLocalDate()
     
+    // Build base query
     let query = supabase
       .from('guests')
       .select(`
@@ -42,13 +44,16 @@ export default function AdminGuestsPage() {
         tour:tours(name, tour_date)
       `)
       .order('created_at', { ascending: false })
+      .limit(100)
     
-    // Only filter by today's date if showAll is false
-    if (!showAll) {
-      query = query.eq('tour.tour_date', today)
+    // Execute query
+    const { data, error } = await query
+
+    if (error) {
+      console.error('Error loading guests:', error)
+      setLoading(false)
+      return
     }
-    
-    const { data } = await query.limit(100)
 
     if (data) {
       const formatted = data.map((g: any) => ({
