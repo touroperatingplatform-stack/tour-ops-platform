@@ -32,18 +32,20 @@ export default function TestLayout({ children }: { children: React.ReactNode }) 
 
   return (
     <div className="h-screen flex flex-col bg-gray-50 overflow-hidden">
-      {/* Top Navigation - DEBUG: Yellow border */}
-      <header className="bg-white border-b-4 border-yellow-400 flex-shrink-0">
+      {/* Top Navigation - DEBUG: Outer red border */}
+      <header className="bg-white border-b-4 border-red-400 flex-shrink-0">
         <div className="px-4 py-3">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
+            {/* Logo/Brand - DEBUG: Blue background */}
+            <div className="flex items-center gap-3 border-4 border-blue-400 border-dashed p-1">
               <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold text-sm">
                 T
               </div>
               <span className="font-bold text-gray-900">{currentPage}</span>
             </div>
 
-            <div className="flex items-center gap-2">
+            {/* Right side - DEBUG: Purple background */}
+            <div className="flex items-center gap-2 border-4 border-purple-400 border-dashed p-1">
               <button className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center hover:bg-gray-300">
                 👤
               </button>
@@ -61,8 +63,8 @@ export default function TestLayout({ children }: { children: React.ReactNode }) 
         </div>
       </main>
 
-      {/* Bottom Navigation - DEBUG: Green border */}
-      <nav className="flex-none bg-white border-t-4 border-green-400 z-50">
+      {/* Bottom Navigation - DEBUG: Orange border */}
+      <nav className="flex-none bg-white border-t-4 border-orange-400 z-50">
         <div className="flex justify-around items-center px-2 py-2">
           {navItems.map((item) => {
             const active = isActive(item.href)
@@ -70,7 +72,7 @@ export default function TestLayout({ children }: { children: React.ReactNode }) 
               <Link
                 key={item.href}
                 href={item.href}
-                className={`flex flex-col items-center justify-center py-2 px-2 min-w-[48px] ${
+                className={`flex flex-col items-center justify-center py-2 px-2 min-w-[48px] border-2 border-dashed border-yellow-400 ${
                   active ? 'text-blue-600' : 'text-gray-500'
                 }`}
               >
@@ -81,7 +83,7 @@ export default function TestLayout({ children }: { children: React.ReactNode }) 
           })}
           <button
             onClick={() => setShowMore(true)}
-            className="flex flex-col items-center justify-center py-2 px-2 min-w-[48px] text-gray-500"
+            className="flex flex-col items-center justify-center py-2 px-2 min-w-[48px] text-gray-500 border-2 border-dashed border-teal-400"
           >
             <span className="text-xl mb-1">☰</span>
             <span className="text-xs">More</span>
@@ -96,24 +98,24 @@ export default function TestLayout({ children }: { children: React.ReactNode }) 
             className="fixed inset-0 bg-black bg-opacity-50 z-50"
             onClick={() => setShowMore(false)}
           />
-          <div className="fixed bottom-20 left-4 right-4 bg-white rounded-2xl shadow-2xl z-50">
+          <div className="fixed bottom-20 left-4 right-4 bg-white rounded-2xl shadow-2xl z-50 border-4 border-pink-400">
             <div className="p-4">
-              <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center justify-between mb-4 border-2 border-dashed border-cyan-400 p-2">
                 <span className="font-bold text-lg">Menu</span>
                 <button 
                   onClick={() => setShowMore(false)}
-                  className="p-2 hover:bg-gray-100 rounded-lg"
+                  className="p-2 hover:bg-gray-100 rounded-lg border-2 border-dashed border-red-400"
                 >
                   ✕
                 </button>
               </div>
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-3 gap-3 border-2 border-dashed border-indigo-400 p-2">
                 {moreItems.map((item) => (
                   <Link
                     key={item.href}
                     href={item.href}
                     onClick={() => setShowMore(false)}
-                    className="flex flex-col items-center gap-1 p-3 rounded-xl text-gray-600 hover:bg-gray-50"
+                    className="flex flex-col items-center gap-1 p-3 rounded-xl text-gray-600 hover:bg-gray-50 border border-dashed border-gray-300"
                   >
                     <span className="text-2xl">{item.icon}</span>
                     <span className="text-xs font-medium">{item.label}</span>

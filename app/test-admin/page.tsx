@@ -96,20 +96,20 @@ export default function TestPage() {
             {/* Quick Actions - Right */}
             <div className="col-span-3 h-full overflow-auto bg-white rounded-lg border border-gray-200 p-5 flex flex-col">
               <span className="font-semibold text-sm text-center mb-4">Quick Actions</span>
-              <div className="flex-1 grid grid-cols-2 gap-4 content-start">
-                <button className="flex flex-col items-center justify-center p-4 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors">
+              <div className="flex-1 grid grid-cols-2 gap-4">
+                <button className="flex flex-col items-center justify-center p-4 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors h-full">
                   <span className="text-2xl mb-2">🚌</span>
                   <span className="text-xs font-medium">New Tour</span>
                 </button>
-                <button className="flex flex-col items-center justify-center p-4 bg-green-50 hover:bg-green-100 rounded-lg transition-colors">
+                <button className="flex flex-col items-center justify-center p-4 bg-green-50 hover:bg-green-100 rounded-lg transition-colors h-full">
                   <span className="text-2xl mb-2">👤</span>
                   <span className="text-xs font-medium">Add User</span>
                 </button>
-                <button className="flex flex-col items-center justify-center p-4 bg-purple-50 hover:bg-purple-100 rounded-lg transition-colors">
+                <button className="flex flex-col items-center justify-center p-4 bg-purple-50 hover:bg-purple-100 rounded-lg transition-colors h-full">
                   <span className="text-2xl mb-2">📊</span>
                   <span className="text-xs font-medium">Reports</span>
                 </button>
-                <button className="flex flex-col items-center justify-center p-4 bg-orange-50 hover:bg-orange-100 rounded-lg transition-colors">
+                <button className="flex flex-col items-center justify-center p-4 bg-orange-50 hover:bg-orange-100 rounded-lg transition-colors h-full">
                   <span className="text-2xl mb-2">🚗</span>
                   <span className="text-xs font-medium">Fleet</span>
                 </button>
@@ -141,20 +141,22 @@ export default function TestPage() {
             </div>
 
             {/* Fleet Status */}
-            <div className="col-span-3 h-full overflow-auto bg-white rounded-lg border border-gray-200 p-5">
-              <span className="font-semibold text-sm block text-center mb-4">Fleet Status</span>
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs">In Use</span>
-                  <span className="font-bold text-lg">4</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-xs">Available</span>
-                  <span className="font-bold text-lg">2</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-xs">Maintenance</span>
-                  <span className="font-bold text-lg text-red-600">0</span>
+            <div className="col-span-3 h-full overflow-auto bg-white rounded-lg border border-gray-200 p-8 flex flex-col">
+              <span className="font-semibold text-sm block text-center mb-6">Fleet Status</span>
+              <div className="flex-1 flex flex-col justify-center">
+                <div className="space-y-6">
+                  <div className="flex items-center justify-between px-4 py-3 bg-gray-50 rounded-lg">
+                    <span className="text-sm">In Use</span>
+                    <span className="font-bold text-xl">4</span>
+                  </div>
+                  <div className="flex items-center justify-between px-4 py-3 bg-gray-50 rounded-lg">
+                    <span className="text-sm">Available</span>
+                    <span className="font-bold text-xl">2</span>
+                  </div>
+                  <div className="flex items-center justify-between px-4 py-3 bg-gray-50 rounded-lg">
+                    <span className="text-sm">Maintenance</span>
+                    <span className="font-bold text-xl text-red-600">0</span>
+                  </div>
                 </div>
               </div>
             </div>
