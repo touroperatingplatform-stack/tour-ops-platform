@@ -204,8 +204,32 @@ export default function AdminLayout({
         </>
       )}
 
+      {/* Bottom Navigation - Mobile/Tablet */}
+      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50 h-16 md:hidden">
+        <div className="flex justify-around items-center h-full">
+          {navItems.slice(0, 5).map((item) => {
+            const active = isActive(item.href)
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={`flex flex-col items-center justify-center flex-1 h-full ${
+                  active ? 'text-blue-600' : 'text-gray-400'
+                }`}
+              >
+                <span className="text-xl">{item.icon}</span>
+                <span className="text-[10px] font-medium mt-0.5">{item.label}</span>
+                {active && (
+                  <div className="absolute bottom-1 w-8 h-0.5 bg-blue-600 rounded-full" />
+                )}
+              </Link>
+            )
+          })}
+        </div>
+      </nav>
+
       {/* Main Content */}
-      <main className="p-4">
+      <main className="p-4 pb-20 md:pb-4">
         {children}
       </main>
     </div>
