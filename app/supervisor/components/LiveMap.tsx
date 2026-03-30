@@ -177,12 +177,12 @@ export default function LiveMap() {
     const today = getLocalDate()
     const tomorrow = new Date(new Date().getTime() + 86400000).toISOString().split('T')[0]
     
-    // Get all tours (query both today and tomorrow for timezone)
+    // Get all tours (including completed - they still have check-ins)
     const { data: tours } = await supabase
       .from('tours')
       .select('id, name, start_time, status, guide_id, pickup_location')
       .in('tour_date', [today, tomorrow])
-      .in('status', ['in_progress', 'scheduled'])
+      .in('status', ['in_progress', 'scheduled', 'completed'])
     
     if (!tours || tours.length === 0) {
       setLocations([])
