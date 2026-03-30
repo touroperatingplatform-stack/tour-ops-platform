@@ -23,7 +23,7 @@ interface Guest {
 
 export default function AdminGuestsPage() {
   const [guests, setGuests] = useState<Guest[]>([])
-  const [stats, setStats] useState({ total: 0, checkedIn: 0, noShow: 0 })
+  const [stats, setStats] = useState({ total: 0, checkedIn: 0, noShow: 0 })
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState<'all' | 'checked_in' | 'no_show'>('all')
 

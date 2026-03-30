@@ -206,7 +206,7 @@ export default function DriverDashboard() {
                     <div className="text-gray-500 text-sm">Total miles</div>
                   </div>
                 </div>
-                <span className="font-bold text-lg">{vehicleStatus.mileage.toLocaleString()}</div>
+                <span className="font-bold text-lg">{vehicleStatus.mileage.toLocaleString()}</span>
               </div>
 
               <div className="flex items-center justify-between">
