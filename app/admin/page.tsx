@@ -116,11 +116,6 @@ export default function AdminDashboard() {
     }
   }
 
-  async function handleSignOut() {
-    await supabase.auth.signOut()
-    router.push('/login')
-  }
-
   if (loading) {
     return (
       <div className="h-full flex flex-col space-y-4">
