@@ -127,25 +127,8 @@ export default function AdminDashboard() {
   if (loading) {
     return (
       <RoleGuard requiredRole="company_admin">
-        <div className="h-screen flex flex-col bg-gray-100">
-          {/* Top Nav */}
-          <div className="bg-white border-b px-4 py-3 flex-shrink-0 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold">
-                T
-              </div>
-              <h1 className="text-lg font-bold">{t('adminDashboard.title')}</h1>
-            </div>
-            <div className="flex items-center gap-3">
-              <LanguageToggle />
-              <button className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
-                👤
-              </button>
-            </div>
-          </div>
-          
-          {/* Loading */}
-          <div className="flex-1 flex items-center justify-center">
+        <div className="h-full">
+          <div className="flex items-center justify-center h-full">
             <div className="text-gray-500">{t('common.loading')}</div>
           </div>
         </div>
