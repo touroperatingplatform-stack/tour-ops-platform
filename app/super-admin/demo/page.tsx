@@ -302,7 +302,7 @@ export default function SuperAdminDemoPage() {
 
       setDemoProgress(`✅ Created ${createdTourIds.length} tours for today`)
       
-      // Update tour statuses - keep evening tours active for night demo
+      // Update tour statuses - evening tours active at night
       setDemoProgress('⏰ Setting realistic tour statuses...')
       const currentHour = now.getHours()
       
@@ -313,23 +313,32 @@ export default function SuperAdminDemoPage() {
         
         let status = 'scheduled'
         
-        // Night time (after 6 PM): Evening tours show as in_progress
-        if (currentHour >= 18) {
+        // At night (after 5 PM), evening/night tours are in progress
+        if (currentHour >= 17) {
           if (tourHour >= 17) {
-            status = 'in_progress'  // Evening/night tours active
-          } else if (tourHour >= 12) {
-            status = 'completed'    // Afternoon tours done
+            status = 'in_progress'  // Evening/night tours currently running
+          } else if (tourHour >= 14) {
+            status = 'completed'    // Afternoon tours just finished
           } else {
             status = 'completed'    // Morning tours done
           }
-        } else {
-          // Day time: normal logic
-          if (tourHour < currentHour - 2) {
-            status = 'completed'
+        } else if (currentHour >= 12) {
+          // Afternoon: noon-5pm
+          if (tourHour < 12) {
+            status = 'completed'    // Morning tours done
           } else if (tourHour <= currentHour) {
-            status = 'in_progress'
+            status = 'in_progress'  // Current afternoon tours
           } else {
-            status = 'scheduled'
+            status = 'scheduled'    // Evening tours coming up
+          }
+        } else {
+          // Morning: before noon
+          if (tourHour < currentHour - 1) {
+            status = 'completed'    // Early tours done
+          } else if (tourHour <= currentHour) {
+            status = 'in_progress'    // Current tours
+          } else {
+            status = 'scheduled'    // Upcoming tours
           }
         }
         
