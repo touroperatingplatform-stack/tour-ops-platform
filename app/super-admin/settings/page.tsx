@@ -1,121 +1,105 @@
 'use client'
 
-export const dynamic = 'force-dynamic'
-
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase/client'
 import RoleGuard from '@/lib/auth/RoleGuard'
-import AdminNav from '@/components/navigation/AdminNav'
-import { getLocalDate } from '@/lib/timezone'
 
-interface SystemSetting {
-  id: string
-  setting_key: string
-  setting_value: string
-  description?: string
+interface PlatformSettings {
+  platform_name: string
+  default_timezone: string
+  default_currency: string
+  enable_multi_company: boolean
+  enable_external_bookings: boolean
+  require_guide_checkins: boolean
+  require_driver_checkins: boolean
+  default_guests_per_tour: number
+  max_tours_per_day: number
+  incident_escalation_enabled: boolean
+  expense_approval_required: boolean
+  enable_guest_feedback: boolean
+  enable_activity_feed: boolean
+  maintenance_mode: boolean
+  maintenance_message: string
 }
-
-const TIMEZONE_OPTIONS = [
-  { value: 'America/Cancun', label: 'Cancun / Playa del Carmen (EST, no DST)' },
-  { value: 'America/Mexico_City', label: 'Mexico City (CST/CDT)' },
-  { value: 'America/New_York', label: 'New York (EST/EDT)' },
-  { value: 'America/Chicago', label: 'Chicago (CST/CDT)' },
-  { value: 'America/Los_Angeles', label: 'Los Angeles (PST/PDT)' },
-  { value: 'Europe/London', label: 'London (GMT/BST)' },
-  { value: 'Europe/Paris', label: 'Paris (CET/CEST)' },
-  { value: 'Asia/Tokyo', label: 'Tokyo (JST)' },
-  { value: 'Australia/Sydney', label: 'Sydney (AEDT/AEST)' },
-]
 
 export default function SuperAdminSettingsPage() {
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
-  const [settings, setSettings] = useState<Record<string, SystemSetting>>({})
-  const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
-
-  // Form state
-  const [timezone, setTimezone] = useState('America/Cancun')
+  const [settings, setSettings] = useState<PlatformSettings>({
+    platform_name: 'Tour Operations Platform',
+    default_timezone: 'America/Cancun',
+    default_currency: 'MXN',
+    enable_multi_company: true,
+    enable_external_bookings: true,
+    require_guide_checkins: true,
+    require_driver_checkins: true,
+    default_guests_per_tour: 8,
+    max_tours_per_day: 100,
+    incident_escalation_enabled: true,
+    expense_approval_required: true,
+    enable_guest_feedback: true,
+    enable_activity_feed: true,
+    maintenance_mode: false,
+    maintenance_message: 'Platform is under maintenance. Please check back later.'
+  })
 
   useEffect(() => {
     loadSettings()
   }, [])
 
   async function loadSettings() {
-    setLoading(true)
     try {
-      const { data } = await supabase.from('system_settings').select('*')
+      // Try to load from platform_settings table
+      const { data, error } = await supabase
+        .from('platform_settings')
+        .select('*')
+        .single()
       
-      const settingsMap: Record<string, SystemSetting> = {}
-      data?.forEach((s: SystemSetting) => {
-        settingsMap[s.setting_key] = s
-      })
-      
-      setSettings(settingsMap)
-      
-      // Set form values
-      if (settingsMap.timezone) {
-        setTimezone(settingsMap.timezone.setting_value)
+      if (data) {
+        setSettings({ ...settings, ...data })
       }
     } catch (error) {
-      console.error('Error loading settings:', error)
+      console.log('No platform settings found, using defaults')
     } finally {
       setLoading(false)
     }
   }
 
-  async function saveTimezone() {
+  async function handleSave() {
     setSaving(true)
-    setMessage(null)
-    
     try {
-      const existingTimezone = settings.timezone
+      // Upsert settings
+      const { error } = await supabase
+        .from('platform_settings')
+        .upsert({
+          id: 1, // Single row for platform settings
+          ...settings,
+          updated_at: new Date().toISOString()
+        })
       
-      if (existingTimezone) {
-        // Update existing
-        const { error } = await supabase
-          .from('system_settings')
-          .update({ 
-            setting_value: timezone,
-            updated_at: new Date().toISOString()
-          })
-          .eq('setting_key', 'timezone')
-        
-        if (error) throw error
-      } else {
-        // Insert new
-        const { error } = await supabase
-          .from('system_settings')
-          .insert({
-            setting_key: 'timezone',
-            setting_value: timezone,
-            description: 'Application timezone for date calculations'
-          })
-        
-        if (error) throw error
-      }
-
-      setMessage({ 
-        type: 'success', 
-        text: `✅ Timezone saved: ${TIMEZONE_OPTIONS.find(t => t.value === timezone)?.label || timezone}` 
-      })
+      if (error) throw error
       
-      // Reload settings
-      setTimeout(() => loadSettings(), 1000)
+      alert('✅ Settings saved successfully!')
     } catch (error: any) {
-      setMessage({ type: 'error', text: '❌ Error saving: ' + error.message })
+      alert('❌ Error saving settings: ' + error.message)
     } finally {
       setSaving(false)
     }
   }
 
+  function updateSetting<K extends keyof PlatformSettings>(
+    key: K,
+    value: PlatformSettings[K]
+  ) {
+    setSettings(prev => ({ ...prev, [key]: value }))
+  }
+
   if (loading) {
     return (
-      <RoleGuard requiredRole="super_admin">
-        <AdminNav />
-        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">Loading settings...</p>
+      <RoleGuard requiredRole='super_admin'>
+        <div className="max-w-7xl mx-auto">
+          <div className="flex items-center justify-center h-64">
+            <div className="text-gray-500">Loading settings...</div>
           </div>
         </div>
       </RoleGuard>
@@ -123,83 +107,212 @@ export default function SuperAdminSettingsPage() {
   }
 
   return (
-    <RoleGuard requiredRole="super_admin">
-      <AdminNav />
-      <div className="min-h-screen bg-gray-50">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <h1 className="text-2xl font-bold text-gray-900 mb-6">System Settings</h1>
-          
-          {message && (
-            <div className={`mb-6 p-4 rounded-lg ${message.type === 'success' ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'}`}>
-              {message.text}
+    <RoleGuard requiredRole='super_admin'>
+      <div className="max-w-7xl mx-auto">
+        <div className="mb-8">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold mb-1">Platform Settings</h1>
+              <p className="text-gray-600 text-sm">Configure platform-wide defaults and settings</p>
             </div>
-          )}
+            <button
+              onClick={handleSave}
+              disabled={saving}
+              className="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 font-medium"
+            >
+              {saving ? 'Saving...' : '💾 Save Settings'}
+            </button>
+          </div>
+        </div>
 
-          {/* Timezone Setting */}
-          <div className="bg-white rounded-xl border border-gray-200 p-6 mb-6">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="text-3xl">🌍</div>
+        <div className="space-y-6">
+          {/* General Settings */}
+          <div className="bg-white rounded-lg shadow p-6">
+            <h2 className="text-lg font-semibold mb-4">General</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <h2 className="font-semibold text-gray-900 text-lg">Timezone</h2>
-                <p className="text-sm text-gray-500">Application-wide timezone for date calculations</p>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Platform Name
+                </label>
+                <input
+                  type="text"
+                  value={settings.platform_name}
+                  onChange={(e) => updateSetting('platform_name', e.target.value)}
+                  className="w-full border rounded-lg px-3 py-2"
+                />
               </div>
-            </div>
-            
-            <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-              <p className="text-sm text-blue-800">
-                <strong>⚠️ Why this matters:</strong> On March 28, 2026, the driver assignment component showed 
-                the wrong date (March 27) due to timezone mismatch. This setting ensures all components use 
-                the same timezone for date calculations.
-              </p>
-            </div>
-
-            <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Select Timezone
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Default Timezone
                 </label>
                 <select
-                  value={timezone}
-                  onChange={(e) => setTimezone(e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  value={settings.default_timezone}
+                  onChange={(e) => updateSetting('default_timezone', e.target.value)}
+                  className="w-full border rounded-lg px-3 py-2"
                 >
-                  {TIMEZONE_OPTIONS.map((tz) => (
-                    <option key={tz.value} value={tz.value}>
-                      {tz.label}
-                    </option>
-                  ))}
+                  <option value="America/Cancun">Cancun (EST)</option>
+                  <option value="America/Mexico_City">Mexico City (CST)</option>
+                  <option value="America/New_York">New York (EST)</option>
+                  <option value="America/Los_Angeles">Los Angeles (PST)</option>
+                  <option value="UTC">UTC</option>
                 </select>
               </div>
-
-              <div className="flex items-center gap-4 text-sm text-gray-600">
-                <div>
-                  <strong>Current date:</strong> {getLocalDate(timezone)}
-                </div>
-                <div>
-                  <strong>UTC date:</strong> {new Date().toISOString().split('T')[0]}
-                </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Default Currency
+                </label>
+                <select
+                  value={settings.default_currency}
+                  onChange={(e) => updateSetting('default_currency', e.target.value)}
+                  className="w-full border rounded-lg px-3 py-2"
+                >
+                  <option value="MXN">MXN - Mexican Peso</option>
+                  <option value="USD">USD - US Dollar</option>
+                  <option value="EUR">EUR - Euro</option>
+                  <option value="CAD">CAD - Canadian Dollar</option>
+                </select>
               </div>
-
-              <button
-                onClick={saveTimezone}
-                disabled={saving}
-                className="w-full bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50"
-              >
-                {saving ? 'Saving...' : '💾 Save Timezone'}
-              </button>
             </div>
           </div>
 
-          {/* More Settings Coming Soon */}
-          <div className="bg-white rounded-xl border border-gray-200 p-6 opacity-60">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="text-3xl">💰</div>
-              <div>
-                <h2 className="font-semibold text-gray-900 text-lg">Currency</h2>
-                <p className="text-sm text-gray-500">Default currency for transactions</p>
-              </div>
+          {/* Features */}
+          <div className="bg-white rounded-lg shadow p-6">
+            <h2 className="text-lg font-semibold mb-4">Features</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <label className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <span className="text-sm font-medium text-gray-700">Multi-Company Support</span>
+                <input
+                  type="checkbox"
+                  checked={settings.enable_multi_company}
+                  onChange={(e) => updateSetting('enable_multi_company', e.target.checked)}
+                  className="w-4 h-4"
+                />
+              </label>
+              <label className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <span className="text-sm font-medium text-gray-700">External Bookings (Viator/GYG)</span>
+                <input
+                  type="checkbox"
+                  checked={settings.enable_external_bookings}
+                  onChange={(e) => updateSetting('enable_external_bookings', e.target.checked)}
+                  className="w-4 h-4"
+                />
+              </label>
+              <label className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <span className="text-sm font-medium text-gray-700">Require Guide Check-ins</span>
+                <input
+                  type="checkbox"
+                  checked={settings.require_guide_checkins}
+                  onChange={(e) => updateSetting('require_guide_checkins', e.target.checked)}
+                  className="w-4 h-4"
+                />
+              </label>
+              <label className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <span className="text-sm font-medium text-gray-700">Require Driver Check-ins</span>
+                <input
+                  type="checkbox"
+                  checked={settings.require_driver_checkins}
+                  onChange={(e) => updateSetting('require_driver_checkins', e.target.checked)}
+                  className="w-4 h-4"
+                />
+              </label>
+              <label className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <span className="text-sm font-medium text-gray-700">Guest Feedback</span>
+                <input
+                  type="checkbox"
+                  checked={settings.enable_guest_feedback}
+                  onChange={(e) => updateSetting('enable_guest_feedback', e.target.checked)}
+                  className="w-4 h-4"
+                />
+              </label>
+              <label className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <span className="text-sm font-medium text-gray-700">Activity Feed</span>
+                <input
+                  type="checkbox"
+                  checked={settings.enable_activity_feed}
+                  onChange={(e) => updateSetting('enable_activity_feed', e.target.checked)}
+                  className="w-4 h-4"
+                />
+              </label>
             </div>
-            <p className="text-sm text-gray-500">Coming soon...</p>
+          </div>
+
+          {/* Operations */}
+          <div className="bg-white rounded-lg shadow p-6">
+            <h2 className="text-lg font-semibold mb-4">Operations</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Default Guests per Tour
+                </label>
+                <input
+                  type="number"
+                  value={settings.default_guests_per_tour}
+                  onChange={(e) => updateSetting('default_guests_per_tour', parseInt(e.target.value))}
+                  className="w-full border rounded-lg px-3 py-2"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Max Tours per Day
+                </label>
+                <input
+                  type="number"
+                  value={settings.max_tours_per_day}
+                  onChange={(e) => updateSetting('max_tours_per_day', parseInt(e.target.value))}
+                  className="w-full border rounded-lg px-3 py-2"
+                />
+              </div>
+              <label className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <span className="text-sm font-medium text-gray-700">Incident Escalation</span>
+                <input
+                  type="checkbox"
+                  checked={settings.incident_escalation_enabled}
+                  onChange={(e) => updateSetting('incident_escalation_enabled', e.target.checked)}
+                  className="w-4 h-4"
+                />
+              </label>
+              <label className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <span className="text-sm font-medium text-gray-700">Expense Approval Required</span>
+                <input
+                  type="checkbox"
+                  checked={settings.expense_approval_required}
+                  onChange={(e) => updateSetting('expense_approval_required', e.target.checked)}
+                  className="w-4 h-4"
+                />
+              </label>
+            </div>
+          </div>
+
+          {/* Maintenance Mode */}
+          <div className="bg-white rounded-lg shadow p-6 border-2 border-red-200">
+            <h2 className="text-lg font-semibold mb-4 text-red-600">⚠️ Maintenance Mode</h2>
+            <div className="space-y-4">
+              <label className="flex items-center justify-between p-3 bg-red-50 rounded-lg">
+                <span className="text-sm font-medium text-gray-700">Enable Maintenance Mode</span>
+                <input
+                  type="checkbox"
+                  checked={settings.maintenance_mode}
+                  onChange={(e) => updateSetting('maintenance_mode', e.target.checked)}
+                  className="w-4 h-4"
+                />
+              </label>
+              {settings.maintenance_mode && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Maintenance Message
+                  </label>
+                  <textarea
+                    value={settings.maintenance_message}
+                    onChange={(e) => updateSetting('maintenance_message', e.target.value)}
+                    className="w-full border rounded-lg px-3 py-2"
+                    rows={3}
+                  />
+                </div>
+              )}
+            </div>
+            <p className="text-xs text-gray-500 mt-2">
+              When enabled, all users will see the maintenance message and cannot access the platform.
+            </p>
           </div>
         </div>
       </div>
