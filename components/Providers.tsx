@@ -1,4 +1,9 @@
-// No provider needed - useTranslation uses global store
+import { AuthProvider } from '@/lib/auth/AuthContext'
+
 export default function Providers({ children }: { children: React.ReactNode }) {
-  return children
+  return (
+    <AuthProvider>
+      {children}
+    </AuthProvider>
+  )
 }
