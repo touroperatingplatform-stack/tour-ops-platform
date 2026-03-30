@@ -478,6 +478,7 @@ export default function SuperAdminDemoPage() {
       
       // Create check-ins for ALL tours (not just first 8)
       let checkinCount = 0
+      let checkinErrors = []
       for (const tourId of createdTourIds) {
         const { data: tour, error: tourError } = await supabase
           .from('tours')
@@ -485,7 +486,10 @@ export default function SuperAdminDemoPage() {
           .eq('id', tourId)
           .single()
         
-        if (tourError || !tour) continue
+        if (tourError || !tour) {
+          checkinErrors.push(`Tour ${tourId}: ${tourError?.message || 'not found'}`)
+          continue
+        }
         
         const startTime = tour.start_time || '08:00'
         const [hours, minutes] = startTime.split(':').map(Number)
@@ -523,10 +527,17 @@ export default function SuperAdminDemoPage() {
           selfie_url: 'https://cloudinary.com/dorhbpsxy/tour-ops/demo-selfie.jpg'
         })
         
-        if (!insertError) checkinCount++
+        if (insertError) {
+          checkinErrors.push(`Check-in for ${tour.name}: ${insertError.message}`)
+        } else {
+          checkinCount++
+        }
       }
 
-      setDemoProgress(`✅ Created ${checkinCount} guide check-ins`)
+      if (checkinErrors.length > 0) {
+        console.error('Check-in errors:', checkinErrors)
+      }
+      setDemoProgress(`✅ Created ${checkinCount} guide check-ins${checkinErrors.length > 0 ? ` (${checkinErrors.length} errors)` : ''}`)
       await new Promise(resolve => setTimeout(resolve, 500))
 
       // Step 5b: Create driver check-ins for ALL tours with drivers
