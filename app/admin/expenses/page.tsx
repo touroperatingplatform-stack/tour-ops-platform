@@ -5,6 +5,7 @@ export const dynamic = 'force-dynamic'
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase/client'
+import { getLocalDate } from '@/lib/timezone'
 
 interface Expense {
   id: string
@@ -12,173 +13,151 @@ interface Expense {
   category: string
   description: string
   date: string
-  tour_id: string | null
-  receipt_url: string | null
-  created_by: string | null
 }
 
-const categories = ['fuel', 'maintenance', 'supplies', 'tolls', 'meals', 'other']
+const categoryIcons: Record<string, string> = {
+  fuel: '⛽',
+  maintenance: '🔧',
+  supplies: '📦',
+  tolls: '🛣️',
+  meals: '🍽️',
+  other: '📝'
+}
 
 export default function ExpensesPage() {
   const [expenses, setExpenses] = useState<Expense[]>([])
+  const [stats, setStats] = useState({ total: 0, today: 0, week: 0 })
   const [loading, setLoading] = useState(true)
-  const [total, setTotal] = useState(0)
-  const [filter, setFilter] = useState('all')
 
   useEffect(() => {
     loadExpenses()
   }, [])
 
   async function loadExpenses() {
-    let query = supabase
-      .from('expenses')
-      .select('*')
-      .order('date', { ascending: false })
+    const today = getLocalDate()
+    const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
 
-    if (filter !== 'all' && filter !== 'this_month') {
-      query = query.eq('category', filter)
-    }
+    const { data } = await supabase
+      .from('tour_expenses')
+      .select('id, amount, category, description, created_at')
+      .order('created_at', { ascending: false })
+      .limit(20)
 
-    const { data, error } = await query
+    if (data) {
+      const formatted = data.map((e: any) => ({
+        ...e,
+        date: e.created_at?.split('T')[0]
+      }))
 
-    if (error) {
-      console.error('Error loading expenses:', error)
-    } else {
-      const filtered = filter === 'this_month' 
-        ? data.filter(e => new Date(e.date).getMonth() === new Date().getMonth())
-        : data
-      setExpenses(filtered || [])
-      setTotal(filtered?.reduce((sum, e) => sum + e.amount, 0) || 0)
+      setExpenses(formatted)
+      setStats({
+        total: formatted.reduce((sum: number, e: Expense) => sum + e.amount, 0),
+        today: formatted.filter((e: Expense) => e.date === today).reduce((sum: number, e: Expense) => sum + e.amount, 0),
+        week: formatted.filter((e: Expense) => e.date >= weekAgo).reduce((sum: number, e: Expense) => sum + e.amount, 0)
+      })
     }
     setLoading(false)
   }
 
-  async function deleteExpense(id: string) {
-    if (!confirm('Delete this expense?')) return
-    
-    const { error } = await supabase
-      .from('expenses')
-      .delete()
-      .eq('id', id)
-
-    if (error) {
-      alert('Failed to delete')
-    } else {
-      setExpenses(prev => prev.filter(e => e.id !== id))
-      loadExpenses()
-    }
-  }
-
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
+      <div className="h-screen flex items-center justify-center bg-gray-50">
         <div className="text-gray-500">Loading expenses...</div>
       </div>
     )
   }
 
   return (
-    <div className="space-y-6">
+    <div className="h-screen flex flex-col bg-gray-50 overflow-hidden">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Expenses</h1>
-          <p className="text-gray-500 mt-1">Track operational costs</p>
-        </div>
-        <Link
-          href="/admin/expenses/new"
-          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-        >
-          + Add Expense
-        </Link>
-      </div>
-
-      {/* Summary */}
-      <div className="bg-blue-600 rounded-2xl p-6 text-white">
-        <p className="text-blue-100 text-sm">Total Expenses</p>
-        <p className="text-4xl font-bold mt-2">${total.toFixed(2)}</p>
-        <p className="text-blue-100 text-sm mt-2">{expenses.length} records</p>
-      </div>
-
-      {/* Filters */}
-      <div className="flex gap-2 overflow-x-auto pb-2">
-        <button
-          onClick={() => setFilter('all')}
-          className={`px-4 py-2 rounded-lg font-medium whitespace-nowrap transition-colors ${
-            filter === 'all'
-              ? 'bg-blue-600 text-white'
-              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-          }`}
-        >
-          All
-        </button>
-        <button
-          onClick={() => setFilter('this_month')}
-          className={`px-4 py-2 rounded-lg font-medium whitespace-nowrap transition-colors ${
-            filter === 'this_month'
-              ? 'bg-blue-600 text-white'
-              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-          }`}
-        >
-          This Month
-        </button>
-        {categories.map(cat => (
-          <button
-            key={cat}
-            onClick={() => setFilter(cat)}
-            className={`px-4 py-2 rounded-lg font-medium whitespace-nowrap capitalize transition-colors ${
-              filter === cat
-                ? 'bg-blue-600 text-white'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-            }`}
+      <div className="bg-white border-b px-4 py-4 flex-shrink-0">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-xl font-bold">Expenses</h1>
+            <p className="text-gray-500 text-sm">Track costs</p>
+          </div>
+          <Link 
+            href="/admin/expenses/new"
+            className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium text-sm"
           >
-            {cat}
-          </button>
-        ))}
+            + Add
+          </Link>
+        </div>
       </div>
 
-      {/* Expenses List */}
-      <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
-        {expenses.length === 0 ? (
-          <div className="p-8 text-center text-gray-500">
-            <p className="text-lg mb-2">No expenses found</p>
-            <p className="text-sm">Add your first expense to get started.</p>
+      {/* Stats */}
+      <div className="px-4 py-3 flex-shrink-0">
+        <div className="grid grid-cols-3 gap-3">
+          <div className="bg-white rounded-xl shadow p-3 text-center">
+            <div className="text-2xl font-bold">${stats.today}</div>
+            <div className="text-gray-500 text-xs">Today</div>
           </div>
-        ) : (
-          <div className="divide-y divide-gray-200">
-            {expenses.map((expense) => (
-              <div key={expense.id} className="p-4 flex items-center justify-between hover:bg-gray-50">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-1">
-                    <h3 className="font-semibold text-gray-900">{expense.description}</h3>
-                    <span className="px-2 py-1 bg-gray-100 rounded-full text-xs font-medium capitalize">
-                      {expense.category}
-                    </span>
+          <div className="bg-white rounded-xl shadow p-3 text-center">
+            <div className="text-2xl font-bold text-blue-600">${stats.week}</div>
+            <div className="text-gray-500 text-xs">This Week</div>
+          </div>
+          <div className="bg-white rounded-xl shadow p-3 text-center">
+            <div className="text-2xl font-bold text-gray-600">${stats.total}</div>
+            <div className="text-gray-500 text-xs">Total</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Expense List */}
+      <div className="flex-1 px-4 pb-4 overflow-y-auto">
+        <div className="space-y-2">
+          {expenses.length === 0 ? (
+            <div className="bg-white rounded-xl shadow p-6 text-center text-gray-500">
+              No expenses yet
+            </div>
+          ) : (
+            expenses.map(expense => (
+              <Link
+                key={expense.id}
+                href={`/admin/expenses/${expense.id}`}
+                className="block bg-white rounded-xl shadow p-4 hover:shadow-md transition-shadow"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center text-xl">
+                      {categoryIcons[expense.category] || '📝'}
+                    </div>
+                    <div>
+                      <h3 className="font-bold capitalize">{expense.category}</h3>
+                      <p className="text-gray-500 text-sm">{expense.description}</p>
+                    </div>
                   </div>
-                  <p className="text-sm text-gray-500">
-                    {new Date(expense.date).toLocaleDateString()}
-                    {expense.tour_id && ' • Tour ID: ' + expense.tour_id}
-                  </p>
+                  <div className="text-right">
+                    <div className="font-bold text-lg">${expense.amount}</div>
+                    <div className="text-gray-400 text-xs">{expense.date}</div>
+                  </div>
                 </div>
-                <div className="flex items-center gap-4">
-                  <p className="font-semibold text-gray-900">${expense.amount.toFixed(2)}</p>
-                  <Link
-                    href={`/admin/expenses/${expense.id}`}
-                    className="text-blue-600 hover:text-blue-800 text-sm"
-                  >
-                    Edit
-                  </Link>
-                  <button
-                    onClick={() => deleteExpense(expense.id)}
-                    className="text-red-600 hover:text-red-800 text-sm"
-                  >
-                    Delete
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
+              </Link>
+            ))
+          )}
+        </div>
+      </div>
+
+      {/* Bottom Nav */}
+      <div className="bg-white border-t px-4 py-3 flex-shrink-0">
+        <div className="flex items-center justify-around">
+          <Link href="/admin" className="flex flex-col items-center text-gray-400">
+            <span className="text-xl">📊</span>
+            <span className="text-xs">Dashboard</span>
+          </Link>
+          <Link href="/admin/tours" className="flex flex-col items-center text-gray-400">
+            <span className="text-xl">🚌</span>
+            <span className="text-xs">Tours</span>
+          </Link>
+          <Link href="/admin/expenses" className="flex flex-col items-center text-blue-600">
+            <span className="text-xl">💰</span>
+            <span className="text-xs">Expenses</span>
+          </Link>
+          <Link href="/admin/settings" className="flex flex-col items-center text-gray-400">
+            <span className="text-xl">⚙️</span>
+            <span className="text-xs">Settings</span>
+          </Link>
+        </div>
       </div>
     </div>
   )
