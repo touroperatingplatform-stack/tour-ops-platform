@@ -16,6 +16,7 @@ function notifyListeners() {
 
 // Load translations immediately
 async function loadTranslations(locale: Locale) {
+  loaded = false
   try {
     const response = await fetch(`/locales/${locale}.json`)
     translations = await response.json()
