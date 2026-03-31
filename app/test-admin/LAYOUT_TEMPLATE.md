@@ -159,6 +159,71 @@ export default function MyPage() {
 - `app/test-admin/TestLayout.tsx` - Layout component
 - `app/test-admin/page.tsx` - Example usage (Dashboard)
 
+## Translations (Required)
+
+Every page layout MUST support English and Spanish translations.
+
+### Setup
+
+1. Import `LanguageToggle` and `useTranslation`:
+```tsx
+import LanguageToggle from '@/components/LanguageToggle'
+import { useTranslation } from '@/lib/i18n/useTranslation'
+```
+
+2. Add hook in component:
+```tsx
+const { t } = useTranslation()
+```
+
+3. Use `<LanguageToggle />` for the language switch button
+
+4. Replace all visible strings with `t('key')`:
+```tsx
+// Bad - hardcoded
+<span>Dashboard</span>
+<span>More</span>
+<span>Profile</span>
+
+// Good - translated
+<span>{t('nav.dashboard')}</span>
+<span>{t('nav.menu')}</span>
+<span>{t('profile.title')}</span>
+```
+
+### Required Translation Keys
+
+Add missing keys to `public/locales/en.json` and `public/locales/es.json`:
+
+```json
+{
+  "nav": {
+    "dashboard": "Dashboard",
+    "tours": "Tours",
+    "guests": "Guests",
+    "reports": "Reports",
+    "vehicles": "Vehicles",
+    "expenses": "Expenses",
+    "menu": "Menu"
+  },
+  "profile": {
+    "title": "Profile",
+    "settings": "Settings"
+  },
+  "auth": {
+    "signOut": "Sign Out"
+  }
+}
+```
+
+### Checklist for New Pages
+
+- [ ] Uses `<LanguageToggle />` component (NOT custom toggle)
+- [ ] Imports and calls `useTranslation()` hook
+- [ ] All visible strings use `t('key')` pattern
+- [ ] Translation keys exist in both `en.json` and `es.json`
+- [ ] Language switch works without page refresh
+
 ## Invisible Borders (Debug)
 
 Use `border-8 border-transparent` to visualize padding areas:
