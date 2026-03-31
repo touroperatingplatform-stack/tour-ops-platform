@@ -135,9 +135,9 @@ export default function AdminDashboard() {
           {/* Spacer for header in layout */}
           <div className="flex-none" />
 
-        {/* KPI CARDS ROW - gap-3, p-3, centered text */}
-        <div className="flex-none">
-          <div className="grid grid-cols-4 gap-3">
+          {/* KPI CARDS ROW - gap-3, p-3, centered text */}
+          <div className="flex-none">
+            <div className="grid grid-cols-4 gap-3">
             <div className="bg-white rounded-lg border border-gray-200 p-3 text-center border-8 border-transparent">
               <div className="flex items-baseline justify-center gap-2">
                 <span className="text-2xl font-bold">{stats.toursCompleted}/{stats.toursTotal}</span>
@@ -303,6 +303,7 @@ export default function AdminDashboard() {
           </div>
         </div>
       </div>
-    </RoleGuard>
+    </div>
+  </RoleGuard>
   )
 }
