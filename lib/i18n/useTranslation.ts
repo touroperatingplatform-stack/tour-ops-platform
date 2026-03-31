@@ -53,8 +53,7 @@ export function useTranslation() {
   function setLocale(newLocale: Locale) {
     currentLocale = newLocale
     localStorage.setItem('locale', newLocale)
-    loadTranslations(newLocale)
-    notifyListeners()
+    loadTranslations(newLocale) // loadTranslations calls notifyListeners when ready
   }
 
   function t(key: string): string {
