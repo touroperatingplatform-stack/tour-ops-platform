@@ -138,7 +138,7 @@ export default function AdminDashboard() {
           {/* KPI CARDS ROW - gap-3, p-3, centered text */}
           <div className="flex-none">
             <div className="grid grid-cols-4 gap-3">
-            <div className="bg-white rounded-lg border border-gray-200 p-3 text-center border-8 border-transparent">
+            <div className="bg-white rounded-lg border border-gray-100 p-3 text-center border-8 border-transparent">
               <div className="flex items-baseline justify-center gap-2">
                 <span className="text-2xl font-bold">{stats.toursCompleted}/{stats.toursTotal}</span>
                 <span className="text-xs text-green-600 font-medium">{t('adminDashboard.live')}</span>
@@ -146,17 +146,17 @@ export default function AdminDashboard() {
               <p className="text-xs text-gray-500 uppercase font-medium mt-2">{t('adminDashboard.toursToday')}</p>
             </div>
 
-            <div className="bg-white rounded-lg border border-gray-200 p-3 text-center border-8 border-transparent">
+            <div className="bg-white rounded-lg border border-gray-100 p-3 text-center border-8 border-transparent">
               <p className="text-2xl font-bold text-blue-600">{stats.guestsToday}</p>
               <p className="text-xs text-blue-600 uppercase font-medium mt-2">{t('adminDashboard.guestsToday')}</p>
             </div>
 
-            <div className="bg-white rounded-lg border border-gray-200 p-3 text-center border-8 border-transparent">
+            <div className="bg-white rounded-lg border border-gray-100 p-3 text-center border-8 border-transparent">
               <p className="text-2xl font-bold text-green-600">{stats.onTimeRate}%</p>
               <p className="text-xs text-green-600 uppercase font-medium mt-2">{t('adminDashboard.onTimeRate')}</p>
             </div>
 
-            <div className="bg-white rounded-lg border border-gray-200 p-3 text-center border-8 border-transparent">
+            <div className="bg-white rounded-lg border border-gray-100 p-3 text-center border-8 border-transparent">
               <p className="text-2xl font-bold text-red-600">{stats.incidentsOpen}</p>
               <p className="text-xs text-red-600 uppercase font-medium mt-2">{t('adminDashboard.incidents')}</p>
             </div>
@@ -167,7 +167,7 @@ export default function AdminDashboard() {
         <div className="flex-1 min-h-0 overflow-hidden">
           <div className="h-full grid grid-cols-12 gap-6">
             {/* Timeline - Left */}
-            <div className="col-span-4 h-full overflow-auto bg-white rounded-lg border border-gray-200 p-3 flex flex-col border-8 border-transparent">
+            <div className="col-span-4 h-full overflow-auto bg-white rounded-lg border border-gray-100 p-3 flex flex-col border-8 border-transparent">
               <div className="flex items-center justify-center gap-2 mb-4">
                 <span className="font-semibold text-sm">{t('adminDashboard.todaysTimeline')}</span>
                 <span className="text-gray-400 text-xs">{stats.toursTotal} {t('nav.tours').toLowerCase()}</span>
@@ -186,7 +186,7 @@ export default function AdminDashboard() {
             </div>
 
             {/* Fleet Status - Center */}
-            <div className="col-span-4 h-full overflow-auto bg-white rounded-lg border border-gray-200 p-3 flex flex-col border-8 border-transparent">
+            <div className="col-span-4 h-full overflow-auto bg-white rounded-lg border border-gray-100 p-3 flex flex-col border-8 border-transparent">
               <span className="font-semibold text-sm text-center mb-4">{t('adminDashboard.fleetStatus')}</span>
               <div className="flex-1 flex flex-col justify-between">
                 <div className="flex items-center justify-between px-4 py-3 bg-gray-50 rounded-lg">
@@ -207,7 +207,7 @@ export default function AdminDashboard() {
             {/* Active Tours + Team - Right */}
             <div className="col-span-4 h-full overflow-auto">
               <div className="space-y-6">
-                <div className="bg-white rounded-lg border border-gray-200 p-3 text-center border-8 border-transparent">
+                <div className="bg-white rounded-lg border border-gray-100 p-3 text-center border-8 border-transparent">
                   <div className="flex items-center justify-center gap-2 mb-2">
                     <span className="text-xs text-gray-500 uppercase font-medium">{t('adminDashboard.activeTours')}</span>
                     <span className="bg-green-100 text-green-700 text-xs px-2 py-0.5 rounded-full">{stats.toursActive} {t('adminDashboard.live')}</span>
@@ -215,7 +215,7 @@ export default function AdminDashboard() {
                   <p className="text-3xl font-bold text-blue-600">{stats.toursActive}</p>
                 </div>
 
-                <div className="bg-white rounded-lg border border-gray-200 p-3 border-8 border-transparent">
+                <div className="bg-white rounded-lg border border-gray-100 p-3 border-8 border-transparent">
                   <p className="text-xs text-gray-500 uppercase font-medium text-center mb-3">{t('adminDashboard.teamStatus')}</p>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="text-center">
@@ -237,7 +237,7 @@ export default function AdminDashboard() {
         <div className="flex-1 min-h-0 overflow-hidden">
           <div className="h-full grid grid-cols-12 gap-6">
             {/* Attention Required - Left */}
-            <div className="col-span-6 h-full overflow-auto bg-white rounded-lg border border-gray-200 p-3 flex flex-col border-8 border-transparent">
+            <div className="col-span-6 h-full overflow-auto bg-white rounded-lg border border-gray-100 p-3 flex flex-col border-8 border-transparent">
               <div className="flex items-center justify-center gap-2 mb-4">
                 <span className="font-semibold text-sm">⚠️ {t('adminDashboard.attentionRequired')}</span>
                 <span className="text-gray-400 text-xs">{attentionItems.length} {t('adminDashboard.items')}</span>
@@ -267,7 +267,7 @@ export default function AdminDashboard() {
             </div>
 
             {/* Quick Actions - Right */}
-            <div className="col-span-6 h-full overflow-auto bg-white rounded-lg border border-gray-200 p-3 flex flex-col border-8 border-transparent">
+            <div className="col-span-6 h-full overflow-auto bg-white rounded-lg border border-gray-100 p-3 flex flex-col border-8 border-transparent">
               <span className="font-semibold text-sm text-center mb-4">{t('adminDashboard.quickActions')}</span>
               <div className="flex-1 grid grid-cols-2 gap-4">
                 <Link 
