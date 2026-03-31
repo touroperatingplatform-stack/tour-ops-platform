@@ -1,55 +1,32 @@
 'use client'
 
-import { useState } from 'react'
 import { useTranslation } from '@/lib/i18n/useTranslation'
 
 export default function LanguageToggle() {
   const { locale, setLocale } = useTranslation()
-  const [isOpen, setIsOpen] = useState(false)
-
-  const locales = [
-    { code: 'en', label: 'English', flag: '🇺🇸' },
-    { code: 'es', label: 'Español', flag: '🇲🇽' }
-  ]
-
-  function handleSelect(code: 'en' | 'es') {
-    setLocale(code)
-    setIsOpen(false)
-  }
-
-  const currentFlag = locale === 'en' ? '🇺🇸' : '🇲🇽'
 
   return (
-    <div className="relative">
+    <div className="flex items-center gap-1 bg-gray-100 rounded-md p-1">
       <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center hover:bg-gray-200"
+        onClick={() => setLocale('en')}
+        className={`px-2 py-1 text-xs font-medium rounded ${
+          locale === 'en'
+            ? 'bg-white text-gray-900 shadow-sm'
+            : 'text-gray-600 hover:text-gray-900'
+        }`}
       >
-        {currentFlag}
+        EN
       </button>
-
-      {isOpen && (
-        <>
-          <div 
-            className="fixed inset-0 z-10" 
-            onClick={() => setIsOpen(false)}
-          />
-          <div className="absolute right-0 mt-1 w-32 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-20">
-            {locales.map((loc) => (
-              <button
-                key={loc.code}
-                onClick={() => handleSelect(loc.code as 'en' | 'es')}
-                className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-100 transition-colors flex items-center gap-2 ${
-                  locale === loc.code ? 'bg-blue-50 text-blue-700 font-medium' : 'text-gray-700'
-                }`}
-              >
-                <span>{loc.flag}</span>
-                <span>{loc.label}</span>
-              </button>
-            ))}
-          </div>
-        </>
-      )}
+      <button
+        onClick={() => setLocale('es')}
+        className={`px-2 py-1 text-xs font-medium rounded ${
+          locale === 'es'
+            ? 'bg-white text-gray-900 shadow-sm'
+            : 'text-gray-600 hover:text-gray-900'
+        }`}
+      >
+        ES
+      </button>
     </div>
   )
 }

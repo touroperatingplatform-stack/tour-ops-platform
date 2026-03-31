@@ -1,41 +1,60 @@
 'use client'
 
-import { createContext, useContext, useEffect, useState } from 'react'
+import { useState, useEffect } from 'react'
 
 type Locale = 'en' | 'es'
 
-interface TranslationContextType {
-  locale: Locale
-  setLocale: (locale: Locale) => void
-  t: (key: string) => string
-}
-
-const TranslationContext = createContext<TranslationContextType | undefined>(undefined)
-
+// Global store
+let currentLocale: Locale = 'en'
 let translations: Record<string, any> = {}
+let loaded = false
+const listeners: Set<() => void> = new Set()
 
-async function loadTranslations(locale: Locale) {
-  try {
-    const response = await fetch(`/locales/${locale}.json`)
-    translations = await response.json()
-  } catch (error) {
-    console.error('Failed to load translations:', error)
-  }
+function notifyListeners() {
+  listeners.forEach(fn => fn())
 }
 
-export function TranslationProvider({ children }: { children: React.ReactNode }) {
-  const [locale, setLocaleState] = useState<Locale>('en')
-  const [, forceUpdate] = useState(0)
+export function useTranslation() {
+  const [, forceUpdate] = useState({})
 
   useEffect(() => {
-    loadTranslations(locale)
-  }, [locale])
+    const handler = () => forceUpdate({})
+    listeners.add(handler)
+
+    // Load saved locale
+    const savedLocale = localStorage.getItem('locale') as Locale
+    if (savedLocale && (savedLocale === 'en' || savedLocale === 'es') && savedLocale !== currentLocale) {
+      currentLocale = savedLocale
+      loadTranslations(savedLocale)
+    }
+
+    return () => {
+      listeners.delete(handler)
+    }
+  }, [])
 
   function setLocale(newLocale: Locale) {
-    setLocaleState(newLocale)
+    currentLocale = newLocale
+    localStorage.setItem('locale', newLocale)
+    loadTranslations(newLocale)
+    notifyListeners()
+  }
+
+  async function loadTranslations(locale: Locale) {
+    try {
+      const response = await fetch(`/locales/${locale}.json`)
+      translations = await response.json()
+      loaded = true
+      notifyListeners()
+    } catch (error) {
+      console.error('Failed to load translations:', error)
+      loaded = true
+    }
   }
 
   function t(key: string): string {
+    if (!loaded) return key
+
     const keys = key.split('.')
     let value: any = translations
 
@@ -50,17 +69,9 @@ export function TranslationProvider({ children }: { children: React.ReactNode })
     return typeof value === 'string' ? value : key
   }
 
-  return (
-    <TranslationContext.Provider value={{ locale, setLocale, t }}>
-      {children}
-    </TranslationContext.Provider>
-  )
-}
-
-export function useTranslation() {
-  const context = useContext(TranslationContext)
-  if (!context) {
-    throw new Error('useTranslation must be used within TranslationProvider')
+  return {
+    locale: currentLocale,
+    setLocale,
+    t
   }
-  return context
 }
