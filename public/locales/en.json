@@ -32,6 +32,7 @@
     "vehicles": "Vehicles",
     "schedule": "Schedule",
     "reports": "Reports",
+    "expenses": "Expenses",
     "menu": "Menu"
   },
   "common": {
@@ -176,6 +177,10 @@
     "password": "Password",
     "forgotPassword": "Forgot Password?",
     "rememberMe": "Remember Me"
+  },
+  "profile": {
+    "title": "Profile",
+    "settings": "Settings"
   },
   "errors": {
     "unauthorized": "You don't have permission to access this page",

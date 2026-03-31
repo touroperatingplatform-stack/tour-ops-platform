@@ -3,14 +3,16 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import LanguageToggle from '@/components/LanguageToggle'
+import { useTranslation } from '@/lib/i18n/useTranslation'
 
 const navItems = [
-  { href: '/admin', label: 'Dashboard', icon: '📊' },
-  { href: '/admin/tours', label: 'Tours', icon: '🚌' },
-  { href: '/admin/guests', label: 'Guests', icon: '👤' },
-  { href: '/admin/reports', label: 'Reports', icon: '📈' },
-  { href: '/admin/vehicles', label: 'Fleet', icon: '🚐' },
-  { href: '/admin/expenses', label: 'Expenses', icon: '💵' },
+  { href: '/admin', labelKey: 'nav.dashboard', icon: '📊' },
+  { href: '/admin/tours', labelKey: 'nav.tours', icon: '🚌' },
+  { href: '/admin/guests', labelKey: 'nav.guests', icon: '👤' },
+  { href: '/admin/reports', labelKey: 'nav.reports', icon: '📈' },
+  { href: '/admin/vehicles', labelKey: 'nav.vehicles', icon: '🚐' },
+  { href: '/admin/expenses', labelKey: 'nav.expenses', icon: '💵' },
 ]
 
 const moreItems = [
@@ -20,20 +22,17 @@ const moreItems = [
 ]
 
 const userMenuItems = [
-  { label: 'Profile', icon: '👤', action: () => console.log('Profile') },
-  { label: 'Settings', icon: '⚙️', action: () => console.log('Settings') },
-  { label: 'Logout', icon: '🚪', action: () => console.log('Logout') },
+  { labelKey: 'profile.title', icon: '👤', action: () => console.log('Profile') },
+  { labelKey: 'profile.settings', icon: '⚙️', action: () => console.log('Settings') },
+  { labelKey: 'auth.signOut', icon: '🚪', action: () => console.log('Logout') },
 ]
 
 export default function TestLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
+  const { t } = useTranslation()
   const [showMore, setShowMore] = useState(false)
   const [showUserMenu, setShowUserMenu] = useState(false)
-  const [showLangMenu, setShowLangMenu] = useState(false)
-  const [language, setLanguage] = useState('EN')
   const [notifications, setNotifications] = useState(3)
-
-  const currentPage = 'Test Page'
 
   const isActive = (href: string) => {
     if (href === '/admin') return pathname === '/admin'
@@ -51,45 +50,13 @@ export default function TestLayout({ children }: { children: React.ReactNode }) 
               <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold text-sm">
                 T
               </div>
-              <span className="font-bold text-gray-900">Dashboard</span>
+              <span className="font-bold text-gray-900">{t('nav.dashboard')}</span>
             </div>
 
             {/* Right side */}
             <div className="flex items-center gap-3">
-              {/* Language Toggle - Flag Dropdown */}
-              <div className="relative">
-                <button 
-                  onClick={() => setShowLangMenu(!showLangMenu)}
-                  className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center hover:bg-gray-200"
-                >
-                  {language === 'EN' ? '🇺🇸' : '🇲🇽'}
-                </button>
-                
-                {showLangMenu && (
-                  <>
-                    <div 
-                      className="fixed inset-0 z-50"
-                      onClick={() => setShowLangMenu(false)}
-                    />
-                    <div className="absolute top-10 right-0 bg-white rounded-lg shadow-xl z-50 p-2">
-                      <button 
-                        onClick={() => { setLanguage('EN'); setShowLangMenu(false); }}
-                        className={`flex items-center gap-2 px-4 py-2 rounded-lg w-full ${language === 'EN' ? 'bg-blue-100' : 'hover:bg-gray-100'}`}
-                      >
-                        <span>🇺🇸</span>
-                        <span>English</span>
-                      </button>
-                      <button 
-                        onClick={() => { setLanguage('ES'); setShowLangMenu(false); }}
-                        className={`flex items-center gap-2 px-4 py-2 rounded-lg w-full mt-1 ${language === 'ES' ? 'bg-blue-100' : 'hover:bg-gray-100'}`}
-                      >
-                        <span>🇲🇽</span>
-                        <span>Español</span>
-                      </button>
-                    </div>
-                  </>
-                )}
-              </div>
+              {/* Language Toggle */}
+              <LanguageToggle />
               
               {/* Notifications */}
               <button className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center hover:bg-gray-200 relative">
@@ -136,7 +103,7 @@ export default function TestLayout({ children }: { children: React.ReactNode }) 
                 }`}
               >
                 <span className="text-xl mb-1">{item.icon}</span>
-                <span className="text-xs">{item.label}</span>
+                <span className="text-xs">{t(item.labelKey)}</span>
               </Link>
             )
           })}
@@ -145,7 +112,7 @@ export default function TestLayout({ children }: { children: React.ReactNode }) 
             className="flex flex-col items-center justify-center py-2 px-2 min-w-[48px] text-gray-500"
           >
             <span className="text-xl mb-1">☰</span>
-            <span className="text-xs">More</span>
+            <span className="text-xs">{t('nav.menu')}</span>
           </button>
         </div>
       </nav>
@@ -160,7 +127,7 @@ export default function TestLayout({ children }: { children: React.ReactNode }) 
           <div className="fixed inset-4 bg-white rounded-2xl shadow-2xl z-50 flex flex-col">
             <div className="p-4 flex flex-col h-full">
               <div className="flex items-center justify-center mb-4 p-4">
-                <span className="font-bold text-2xl">Menu</span>
+                <span className="font-bold text-2xl">{t('nav.menu')}</span>
                 <button 
                   onClick={() => setShowMore(false)}
                   className="absolute right-10 p-4 hover:bg-gray-100 rounded-lg"
@@ -209,7 +176,7 @@ export default function TestLayout({ children }: { children: React.ReactNode }) 
               <div className="space-y-1">
                 {userMenuItems.map((item) => (
                   <button
-                    key={item.label}
+                    key={item.labelKey}
                     onClick={() => {
                       item.action()
                       setShowUserMenu(false)
@@ -217,7 +184,7 @@ export default function TestLayout({ children }: { children: React.ReactNode }) 
                     className="w-full flex flex-col items-center gap-1 p-3 rounded-lg hover:bg-gray-100"
                   >
                     <span className="text-2xl">{item.icon}</span>
-                    <span className="text-sm">{item.label}</span>
+                    <span className="text-sm">{t(item.labelKey)}</span>
                   </button>
                 ))}
               </div>
