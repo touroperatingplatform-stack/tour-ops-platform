@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase/client'
 import { getLocalDate } from '@/lib/timezone'
+import { useTranslation } from '@/lib/i18n/useTranslation'
 
 interface Tour {
   id: string
@@ -20,6 +21,7 @@ interface Tour {
 }
 
 export default function ToursPage() {
+  const { t } = useTranslation()
   const [todayTours, setTodayTours] = useState<Tour[]>([])
   const [upcomingTours, setUpcomingTours] = useState<Tour[]>([])
   const [stats, setStats] = useState({ total: 0, active: 0, completed: 0 })
@@ -75,9 +77,9 @@ export default function ToursPage() {
 
   function getStatusText(status: string) {
     switch (status) {
-      case 'in_progress': return 'Live'
-      case 'completed': return 'Done'
-      case 'scheduled': return 'Upcoming'
+      case 'in_progress': return t('adminDashboard.live')
+      case 'completed': return t('common.done')
+      case 'scheduled': return t('common.upcoming')
       default: return status
     }
   }
@@ -85,7 +87,7 @@ export default function ToursPage() {
   if (loading) {
     return (
       <div className="h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-gray-500">Loading tours...</div>
+        <div className="text-gray-500">{t('common.loading')}</div>
       </div>
     )
   }
@@ -96,14 +98,14 @@ export default function ToursPage() {
       <div className="bg-white border-b px-4 py-4 flex-shrink-0">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-xl font-bold">Tours</h1>
-            <p className="text-gray-500 text-sm">Manage your tours</p>
+            <h1 className="text-xl font-bold">{t('nav.tours')}</h1>
+            <p className="text-gray-500 text-sm">{t('adminDashboard.toursToday')}</p>
           </div>
           <Link 
             href="/admin/tours/new"
             className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium text-sm"
           >
-            + New
+            + {t('common.add')}
           </Link>
         </div>
       </div>
@@ -113,15 +115,15 @@ export default function ToursPage() {
         <div className="grid grid-cols-3 gap-3">
           <div className="bg-white rounded-xl shadow p-3 text-center">
             <div className="text-2xl font-bold">{stats.total}</div>
-            <div className="text-gray-500 text-xs">Total</div>
+            <div className="text-gray-500 text-xs">{t('common.total')}</div>
           </div>
           <div className="bg-white rounded-xl shadow p-3 text-center">
             <div className="text-2xl font-bold text-green-600">{stats.active}</div>
-            <div className="text-gray-500 text-xs">Active</div>
+            <div className="text-gray-500 text-xs">{t('common.active')}</div>
           </div>
           <div className="bg-white rounded-xl shadow p-3 text-center">
             <div className="text-2xl font-bold text-gray-400">{stats.completed}</div>
-            <div className="text-gray-500 text-xs">Done</div>
+            <div className="text-gray-500 text-xs">{t('common.done')}</div>
           </div>
         </div>
       </div>
@@ -132,13 +134,13 @@ export default function ToursPage() {
         <div className="mb-4">
           <h2 className="font-semibold mb-2 flex items-center gap-2">
             <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-            Today's Tours ({todayTours.length})
+            {t('adminDashboard.toursToday')} ({todayTours.length})
           </h2>
           
           <div className="space-y-2">
             {todayTours.length === 0 ? (
               <div className="bg-white rounded-xl shadow p-6 text-center text-gray-500">
-                No tours today
+                {t('tours.noToursToday')}
               </div>
             ) : (
               todayTours.map(tour => (
@@ -171,7 +173,7 @@ export default function ToursPage() {
         {/* Upcoming */}
         {upcomingTours.length > 0 && (
           <div>
-            <h2 className="font-semibold mb-2 text-gray-600">Upcoming</h2>
+            <h2 className="font-semibold mb-2 text-gray-600">{t('common.upcoming')}</h2>
             <div className="space-y-2">
               {upcomingTours.map(tour => (
                 <Link
@@ -198,19 +200,19 @@ export default function ToursPage() {
         <div className="flex items-center justify-around">
           <Link href="/admin" className="flex flex-col items-center text-gray-400">
             <span className="text-xl">📊</span>
-            <span className="text-xs">Dashboard</span>
+            <span className="text-xs">{t('nav.dashboard')}</span>
           </Link>
           <Link href="/admin/tours" className="flex flex-col items-center text-blue-600">
             <span className="text-xl">🚌</span>
-            <span className="text-xs">Tours</span>
+            <span className="text-xs">{t('nav.tours')}</span>
           </Link>
           <Link href="/admin/users" className="flex flex-col items-center text-gray-400">
             <span className="text-xl">👥</span>
-            <span className="text-xs">Team</span>
+            <span className="text-xs">{t('nav.team')}</span>
           </Link>
           <Link href="/admin/settings" className="flex flex-col items-center text-gray-400">
             <span className="text-xl">⚙️</span>
-            <span className="text-xs">Settings</span>
+            <span className="text-xs">{t('profile.settings')}</span>
           </Link>
         </div>
       </div>

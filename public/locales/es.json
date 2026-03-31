@@ -33,7 +33,8 @@
     "schedule": "Horarios",
     "reports": "Reportes",
     "expenses": "Gastos",
-    "menu": "Menú"
+    "menu": "Menú",
+    "team": "Equipo"
   },
   "common": {
     "loading": "Cargando...",
@@ -61,7 +62,11 @@
     "unassigned": "No Asignado",
     "all": "Todos",
     "yes": "Sí",
-    "no": "No"
+    "no": "No",
+    "total": "Total",
+    "active": "Activos",
+    "done": "Hechos",
+    "upcoming": "Próximos"
   },
   "incident": {
     "title": "Gestión de Incidentes",
@@ -136,6 +141,9 @@
     "noCheckinsToday": "Sin check-ins hoy",
     "early": "temprano",
     "late": "tarde"
+  },
+  "tours": {
+    "noToursToday": "Sin tours hoy"
   },
   "drivers": {
     "title": "Asignación de Choferes",

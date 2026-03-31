@@ -33,7 +33,8 @@
     "schedule": "Schedule",
     "reports": "Reports",
     "expenses": "Expenses",
-    "menu": "Menu"
+    "menu": "Menu",
+    "team": "Team"
   },
   "common": {
     "loading": "Loading...",
@@ -61,7 +62,11 @@
     "unassigned": "Unassigned",
     "all": "All",
     "yes": "Yes",
-    "no": "No"
+    "no": "No",
+    "total": "Total",
+    "active": "Active",
+    "done": "Done",
+    "upcoming": "Upcoming"
   },
   "incident": {
     "title": "Incident Management",
@@ -136,6 +141,9 @@
     "noCheckinsToday": "No check-ins today",
     "early": "early",
     "late": "late"
+  },
+  "tours": {
+    "noToursToday": "No tours today"
   },
   "drivers": {
     "title": "Driver Assignment",
