@@ -1,65 +1,41 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { createContext, useContext, useEffect, useState } from 'react'
 
 type Locale = 'en' | 'es'
 
-// Global store
-let currentLocale: Locale = 'en'
-let translations: Record<string, any> = {}
-let loaded = false
-const listeners: Set<() => void> = new Set()
-
-function notifyListeners() {
-  listeners.forEach(fn => fn())
+interface TranslationContextType {
+  locale: Locale
+  setLocale: (locale: Locale) => void
+  t: (key: string) => string
 }
 
-// Load translations immediately
+const TranslationContext = createContext<TranslationContextType | undefined>(undefined)
+
+let translations: Record<string, any> = {}
+
 async function loadTranslations(locale: Locale) {
-  loaded = false
-  notifyListeners()
   try {
-    console.log('Fetching translations for:', locale)
     const response = await fetch(`/locales/${locale}.json`)
     translations = await response.json()
-    console.log('Loaded translations:', Object.keys(translations))
-    loaded = true
-    notifyListeners()
   } catch (error) {
     console.error('Failed to load translations:', error)
-    loaded = true
-    notifyListeners()
   }
 }
 
-// Initial load
-loadTranslations('en')
-
-export function useTranslation() {
-  const [localeState, setLocaleState] = useState<Locale>(currentLocale)
-  const [, forceUpdate] = useState({})
+export function TranslationProvider({ children }: { children: React.ReactNode }) {
+  const [locale, setLocaleState] = useState<Locale>('en')
+  const [, forceUpdate] = useState(0)
 
   useEffect(() => {
-    const handler = () => {
-      setLocaleState(currentLocale)
-      forceUpdate({})
-    }
-    listeners.add(handler)
-
-    return () => {
-      listeners.delete(handler)
-    }
-  }, [])
+    loadTranslations(locale)
+  }, [locale])
 
   function setLocale(newLocale: Locale) {
-    currentLocale = newLocale
-    loadTranslations(newLocale)
-    notifyListeners()
+    setLocaleState(newLocale)
   }
 
   function t(key: string): string {
-    if (!loaded) return key
-
     const keys = key.split('.')
     let value: any = translations
 
@@ -74,9 +50,17 @@ export function useTranslation() {
     return typeof value === 'string' ? value : key
   }
 
-  return {
-    locale: localeState,
-    setLocale,
-    t
+  return (
+    <TranslationContext.Provider value={{ locale, setLocale, t }}>
+      {children}
+    </TranslationContext.Provider>
+  )
+}
+
+export function useTranslation() {
+  const context = useContext(TranslationContext)
+  if (!context) {
+    throw new Error('useTranslation must be used within TranslationProvider')
   }
+  return context
 }
