@@ -16,16 +16,15 @@ function notifyListeners() {
 
 // Load translations immediately
 async function loadTranslations(locale: Locale) {
-  console.log('[i18n] Loading:', locale)
   try {
     const response = await fetch(`/locales/${locale}.json`)
     translations = await response.json()
-    console.log('[i18n] Loaded:', locale, 'keys:', Object.keys(translations))
     loaded = true
     notifyListeners()
   } catch (error) {
-    console.error('[i18n] Failed:', error)
+    console.error('Failed to load translations:', error)
     loaded = true
+    notifyListeners()
   }
 }
 
@@ -52,7 +51,6 @@ export function useTranslation() {
   }, [])
 
   function setLocale(newLocale: Locale) {
-    console.log('[i18n] setLocale:', newLocale, 'was:', currentLocale)
     currentLocale = newLocale
     localStorage.setItem('locale', newLocale)
     loadTranslations(newLocale)
