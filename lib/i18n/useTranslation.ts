@@ -32,18 +32,15 @@ async function loadTranslations(locale: Locale) {
 loadTranslations('en')
 
 export function useTranslation() {
+  const [localeState, setLocaleState] = useState<Locale>(currentLocale)
   const [, forceUpdate] = useState({})
 
   useEffect(() => {
-    const handler = () => forceUpdate({})
-    listeners.add(handler)
-
-    // Load saved locale
-    const savedLocale = localStorage.getItem('locale') as Locale
-    if (savedLocale && (savedLocale === 'en' || savedLocale === 'es') && savedLocale !== currentLocale) {
-      currentLocale = savedLocale
-      loadTranslations(savedLocale)
+    const handler = () => {
+      setLocaleState(currentLocale)
+      forceUpdate({})
     }
+    listeners.add(handler)
 
     return () => {
       listeners.delete(handler)
@@ -52,7 +49,6 @@ export function useTranslation() {
 
   function setLocale(newLocale: Locale) {
     currentLocale = newLocale
-    localStorage.setItem('locale', newLocale)
     loadTranslations(newLocale)
     notifyListeners()
   }
@@ -75,7 +71,7 @@ export function useTranslation() {
   }
 
   return {
-    locale: currentLocale,
+    locale: localeState,
     setLocale,
     t
   }
