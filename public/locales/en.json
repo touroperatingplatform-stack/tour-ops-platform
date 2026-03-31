@@ -36,6 +36,23 @@
     "menu": "Menu",
     "team": "Team"
   },
+  "guests": {
+    "allGuests": "All Guests",
+    "todayGuests": "Today's Guests",
+    "showAll": "Show All",
+    "showTodayOnly": "Show Today Only",
+    "todayOnly": "Today Only",
+    "total": "Total",
+    "checkedIn": "Checked In",
+    "noShow": "No Show",
+    "pending": "Pending",
+    "showing": "Showing",
+    "guests": "guests",
+    "hotel": "Hotel",
+    "room": "Room",
+    "adults": "adults",
+    "children": "children"
+  },
   "common": {
     "loading": "Loading...",
     "add": "Add",
