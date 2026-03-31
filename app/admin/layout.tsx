@@ -4,6 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { supabase } from '@/lib/supabase/client'
+import LanguageToggle from '@/components/LanguageToggle'
 
 const navItems = [
   { href: '/admin', label: 'Dashboard', icon: '📊' },
@@ -38,8 +39,6 @@ export default function AdminLayout({
   const pathname = usePathname()
   const [showMore, setShowMore] = useState(false)
   const [showUserMenu, setShowUserMenu] = useState(false)
-  const [showLangMenu, setShowLangMenu] = useState(false)
-  const [language, setLanguage] = useState('EN')
   const [notifications, setNotifications] = useState(3)
 
   const currentPage = 'Dashboard'
@@ -71,39 +70,7 @@ export default function AdminLayout({
             {/* Right side */}
             <div className="flex items-center gap-3">
               {/* Language Toggle */}
-              <div className="relative">
-                <button 
-                  onClick={() => setShowLangMenu(!showLangMenu)}
-                  className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center hover:bg-gray-200"
-                >
-                  {language === 'EN' ? '🇺🇸' : '🇲🇽'}
-                </button>
-                
-                {showLangMenu && (
-                  <>
-                    <div 
-                      className="fixed inset-0 z-50"
-                      onClick={() => setShowLangMenu(false)}
-                    />
-                    <div className="absolute top-10 right-0 bg-white rounded-lg shadow-xl z-50 p-2">
-                      <button 
-                        onClick={() => { setLanguage('EN'); setShowLangMenu(false); }}
-                        className={`flex items-center gap-2 px-4 py-2 rounded-lg w-full ${language === 'EN' ? 'bg-blue-100' : 'hover:bg-gray-100'}`}
-                      >
-                        <span>🇺🇸</span>
-                        <span>English</span>
-                      </button>
-                      <button 
-                        onClick={() => { setLanguage('ES'); setShowLangMenu(false); }}
-                        className={`flex items-center gap-2 px-4 py-2 rounded-lg w-full mt-1 ${language === 'ES' ? 'bg-blue-100' : 'hover:bg-gray-100'}`}
-                      >
-                        <span>🇲🇽</span>
-                        <span>Español</span>
-                      </button>
-                    </div>
-                  </>
-                )}
-              </div>
+              <LanguageToggle />
               
               {/* Notifications */}
               <button className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center hover:bg-gray-200 relative">
