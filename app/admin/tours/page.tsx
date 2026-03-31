@@ -95,23 +95,25 @@ export default function ToursPage() {
   return (
     <div className="h-screen flex flex-col bg-gray-50 overflow-hidden">
       {/* Header */}
-      <div className="bg-white border-b px-4 py-4 flex-shrink-0">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-xl font-bold">{t('nav.tours')}</h1>
-            <p className="text-gray-500 text-sm">{t('adminDashboard.toursToday')}</p>
+      <header className="bg-white flex-shrink-0">
+        <div className="px-4 py-3 border-8 border-transparent">
+          <div className="flex items-center justify-between px-4 py-3">
+            <div>
+              <h1 className="text-xl font-bold">{t('nav.tours')}</h1>
+              <p className="text-gray-500 text-sm">{t('adminDashboard.toursToday')}</p>
+            </div>
+            <Link 
+              href="/admin/tours/new"
+              className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium text-sm"
+            >
+              + {t('common.add')}
+            </Link>
           </div>
-          <Link 
-            href="/admin/tours/new"
-            className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium text-sm"
-          >
-            + {t('common.add')}
-          </Link>
         </div>
-      </div>
+      </header>
 
       {/* Stats */}
-      <div className="px-4 py-3 flex-shrink-0">
+      <div className="px-4 py-3 flex-shrink-0 border-8 border-transparent">
         <div className="grid grid-cols-3 gap-3">
           <div className="bg-white rounded-xl shadow p-3 text-center">
             <div className="text-2xl font-bold">{stats.total}</div>
@@ -128,9 +130,10 @@ export default function ToursPage() {
         </div>
       </div>
 
-      {/* Content */}
-      <div className="flex-1 px-4 pb-4 overflow-y-auto">
-        {/* Today's Tours */}
+      {/* Main Content */}
+      <main className="flex-1 overflow-hidden bg-white border-8 border-transparent">
+        <div className="h-full overflow-auto px-4 py-4 border-8 border-transparent">
+          {/* Today's Tours */}
         <div className="mb-4">
           <h2 className="font-semibold mb-2 flex items-center gap-2">
             <span className="w-2 h-2 bg-green-500 rounded-full"></span>
@@ -193,29 +196,30 @@ export default function ToursPage() {
             </div>
           </div>
         )}
-      </div>
+        </div>
+      </main>
 
-      {/* Bottom Nav */}
-      <div className="bg-white border-t px-4 py-3 flex-shrink-0">
-        <div className="flex items-center justify-around">
-          <Link href="/admin" className="flex flex-col items-center text-gray-400">
-            <span className="text-xl">📊</span>
+      {/* Bottom Navigation */}
+      <nav className="flex-none bg-white z-50">
+        <div className="flex justify-around items-center px-2 py-2">
+          <Link href="/admin" className="flex flex-col items-center justify-center py-2 px-2 min-w-[48px] text-gray-500">
+            <span className="text-xl mb-1">📊</span>
             <span className="text-xs">{t('nav.dashboard')}</span>
           </Link>
-          <Link href="/admin/tours" className="flex flex-col items-center text-blue-600">
-            <span className="text-xl">🚌</span>
+          <Link href="/admin/tours" className="flex flex-col items-center justify-center py-2 px-2 min-w-[48px] text-blue-600">
+            <span className="text-xl mb-1">🚌</span>
             <span className="text-xs">{t('nav.tours')}</span>
           </Link>
-          <Link href="/admin/users" className="flex flex-col items-center text-gray-400">
-            <span className="text-xl">👥</span>
+          <Link href="/admin/users" className="flex flex-col items-center justify-center py-2 px-2 min-w-[48px] text-gray-500">
+            <span className="text-xl mb-1">👥</span>
             <span className="text-xs">{t('nav.team')}</span>
           </Link>
-          <Link href="/admin/settings" className="flex flex-col items-center text-gray-400">
-            <span className="text-xl">⚙️</span>
+          <Link href="/admin/settings" className="flex flex-col items-center justify-center py-2 px-2 min-w-[48px] text-gray-500">
+            <span className="text-xl mb-1">⚙️</span>
             <span className="text-xs">{t('profile.settings')}</span>
           </Link>
         </div>
-      </div>
+      </nav>
     </div>
   )
 }
