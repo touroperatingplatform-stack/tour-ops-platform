@@ -2,7 +2,7 @@
 
 export const dynamic = 'force-dynamic'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase/client'
 import { uploadToCloudinary } from '@/lib/cloudinary/upload'
@@ -37,6 +37,7 @@ export default function CompleteTourPage() {
   const params = useParams()
   const router = useRouter()
   const [submitting, setSubmitting] = useState(false)
+  const [location, setLocation] = useState<{lat: number, lng: number} | null>(null)
   
   // Form state
   const [weather, setWeather] = useState('sunny')
@@ -58,6 +59,16 @@ export default function CompleteTourPage() {
     notes: ''
   })
 
+  // Get location on mount
+  useEffect(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => setLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+        () => {} // Silently fail
+      )
+    }
+  }, [])
+
   async function handlePhotoUpload(file: File) {
     setUploading(true)
     try {
@@ -75,6 +86,35 @@ export default function CompleteTourPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setSubmitting(true)
+
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+      alert('Not authenticated')
+      setSubmitting(false)
+      return
+    }
+
+    // Get tour data for brand_id
+    const { data: tourData } = await supabase
+      .from('tours')
+      .select('brand_id')
+      .eq('id', params.id)
+      .single()
+
+    // Create office_return checkin
+    if (tourData) {
+      await supabase
+        .from('guide_checkins')
+        .insert({
+          tour_id: params.id,
+          brand_id: tourData.brand_id,
+          guide_id: user.id,
+          checkin_type: 'office_return',
+          checked_in_at: new Date().toISOString(),
+          latitude: location?.lat,
+          longitude: location?.lng,
+        })
+    }
 
     const { error } = await supabase
       .from('tours')
