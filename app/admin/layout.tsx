@@ -8,7 +8,6 @@ import LanguageToggle from '@/components/LanguageToggle'
 
 const navItems = [
   { href: '/admin', label: 'Dashboard', icon: '📊' },
-  { href: '/admin/operations', label: 'Operations', icon: '🗺️' },
   { href: '/admin/tours', label: 'Tours', icon: '🚌' },
   { href: '/admin/guests', label: 'Guests', icon: '👤' },
   { href: '/admin/reports', label: 'Reports', icon: '📈' },
