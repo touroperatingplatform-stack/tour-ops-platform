@@ -32,8 +32,9 @@ export async function POST(request: NextRequest) {
     }
     notification.data = data || {}
     // Target by external user ID (Supabase auth ID)
-    notification.include_external_user_ids = [userId]
-    notification.channel_for_external_user_ids = 'push'
+    // Using type assertion because OneSignal types are incomplete
+    ;(notification as any).include_external_user_ids = [userId]
+    ;(notification as any).channel_for_external_user_ids = 'push'
 
     const result = await client.createNotification(notification)
 
