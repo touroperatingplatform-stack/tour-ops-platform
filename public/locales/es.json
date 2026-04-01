@@ -242,7 +242,11 @@
     "adding": "Agregando...",
     "addVehicle": "Agregar Vehículo",
     "editVehicle": "Editar Vehículo",
-    "updateVehicle": "Actualizar detalles del vehículo"
+    "updateVehicle": "Actualizar detalles del vehículo",
+    "saving": "Guardando...",
+    "saveChanges": "Guardar Cambios",
+    "deleteVehicle": "Eliminar Vehículo",
+    "confirmDelete": "¿Eliminar este vehículo? No se puede deshacer."
   },
   "schedule": {
     "title": "Horarios",

@@ -242,7 +242,11 @@
     "adding": "Adding...",
     "addVehicle": "Add Vehicle",
     "editVehicle": "Edit Vehicle",
-    "updateVehicle": "Update vehicle details"
+    "updateVehicle": "Update vehicle details",
+    "saving": "Saving...",
+    "saveChanges": "Save Changes",
+    "deleteVehicle": "Delete Vehicle",
+    "confirmDelete": "Delete this vehicle? This cannot be undone."
   },
   "schedule": {
     "title": "Schedule",
