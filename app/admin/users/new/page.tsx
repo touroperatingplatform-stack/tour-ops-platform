@@ -6,18 +6,20 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase/client'
+import { useTranslation } from '@/lib/i18n/useTranslation'
 
 const roles = [
-  { value: 'super_admin', label: 'Super Admin', color: 'bg-red-100 text-red-700' },
-  { value: 'company_admin', label: 'Company Admin', color: 'bg-orange-100 text-orange-700' },
-  { value: 'supervisor', label: 'Supervisor', color: 'bg-blue-100 text-blue-700' },
-  { value: 'manager', label: 'Manager', color: 'bg-blue-100 text-blue-700' },
-  { value: 'operations', label: 'Operations', color: 'bg-green-100 text-green-700' },
-  { value: 'guide', label: 'Guide', color: 'bg-gray-100 text-gray-700' },
+  { value: 'super_admin', label: 'Super Admin' },
+  { value: 'company_admin', label: 'Company Admin' },
+  { value: 'supervisor', label: 'Supervisor' },
+  { value: 'manager', label: 'Manager' },
+  { value: 'operations', label: 'Operations' },
+  { value: 'guide', label: 'Guide' },
 ]
 
 export default function NewUserPage() {
   const router = useRouter()
+  const { t } = useTranslation()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [formData, setFormData] = useState({
@@ -77,146 +79,154 @@ export default function NewUserPage() {
   }
 
   return (
-    <div className="max-w-2xl mx-auto">
+    <div className="h-screen flex flex-col bg-gray-50 overflow-hidden">
       {/* Header */}
-      <div className="mb-6">
-        <Link href="/admin/users" className="text-gray-600 hover:text-gray-900 text-sm flex items-center gap-2 mb-3">
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-          </svg>
-          Back to Users
-        </Link>
-        <h1 className="text-2xl font-bold text-gray-900">Create New User</h1>
-        <p className="text-gray-500 mt-1">Add a new team member to the system</p>
-      </div>
+      <header className="bg-white flex-shrink-0">
+        <div className="px-4 py-3 border-8 border-transparent">
+          <div className="px-4 py-3">
+            <Link href="/admin/users" className="text-gray-600 hover:text-gray-900 text-sm flex items-center gap-2 mb-3">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+              {t('users.backToUsers')}
+            </Link>
+            <h1 className="text-xl font-bold">{t('users.createNew')}</h1>
+            <p className="text-gray-500 text-sm">{t('users.addTeamMember')}</p>
+          </div>
+        </div>
+      </header>
 
       {/* Form */}
-      <form onSubmit={handleSubmit} className="bg-white rounded-2xl border border-gray-200 p-6 space-y-6">
-        {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
-            {error}
-          </div>
-        )}
+      <main className="flex-1 overflow-hidden bg-white border-8 border-transparent">
+        <form onSubmit={handleSubmit} className="h-full overflow-auto px-4 py-4 border-8 border-transparent">
+          <div className="max-w-md mx-auto space-y-4">
+            {error && (
+              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+                {error}
+              </div>
+            )}
 
-        {/* Name Fields */}
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">First Name *</label>
-            <input
-              type="text"
-              required
-              value={formData.first_name}
-              onChange={(e) => handleChange('first_name', e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="John"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Last Name *</label>
-            <input
-              type="text"
-              required
-              value={formData.last_name}
-              onChange={(e) => handleChange('last_name', e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Doe"
-            />
-          </div>
-        </div>
+            {/* Name Fields */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">{t('users.firstName')} *</label>
+                <input
+                  type="text"
+                  required
+                  value={formData.first_name}
+                  onChange={(e) => handleChange('first_name', e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder={t('users.firstNamePlaceholder')}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">{t('users.lastName')} *</label>
+                <input
+                  type="text"
+                  required
+                  value={formData.last_name}
+                  onChange={(e) => handleChange('last_name', e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder={t('users.lastNamePlaceholder')}
+                />
+              </div>
+            </div>
 
-        {/* Email */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Email *</label>
-          <input
-            type="email"
-            required
-            value={formData.email}
-            onChange={(e) => handleChange('email', e.target.value)}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="john@company.com"
-          />
-        </div>
+            {/* Email */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">{t('users.email')} *</label>
+              <input
+                type="email"
+                required
+                value={formData.email}
+                onChange={(e) => handleChange('email', e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder={t('users.emailPlaceholder')}
+              />
+            </div>
 
-        {/* Phone & Employee ID */}
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Phone</label>
-            <input
-              type="tel"
-              value={formData.phone}
-              onChange={(e) => handleChange('phone', e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="+52 998 123 4567"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Employee ID</label>
-            <input
-              type="text"
-              value={formData.employee_id}
-              onChange={(e) => handleChange('employee_id', e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="EMP-001"
-            />
-          </div>
-        </div>
+            {/* Phone & Employee ID */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">{t('users.phone')}</label>
+                <input
+                  type="tel"
+                  value={formData.phone}
+                  onChange={(e) => handleChange('phone', e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder={t('users.phonePlaceholder')}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">{t('users.employeeId')}</label>
+                <input
+                  type="text"
+                  value={formData.employee_id}
+                  onChange={(e) => handleChange('employee_id', e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder={t('users.employeeIdPlaceholder')}
+                />
+              </div>
+            </div>
 
-        {/* Role Selection */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Role *</label>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-            {roles.map((role) => (
+            {/* Role Selection */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">{t('users.role')} *</label>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                {roles.map((role) => (
+                  <button
+                    key={role.value}
+                    type="button"
+                    onClick={() => handleChange('role', role.value)}
+                    className={`px-4 py-3 rounded-lg border-2 text-left transition-all ${
+                      formData.role === role.value
+                        ? 'border-blue-500 bg-blue-50'
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                  >
+                    <p className="font-medium text-gray-900">{role.label}</p>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Active Status */}
+            <div className="flex items-center gap-3">
               <button
-                key={role.value}
                 type="button"
-                onClick={() => handleChange('role', role.value)}
-                className={`px-4 py-3 rounded-lg border-2 text-left transition-all ${
-                  formData.role === role.value
-                    ? 'border-blue-500 bg-blue-50'
-                    : 'border-gray-200 hover:border-gray-300'
+                onClick={() => handleChange('is_active', !formData.is_active)}
+                className={`w-12 h-6 rounded-full transition-colors relative ${
+                  formData.is_active ? 'bg-green-500' : 'bg-gray-300'
                 }`}
               >
-                <p className="font-medium text-gray-900">{role.label}</p>
+                <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-transform ${
+                  formData.is_active ? 'left-7' : 'left-1'
+                }`} />
               </button>
-            ))}
+              <label className="text-sm font-medium text-gray-700">
+                {t('users.userActive')}
+              </label>
+            </div>
+
+            {/* Actions */}
+            <div className="flex gap-3 pt-4 border-t border-gray-200">
+              <Link
+                href="/admin/users"
+                className="flex-1 bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 transition-colors text-center"
+              >
+                {t('common.cancel')}
+              </Link>
+              <button
+                type="submit"
+                disabled={loading}
+                className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+              >
+                {loading ? t('users.creating') : t('users.createUser')}
+              </button>
+            </div>
           </div>
-        </div>
-
-        {/* Active Status */}
-        <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={() => handleChange('is_active', !formData.is_active)}
-            className={`w-12 h-6 rounded-full transition-colors relative ${
-              formData.is_active ? 'bg-green-500' : 'bg-gray-300'
-            }`}
-          >
-            <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-transform ${
-              formData.is_active ? 'left-7' : 'left-1'
-            }`} />
-          </button>
-          <label className="text-sm font-medium text-gray-700">
-            User is active
-          </label>
-        </div>
-
-        {/* Actions */}
-        <div className="flex gap-3 pt-4 border-t border-gray-200">
-          <Link
-            href="/admin/users"
-            className="flex-1 bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 transition-colors text-center"
-          >
-            Cancel
-          </Link>
-          <button
-            type="submit"
-            disabled={loading}
-            className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
-          >
-            {loading ? 'Creating...' : 'Create User'}
-          </button>
-        </div>
-      </form>
+        </form>
+      </main>
     </div>
   )
 }
