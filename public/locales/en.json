@@ -274,6 +274,74 @@
     "sat": "Sat",
     "sun": "Sun"
   },
+  "checklists": {
+    "title": "Checklists",
+    "subtitle": "Tour checkpoints",
+    "totalItems": "Total Items",
+    "mandatory": "Mandatory",
+    "required": "*Required",
+    "stages": {
+      "pre_departure": "Pre-Departure",
+      "pre_pickup": "Pre-Pickup",
+      "dropoff": "Dropoff",
+      "finish": "Finish"
+    }
+  },
+  "templates": {
+    "title": "Templates",
+    "subtitle": "Tour templates",
+    "noTemplates": "No templates yet",
+    "inactive": "Inactive",
+    "guests": "guests"
+  },
+  "data": {
+    "title": "Data",
+    "subtitle": "Export your data",
+    "exportData": "Export Data",
+    "exportDesc": "Download all your data",
+    "importData": "Import Data",
+    "importDesc": "Restore from backup",
+    "exportComplete": "✅ Export complete!",
+    "exportFailed": "❌ Export failed",
+    "dangerZone": "Danger Zone",
+    "dangerDesc": "Clear all demo data. This cannot be undone.",
+    "clearDemo": "Clear Demo Data"
+  },
+  "settings": {
+    "subtitle": "Configure your account",
+    "company": "Company",
+    "companyName": "Company Name",
+    "timezone": "Timezone",
+    "currency": "Currency",
+    "language": "Language",
+    "saveCompany": "Save Company Settings",
+    "saving": "Saving...",
+    "saveSuccess": "✅ Settings saved!",
+    "saveError": "❌ Error saving settings",
+    "preferences": "Preferences",
+    "notifications": "Notifications",
+    "notificationsDesc": "Get alerts for incidents",
+    "autoDispatch": "Auto Dispatch",
+    "autoDispatchDesc": "Auto-assign guides to tours",
+    "requireChecklist": "Require Checklist",
+    "requireChecklistDesc": "Mandatory tour checklists"
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "tours": "Tours",
+    "guests": "Guests",
+    "incidents": "Incidents",
+    "drivers": "Drivers",
+    "vehicles": "Vehicles",
+    "schedule": "Schedule",
+    "reports": "Reports",
+    "expenses": "Expenses",
+    "menu": "Menu",
+    "team": "Team",
+    "checklists": "Checklists",
+    "templates": "Templates",
+    "data": "Data"
+  },
   "fleet": {
     "total": "Total",
     "ready": "Ready",

@@ -274,6 +274,74 @@
     "sat": "Sáb",
     "sun": "Dom"
   },
+  "checklists": {
+    "title": "Listas de Verificación",
+    "subtitle": "Puntos de control de tours",
+    "totalItems": "Total de Items",
+    "mandatory": "Obligatorios",
+    "required": "*Requerido",
+    "stages": {
+      "pre_departure": "Pre-Salida",
+      "pre_pickup": "Pre-Pickup",
+      "dropoff": "Entrega",
+      "finish": "Fin"
+    }
+  },
+  "templates": {
+    "title": "Plantillas",
+    "subtitle": "Plantillas de tours",
+    "noTemplates": "Sin plantillas aún",
+    "inactive": "Inactiva",
+    "guests": "huéspedes"
+  },
+  "data": {
+    "title": "Datos",
+    "subtitle": "Exporta tus datos",
+    "exportData": "Exportar Datos",
+    "exportDesc": "Descarga todos tus datos",
+    "importData": "Importar Datos",
+    "importDesc": "Restaurar desde respaldo",
+    "exportComplete": "✅ ¡Exportación completa!",
+    "exportFailed": "❌ Exportación fallida",
+    "dangerZone": "Zona de Peligro",
+    "dangerDesc": "Borrar todos los datos de demo. Esto no se puede deshacer.",
+    "clearDemo": "Borrar Datos Demo"
+  },
+  "settings": {
+    "subtitle": "Configura tu cuenta",
+    "company": "Empresa",
+    "companyName": "Nombre de Empresa",
+    "timezone": "Zona Horaria",
+    "currency": "Moneda",
+    "language": "Idioma",
+    "saveCompany": "Guardar Configuración",
+    "saving": "Guardando...",
+    "saveSuccess": "✅ ¡Configuración guardada!",
+    "saveError": "❌ Error al guardar",
+    "preferences": "Preferencias",
+    "notifications": "Notificaciones",
+    "notificationsDesc": "Recibe alertas de incidentes",
+    "autoDispatch": "Auto Asignación",
+    "autoDispatchDesc": "Asignar guías automáticamente",
+    "requireChecklist": "Requerir Lista",
+    "requireChecklistDesc": "Listas de verificación obligatorias"
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "tours": "Tours",
+    "guests": "Huéspedes",
+    "incidents": "Incidentes",
+    "drivers": "Choferes",
+    "vehicles": "Vehículos",
+    "schedule": "Horarios",
+    "reports": "Reportes",
+    "expenses": "Gastos",
+    "menu": "Menú",
+    "team": "Equipo",
+    "checklists": "Listas",
+    "templates": "Plantillas",
+    "data": "Datos"
+  },
   "fleet": {
     "total": "Total",
     "ready": "Listo",
