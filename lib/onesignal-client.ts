@@ -2,7 +2,6 @@
  * OneSignal Web Push Setup
  * 
  * Client-side setup for web push notifications
- * Include this in your root layout or _app.tsx
  */
 
 'use client'
@@ -16,12 +15,12 @@ const ONESIGNAL_APP_ID = process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID
 declare global {
   interface Window {
     OneSignal?: any
+    OneSignalDeferred?: any[]
   }
 }
 
 /**
  * Initialize OneSignal for web push
- * Call this in your root layout or _app.tsx
  */
 export function useOneSignal() {
   useEffect(() => {
@@ -30,70 +29,44 @@ export function useOneSignal() {
       return
     }
 
-    // Load OneSignal SDK
-    const script = document.createElement('script')
-    script.src = 'https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.ts2.js'
-    script.defer = true
-    document.body.appendChild(script)
+    // OneSignal is loaded via script tag in layout.tsx
+    // Initialize via OneSignalDeferred
+    if (typeof window !== 'undefined') {
+      window.OneSignalDeferred = window.OneSignalDeferred || []
+      window.OneSignalDeferred.push(async function(OneSignal: any) {
+        await OneSignal.init({
+          appId: ONESIGNAL_APP_ID,
+          allowLocalhostAsSecureOrigin: true,
+        })
 
-    script.onload = () => {
-      initOneSignal()
-    }
+        // Listen for subscription changes
+        OneSignal.User.addEventListener('change', (event: any) => {
+          if (event.pushSubscription?.id) {
+            syncSubscriptionWithUser()
+          }
+        })
 
-    return () => {
-      document.body.removeChild(script)
+        // If already logged in, sync subscription
+        syncSubscriptionWithUser()
+      })
     }
   }, [])
-
-  async function initOneSignal() {
-    if (!window.OneSignal) return
-
-    try {
-      await window.OneSignal.init({
-        appId: ONESIGNAL_APP_ID,
-        allowLocalhostAsSecureOrigin: true,
-        welcomeNotification: {
-          title: 'Tour Ops',
-          message: 'Thanks for subscribing!',
-        },
-        notifyButton: {
-          enable: true,
-          showCredit: false,
-        },
-      })
-
-      // Listen for subscription changes
-      window.OneSignal.User.addEventListener('change', (event: any) => {
-        if (event.pushSubscription.id) {
-          // User subscribed - store their OneSignal ID
-          syncSubscriptionWithUser()
-        }
-      })
-
-      // If already logged in, sync subscription
-      syncSubscriptionWithUser()
-    } catch (error) {
-      console.error('OneSignal init error:', error)
-    }
-  }
 }
 
 /**
  * Sync OneSignal subscription with user account
  */
 export async function syncSubscriptionWithUser() {
-  if (!window.OneSignal) return
+  if (typeof window === 'undefined' || !window.OneSignalDeferred) return
 
   try {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
 
-    // Set external user ID for OneSignal
-    const subscriptionId = window.OneSignal.User.pushSubscription.id
-    if (subscriptionId) {
-      await window.OneSignal.login(user.id)
+    window.OneSignalDeferred!.push(async function(OneSignal: any) {
+      await OneSignal.login(user.id)
       console.log('OneSignal synced with user:', user.id)
-    }
+    })
   } catch (error) {
     console.error('Error syncing OneSignal:', error)
   }
@@ -103,42 +76,35 @@ export async function syncSubscriptionWithUser() {
  * Request push notification permission
  */
 export async function requestPushPermission(): Promise<boolean> {
-  if (!window.OneSignal) {
-    console.warn('OneSignal not loaded')
-    return false
-  }
+  if (typeof window === 'undefined' || !window.OneSignalDeferred) return false
 
-  try {
-    await window.OneSignal.Slidedown.promptPush()
-    return true
-  } catch (error) {
-    console.error('Error requesting push permission:', error)
-    return false
-  }
+  return new Promise((resolve) => {
+    window.OneSignalDeferred!.push(async function(OneSignal: any) {
+      try {
+        await OneSignal.Slidedown.promptPush()
+        resolve(true)
+      } catch (error) {
+        console.error('Error requesting push permission:', error)
+        resolve(false)
+      }
+    })
+  })
 }
 
 /**
  * Check if user is subscribed to push
  */
 export async function isPushSubscribed(): Promise<boolean> {
-  if (!window.OneSignal) return false
+  if (typeof window === 'undefined' || !window.OneSignalDeferred) return false
 
-  try {
-    return await window.OneSignal.User.pushSubscription.optedIn()
-  } catch {
-    return false
-  }
-}
-
-/**
- * Unsubscribe from push notifications
- */
-export async function unsubscribeFromPush() {
-  if (!window.OneSignal) return
-
-  try {
-    await window.OneSignal.User.pushSubscription.optOut()
-  } catch (error) {
-    console.error('Error unsubscribing:', error)
-  }
+  return new Promise((resolve) => {
+    window.OneSignalDeferred!.push(async function(OneSignal: any) {
+      try {
+        const optedIn = await OneSignal.User.pushSubscription.optedIn()
+        resolve(optedIn)
+      } catch {
+        resolve(false)
+      }
+    })
+  })
 }

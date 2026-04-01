@@ -42,11 +42,23 @@ export default function RootLayout({
         <Providers>
           {children}
         </Providers>
+        <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+        <script dangerouslySetInnerHTML={{
+          __html: `
+            window.OneSignalDeferred = window.OneSignalDeferred || [];
+            OneSignalDeferred.push(async function(OneSignal) {
+              await OneSignal.init({
+                appId: "e3fc642b-bb3a-44f6-8f07-8c1ca1fbd093",
+                allowLocalhostAsSecureOrigin: true,
+              });
+            });
+          `
+        }} />
         <script dangerouslySetInnerHTML={{
           __html: `
             if ('serviceWorker' in navigator) {
               window.addEventListener('load', function() {
-                navigator.serviceWorker.register('/sw.js').then(
+                navigator.serviceWorker.register('/OneSignalSDK.worker.js').then(
                   function(registration) {
                     console.log('SW registered: ', registration.scope);
                   },
