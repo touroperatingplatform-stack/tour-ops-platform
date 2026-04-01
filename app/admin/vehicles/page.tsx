@@ -56,7 +56,7 @@ export default function VehiclesPage() {
   if (loading) {
     return (
       <AdminLayout title={t('adminDashboard.fleet')} activeNav="menu">
-        <div className="flex items-center justify-center h-full">
+        <div className="flex items-center justify-center h-full border-8 border-transparent">
           <div className="text-gray-500">{t('common.loading')}</div>
         </div>
       </AdminLayout>
@@ -65,10 +65,10 @@ export default function VehiclesPage() {
 
   return (
     <AdminLayout title={t('adminDashboard.fleet')} activeNav="menu">
-      <div className="h-full grid grid-cols-12 grid-rows-[auto_1fr] gap-3">
+      <div className="h-full grid grid-cols-12 grid-rows-[auto_1fr] gap-3 border-8 border-transparent">
         
         {/* Row 1: Stats Cards */}
-        <div className="col-span-12 grid grid-cols-3 gap-3">
+        <div className="col-span-12 grid grid-cols-3 gap-3 border-8 border-transparent">
           <div className="bg-white rounded-lg border border-gray-200 p-3 text-center">
             <p className="text-xs text-gray-500 uppercase font-medium">{t('fleet.total')}</p>
             <p className="text-2xl font-bold text-gray-900 mt-1">{vehicles.length}</p>
@@ -84,7 +84,7 @@ export default function VehiclesPage() {
         </div>
 
         {/* Row 2: Vehicle List + Quick Actions */}
-        <div className="col-span-12 grid grid-cols-12 gap-3">
+        <div className="col-span-12 grid grid-cols-12 gap-3 border-8 border-transparent">
           {/* Vehicle List - Left */}
           <div className="col-span-9 bg-white rounded-lg border border-gray-200 p-3 flex flex-col">
             <div className="flex items-center justify-between mb-2">

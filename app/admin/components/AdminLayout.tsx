@@ -41,45 +41,51 @@ export default function AdminLayout({
     <RoleGuard requiredRole="company_admin">
       <div className="h-screen flex flex-col bg-gray-100">
         {/* Top Nav */}
-        <div className="bg-white border-b px-4 py-3 flex-shrink-0 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold">
-              T
+        <header className="bg-white flex-shrink-0">
+          <div className="px-4 py-3 border-8 border-transparent">
+            <div className="flex items-center justify-between px-4 py-3">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold">
+                  T
+                </div>
+                <h1 className="text-lg font-bold">{title}</h1>
+              </div>
+              <div className="flex items-center gap-3">
+                <LanguageToggle />
+                <button 
+                  onClick={handleSignOut}
+                  className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center hover:bg-gray-300"
+                >
+                  👤
+                </button>
+              </div>
             </div>
-            <h1 className="text-lg font-bold">{title}</h1>
           </div>
-          <div className="flex items-center gap-3">
-            <LanguageToggle />
-            <button 
-              onClick={handleSignOut}
-              className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center hover:bg-gray-300"
-            >
-              👤
-            </button>
-          </div>
-        </div>
+        </header>
 
         {/* Main Content */}
-        <div className="flex-1 overflow-hidden p-3">
-          {children}
-        </div>
+        <main className="flex-1 overflow-hidden bg-white border-8 border-transparent">
+          <div className="h-full overflow-auto p-3 border-8 border-transparent">
+            {children}
+          </div>
+        </main>
 
         {/* Bottom Nav */}
         {showBottomNav && (
-          <div className="bg-white border-t px-4 py-3 flex-shrink-0">
-            <div className="flex items-center justify-around">
+          <nav className="flex-none bg-white z-50">
+            <div className="flex justify-around items-center px-2 py-2">
               {navItems.map((item) => (
                 <Link 
                   key={item.key}
                   href={item.href} 
-                  className={`flex flex-col items-center ${activeNav === item.key ? 'text-blue-600' : 'text-gray-400'}`}
+                  className={`flex flex-col items-center justify-center py-2 px-2 min-w-[48px] ${activeNav === item.key ? 'text-blue-600' : 'text-gray-500'}`}
                 >
-                  <span className="text-xl">{item.icon}</span>
+                  <span className="text-xl mb-1">{item.icon}</span>
                   <span className="text-xs">{item.label}</span>
                 </Link>
               ))}
             </div>
-          </div>
+          </nav>
         )}
       </div>
     </RoleGuard>
