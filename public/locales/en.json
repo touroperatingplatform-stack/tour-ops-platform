@@ -398,6 +398,8 @@
     "available": "Available"
   },
   "driver": {
+    "tours": "Tours",
+    "checkin": "Check-in",
     "dashboard": "Driver Dashboard",
     "online": "Online",
     "todaysTour": "TODAY'S TOUR",
@@ -439,6 +441,10 @@
     "selectFuel": "Select fuel level...",
     "vehicleInspection": "Vehicle Inspection",
     "inspection": {
+      "title": "Vehicle Inspection",
+      "mileage": "Starting Mileage (km)",
+      "issues": "Issues / Notes",
+      "issuesPlaceholder": "Describe any issues found during inspection...",
       "tires": "Tires (pressure, tread, damage)",
       "brakes": "Brakes (responsive, no noise)",
       "lights": "Lights (headlights, brake lights, signals)",

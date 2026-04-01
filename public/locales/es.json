@@ -320,6 +320,8 @@
     "driver": "Chofer"
   },
   "driver": {
+    "tours": "Tours",
+    "checkin": "Check-in",
     "dashboard": "Panel de Conductor",
     "online": "En línea",
     "todaysTour": "TOUR DE HOY",
