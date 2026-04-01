@@ -18,6 +18,23 @@ interface Tour {
   guide: { first_name: string; last_name: string } | null
 }
 
+interface Stop {
+  id: string
+  location_name: string
+  address: string
+  scheduled_time: string
+  guest_count: number
+  stop_type: 'pickup' | 'activity' | 'dropoff'
+  sort_order: number
+}
+
+interface Checkin {
+  id: string
+  pickup_stop_id: string
+  checkin_type: string
+  checked_in_at: string
+}
+
 interface Reservation {
   id: string
   booking_reference: string
@@ -57,11 +74,14 @@ export default function GuideTourPage() {
   const [vanPhoto, setVanPhoto] = useState<string | null>(null)
   const [hasCheckedIn, setHasCheckedIn] = useState(false)
   const [reservations, setReservations] = useState<Reservation[]>([])
+  const [stops, setStops] = useState<Stop[]>([])
+  const [checkins, setCheckins] = useState<Checkin[]>([])
 
   useEffect(() => {
     loadTour()
     loadReservations()
     loadChecklist()
+    loadStops()
   }, [])
 
   async function loadChecklist() {
@@ -92,6 +112,24 @@ export default function GuideTourPage() {
       .order('booking_reference')
     
     if (data) setReservations(data)
+  }
+
+  async function loadStops() {
+    const { data: stopsData } = await supabase
+      .from('pickup_stops')
+      .select('id, location_name, address, scheduled_time, guest_count, stop_type, sort_order')
+      .eq('tour_id', params.id)
+      .order('sort_order', { ascending: true })
+    
+    if (stopsData) setStops(stopsData)
+
+    // Load existing checkins
+    const { data: checkinsData } = await supabase
+      .from('guide_checkins')
+      .select('id, pickup_stop_id, checkin_type, checked_in_at')
+      .eq('tour_id', params.id)
+    
+    if (checkinsData) setCheckins(checkinsData)
   }
 
   async function toggleReservationCheckin(reservationId: string, checked: boolean) {
@@ -391,6 +429,50 @@ export default function GuideTourPage() {
                 />
               </label>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Tour Stops - Only show when in progress */}
+      {tour.status === 'in_progress' && stops.length > 0 && (
+        <div className="bg-white rounded-2xl border border-gray-200 p-6">
+          <h2 className="font-semibold text-gray-900 mb-4">Tour Stops</h2>
+          <div className="space-y-3">
+            {stops.map((stop) => {
+              const checkin = checkins.find(c => c.pickup_stop_id === stop.id)
+              const isCheckedIn = !!checkin
+              return (
+                <div key={stop.id} className={`p-4 rounded-xl border-2 ${isCheckedIn ? 'bg-green-50 border-green-200' : 'bg-white border-gray-200'}`}>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-lg">
+                          {stop.stop_type === 'pickup' ? '📍' : stop.stop_type === 'activity' ? '🎯' : '🏁'}
+                        </span>
+                        <span className="font-medium">{stop.location_name}</span>
+                      </div>
+                      <p className="text-sm text-gray-500 mt-1">
+                        {stop.scheduled_time?.slice(0, 5)}
+                        {stop.guest_count && ` • ${stop.guest_count} guests`}
+                      </p>
+                      {isCheckedIn && (
+                        <p className="text-xs text-green-600 mt-1">
+                          ✓ Checked in at {new Date(checkin.checked_in_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+                        </p>
+                      )}
+                    </div>
+                    {!isCheckedIn && (
+                      <Link
+                        href={`/guide/tours/${tour.id}/checkin?type=${stop.stop_type}`}
+                        className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700"
+                      >
+                        Check In
+                      </Link>
+                    )}
+                  </div>
+                </div>
+              )
+            })}
           </div>
         </div>
       )}
