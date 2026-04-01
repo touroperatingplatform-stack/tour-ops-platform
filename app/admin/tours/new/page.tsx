@@ -16,6 +16,7 @@ export default function CreateTourPage() {
   const [brands, setBrands] = useState<any[]>([])
   const [guides, setGuides] = useState<any[]>([])
   const [vehicles, setVehicles] = useState<any[]>([])
+  const [tourTypes, setTourTypes] = useState<any[]>([])
 
   const [formData, setFormData] = useState({
     name: '',
@@ -26,6 +27,7 @@ export default function CreateTourPage() {
     pickupLocation: '',
     description: '',
     brandId: '',
+    tourTypeId: '',
     guideId: '',
     vehicleId: '',
   })
@@ -38,10 +40,12 @@ export default function CreateTourPage() {
     const { data: brandsData } = await supabase.from('brands').select('*').order('name')
     const { data: guidesData } = await supabase.from('profiles').select('id, full_name').eq('role', 'guide').order('full_name')
     const { data: vehiclesData } = await supabase.from('vehicles').select('id, plate_number, model').eq('status', 'available').order('plate_number')
+    const { data: tourTypesData } = await supabase.from('tour_types').select('id, name').eq('is_active', true).order('name')
     
     setBrands(brandsData || [])
     setGuides(guidesData || [])
     setVehicles(vehiclesData || [])
+    setTourTypes(tourTypesData || [])
     
     if (brandsData?.length) {
       setFormData(prev => ({ ...prev, brandId: brandsData[0].id }))
@@ -62,11 +66,13 @@ export default function CreateTourPage() {
     setError('')
 
     try {
-      const { error: tourError } = await supabase
+      // Create tour
+      const { data: tour, error: tourError } = await supabase
         .from('tours')
         .insert({
           company_id: '6e046c69-93e2-48c9-a861-46c91fd2ae3b',
           brand_id: formData.brandId,
+          tour_type_id: formData.tourTypeId || null,
           name: formData.name,
           tour_date: formData.tourDate,
           start_time: formData.startTime,
@@ -80,8 +86,41 @@ export default function CreateTourPage() {
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         })
+        .select('id')
+        .single()
 
       if (tourError) throw tourError
+
+      // Seed activities from tour_type
+      if (tour && formData.tourTypeId) {
+        const { data: tourType } = await supabase
+          .from('tour_types')
+          .select('activities')
+          .eq('id', formData.tourTypeId)
+          .single()
+
+        if (tourType?.activities && Array.isArray(tourType.activities)) {
+          const activities = tourType.activities as Array<{name: string; duration_minutes: number; sort_order: number}>
+          const [hours, minutes] = formData.startTime.split(':').map(Number)
+          
+          for (const activity of activities) {
+            // Calculate time for each activity (cumulative)
+            const activityMinutes = (hours * 60 + minutes) + (activity.sort_order - 1) * (activity.duration_minutes || 60)
+            const activityTime = `${String(Math.floor(activityMinutes / 60)).padStart(2, '0')}:${String(activityMinutes % 60).padStart(2, '0')}:00`
+
+            await supabase
+              .from('pickup_stops')
+              .insert({
+                tour_id: tour.id,
+                brand_id: formData.brandId,
+                sort_order: activity.sort_order + 100, // Activities after pickups (pickups are 1-99)
+                location_name: activity.name,
+                scheduled_time: activityTime,
+                stop_type: 'activity'
+              })
+          }
+        }
+      }
 
       router.push('/admin/tours')
     } catch (err: any) {
@@ -145,6 +184,22 @@ export default function CreateTourPage() {
                   <option key={brand.id} value={brand.id}>{brand.name}</option>
                 ))}
               </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Tour Type</label>
+              <select
+                name="tourTypeId"
+                value={formData.tourTypeId}
+                onChange={handleChange}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">Select tour type (optional)</option>
+                {tourTypes.map((type) => (
+                  <option key={type.id} value={type.id}>{type.name}</option>
+                ))}
+              </select>
+              <p className="text-xs text-gray-500 mt-1">Activities will be auto-created from tour type</p>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
