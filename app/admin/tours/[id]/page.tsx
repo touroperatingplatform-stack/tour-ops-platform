@@ -223,6 +223,22 @@ export default function TourDetailPage() {
                 placeholder={t('tours.descriptionPlaceholder')}
               />
             </div>
+
+            {/* Stops Management */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-semibold text-gray-900">Tour Stops</h2>
+                <Link
+                  href={`/admin/tours/${tourId}/stops`}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700"
+                >
+                  Manage Stops
+                </Link>
+              </div>
+              <p className="text-gray-500 text-sm">
+                Add pickups, activities, and dropoffs for this tour. Guides will check in at each stop.
+              </p>
+            </div>
           </div>
         </div>
       </main>
