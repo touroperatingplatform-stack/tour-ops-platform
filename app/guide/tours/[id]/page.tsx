@@ -97,7 +97,7 @@ export default function GuideTourPage() {
       setChecklist(data)
       // Initialize checklist state
       const state: ChecklistState = {}
-      data.items.forEach(item => {
+      data.items.forEach((item: { id: string; text: string; required: boolean }) => {
         state[item.id] = false
       })
       setChecklistState(state)
@@ -325,8 +325,8 @@ export default function GuideTourPage() {
   }
 
   const allRequiredChecked = checklist?.items
-    .filter(item => item.required)
-    .every(item => checklistState[item.id]) ?? true
+    .filter((item: { id: string; text: string; required: boolean }) => item.required)
+    .every((item: { id: string; text: string; required: boolean }) => checklistState[item.id]) ?? true
 
   return (
     <div className="space-y-6 p-4">
@@ -350,7 +350,7 @@ export default function GuideTourPage() {
         <div className="bg-white rounded-2xl border border-gray-200 p-6">
           <h2 className="font-semibold text-gray-900 mb-4">{checklist.name}</h2>
           <div className="space-y-3">
-            {checklist.items.map((item) => (
+            {checklist.items.map((item: { id: string; text: string; required: boolean }) => (
               <label key={item.id} className="flex items-center gap-3">
                 <input
                   type="checkbox"
