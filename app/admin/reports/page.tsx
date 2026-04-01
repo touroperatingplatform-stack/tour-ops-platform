@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase/client'
 import { getLocalDate } from '@/lib/timezone'
+import { useTranslation } from '@/lib/i18n/useTranslation'
 
 interface ReportCard {
   title: string
@@ -16,6 +17,7 @@ interface ReportCard {
 }
 
 export default function ReportsPage() {
+  const { t } = useTranslation()
   const [stats, setStats] = useState({
     toursToday: 0,
     guestsToday: 0,
@@ -74,44 +76,44 @@ export default function ReportsPage() {
 
   const reportCards: ReportCard[] = [
     {
-      title: "Today's Tours",
+      title: t('reports.toursToday'),
       value: stats.toursToday.toString(),
-      subtitle: 'Total scheduled',
+      subtitle: t('reports.totalScheduled'),
       icon: '🚌',
       color: 'bg-blue-500'
     },
     {
-      title: "Today's Guests",
+      title: t('reports.guestsToday'),
       value: stats.guestsToday.toString(),
-      subtitle: 'People served',
+      subtitle: t('reports.peopleServed'),
       icon: '👥',
       color: 'bg-green-500'
     },
     {
-      title: 'On-Time %',
+      title: t('reports.onTimeRate'),
       value: `${stats.onTimeRate}%`,
-      subtitle: 'Performance',
+      subtitle: t('reports.performance'),
       icon: '⏱️',
       color: 'bg-purple-500'
     },
     {
-      title: 'Incidents',
+      title: t('reports.incidents'),
       value: stats.incidents.toString(),
-      subtitle: 'Today',
+      subtitle: t('time.today'),
       icon: '⚠️',
       color: 'bg-red-500'
     },
     {
-      title: 'Expenses',
+      title: t('reports.expenses'),
       value: `$${stats.expenses.toLocaleString()}`,
-      subtitle: 'Today',
+      subtitle: t('time.today'),
       icon: '💰',
       color: 'bg-orange-500'
     },
     {
-      title: 'Weekly Trend',
+      title: t('reports.weeklyTrend'),
       value: '↑ 12%',
-      subtitle: 'vs last week',
+      subtitle: t('reports.vsLastWeek'),
       icon: '📈',
       color: 'bg-green-500'
     }
@@ -120,7 +122,7 @@ export default function ReportsPage() {
   if (loading) {
     return (
       <div className="h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-gray-500">Loading reports...</div>
+        <div className="text-gray-500">{t('common.loading')}</div>
       </div>
     )
   }
@@ -128,88 +130,97 @@ export default function ReportsPage() {
   return (
     <div className="h-screen flex flex-col bg-gray-50 overflow-hidden">
       {/* Header */}
-      <div className="bg-white border-b px-4 py-4 flex-shrink-0">
-        <h1 className="text-xl font-bold">Reports</h1>
-        <p className="text-gray-500 text-sm">{getLocalDate()}</p>
-      </div>
-
-      {/* Report Cards */}
-      <div className="flex-1 px-4 py-4 overflow-y-auto">
-        <div className="grid grid-cols-2 gap-3">
-          {reportCards.map((card, i) => (
-            <div key={i} className="bg-white rounded-xl shadow p-4">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-2xl">{card.icon}</span>
-                <div className={`w-2 h-2 rounded-full ${card.color}`}></div>
-              </div>
-              <div className="text-2xl font-bold mb-1">{card.value}</div>
-              <div className="text-gray-500 text-sm">{card.title}</div>
-              <div className="text-gray-400 text-xs">{card.subtitle}</div>
+      <header className="bg-white flex-shrink-0">
+        <div className="px-4 py-3 border-8 border-transparent">
+          <div className="flex items-center justify-between px-4 py-3">
+            <div>
+              <h1 className="text-xl font-bold">{t('nav.reports')}</h1>
+              <p className="text-gray-500 text-sm">{getLocalDate()}</p>
             </div>
-          ))}
-        </div>
-
-        {/* Quick Reports */}
-        <div className="mt-6">
-          <h2 className="font-semibold mb-3">Quick Reports</h2>
-          <div className="space-y-2">
-            <Link href="/admin/reports/tours" className="block bg-white rounded-xl shadow p-4 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <span className="text-2xl">🚌</span>
-                <div>
-                  <div className="font-medium">Tour Report</div>
-                  <div className="text-gray-500 text-sm">Performance by tour</div>
-                </div>
-              </div>
-              <span className="text-gray-400">→</span>
-            </Link>
-
-            <Link href="/admin/reports/guides" className="block bg-white rounded-xl shadow p-4 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <span className="text-2xl">🎯</span>
-                <div>
-                  <div className="font-medium">Guide Report</div>
-                  <div className="text-gray-500 text-sm">Performance by guide</div>
-                </div>
-              </div>
-              <span className="text-gray-400">→</span>
-            </Link>
-
-            <Link href="/admin/reports/expenses" className="block bg-white rounded-xl shadow p-4 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <span className="text-2xl">💰</span>
-                <div>
-                  <div className="font-medium">Expense Report</div>
-                  <div className="text-gray-500 text-sm">Costs breakdown</div>
-                </div>
-              </div>
-              <span className="text-gray-400">→</span>
-            </Link>
           </div>
         </div>
-      </div>
+      </header>
 
-      {/* Bottom Nav */}
-      <div className="bg-white border-t px-4 py-3 flex-shrink-0">
-        <div className="flex items-center justify-around">
-          <Link href="/admin" className="flex flex-col items-center text-gray-400">
-            <span className="text-xl">📊</span>
-            <span className="text-xs">Dashboard</span>
+      {/* Main Content */}
+      <main className="flex-1 overflow-hidden bg-white border-8 border-transparent">
+        <div className="h-full overflow-auto px-4 py-4 border-8 border-transparent">
+          {/* Report Cards */}
+          <div className="grid grid-cols-2 gap-3">
+            {reportCards.map((card, i) => (
+              <div key={i} className="bg-white rounded-xl shadow p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-2xl">{card.icon}</span>
+                  <div className={`w-2 h-2 rounded-full ${card.color}`}></div>
+                </div>
+                <div className="text-2xl font-bold mb-1">{card.value}</div>
+                <div className="text-gray-500 text-sm">{card.title}</div>
+                <div className="text-gray-400 text-xs">{card.subtitle}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* Quick Reports */}
+          <div className="mt-6">
+            <h2 className="font-semibold mb-3">{t('reports.quickReports')}</h2>
+            <div className="space-y-2">
+              <Link href="/admin/reports/tours" className="block bg-white rounded-xl shadow p-4 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <span className="text-2xl">🚌</span>
+                  <div>
+                    <div className="font-medium">{t('reports.tourReport')}</div>
+                    <div className="text-gray-500 text-sm">{t('reports.tourReportDesc')}</div>
+                  </div>
+                </div>
+                <span className="text-gray-400">→</span>
+              </Link>
+
+              <Link href="/admin/reports/guides" className="block bg-white rounded-xl shadow p-4 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <span className="text-2xl">🎯</span>
+                  <div>
+                    <div className="font-medium">{t('reports.guideReport')}</div>
+                    <div className="text-gray-500 text-sm">{t('reports.guideReportDesc')}</div>
+                  </div>
+                </div>
+                <span className="text-gray-400">→</span>
+              </Link>
+
+              <Link href="/admin/reports/expenses" className="block bg-white rounded-xl shadow p-4 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <span className="text-2xl">💰</span>
+                  <div>
+                    <div className="font-medium">{t('reports.expenseReport')}</div>
+                    <div className="text-gray-500 text-sm">{t('reports.expenseReportDesc')}</div>
+                  </div>
+                </div>
+                <span className="text-gray-400">→</span>
+              </Link>
+            </div>
+          </div>
+        </div>
+      </main>
+
+      {/* Bottom Navigation */}
+      <nav className="flex-none bg-white z-50">
+        <div className="flex justify-around items-center px-2 py-2">
+          <Link href="/admin" className="flex flex-col items-center justify-center py-2 px-2 min-w-[48px] text-gray-500">
+            <span className="text-xl mb-1">📊</span>
+            <span className="text-xs">{t('nav.dashboard')}</span>
           </Link>
-          <Link href="/admin/tours" className="flex flex-col items-center text-gray-400">
-            <span className="text-xl">🚌</span>
-            <span className="text-xs">Tours</span>
+          <Link href="/admin/tours" className="flex flex-col items-center justify-center py-2 px-2 min-w-[48px] text-gray-500">
+            <span className="text-xl mb-1">🚌</span>
+            <span className="text-xs">{t('nav.tours')}</span>
           </Link>
-          <Link href="/admin/guests" className="flex flex-col items-center text-gray-400">
-            <span className="text-xl">👥</span>
-            <span className="text-xs">Guests</span>
+          <Link href="/admin/guests" className="flex flex-col items-center justify-center py-2 px-2 min-w-[48px] text-gray-500">
+            <span className="text-xl mb-1">👥</span>
+            <span className="text-xs">{t('nav.guests')}</span>
           </Link>
-          <Link href="/admin/reports" className="flex flex-col items-center text-blue-600">
-            <span className="text-xl">📈</span>
-            <span className="text-xs">Reports</span>
+          <Link href="/admin/reports" className="flex flex-col items-center justify-center py-2 px-2 min-w-[48px] text-blue-600">
+            <span className="text-xl mb-1">📈</span>
+            <span className="text-xs">{t('nav.reports')}</span>
           </Link>
         </div>
-      </div>
+      </nav>
     </div>
   )
 }
