@@ -14,6 +14,7 @@ interface Tour {
   start_time: string
   status: string
   pickup_location: string
+  acknowledged_at: string | null
   guide: { first_name: string; last_name: string } | null
 }
 
@@ -120,7 +121,7 @@ export default function GuideTourPage() {
   async function loadTour() {
     const { data: tourData } = await supabase
       .from('tours')
-      .select('id, name, start_time, status, pickup_location, guide_id, equipment_photo_url, van_photo_url')
+      .select('id, name, start_time, status, pickup_location, guide_id, equipment_photo_url, van_photo_url, acknowledged_at')
       .eq('id', params.id)
       .single()
 
@@ -147,6 +148,12 @@ export default function GuideTourPage() {
     
     setHasCheckedIn(!!checkins && checkins.length > 0)
     setLoading(false)
+  }
+
+  // Redirect to acknowledgment if not acknowledged
+  if (tour && tour.status === 'scheduled' && !tour.acknowledged_at) {
+    router.push(`/guide/tours/${params.id}/acknowledge`)
+    return null
   }
 
   function toggleChecklist(id: string) {
