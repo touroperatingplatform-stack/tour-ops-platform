@@ -128,7 +128,7 @@ export default function ExpensesPage() {
                         {categoryIcons[expense.category] || '📝'}
                       </div>
                       <div>
-                        <h3 className="font-bold capitalize">{t(`expenses.categories.${expense.category}`, expense.category)}</h3>
+                        <h3 className="font-bold capitalize">{t(`expenses.categories.${expense.category}`)}</h3>
                         <p className="text-gray-500 text-sm">{expense.description}</p>
                       </div>
                     </div>
