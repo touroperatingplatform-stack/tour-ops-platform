@@ -199,7 +199,25 @@
       "tolls": "Tolls",
       "meals": "Meals",
       "other": "Other"
-    }
+    },
+    "backToExpenses": "Back to Expenses",
+    "addNew": "Add New Expense",
+    "recordCost": "Record operational cost",
+    "amount": "Amount",
+    "category": "Category",
+    "description": "Description",
+    "descriptionPlaceholder": "What was this expense for?",
+    "date": "Date",
+    "relatedTour": "Related Tour ID",
+    "relatedTourPlaceholder": "Link to specific tour (optional)",
+    "relatedTourOptional": "Leave blank if not tour-related",
+    "addExpense": "Add Expense",
+    "adding": "Adding...",
+    "editExpense": "Edit Expense",
+    "updateDetails": "Update expense details",
+    "receiptUrl": "Receipt URL",
+    "saving": "Saving...",
+    "saveChanges": "Save Changes"
   },
   "reports": {
     "title": "Reports",

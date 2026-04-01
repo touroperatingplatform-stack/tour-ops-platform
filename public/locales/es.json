@@ -317,7 +317,15 @@
       "pre_pickup": "Pre-Pickup",
       "dropoff": "Entrega",
       "finish": "Fin"
-    }
+    },
+    "addItem": "Agregar Item",
+    "createCheckpoint": "Crear punto de control",
+    "stage": "Etapa",
+    "taskDescription": "Descripción de Tarea",
+    "taskPlaceholder": "ej., Verificar nivel de combustible",
+    "mandatoryItem": "Item Obligatorio",
+    "mandatoryDesc": "Debe completarse antes de terminar el tour",
+    "saveError": "❌ Error al guardar item"
   },
   "templates": {
     "title": "Plantillas",
