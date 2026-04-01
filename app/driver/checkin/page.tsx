@@ -150,7 +150,7 @@ function DriverCheckinContent() {
   return (
     <RoleGuard requiredRole="driver">
       <DriverNav />
-      <div className="h-screen flex flex-col bg-gray-50 overflow-hidden">
+      <div className="h-screen flex flex-col bg-gray-50 overflow-hidden pt-14 pb-16">
         {/* Header */}
         <header className="bg-white flex-shrink-0">
           <div className="px-4 py-3 border-8 border-transparent">

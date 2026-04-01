@@ -8,6 +8,7 @@ import { supabase } from '@/lib/supabase/client'
 import RoleGuard from '@/lib/auth/RoleGuard'
 import { getLocalDate } from '@/lib/timezone'
 import { useTranslation } from '@/lib/i18n/useTranslation'
+import DriverNav from '@/components/navigation/DriverNav'
 
 interface Tour {
   id: string
@@ -112,7 +113,8 @@ export default function DriverDashboard() {
 
   return (
     <RoleGuard requiredRole="driver">
-      <div className="h-screen flex flex-col bg-gray-50 overflow-hidden">
+      <DriverNav />
+      <div className="h-screen flex flex-col bg-gray-50 overflow-hidden pt-14 pb-16">
         {/* Header */}
         <header className="bg-white flex-shrink-0">
           <div className="px-4 py-3 border-8 border-transparent">
