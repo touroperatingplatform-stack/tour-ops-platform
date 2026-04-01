@@ -4,10 +4,13 @@ export const dynamic = 'force-dynamic'
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { supabase } from '@/lib/supabase/client'
+import { useTranslation } from '@/lib/i18n/useTranslation'
 
 export default function NewTemplatePage() {
   const router = useRouter()
+  const { t } = useTranslation()
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
   const [guides, setGuides] = useState<any[]>([])
@@ -97,183 +100,199 @@ export default function NewTemplatePage() {
     setFormData((prev) => ({ ...prev, [name]: value }))
   }
 
-  if (loading) return <div className="p-4">Loading...</div>
+  if (loading) return <div className="h-screen flex items-center justify-center"><div className="text-gray-500">{t('common.loading')}</div></div>
 
   return (
-    <div className="p-4 max-w-2xl">
-      <h1 className="text-2xl font-bold text-gray-900 mb-4">New Tour Template</h1>
-
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Template Name *
-          </label>
-          <input
-            type="text"
-            name="name"
-            required
-            value={formData.name}
-            onChange={handleChange}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-            placeholder="e.g., Chichen Itza Day Tour"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-          <textarea
-            name="description"
-            value={formData.description}
-            onChange={handleChange}
-            rows={3}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-          />
-        </div>
-
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Duration (min) *</label>
-            <input
-              type="number"
-              name="duration_minutes"
-              required
-              min="30"
-              step="15"
-              value={formData.duration_minutes}
-              onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Capacity *</label>
-            <input
-              type="number"
-              name="capacity"
-              required
-              min="1"
-              value={formData.capacity}
-              onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-            />
+    <div className="h-screen flex flex-col bg-gray-50 overflow-hidden">
+      {/* Header */}
+      <header className="bg-white flex-shrink-0">
+        <div className="px-4 py-3 border-8 border-transparent">
+          <div className="px-4 py-3">
+            <Link href="/admin/templates" className="text-gray-600 hover:text-gray-900 text-sm flex items-center gap-2 mb-3">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+              {t('templates.backToTemplates')}
+            </Link>
+            <h1 className="text-xl font-bold">{t('templates.newTemplate')}</h1>
           </div>
         </div>
+      </header>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Price ($)</label>
-          <input
-            type="number"
-            name="price"
-            min="0"
-            step="0.01"
-            value={formData.price}
-            onChange={handleChange}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-          />
-        </div>
+      {/* Form */}
+      <main className="flex-1 overflow-hidden bg-white border-8 border-transparent">
+        <form onSubmit={handleSubmit} className="h-full overflow-auto px-4 py-4 border-8 border-transparent">
+          <div className="max-w-md mx-auto space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">{t('templates.templateName')} *</label>
+              <input
+                type="text"
+                name="name"
+                required
+                value={formData.name}
+                onChange={handleChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                placeholder={t('templates.templateNamePlaceholder')}
+              />
+            </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Pickup Location</label>
-          <input
-            type="text"
-            name="pickup_location"
-            value={formData.pickup_location}
-            onChange={handleChange}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-          />
-        </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">{t('templates.description')}</label>
+              <textarea
+                name="description"
+                value={formData.description}
+                onChange={handleChange}
+                rows={3}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+              />
+            </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Dropoff Location</label>
-          <input
-            type="text"
-            name="dropoff_location"
-            value={formData.dropoff_location}
-            onChange={handleChange}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-          />
-        </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t('templates.duration')} *</label>
+                <input
+                  type="number"
+                  name="duration_minutes"
+                  required
+                  min="30"
+                  step="15"
+                  value={formData.duration_minutes}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t('templates.capacity')} *</label>
+                <input
+                  type="number"
+                  name="capacity"
+                  required
+                  min="1"
+                  value={formData.capacity}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                />
+              </div>
+            </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Default Guide</label>
-          <select
-            name="default_guide_id"
-            value={formData.default_guide_id}
-            onChange={handleChange}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-          >
-            <option value="">None (assign later)</option>
-            {guides.map((g) => (
-              <option key={g.id} value={g.id}>
-                {g.first_name} {g.last_name}
-              </option>
-            ))}
-          </select>
-        </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">{t('templates.price')}</label>
+              <input
+                type="number"
+                name="price"
+                min="0"
+                step="0.01"
+                value={formData.price}
+                onChange={handleChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+              />
+            </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Default Vehicle</label>
-          <select
-            name="default_vehicle_id"
-            value={formData.default_vehicle_id}
-            onChange={handleChange}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-          >
-            <option value="">None (assign later)</option>
-            {vehicles.map((v) => (
-              <option key={v.id} value={v.id}>
-                {v.plate_number} - {v.make} {v.model}
-              </option>
-            ))}
-          </select>
-        </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">{t('templates.pickupLocation')}</label>
+              <input
+                type="text"
+                name="pickup_location"
+                value={formData.pickup_location}
+                onChange={handleChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+              />
+            </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Checklist Template</label>
-          <select
-            name="checklist_template_id"
-            value={formData.checklist_template_id}
-            onChange={handleChange}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-          >
-            <option value="">None</option>
-            {checklists.map((c) => (
-              <option key={c.id} value={c.id}>{c.name}</option>
-            ))}
-          </select>
-        </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">{t('templates.dropoffLocation')}</label>
+              <input
+                type="text"
+                name="dropoff_location"
+                value={formData.dropoff_location}
+                onChange={handleChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+              />
+            </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Brand</label>
-          <select
-            name="brand_id"
-            value={formData.brand_id}
-            onChange={handleChange}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-          >
-            <option value="">None</option>
-            {brands.map((b) => (
-              <option key={b.id} value={b.id}>{b.name}</option>
-            ))}
-          </select>
-        </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">{t('templates.defaultGuide')}</label>
+              <select
+                name="default_guide_id"
+                value={formData.default_guide_id}
+                onChange={handleChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+              >
+                <option value="">{t('templates.assignLater')}</option>
+                {guides.map((g) => (
+                  <option key={g.id} value={g.id}>
+                    {g.first_name} {g.last_name}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-        <div className="flex gap-3 pt-4">
-          <button
-            type="button"
-            onClick={() => router.back()}
-            className="flex-1 py-2 border border-gray-300 text-gray-700 rounded-lg"
-          >
-            Cancel
-          </button>
-          <button
-            type="submit"
-            disabled={saving}
-            className="flex-1 py-2 bg-blue-600 text-white rounded-lg disabled:opacity-50"
-          >
-            {saving ? 'Creating...' : 'Create Template'}
-          </button>
-        </div>
-      </form>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">{t('templates.defaultVehicle')}</label>
+              <select
+                name="default_vehicle_id"
+                value={formData.default_vehicle_id}
+                onChange={handleChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+              >
+                <option value="">{t('templates.assignLater')}</option>
+                {vehicles.map((v) => (
+                  <option key={v.id} value={v.id}>
+                    {v.plate_number} - {v.make} {v.model}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">{t('templates.checklistTemplate')}</label>
+              <select
+                name="checklist_template_id"
+                value={formData.checklist_template_id}
+                onChange={handleChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+              >
+                <option value="">{t('templates.none')}</option>
+                {checklists.map((c) => (
+                  <option key={c.id} value={c.id}>{c.name}</option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">{t('templates.brand')}</label>
+              <select
+                name="brand_id"
+                value={formData.brand_id}
+                onChange={handleChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+              >
+                <option value="">{t('templates.none')}</option>
+                {brands.map((b) => (
+                  <option key={b.id} value={b.id}>{b.name}</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="flex gap-3 pt-4">
+              <button
+                type="button"
+                onClick={() => router.back()}
+                className="flex-1 py-2 border border-gray-300 text-gray-700 rounded-lg"
+              >
+                {t('common.cancel')}
+              </button>
+              <button
+                type="submit"
+                disabled={saving}
+                className="flex-1 py-2 bg-blue-600 text-white rounded-lg disabled:opacity-50"
+              >
+                {saving ? t('templates.creating') : t('templates.createTemplate')}
+              </button>
+            </div>
+          </div>
+        </form>
+      </main>
     </div>
   )
 }
