@@ -793,26 +793,28 @@ export default function SuperAdminDemoPage() {
       // Step 0: Setup drivers
       setDemoProgress('🚗 Setting up test drivers...')
       const testDrivers = [
-        { email: 'felipe@lifeoperations.com', type: 'freelance', license: 'LIC-FEL-001', expiry: '2027-12-31', first_name: 'Felipe', last_name: 'Ramirez' },
-        { email: 'driver1@lifeoperations.com', type: 'employee', license: 'LIC-DRV1-001', expiry: '2027-06-30', first_name: 'Carlos', last_name: 'Gonzalez' },
-        { email: 'driver2@lifeoperations.com', type: 'employee', license: 'LIC-DRV2-001', expiry: '2027-08-15', first_name: 'Miguel', last_name: 'Santos' },
-        { email: 'driver3@lifeoperations.com', type: 'employee', license: 'LIC-DRV3-001', expiry: '2027-09-20', first_name: 'Jose', last_name: 'Martinez' }
+        { email: 'felipe@lifeoperations.com', type: 'freelance', license: 'LIC-FEL-001', expiry: '2027-12-31', full_name: 'Felipe Ramirez' },
+        { email: 'driver1@lifeoperations.com', type: 'employee', license: 'LIC-DRV1-001', expiry: '2027-06-30', full_name: 'Carlos Gonzalez' },
+        { email: 'driver2@lifeoperations.com', type: 'employee', license: 'LIC-DRV2-001', expiry: '2027-08-15', full_name: 'Miguel Santos' },
+        { email: 'driver3@lifeoperations.com', type: 'employee', license: 'LIC-DRV3-001', expiry: '2027-09-20', full_name: 'Jose Martinez' }
       ]
 
       let driverSetupCount = 0
       for (const driver of testDrivers) {
-        await supabase.from('profiles').upsert({
-          email: driver.email,
-          first_name: driver.first_name,
-          last_name: driver.last_name,
-          role: 'driver',
-          status: 'active'
-        }, { onConflict: 'email' })
+        // Check if profile exists first
+        const { data: existingProfile } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('email', driver.email)
+          .single()
         
-        const { data: profile } = await supabase.from('profiles').select('id').eq('email', driver.email).single()
-        if (profile) {
+        if (existingProfile) {
+          // Update role to driver
+          await supabase.from('profiles').update({ role: 'driver' }).eq('id', existingProfile.id)
+          
+          // Upsert driver profile
           await supabase.from('driver_profiles').upsert({
-            profile_id: profile.id,
+            profile_id: existingProfile.id,
             license_number: driver.license,
             license_expiry: driver.expiry,
             driver_type: driver.type,
@@ -821,6 +823,31 @@ export default function SuperAdminDemoPage() {
             company_id: companyId
           })
           driverSetupCount++
+        } else {
+          // Create new profile with required fields
+          const { data: newProfile } = await supabase
+            .from('profiles')
+            .insert({
+              email: driver.email,
+              full_name: driver.full_name,
+              role: 'driver',
+              status: 'active'
+            })
+            .select('id')
+            .single()
+          
+          if (newProfile) {
+            await supabase.from('driver_profiles').insert({
+              profile_id: newProfile.id,
+              license_number: driver.license,
+              license_expiry: driver.expiry,
+              driver_type: driver.type,
+              hire_date: '2025-01-15',
+              status: 'active',
+              company_id: companyId
+            })
+            driverSetupCount++
+          }
         }
       }
       setDemoProgress(`✅ Set up ${driverSetupCount} drivers`)
