@@ -1082,7 +1082,7 @@ export default function SuperAdminDemoPage() {
       }
 
       for (const tourId of createdTourIds) {
-        const { data: tour } = await supabase.from('tours').select('tour_type, start_time, name, brand_id').eq('id', tourId).single()
+        const { data: tour } = await supabase.from('tours').select('tour_type, start_time, name, brand_id, duration_minutes').eq('id', tourId).single()
         if (!tour) continue
         
         const [hours, minutes] = (tour.start_time || '08:00').split(':').map(Number)
