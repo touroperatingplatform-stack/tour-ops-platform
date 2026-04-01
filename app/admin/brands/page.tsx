@@ -5,6 +5,7 @@ export const dynamic = 'force-dynamic'
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase/client'
+import { useTranslation } from '@/lib/i18n/useTranslation'
 
 interface Brand {
   id: string
@@ -14,6 +15,7 @@ interface Brand {
 }
 
 export default function BrandsPage() {
+  const { t } = useTranslation()
   const [brands, setBrands] = useState<Brand[]>([])
   const [stats, setStats] = useState({ total: 0, active: 0 })
   const [loading, setLoading] = useState(true)
@@ -43,7 +45,7 @@ export default function BrandsPage() {
   if (loading) {
     return (
       <div className="h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-gray-500">Loading brands...</div>
+        <div className="text-gray-500">{t('common.loading')}</div>
       </div>
     )
   }
@@ -51,87 +53,91 @@ export default function BrandsPage() {
   return (
     <div className="h-screen flex flex-col bg-gray-50 overflow-hidden">
       {/* Header */}
-      <div className="bg-white border-b px-4 py-4 flex-shrink-0">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-xl font-bold">Brands</h1>
-            <p className="text-gray-500 text-sm">Manage tour brands</p>
+      <header className="bg-white flex-shrink-0">
+        <div className="px-4 py-3 border-8 border-transparent">
+          <div className="flex items-center justify-between px-4 py-3">
+            <div>
+              <h1 className="text-xl font-bold">{t('brands.title')}</h1>
+              <p className="text-gray-500 text-sm">{t('brands.subtitle')}</p>
+            </div>
+            <Link 
+              href="/admin/brands/new"
+              className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium text-sm"
+            >
+              + {t('common.add')}
+            </Link>
           </div>
-          <Link 
-            href="/admin/brands/new"
-            className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium text-sm"
-          >
-            + Add
-          </Link>
         </div>
-      </div>
+      </header>
 
       {/* Stats */}
-      <div className="px-4 py-3 flex-shrink-0">
+      <div className="px-4 py-3 flex-shrink-0 border-8 border-transparent">
         <div className="grid grid-cols-2 gap-3">
           <div className="bg-white rounded-xl shadow p-3 text-center">
             <div className="text-2xl font-bold">{stats.total}</div>
-            <div className="text-gray-500 text-xs">Total Brands</div>
+            <div className="text-gray-500 text-xs">{t('brands.total')}</div>
           </div>
           <div className="bg-white rounded-xl shadow p-3 text-center">
             <div className="text-2xl font-bold text-green-600">{stats.active}</div>
-            <div className="text-gray-500 text-xs">Active</div>
+            <div className="text-gray-500 text-xs">{t('common.active')}</div>
           </div>
         </div>
       </div>
 
-      {/* Brand List */}
-      <div className="flex-1 px-4 pb-4 overflow-y-auto">
-        <div className="space-y-2">
-          {brands.length === 0 ? (
-            <div className="bg-white rounded-xl shadow p-6 text-center text-gray-500">
-              No brands yet
-            </div>
-          ) : (
-            brands.map(brand => (
-              <Link
-                key={brand.id}
-                href={`/admin/brands/${brand.id}`}
-                className="block bg-white rounded-xl shadow p-4 hover:shadow-md transition-shadow"
-              >
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="font-bold">{brand.name}</h3>
-                    <p className="text-gray-500 text-sm">{brand.slug}</p>
+      {/* Main Content */}
+      <main className="flex-1 overflow-hidden bg-white border-8 border-transparent">
+        <div className="h-full overflow-auto px-4 py-4 border-8 border-transparent">
+          <div className="space-y-2">
+            {brands.length === 0 ? (
+              <div className="bg-white rounded-xl shadow p-6 text-center text-gray-500">
+                {t('brands.noBrands')}
+              </div>
+            ) : (
+              brands.map(brand => (
+                <Link
+                  key={brand.id}
+                  href={`/admin/brands/${brand.id}`}
+                  className="block bg-white rounded-xl shadow p-4 hover:shadow-md transition-shadow"
+                >
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="font-bold">{brand.name}</h3>
+                      <p className="text-gray-500 text-sm">{brand.slug}</p>
+                    </div>
+                    <span className={`text-xs px-2 py-1 rounded-full ${
+                      brand.is_active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'
+                    }`}>
+                      {brand.is_active ? t('common.active') : t('brands.inactive')}
+                    </span>
                   </div>
-                  <span className={`text-xs px-2 py-1 rounded-full ${
-                    brand.is_active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'
-                  }`}>
-                    {brand.is_active ? 'Active' : 'Inactive'}
-                  </span>
-                </div>
-              </Link>
-            ))
-          )}
+                </Link>
+              ))
+            )}
+          </div>
         </div>
-      </div>
+      </main>
 
-      {/* Bottom Nav */}
-      <div className="bg-white border-t px-4 py-3 flex-shrink-0">
-        <div className="flex items-center justify-around">
-          <Link href="/admin" className="flex flex-col items-center text-gray-400">
-            <span className="text-xl">📊</span>
-            <span className="text-xs">Dashboard</span>
+      {/* Bottom Navigation */}
+      <nav className="flex-none bg-white z-50">
+        <div className="flex justify-around items-center px-2 py-2">
+          <Link href="/admin" className="flex flex-col items-center justify-center py-2 px-2 min-w-[48px] text-gray-500">
+            <span className="text-xl mb-1">📊</span>
+            <span className="text-xs">{t('nav.dashboard')}</span>
           </Link>
-          <Link href="/admin/tours" className="flex flex-col items-center text-gray-400">
-            <span className="text-xl">🚌</span>
-            <span className="text-xs">Tours</span>
+          <Link href="/admin/tours" className="flex flex-col items-center justify-center py-2 px-2 min-w-[48px] text-gray-500">
+            <span className="text-xl mb-1">🚌</span>
+            <span className="text-xs">{t('nav.tours')}</span>
           </Link>
-          <Link href="/admin/brands" className="flex flex-col items-center text-blue-600">
-            <span className="text-xl">🏷️</span>
-            <span className="text-xs">Brands</span>
+          <Link href="/admin/brands" className="flex flex-col items-center justify-center py-2 px-2 min-w-[48px] text-blue-600">
+            <span className="text-xl mb-1">🏷️</span>
+            <span className="text-xs">{t('nav.brands')}</span>
           </Link>
-          <Link href="/admin/settings" className="flex flex-col items-center text-gray-400">
-            <span className="text-xl">⚙️</span>
-            <span className="text-xs">Settings</span>
+          <Link href="/admin/settings" className="flex flex-col items-center justify-center py-2 px-2 min-w-[48px] text-gray-500">
+            <span className="text-xl mb-1">⚙️</span>
+            <span className="text-xs">{t('profile.settings')}</span>
           </Link>
         </div>
-      </div>
+      </nav>
     </div>
   )
 }

@@ -254,6 +254,38 @@
   "users": {
     "manageStaff": "Manage staff"
   },
+  "brands": {
+    "title": "Brands",
+    "subtitle": "Manage tour brands",
+    "total": "Total Brands",
+    "inactive": "Inactive",
+    "noBrands": "No brands yet"
+  },
+  "import": {
+    "title": "Import Bookings",
+    "subtitle": "Upload CSV from Viator, GetYourGuide, etc.",
+    "partner": "Booking Partner (optional)",
+    "generic": "Generic / Unknown",
+    "hotelDirect": "Hotel Direct",
+    "csvFile": "CSV File",
+    "selectFile": "Click to select CSV file",
+    "supported": "Supports Viator, GetYourGuide exports",
+    "expectedColumns": "Expected CSV Columns",
+    "or": "or",
+    "tourName": "Tour name",
+    "tourDate": "Tour date (YYYY-MM-DD)",
+    "guestName": "Guest name",
+    "guestCount": "Number of guests",
+    "pickupLocation": "Pickup location",
+    "contactInfo": "Contact info",
+    "bookingRef": "Booking reference",
+    "uploading": "Uploading...",
+    "importBookings": "Import Bookings",
+    "of": "of",
+    "bookingsImported": "bookings imported",
+    "errors": "Errors",
+    "more": "more"
+  },
   "guides": {
     "teamAvailability": "Team availability",
     "available": "Available"

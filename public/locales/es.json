@@ -254,6 +254,38 @@
   "users": {
     "manageStaff": "Gestionar personal"
   },
+  "brands": {
+    "title": "Marcas",
+    "subtitle": "Gestionar marcas de tours",
+    "total": "Total de Marcas",
+    "inactive": "Inactiva",
+    "noBrands": "Sin marcas aún"
+  },
+  "import": {
+    "title": "Importar Reservas",
+    "subtitle": "Sube CSV de Viator, GetYourGuide, etc.",
+    "partner": "Socio de Reservas (opcional)",
+    "generic": "Genérico / Desconocido",
+    "hotelDirect": "Hotel Directo",
+    "csvFile": "Archivo CSV",
+    "selectFile": "Haz clic para seleccionar archivo CSV",
+    "supported": "Soporta exports de Viator, GetYourGuide",
+    "expectedColumns": "Columnas Esperadas del CSV",
+    "or": "o",
+    "tourName": "Nombre del tour",
+    "tourDate": "Fecha del tour (YYYY-MM-DD)",
+    "guestName": "Nombre del huésped",
+    "guestCount": "Número de huéspedes",
+    "pickupLocation": "Ubicación de recogida",
+    "contactInfo": "Información de contacto",
+    "bookingRef": "Referencia de reserva",
+    "uploading": "Subiendo...",
+    "importBookings": "Importar Reservas",
+    "of": "de",
+    "bookingsImported": "reservas importadas",
+    "errors": "Errores",
+    "more": "más"
+  },
   "guides": {
     "teamAvailability": "Disponibilidad del equipo",
     "available": "Disponible"
