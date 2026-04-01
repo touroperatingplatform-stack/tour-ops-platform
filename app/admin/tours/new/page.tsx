@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase/client'
 import { useTranslation } from '@/lib/i18n/useTranslation'
+import { notifyTourAssignment } from '@/lib/push-notifications'
 
 export default function CreateTourPage() {
   const router = useRouter()
@@ -120,6 +121,16 @@ export default function CreateTourPage() {
               })
           }
         }
+      }
+
+      // Send push notification to assigned guide
+      if (formData.guideId && tour) {
+        await notifyTourAssignment({
+          guideId: formData.guideId,
+          tourId: tour.id,
+          tourName: formData.name,
+          tourDate: formData.tourDate,
+        })
       }
 
       router.push('/admin/tours')
