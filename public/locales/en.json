@@ -227,7 +227,22 @@
     "capacity": "Capacity",
     "available": "Available",
     "inUse": "In Use",
-    "maintenance": "Maintenance"
+    "maintenance": "Maintenance",
+    "backToFleet": "Back to Fleet",
+    "addNew": "Add New Vehicle",
+    "registerNew": "Register a new vehicle to the fleet",
+    "plateNumber": "Plate Number",
+    "platePlaceholder": "ABC-123",
+    "model": "Model",
+    "modelPlaceholder": "Toyota Hiace",
+    "year": "Year",
+    "active": "Active",
+    "inactive": "Inactive",
+    "lastInspection": "Last Inspection Date",
+    "adding": "Adding...",
+    "addVehicle": "Add Vehicle",
+    "editVehicle": "Edit Vehicle",
+    "updateVehicle": "Update vehicle details"
   },
   "schedule": {
     "title": "Schedule",

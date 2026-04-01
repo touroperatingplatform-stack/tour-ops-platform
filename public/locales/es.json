@@ -227,7 +227,22 @@
     "capacity": "Capacidad",
     "available": "Disponible",
     "inUse": "En Uso",
-    "maintenance": "Mantenimiento"
+    "maintenance": "Mantenimiento",
+    "backToFleet": "Volver a Flota",
+    "addNew": "Agregar Nuevo Vehículo",
+    "registerNew": "Registrar un nuevo vehículo a la flota",
+    "plateNumber": "Número de Placa",
+    "platePlaceholder": "ABC-123",
+    "model": "Modelo",
+    "modelPlaceholder": "Toyota Hiace",
+    "year": "Año",
+    "active": "Activo",
+    "inactive": "Inactivo",
+    "lastInspection": "Última Inspección",
+    "adding": "Agregando...",
+    "addVehicle": "Agregar Vehículo",
+    "editVehicle": "Editar Vehículo",
+    "updateVehicle": "Actualizar detalles del vehículo"
   },
   "schedule": {
     "title": "Horarios",
@@ -322,7 +337,8 @@
     "editUser": "Editar Usuario",
     "updateUser": "Actualizar detalles del usuario",
     "saving": "Guardando...",
-    "saveChanges": "Guardar Cambios"
+    "saveChanges": "Guardar Cambios",
+    "emailCannotChange": "El email no se puede cambiar"
   },
   "brands": {
     "title": "Marcas",
