@@ -189,6 +189,18 @@
     "vehicle": "Vehicle",
     "guests": "Guests"
   },
+  "expenses": {
+    "trackCosts": "Track costs",
+    "noExpenses": "No expenses yet",
+    "categories": {
+      "fuel": "Fuel",
+      "maintenance": "Maintenance",
+      "supplies": "Supplies",
+      "tolls": "Tolls",
+      "meals": "Meals",
+      "other": "Other"
+    }
+  },
   "reports": {
     "title": "Reports",
     "dateRange": "Date Range",

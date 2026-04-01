@@ -189,6 +189,18 @@
     "vehicle": "Vehículo",
     "guests": "Huéspedes"
   },
+  "expenses": {
+    "trackCosts": "Control de gastos",
+    "noExpenses": "Sin gastos aún",
+    "categories": {
+      "fuel": "Gasolina",
+      "maintenance": "Mantenimiento",
+      "supplies": "Suministros",
+      "tolls": "Peajes",
+      "meals": "Comidas",
+      "other": "Otro"
+    }
+  },
   "reports": {
     "title": "Reportes",
     "dateRange": "Rango de Fechas",
