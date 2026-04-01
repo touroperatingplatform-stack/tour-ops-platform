@@ -4,11 +4,14 @@ export const dynamic = 'force-dynamic'
 
 import { useEffect, useState } from 'react'
 import { useRouter, useParams } from 'next/navigation'
+import Link from 'next/link'
 import { supabase } from '@/lib/supabase/client'
+import { useTranslation } from '@/lib/i18n/useTranslation'
 
 export default function AddGuestPage() {
   const router = useRouter()
   const params = useParams()
+  const { t } = useTranslation()
   const tourId = params.id as string
   
   const [loading, setLoading] = useState(false)
@@ -76,163 +79,170 @@ export default function AddGuestPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-20">
-      <header className="bg-gray-900 text-white px-4 py-3">
-        <div className="flex items-center gap-2">
-          <button onClick={() => window.history.back()} className="text-white">←</button>
-          <span className="font-semibold">Add Guest</span>
+    <div className="h-screen flex flex-col bg-gray-50 overflow-hidden">
+      {/* Header */}
+      <header className="bg-white flex-shrink-0">
+        <div className="px-4 py-3 border-8 border-transparent">
+          <div className="px-4 py-3">
+            <button onClick={() => window.history.back()} className="text-gray-600 hover:text-gray-900 text-sm flex items-center gap-2 mb-3">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+              {t('guests.backToGuests')}
+            </button>
+            <h1 className="text-xl font-bold">{t('guests.addGuest')}</h1>
+            <p className="text-gray-500 text-sm">{t('guests.addingTo')}: {tourName}</p>
+          </div>
         </div>
       </header>
 
-      <div className="p-4">
-        <div className="bg-white rounded-lg p-4 mb-4 border border-gray-200">
-          <p className="text-sm text-gray-500">Adding guest to:</p>
-          <p className="font-semibold text-gray-900">{tourName}</p>
-        </div>
+      {/* Form */}
+      <main className="flex-1 overflow-hidden bg-white border-8 border-transparent">
+        <form onSubmit={handleSubmit} className="h-full overflow-auto px-4 py-4 border-8 border-transparent">
+          <div className="max-w-md mx-auto space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t('guests.firstName')} *</label>
+                <input
+                  type="text"
+                  name="first_name"
+                  required
+                  value={formData.first_name}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t('guests.lastName')} *</label>
+                <input
+                  type="text"
+                  name="last_name"
+                  required
+                  value={formData.last_name}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                />
+              </div>
+            </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">First Name *</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">{t('guests.email')}</label>
               <input
-                type="text"
-                name="first_name"
-                required
-                value={formData.first_name}
+                type="email"
+                name="email"
+                value={formData.email}
                 onChange={handleChange}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg"
               />
             </div>
+
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Last Name *</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">{t('guests.phone')}</label>
               <input
-                type="text"
-                name="last_name"
-                required
-                value={formData.last_name}
+                type="tel"
+                name="phone"
+                value={formData.phone}
                 onChange={handleChange}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg"
               />
             </div>
-          </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-            <input
-              type="email"
-              name="email"
-              value={formData.email}
-              onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-            />
-          </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t('guests.hotel')}</label>
+                <input
+                  type="text"
+                  name="hotel"
+                  value={formData.hotel}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                  placeholder={t('guests.hotelPlaceholder')}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t('guests.roomNumber')}</label>
+                <input
+                  type="text"
+                  name="room_number"
+                  value={formData.room_number}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                />
+              </div>
+            </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
-            <input
-              type="tel"
-              name="phone"
-              value={formData.phone}
-              onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-            />
-          </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t('guests.adults')}</label>
+                <select
+                  name="adults"
+                  value={formData.adults}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                >
+                  {[1,2,3,4,5,6,7,8,9,10].map(n => (
+                    <option key={n} value={n}>{n}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t('guests.children')}</label>
+                <select
+                  name="children"
+                  value={formData.children}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                >
+                  {[0,1,2,3,4,5,6,7,8,9,10].map(n => (
+                    <option key={n} value={n}>{n}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
 
-          <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Hotel</label>
-              <input
-                type="text"
-                name="hotel"
-                value={formData.hotel}
+              <label className="block text-sm font-medium text-gray-700 mb-1">{t('guests.specialRequirements')}</label>
+              <textarea
+                name="special_requirements"
+                value={formData.special_requirements}
                 onChange={handleChange}
+                rows={2}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                placeholder="Hotel name"
+                placeholder={t('guests.specialRequirementsPlaceholder')}
               />
             </div>
+
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Room #</label>
-              <input
-                type="text"
-                name="room_number"
-                value={formData.room_number}
+              <label className="block text-sm font-medium text-gray-700 mb-1">{t('guests.notes')}</label>
+              <textarea
+                name="notes"
+                value={formData.notes}
                 onChange={handleChange}
+                rows={2}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                placeholder={t('guests.notesPlaceholder')}
               />
             </div>
-          </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Adults</label>
-              <select
-                name="adults"
-                value={formData.adults}
-                onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+            <div className="flex gap-3 pt-4">
+              <button
+                type="button"
+                onClick={() => router.back()}
+                className="flex-1 py-3 border border-gray-300 text-gray-700 rounded-lg font-medium"
               >
-                {[1,2,3,4,5,6,7,8,9,10].map(n => (
-                  <option key={n} value={n}>{n}</option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Children</label>
-              <select
-                name="children"
-                value={formData.children}
-                onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                {t('common.cancel')}
+              </button>
+              <button
+                type="submit"
+                disabled={loading}
+                className="flex-1 py-3 bg-blue-600 text-white rounded-lg font-medium disabled:opacity-50"
               >
-                {[0,1,2,3,4,5,6,7,8,9,10].map(n => (
-                  <option key={n} value={n}>{n}</option>
-                ))}
-              </select>
+                {loading ? t('guests.adding') : t('guests.addGuest')}
+              </button>
             </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Special Requirements</label>
-            <textarea
-              name="special_requirements"
-              value={formData.special_requirements}
-              onChange={handleChange}
-              rows={2}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-              placeholder="Dietary restrictions, mobility issues, etc."
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
-            <textarea
-              name="notes"
-              value={formData.notes}
-              onChange={handleChange}
-              rows={2}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-              placeholder="Additional notes..."
-            />
-          </div>
-
-          <div className="flex gap-3 pt-4">
-            <button
-              type="button"
-              onClick={() => router.back()}
-              className="flex-1 py-3 border border-gray-300 text-gray-700 rounded-lg font-medium"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={loading}
-              className="flex-1 py-3 bg-blue-600 text-white rounded-lg font-medium disabled:opacity-50"
-            >
-              {loading ? 'Adding...' : 'Add Guest'}
-            </button>
           </div>
         </form>
-      </div>
+      </main>
     </div>
   )
 }

@@ -6,10 +6,12 @@ import { useEffect, useState } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase/client'
+import { useTranslation } from '@/lib/i18n/useTranslation'
 
 export default function TourDetailPage() {
   const router = useRouter()
   const params = useParams()
+  const { t } = useTranslation()
   const tourId = params.id as string
   
   const [tour, setTour] = useState<any>(null)
@@ -65,7 +67,7 @@ export default function TourDetailPage() {
   }
 
   async function handleDelete() {
-    if (!confirm('Are you sure you want to delete this tour?')) return
+    if (!confirm(t('tours.confirmDelete'))) return
     
     await supabase
       .from('tours')
@@ -77,145 +79,153 @@ export default function TourDetailPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-gray-500">Loading...</div>
+      <div className="h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-gray-500">{t('common.loading')}</div>
       </div>
     )
   }
 
   if (!tour) {
-    return <div>Tour not found</div>
+    return <div className="p-4">{t('tours.notFound')}</div>
   }
 
   return (
-    <div>
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <Link href="/admin/tours" className="text-blue-600 hover:text-blue-800 text-sm">
-            ← Back to Tours
-          </Link>
-          <h1 className="text-2xl font-bold text-gray-900 mt-2">{tour.name}</h1>
+    <div className="h-screen flex flex-col bg-gray-50 overflow-hidden">
+      {/* Header */}
+      <header className="bg-white flex-shrink-0">
+        <div className="px-4 py-3 border-8 border-transparent">
+          <div className="px-4 py-3 flex items-center justify-between">
+            <div>
+              <Link href="/admin/tours" className="text-blue-600 hover:text-blue-800 text-sm">
+                ← {t('tours.backToTours')}
+              </Link>
+              <h1 className="text-xl font-bold mt-2">{tour.name}</h1>
+            </div>
+            <button
+              onClick={() => handleDelete()}
+              className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700"
+            >
+              {t('common.delete')}
+            </button>
+          </div>
         </div>
-        <div className="flex gap-3">
-          <button
-            onClick={() => handleDelete()}
-            className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700"
-          >
-            Delete
-          </button>
-        </div>
-      </div>
+      </header>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Tour Info */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Tour Details</h2>
-          
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
-              <select
-                value={tour.status}
-                onChange={(e) => handleUpdate({ status: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-              >
-                <option value="scheduled">Scheduled</option>
-                <option value="in_progress">In Progress</option>
-                <option value="completed">Completed</option>
-                <option value="cancelled">Cancelled</option>
-              </select>
-              {saving && <span className="text-xs text-gray-500 ml-2">Saving...</span>}
-            </div>
+      {/* Content */}
+      <main className="flex-1 overflow-hidden bg-white border-8 border-transparent">
+        <div className="h-full overflow-auto px-4 py-4 border-8 border-transparent">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-4xl mx-auto">
+            {/* Tour Info */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">{t('tours.details')}</h2>
+              
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{t('tours.status')}</label>
+                  <select
+                    value={tour.status}
+                    onChange={(e) => handleUpdate({ status: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                  >
+                    <option value="scheduled">{t('tours.scheduled')}</option>
+                    <option value="in_progress">{t('tours.inProgress')}</option>
+                    <option value="completed">{t('tours.completed')}</option>
+                    <option value="cancelled">{t('tours.cancelled')}</option>
+                  </select>
+                  {saving && <span className="text-xs text-gray-500 ml-2">{t('tours.saving')}</span>}
+                </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Guide</label>
-              <select
-                value={tour.guide_id || ''}
-                onChange={(e) => handleUpdate({ guide_id: e.target.value || null })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-              >
-                <option value="">Unassigned</option>
-                {guides.map((g) => (
-                  <option key={g.id} value={g.id}>
-                    {g.first_name} {g.last_name}
-                  </option>
-                ))}
-              </select>
-            </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{t('tours.guide')}</label>
+                  <select
+                    value={tour.guide_id || ''}
+                    onChange={(e) => handleUpdate({ guide_id: e.target.value || null })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                  >
+                    <option value="">{t('tours.unassigned')}</option>
+                    {guides.map((g) => (
+                      <option key={g.id} value={g.id}>
+                        {g.first_name} {g.last_name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Vehicle</label>
-              <select
-                value={tour.vehicle_id || ''}
-                onChange={(e) => handleUpdate({ vehicle_id: e.target.value || null })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-              >
-                <option value="">Unassigned</option>
-                {vehicles.map((v) => (
-                  <option key={v.id} value={v.id}>
-                    {v.plate_number} - {v.make} {v.model}
-                  </option>
-                ))}
-              </select>
-            </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{t('tours.vehicle')}</label>
+                  <select
+                    value={tour.vehicle_id || ''}
+                    onChange={(e) => handleUpdate({ vehicle_id: e.target.value || null })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                  >
+                    <option value="">{t('tours.unassigned')}</option>
+                    {vehicles.map((v) => (
+                      <option key={v.id} value={v.id}>
+                        {v.plate_number} - {v.make} {v.model}
+                      </option>
+                    ))}
+                  </select>
+                </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Start Time</label>
-                <input
-                  type="time"
-                  value={tour.start_time}
-                  onChange={(e) => handleUpdate({ start_time: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-                />
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">{t('tours.startTime')}</label>
+                    <input
+                      type="time"
+                      value={tour.start_time}
+                      onChange={(e) => handleUpdate({ start_time: e.target.value })}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">{t('tours.endTime')}</label>
+                    <input
+                      type="time"
+                      value={tour.end_time || ''}
+                      onChange={(e) => handleUpdate({ end_time: e.target.value })}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{t('tours.pickupLocation')}</label>
+                  <input
+                    type="text"
+                    value={tour.pickup_location || ''}
+                    onChange={(e) => handleUpdate({ pickup_location: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                    placeholder={t('tours.pickupPlaceholder')}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{t('tours.dropoffLocation')}</label>
+                  <input
+                    type="text"
+                    value={tour.dropoff_location || ''}
+                    onChange={(e) => handleUpdate({ dropoff_location: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                    placeholder={t('tours.dropoffPlaceholder')}
+                  />
+                </div>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">End Time</label>
-                <input
-                  type="time"
-                  value={tour.end_time || ''}
-                  onChange={(e) => handleUpdate({ end_time: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-                />
-              </div>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Pickup Location</label>
-              <input
-                type="text"
-                value={tour.pickup_location || ''}
-                onChange={(e) => handleUpdate({ pickup_location: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-                placeholder="Hotel name or address"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Dropoff Location</label>
-              <input
-                type="text"
-                value={tour.dropoff_location || ''}
-                onChange={(e) => handleUpdate({ dropoff_location: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-                placeholder="Hotel name or address"
+            {/* Description */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">{t('tours.description')}</h2>
+              <textarea
+                value={tour.description || ''}
+                onChange={(e) => handleUpdate({ description: e.target.value })}
+                rows={10}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder={t('tours.descriptionPlaceholder')}
               />
             </div>
           </div>
         </div>
-
-        {/* Description */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Description</h2>
-          <textarea
-            value={tour.description || ''}
-            onChange={(e) => handleUpdate({ description: e.target.value })}
-            rows={10}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="Tour description..."
-          />
-        </div>
-      </div>
+      </main>
     </div>
   )
 }
