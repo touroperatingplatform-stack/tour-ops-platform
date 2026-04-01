@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
     ;(notification as any).include_external_user_ids = [userId]
     ;(notification as any).channel_for_external_user_ids = 'push'
 
-    const result = await client.createNotification(notification)
+    const result = await client.createNotification(notification) as any
 
     // Store notification record
     const supabase = createClient(supabaseUrl, supabaseKey)
@@ -46,10 +46,10 @@ export async function POST(request: NextRequest) {
       body: message || '',
       data: data || {},
       sent_at: new Date().toISOString(),
-      delivered_at: result.body?.id ? new Date().toISOString() : null,
+      delivered_at: result?.id ? new Date().toISOString() : null,
     })
 
-    return NextResponse.json({ success: true, id: result.body?.id })
+    return NextResponse.json({ success: true, id: result?.id })
   } catch (error: any) {
     console.error('Push notification error:', error)
 
