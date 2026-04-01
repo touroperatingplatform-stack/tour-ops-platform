@@ -32,53 +32,66 @@ interface Reservation {
   special_requests: string | null
   checked_in: boolean
   no_show: boolean
-  actual_adult_pax: number | null
-  actual_child_pax: number | null
-  actual_infant_pax: number | null
 }
 
-interface ChecklistItem {
+interface ChecklistTemplate {
   id: string
-  label: string
-  checked: boolean
+  name: string
+  items: { id: string; text: string; required: boolean }[]
 }
 
-const defaultChecklist: ChecklistItem[] = [
-  { id: 'vehicle', label: 'Vehicle inspected & clean', checked: false },
-  { id: 'supplies', label: 'Water/snacks stocked', checked: false },
-  { id: 'first_aid', label: 'First aid kit present', checked: false },
-  { id: 'passengers', label: 'All passengers boarded', checked: false },
-  { id: 'safety_brief', label: 'Safety briefing completed', checked: false },
-]
+interface ChecklistState {
+  [key: string]: boolean
+}
 
 export default function GuideTourPage() {
   const params = useParams()
   const router = useRouter()
   const [tour, setTour] = useState<Tour | null>(null)
   const [loading, setLoading] = useState(true)
-  const [checklist, setChecklist] = useState<ChecklistItem[]>(defaultChecklist)
+  const [checklist, setChecklist] = useState<ChecklistTemplate | null>(null)
+  const [checklistState, setChecklistState] = useState<ChecklistState>({})
   const [notes, setNotes] = useState('')
   const [uploading, setUploading] = useState(false)
   const [equipmentPhoto, setEquipmentPhoto] = useState<string | null>(null)
   const [vanPhoto, setVanPhoto] = useState<string | null>(null)
   const [hasCheckedIn, setHasCheckedIn] = useState(false)
   const [reservations, setReservations] = useState<Reservation[]>([])
-  const [reservationsLoading, setReservationsLoading] = useState(true)
 
   useEffect(() => {
     loadTour()
     loadReservations()
+    loadChecklist()
   }, [])
+
+  async function loadChecklist() {
+    // Load pre_departure checklist template
+    const { data } = await supabase
+      .from('checklists')
+      .select('id, name, items')
+      .eq('is_active', true)
+      .limit(1)
+      .single()
+    
+    if (data) {
+      setChecklist(data)
+      // Initialize checklist state
+      const state: ChecklistState = {}
+      data.items.forEach(item => {
+        state[item.id] = false
+      })
+      setChecklistState(state)
+    }
+  }
 
   async function loadReservations() {
     const { data } = await supabase
       .from('reservation_manifest')
-      .select('id, booking_reference, booking_platform, adult_pax, child_pax, infant_pax, total_pax, primary_contact_name, dietary_restrictions, accessibility_needs, special_requests, checked_in, no_show, actual_adult_pax, actual_child_pax, actual_infant_pax')
+      .select('id, booking_reference, booking_platform, adult_pax, child_pax, infant_pax, total_pax, primary_contact_name, dietary_restrictions, accessibility_needs, special_requests, checked_in, no_show')
       .eq('tour_id', params.id)
       .order('booking_reference')
     
     if (data) setReservations(data)
-    setReservationsLoading(false)
   }
 
   async function toggleReservationCheckin(reservationId: string, checked: boolean) {
@@ -90,17 +103,12 @@ export default function GuideTourPage() {
       .update({ 
         checked_in: checked,
         checked_in_at: checked ? new Date().toISOString() : null,
-        actual_adult_pax: checked ? reservation.adult_pax : null,
-        actual_child_pax: checked ? reservation.child_pax : null,
-        actual_infant_pax: checked ? reservation.infant_pax : null
       })
       .eq('id', reservationId)
     
     if (!error) {
       setReservations(prev => prev.map(r => 
-        r.id === reservationId 
-          ? { ...r, checked_in: checked } 
-          : r
+        r.id === reservationId ? { ...r, checked_in: checked } : r
       ))
     }
   }
@@ -121,32 +129,35 @@ export default function GuideTourPage() {
   async function loadTour() {
     const { data: tourData } = await supabase
       .from('tours')
-      .select('id, name, start_time, status, pickup_location, guide_id, equipment_photo_url, van_photo_url, acknowledged_at')
+      .select('id, name, start_time, status, pickup_location, guide_id, equipment_photo_url, van_photo_url, acknowledged_at, brand_id')
       .eq('id', params.id)
       .single()
 
-    if (tourData && tourData.guide_id) {
-      const { data: guide } = await supabase
-        .from('profiles')
-        .select('first_name, last_name')
-        .eq('id', tourData.guide_id)
-        .single()
-      setTour({ ...tourData, guide })
+    if (tourData) {
+      if (tourData.guide_id) {
+        const { data: guide } = await supabase
+          .from('profiles')
+          .select('first_name, last_name')
+          .eq('id', tourData.guide_id)
+          .single()
+        setTour({ ...tourData, guide })
+      } else {
+        setTour(tourData as any)
+      }
+      
       if (tourData.equipment_photo_url) setEquipmentPhoto(tourData.equipment_photo_url)
       if (tourData.van_photo_url) setVanPhoto(tourData.van_photo_url)
-    } else {
-      setTour(tourData as any)
-    }
 
-    // Check for existing pre_pickup check-ins
-    const { data: checkins } = await supabase
-      .from('guide_checkins')
-      .select('id')
-      .eq('tour_id', params.id)
-      .eq('checkin_type', 'pre_pickup')
-      .limit(1)
-    
-    setHasCheckedIn(!!checkins && checkins.length > 0)
+      // Check for existing checkins
+      const { data: checkins } = await supabase
+        .from('guide_checkins')
+        .select('id')
+        .eq('tour_id', params.id)
+        .eq('checkin_type', 'pre_pickup')
+        .limit(1)
+      
+      setHasCheckedIn(!!checkins && checkins.length > 0)
+    }
     setLoading(false)
   }
 
@@ -156,10 +167,11 @@ export default function GuideTourPage() {
     return null
   }
 
-  function toggleChecklist(id: string) {
-    setChecklist(prev => prev.map(item => 
-      item.id === id ? { ...item, checked: !item.checked } : item
-    ))
+  function toggleChecklistItem(itemId: string) {
+    setChecklistState(prev => ({
+      ...prev,
+      [itemId]: !prev[itemId]
+    }))
   }
 
   async function handlePhotoUpload(type: 'equipment' | 'van', file: File) {
@@ -171,7 +183,6 @@ export default function GuideTourPage() {
       } else {
         setVanPhoto(url)
       }
-      // Save to tour record
       await supabase
         .from('tours')
         .update({ [type === 'equipment' ? 'equipment_photo_url' : 'van_photo_url']: url })
@@ -184,12 +195,62 @@ export default function GuideTourPage() {
   }
 
   async function startTour() {
-    const allChecked = checklist.every(i => i.checked)
-    if (!allChecked) {
-      alert('Please complete all checklist items before starting')
+    // Check all required checklist items
+    if (checklist) {
+      const allRequired = checklist.items
+        .filter(item => item.required)
+        .every(item => checklistState[item.id])
+      
+      if (!allRequired) {
+        alert('Please complete all required checklist items')
+        return
+      }
+    }
+
+    if (!equipmentPhoto || !vanPhoto) {
+      alert('Please upload both required photos')
       return
     }
 
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+
+    // Get brand_id from tour
+    const { data: tourData } = await supabase
+      .from('tours')
+      .select('brand_id')
+      .eq('id', params.id)
+      .single()
+
+    // Save checklist completion
+    if (checklist && tourData) {
+      await supabase
+        .from('checklist_completions')
+        .insert({
+          tour_id: params.id,
+          brand_id: tourData.brand_id,
+          guide_id: user.id,
+          template_id: checklist.id,
+          stage: 'pre_departure',
+          completed_at: new Date().toISOString(),
+          is_confirmed: true
+        })
+    }
+
+    // Create pre_departure checkin
+    if (tourData) {
+      await supabase
+        .from('guide_checkins')
+        .insert({
+          tour_id: params.id,
+          brand_id: tourData.brand_id,
+          guide_id: user.id,
+          checkin_type: 'pre_departure',
+          checked_in_at: new Date().toISOString()
+        })
+    }
+
+    // Update tour status
     const { error } = await supabase
       .from('tours')
       .update({ status: 'in_progress', started_at: new Date().toISOString() })
@@ -225,6 +286,10 @@ export default function GuideTourPage() {
     )
   }
 
+  const allRequiredChecked = checklist?.items
+    .filter(item => item.required)
+    .every(item => checklistState[item.id]) ?? true
+
   return (
     <div className="space-y-6 p-4">
       {/* Header */}
@@ -243,19 +308,22 @@ export default function GuideTourPage() {
       </div>
 
       {/* Pre-Trip Checklist - Only show before tour starts */}
-      {tour.status === 'scheduled' && (
+      {tour.status === 'scheduled' && checklist && (
         <div className="bg-white rounded-2xl border border-gray-200 p-6">
-          <h2 className="font-semibold text-gray-900 mb-4">Pre-Trip Checklist</h2>
+          <h2 className="font-semibold text-gray-900 mb-4">{checklist.name}</h2>
           <div className="space-y-3">
-            {checklist.map((item) => (
+            {checklist.items.map((item) => (
               <label key={item.id} className="flex items-center gap-3">
                 <input
                   type="checkbox"
-                  checked={item.checked}
-                  onChange={() => toggleChecklist(item.id)}
+                  checked={checklistState[item.id] || false}
+                  onChange={() => toggleChecklistItem(item.id)}
                   className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                 />
-                <span className="text-gray-700">{item.label}</span>
+                <span className="text-gray-700">
+                  {item.text}
+                  {item.required && <span className="text-red-500 ml-1">*</span>}
+                </span>
               </label>
             ))}
           </div>
@@ -339,15 +407,6 @@ export default function GuideTourPage() {
                 </span>
                 reservations checked in
               </div>
-              <div className="text-xs text-gray-400 mt-1">
-                Total PAX: {reservations.filter(r => r.checked_in).reduce((sum, r) => sum + r.total_pax, 0)}/
-                {reservations.reduce((sum, r) => sum + r.total_pax, 0)} boarded
-              </div>
-            </div>
-            <div className="text-right">
-              <div className="text-sm font-medium text-blue-600">
-                {Math.round((reservations.filter(r => r.checked_in).length / reservations.length) * 100)}%
-              </div>
             </div>
           </div>
           
@@ -381,7 +440,6 @@ export default function GuideTourPage() {
                           {reservation.booking_reference}
                         </span>
                       </div>
-                      
                       <div className="flex items-center gap-2 mt-1">
                         <span className="text-sm font-semibold text-blue-600">
                           {reservation.adult_pax}.{reservation.child_pax} PAX
@@ -390,19 +448,11 @@ export default function GuideTourPage() {
                           <span className="text-xs text-gray-500">+{reservation.infant_pax} infant</span>
                         )}
                       </div>
-                      
                       {reservation.dietary_restrictions?.length > 0 && (
                         <p className="text-xs text-orange-600 mt-1">
                           🍽️ {reservation.dietary_restrictions.join(', ')}
                         </p>
                       )}
-                      
-                      {reservation.accessibility_needs?.length > 0 && (
-                        <p className="text-xs text-purple-600 mt-1">
-                          ♿ {reservation.accessibility_needs.join(', ')}
-                        </p>
-                      )}
-                      
                       {reservation.special_requests && (
                         <p className="text-xs text-gray-500 mt-1">
                           📝 {reservation.special_requests}
@@ -419,10 +469,6 @@ export default function GuideTourPage() {
                       No show
                     </button>
                   )}
-                  
-                  {reservation.no_show && (
-                    <span className="text-xs font-medium text-red-600 px-2 py-1">No show</span>
-                  )}
                 </div>
               </div>
             ))}
@@ -430,24 +476,12 @@ export default function GuideTourPage() {
         </div>
       )}
 
-      {/* Notes */}
-      <div className="bg-white rounded-2xl border border-gray-200 p-6">
-        <h2 className="font-semibold text-gray-900 mb-4">Tour Notes</h2>
-        <textarea
-          value={notes}
-          onChange={(e) => setNotes(e.target.value)}
-          placeholder="Add any notes about this tour..."
-          rows={4}
-          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-        />
-      </div>
-
       {/* Actions */}
       <div className="flex gap-3">
         {tour.status === 'scheduled' && (
           <button
             onClick={startTour}
-            disabled={uploading || !equipmentPhoto || !vanPhoto}
+            disabled={uploading || !equipmentPhoto || !vanPhoto || !allRequiredChecked}
             className="flex-1 bg-blue-600 text-white px-6 py-4 rounded-xl hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed text-lg font-semibold"
           >
             {uploading ? 'Uploading...' : 'Start Tour'}
@@ -479,7 +513,7 @@ export default function GuideTourPage() {
         )}
       </div>
 
-      {/* Report Incident - Available during tour */}
+      {/* Report Incident */}
       {tour?.status !== 'completed' && tour?.status !== 'cancelled' && (
         <div className="space-y-3">
           <Link
