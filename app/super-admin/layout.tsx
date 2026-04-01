@@ -82,14 +82,9 @@ export default function SuperAdminLayout({ children }: { children: React.ReactNo
                'Super Admin'}
             </h1>
 
-            {/* Right - Back to Operations */}
+            {/* Right - User Info */}
             <div className="flex items-center gap-3">
-              <Link
-                href="/operations"
-                className="text-sm text-gray-600 hover:text-gray-900"
-              >
-                ← Back to Operations
-              </Link>
+              <span className="text-sm text-gray-500">Super Admin</span>
             </div>
           </div>
         </div>
