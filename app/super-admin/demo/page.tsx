@@ -1030,33 +1030,37 @@ export default function SuperAdminDemoPage() {
           // Create manifest entry
           const bookingRef = `${platforms[platformIdx].substring(0, 3).toUpperCase()}-${randomSuffix}-${tourId.substring(0, 4).toUpperCase()}-${g}`
           
-          await supabase.from('reservation_manifest').insert({
-            tour_id: tourId,
-            brand_id: brandIds.length > 0 ? brandIds[0] : null,
-            booking_reference: bookingRef,
-            booking_platform: platforms[platformIdx],
-            adult_pax: groupSize,
-            child_pax: Math.floor(Math.random() * 2),
-            infant_pax: Math.random() > 0.8 ? 1 : 0,
-            total_pax: groupSize + Math.floor(Math.random() * 2),
-            hotel_name: hotels[hotelIdx],
-            room_number: String(100 + Math.floor(Math.random() * 500)),
-            language_code: Math.random() > 0.7 ? 'ES' : 'EN',
-            pickup_time: `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`,
-            rep_name: Math.random() > 0.5 ? 'Alex' : 'Maria',
-            agency_name: Math.random() > 0.5 ? 'Cancun Tours' : 'Playa Adventures',
-            primary_contact_name: `${guestNames[nameIdx][0]} ${guestNames[nameIdx][1]}`,
-            contact_phone: `+1-555-${String(1000 + guestCount).substring(0, 4)}`,
-            contact_email: `${guestNames[nameIdx][0].toLowerCase()}.${guestNames[nameIdx][1].toLowerCase()}@email.com`,
-            dietary_restrictions: Math.random() > 0.8 ? ['vegetarian'] : [],
-            accessibility_needs: Math.random() > 0.9 ? ['wheelchair'] : [],
-            special_requests: Math.random() > 0.7 ? 'Ocean view preferred' : null,
-            pickup_location: hotels[hotelIdx],
-            checked_in: tourStatusMap[tourId] === 'completed',
-            checked_in_at: tourStatusMap[tourId] === 'completed' ? new Date().toISOString() : null,
-            no_show: false
-          })
-          manifestCount++
+          try {
+            await supabase.from('reservation_manifest').insert({
+              tour_id: tourId,
+              brand_id: brandIds.length > 0 ? brandIds[0] : null,
+              booking_reference: bookingRef,
+              booking_platform: platforms[platformIdx],
+              adult_pax: groupSize,
+              child_pax: Math.floor(Math.random() * 2),
+              infant_pax: Math.random() > 0.8 ? 1 : 0,
+              total_pax: groupSize + Math.floor(Math.random() * 2),
+              hotel_name: hotels[hotelIdx],
+              room_number: String(100 + Math.floor(Math.random() * 500)),
+              language_code: Math.random() > 0.7 ? 'ES' : 'EN',
+              pickup_time: `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:00`,
+              rep_name: Math.random() > 0.5 ? 'Alex' : 'Maria',
+              agency_name: Math.random() > 0.5 ? 'Cancun Tours' : 'Playa Adventures',
+              primary_contact_name: `${guestNames[nameIdx][0]} ${guestNames[nameIdx][1]}`,
+              contact_phone: `+1-555-${String(1000 + guestCount).substring(0, 4)}`,
+              contact_email: `${guestNames[nameIdx][0].toLowerCase()}.${guestNames[nameIdx][1].toLowerCase()}@email.com`,
+              dietary_restrictions: Math.random() > 0.8 ? ['vegetarian'] : [],
+              accessibility_needs: Math.random() > 0.9 ? ['wheelchair'] : [],
+              special_requests: Math.random() > 0.7 ? 'Ocean view preferred' : null,
+              pickup_location: hotels[hotelIdx],
+              checked_in: tourStatusMap[tourId] === 'completed',
+              checked_in_at: tourStatusMap[tourId] === 'completed' ? new Date().toISOString() : null,
+              no_show: false
+            })
+            manifestCount++
+          } catch (manifestError) {
+            console.error('Reservation manifest error:', manifestError)
+          }
           
           // Create individual guests
           for (let p = 0; p < groupSize; p++) {
