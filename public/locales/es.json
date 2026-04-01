@@ -242,15 +242,6 @@
     "serverError": "Algo salió mal",
     "tryAgain": "Por favor intenta de nuevo"
   },
-  "time": {
-    "today": "Hoy",
-    "yesterday": "Ayer",
-    "tomorrow": "Mañana",
-    "thisWeek": "Esta Semana",
-    "lastWeek": "Semana Pasada",
-    "thisMonth": "Este Mes",
-    "lastMonth": "Mes Pasado"
-  },
   "roles": {
     "super_admin": "Super Admin",
     "company_admin": "Admin de Empresa",
@@ -259,6 +250,29 @@
     "operations": "Operaciones",
     "guide": "Guía",
     "driver": "Chofer"
+  },
+  "users": {
+    "manageStaff": "Gestionar personal"
+  },
+  "guides": {
+    "teamAvailability": "Disponibilidad del equipo",
+    "available": "Disponible"
+  },
+  "time": {
+    "today": "Hoy",
+    "yesterday": "Ayer",
+    "tomorrow": "Mañana",
+    "thisWeek": "Esta Semana",
+    "lastWeek": "Semana Pasada",
+    "thisMonth": "Este Mes",
+    "lastMonth": "Mes Pasado",
+    "mon": "Lun",
+    "tue": "Mar",
+    "wed": "Mié",
+    "thu": "Jue",
+    "fri": "Vie",
+    "sat": "Sáb",
+    "sun": "Dom"
   },
   "fleet": {
     "total": "Total",

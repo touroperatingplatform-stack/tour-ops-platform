@@ -242,15 +242,6 @@
     "serverError": "Something went wrong",
     "tryAgain": "Please try again"
   },
-  "time": {
-    "today": "Today",
-    "yesterday": "Yesterday",
-    "tomorrow": "Tomorrow",
-    "thisWeek": "This Week",
-    "lastWeek": "Last Week",
-    "thisMonth": "This Month",
-    "lastMonth": "Last Month"
-  },
   "roles": {
     "super_admin": "Super Admin",
     "company_admin": "Company Admin",
@@ -259,6 +250,29 @@
     "operations": "Operations",
     "guide": "Guide",
     "driver": "Driver"
+  },
+  "users": {
+    "manageStaff": "Manage staff"
+  },
+  "guides": {
+    "teamAvailability": "Team availability",
+    "available": "Available"
+  },
+  "time": {
+    "today": "Today",
+    "yesterday": "Yesterday",
+    "tomorrow": "Tomorrow",
+    "thisWeek": "This Week",
+    "lastWeek": "Last Week",
+    "thisMonth": "This Month",
+    "lastMonth": "Last Month",
+    "mon": "Mon",
+    "tue": "Tue",
+    "wed": "Wed",
+    "thu": "Thu",
+    "fri": "Fri",
+    "sat": "Sat",
+    "sun": "Sun"
   },
   "fleet": {
     "total": "Total",
