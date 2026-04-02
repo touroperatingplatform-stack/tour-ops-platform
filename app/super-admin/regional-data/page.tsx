@@ -250,66 +250,74 @@ export default function RegionalDataPage() {
       {/* Add Region Modal */}
       {showAddRegion && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="border-8 border-transparent bg-white rounded-xl w-full max-w-md shadow-xl">
-            <div className="p-4 border-b border-gray-100">
-              <h2 className="text-lg font-bold text-gray-900">
+          <div className="bg-white rounded-xl w-full max-w-md shadow-xl border-8 border-transparent">
+            <div className="border-8 border-transparent p-4 border-b border-gray-100">
+              <h2 className="text-lg font-bold text-gray-900 px-2">
                 {t('regionalData.addNewRegion') || 'Add New Region'}
               </h2>
             </div>
             
-            <div className="p-4 space-y-4">
-              <div>
+            <div className="border-8 border-transparent p-4 space-y-4">
+              <div className="border-8 border-transparent">
                 <label className="block text-sm font-medium text-gray-700 mb-1 px-1">Region Name</label>
-                <input
-                  type="text"
-                  value={regionName}
-                  onChange={e => setRegionName(e.target.value)}
-                  placeholder="e.g., Riviera Maya"
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-purple-500"
-                />
+                <div className="border-8 border-transparent rounded-lg">
+                  <input
+                    type="text"
+                    value={regionName}
+                    onChange={e => setRegionName(e.target.value)}
+                    placeholder="e.g., Riviera Maya"
+                    className="w-full bg-transparent px-3 py-2 focus:outline-none"
+                  />
+                </div>
               </div>
               
-              <div>
+              <div className="border-8 border-transparent">
                 <label className="block text-sm font-medium text-gray-700 mb-1 px-1">Timezone</label>
-                <select
-                  value={regionTimezone}
-                  onChange={e => setRegionTimezone(e.target.value)}
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-purple-500"
-                >
-                  <option value="America/Cancun">America/Cancun</option>
-                  <option value="America/Panama">America/Panama</option>
-                  <option value="America/Bogota">America/Bogota</option>
-                  <option value="America/Lima">America/Lima</option>
-                </select>
+                <div className="border-8 border-transparent rounded-lg">
+                  <select
+                    value={regionTimezone}
+                    onChange={e => setRegionTimezone(e.target.value)}
+                    className="w-full bg-transparent px-3 py-2 focus:outline-none"
+                  >
+                    <option value="America/Cancun">America/Cancun</option>
+                    <option value="America/Panama">America/Panama</option>
+                    <option value="America/Bogota">America/Bogota</option>
+                    <option value="America/Lima">America/Lima</option>
+                  </select>
+                </div>
               </div>
               
-              <div>
+              <div className="border-8 border-transparent">
                 <label className="block text-sm font-medium text-gray-700 mb-1 px-1">Currency</label>
-                <select
-                  value={regionCurrency}
-                  onChange={e => setRegionCurrency(e.target.value)}
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-purple-500"
-                >
-                  <option value="MXN">MXN - Mexican Peso</option>
-                  <option value="USD">USD - US Dollar</option>
-                  <option value="EUR">EUR - Euro</option>
-                  <option value="PAB">PAB - Balboa</option>
-                </select>
+                <div className="border-8 border-transparent rounded-lg">
+                  <select
+                    value={regionCurrency}
+                    onChange={e => setRegionCurrency(e.target.value)}
+                    className="w-full bg-transparent px-3 py-2 focus:outline-none"
+                  >
+                    <option value="MXN">MXN - Mexican Peso</option>
+                    <option value="USD">USD - US Dollar</option>
+                    <option value="EUR">EUR - Euro</option>
+                    <option value="PAB">PAB - Balboa</option>
+                  </select>
+                </div>
               </div>
               
-              <div>
+              <div className="border-8 border-transparent">
                 <label className="block text-sm font-medium text-gray-700 mb-1 px-1">Languages</label>
-                <input
-                  type="text"
-                  value={regionLanguage}
-                  onChange={e => setRegionLanguage(e.target.value)}
-                  placeholder="e.g., ES,EN"
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-purple-500"
-                />
+                <div className="border-8 border-transparent rounded-lg">
+                  <input
+                    type="text"
+                    value={regionLanguage}
+                    onChange={e => setRegionLanguage(e.target.value)}
+                    placeholder="e.g., ES,EN"
+                    className="w-full bg-transparent px-3 py-2 focus:outline-none"
+                  />
+                </div>
               </div>
             </div>
             
-            <div className="p-4 border-t border-gray-100 flex justify-end gap-2">
+            <div className="border-8 border-transparent p-4 border-t border-gray-100 flex justify-end gap-2">
               <button
                 onClick={() => setShowAddRegion(false)}
                 className="border-8 border-transparent bg-gray-50 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-100"
