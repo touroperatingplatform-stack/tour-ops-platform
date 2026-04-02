@@ -1214,7 +1214,6 @@ export default function SuperAdminDemoPage() {
                 company_id: tour.company_id,
                 brand_id: tour.brand_id,
                 guide_id: tour.guide_id,
-                template_id: checklistId,
                 stage: 'pre_departure',
                 completed_at: checkinTime.toISOString(),
                 photo_url: 'https://cloudinary.com/dorhbpsxy/tour-ops/demo-checklist.jpg',
