@@ -1199,7 +1199,7 @@ export default function SuperAdminDemoPage() {
       // Step 6: Create checklist completions for tours that have started
       setDemoProgress('☑️ Creating checklist completions...')
       let checklistCount = 0
-      if (checklistId) {
+      if (demoChecklistId) {
         for (const tourId of createdTourIds) {
           const status = tourStatusMap[tourId]
           if (status === 'in_progress' || status === 'completed') {
