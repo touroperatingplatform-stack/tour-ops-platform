@@ -40,18 +40,18 @@ export default function TestPage() {
           <div className="flex-1 min-h-0 overflow-hidden">
             <div className="h-full grid grid-cols-12 gap-6">
               {/* Active Tours + Team - Left */}
-              <div className="col-span-4 h-full overflow-hidden">
-                <div className="h-full border-8 border-transparent bg-white rounded-lg border border-gray-200 p-5">
-                  <div className="h-full border-8 border-transparent space-y-4 overflow-auto">
-                    <div className="border-8 border-transparent bg-gray-50 rounded-lg p-4 text-center">
-                      <div className="border-8 border-transparent flex items-center justify-center gap-2 mb-2">
+              <div className="col-span-4 h-full overflow-auto">
+                <div className="border-8 border-transparent bg-white rounded-lg border border-gray-200 p-5 h-full">
+                  <div className="border-8 border-transparent space-y-4 h-full overflow-auto">
+                    <div className="bg-white rounded-lg border border-gray-200 p-5 text-center">
+                      <div className="flex items-center justify-center gap-2 mb-2">
                         <span className="text-xs text-gray-500 uppercase font-medium">Active Tours</span>
                         <span className="bg-green-100 text-green-700 text-xs px-2 py-0.5 rounded-full">2 LIVE</span>
                       </div>
                       <p className="text-3xl font-bold text-blue-600">2</p>
                     </div>
 
-                    <div className="border-8 border-transparent bg-gray-50 rounded-lg p-4">
+                    <div className="bg-white rounded-lg border border-gray-200 p-5">
                       <p className="text-xs text-gray-500 uppercase font-medium text-center mb-3">Team Status</p>
                       <div className="grid grid-cols-2 gap-4">
                         <div className="text-center">
@@ -65,13 +65,13 @@ export default function TestPage() {
                       </div>
                     </div>
 
-                    <div className="border-8 border-transparent bg-gray-50 rounded-lg p-4">
-                      <p className="text-xs text-gray-500 text-center">Extra content to test scrolling...</p>
+                    <div className="bg-gray-50 rounded-lg border border-gray-200 p-5">
+                      <p className="text-xs text-gray-500 text-center">Extra content to test scrolling in this section...</p>
                     </div>
-                    <div className="border-8 border-transparent bg-gray-50 rounded-lg p-4">
+                    <div className="bg-gray-50 rounded-lg border border-gray-200 p-5">
                       <p className="text-xs text-gray-500 text-center">More content here...</p>
                     </div>
-                    <div className="border-8 border-transparent bg-gray-50 rounded-lg p-4">
+                    <div className="bg-gray-50 rounded-lg border border-gray-200 p-5">
                       <p className="text-xs text-gray-500 text-center">Even more content to force scroll...</p>
                     </div>
                   </div>
@@ -79,8 +79,8 @@ export default function TestPage() {
               </div>
 
               {/* Attention Required - Center */}
-              <div className="col-span-5 h-full overflow-hidden">
-                <div className="h-full border-8 border-transparent bg-white rounded-lg border border-gray-200 p-5 flex flex-col">
+              <div className="col-span-5 h-full overflow-auto">
+                <div className="border-8 border-transparent bg-white rounded-lg border border-gray-200 p-5 h-full flex flex-col">
                   <div className="border-8 border-transparent flex items-center justify-center gap-2 mb-4">
                     <span className="font-semibold text-sm">⚠️ Attention Required</span>
                     <span className="text-gray-400 text-xs">0 items</span>
@@ -92,23 +92,25 @@ export default function TestPage() {
               </div>
 
               {/* Quick Actions - Right */}
-              <div className="col-span-3 h-full overflow-hidden">
-                <div className="h-full border-8 border-transparent bg-white rounded-lg border border-gray-200 p-5 flex flex-col">
-                  <span className="font-semibold text-sm text-center mb-4">Quick Actions</span>
+              <div className="col-span-3 h-full overflow-auto">
+                <div className="border-8 border-transparent bg-white rounded-lg border border-gray-200 p-5 h-full flex flex-col">
+                  <div className="border-8 border-transparent">
+                    <span className="font-semibold text-sm text-center block mb-4">Quick Actions</span>
+                  </div>
                   <div className="border-8 border-transparent flex-1 grid grid-cols-2 gap-4 content-start">
-                    <button className="flex flex-col items-center justify-center p-4 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors">
+                    <button className="flex flex-col items-center justify-center p-4 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors h-full">
                       <span className="text-2xl mb-2">🚌</span>
                       <span className="text-xs font-medium">New Tour</span>
                     </button>
-                    <button className="flex flex-col items-center justify-center p-4 bg-green-50 hover:bg-green-100 rounded-lg transition-colors">
+                    <button className="flex flex-col items-center justify-center p-4 bg-green-50 hover:bg-green-100 rounded-lg transition-colors h-full">
                       <span className="text-2xl mb-2">👤</span>
                       <span className="text-xs font-medium">Add User</span>
                     </button>
-                    <button className="flex flex-col items-center justify-center p-4 bg-purple-50 hover:bg-purple-100 rounded-lg transition-colors">
+                    <button className="flex flex-col items-center justify-center p-4 bg-purple-50 hover:bg-purple-100 rounded-lg transition-colors h-full">
                       <span className="text-2xl mb-2">📊</span>
                       <span className="text-xs font-medium">Reports</span>
                     </button>
-                    <button className="flex flex-col items-center justify-center p-4 bg-orange-50 hover:bg-orange-100 rounded-lg transition-colors">
+                    <button className="flex flex-col items-center justify-center p-4 bg-orange-50 hover:bg-orange-100 rounded-lg transition-colors h-full">
                       <span className="text-2xl mb-2">🚗</span>
                       <span className="text-xs font-medium">Fleet</span>
                     </button>
@@ -122,8 +124,8 @@ export default function TestPage() {
           <div className="flex-1 min-h-0 overflow-hidden">
             <div className="h-full grid grid-cols-12 gap-6">
               {/* Timeline */}
-              <div className="col-span-9 h-full overflow-hidden">
-                <div className="h-full border-8 border-transparent bg-white rounded-lg border border-gray-200 p-5 flex flex-col">
+              <div className="col-span-9 h-full overflow-auto">
+                <div className="border-8 border-transparent bg-white rounded-lg border border-gray-200 p-5 h-full flex flex-col">
                   <div className="border-8 border-transparent flex items-center justify-center gap-2 mb-4">
                     <span className="font-semibold text-sm">Today's Timeline</span>
                     <span className="text-gray-400 text-xs">19 tours</span>
@@ -143,10 +145,12 @@ export default function TestPage() {
               </div>
 
               {/* Fleet Status */}
-              <div className="col-span-3 h-full overflow-hidden">
-                <div className="h-full border-8 border-transparent bg-white rounded-lg border border-gray-200 p-5">
-                  <span className="font-semibold text-sm block text-center mb-4">Fleet Status</span>
-                  <div className="border-8 border-transparent flex flex-col justify-between h-[calc(100%-2rem)]">
+              <div className="col-span-3 h-full overflow-auto">
+                <div className="border-8 border-transparent bg-white rounded-lg border border-gray-200 p-5 h-full flex flex-col">
+                  <div className="border-8 border-transparent">
+                    <span className="font-semibold text-sm block text-center mb-6">Fleet Status</span>
+                  </div>
+                  <div className="border-8 border-transparent flex flex-col justify-between flex-1">
                     <div className="flex items-center justify-between px-4 py-3 bg-gray-50 rounded-lg">
                       <span className="text-sm">In Use</span>
                       <span className="font-bold text-xl">4</span>
