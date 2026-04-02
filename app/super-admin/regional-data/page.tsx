@@ -169,62 +169,68 @@ export default function RegionalDataPage() {
       <div className="h-full p-4">
         <div className="h-full flex flex-col">
           {/* Page Header */}
-          <div className="border-8 border-transparent bg-white rounded-xl flex-shrink-0 mb-4">
-            <div className="flex justify-between items-center p-4">
-              <h1 className="text-2xl font-bold text-gray-900">
+          <div className="border-8 border-transparent bg-white rounded-xl flex-shrink-0 mb-4 p-4">
+            <div className="flex justify-between items-center">
+              <h1 className="text-2xl font-bold text-gray-900 px-4 py-2 border-8 border-transparent">
                 {t('regionalData.title') || 'Regional Data'}
               </h1>
-              <button
-                onClick={() => setShowAddRegion(true)}
-                className="border-8 border-transparent bg-purple-50 text-purple-600 px-4 py-2 rounded-lg hover:bg-purple-100"
-              >
-                + {t('regionalData.addRegion') || 'Add Region'}
-              </button>
+              <div className="border-8 border-transparent">
+                <button
+                  onClick={() => setShowAddRegion(true)}
+                  className="border-8 border-transparent bg-purple-50 text-purple-600 px-6 py-3 rounded-lg hover:bg-purple-100"
+                >
+                  <span className="border-8 border-transparent px-4 py-2">+ {t('regionalData.addRegion') || 'Add Region'}</span>
+                </button>
+              </div>
             </div>
           </div>
 
           {/* Regions List */}
-          <div className="border-8 border-transparent bg-white rounded-xl flex-1 overflow-hidden">
-            <div className="p-4 h-full flex flex-col">
-              <h2 className="text-lg font-semibold text-gray-900 pb-3 border-b border-gray-100">
+          <div className="border-8 border-transparent bg-white rounded-xl flex-1 overflow-hidden p-4">
+            <div className="h-full flex flex-col">
+              <h2 className="text-lg font-semibold text-gray-900 pb-4 border-b border-gray-100 px-4 border-8 border-transparent">
                 {t('regionalData.regions') || 'Regions'}
               </h2>
               
               <div className="flex-1 overflow-y-auto mt-4">
                 {loading ? (
-                  <p className="text-gray-500">Loading...</p>
+                  <p className="text-gray-500 px-4 py-2 border-8 border-transparent">Loading...</p>
                 ) : regions.length === 0 ? (
-                  <div className="border border-dashed border-gray-200 rounded-xl p-8 text-center">
-                    <p className="text-gray-500">No regions yet. Add your first region to get started.</p>
+                  <div className="border border-dashed border-gray-200 rounded-xl p-8 text-center m-4">
+                    <p className="text-gray-500 px-4 py-2 border-8 border-transparent">No regions yet. Add your first region to get started.</p>
                   </div>
                 ) : (
-                  <div className="space-y-3">
+                  <div className="space-y-4 px-2">
                     {regions.map(region => (
-                      <div key={region.id} className="border border-gray-200 rounded-xl p-4 hover:bg-gray-50">
+                      <div key={region.id} className="border border-gray-200 rounded-xl p-6 hover:bg-gray-50">
                         <div className="flex justify-between items-start">
-                          <div>
-                            <h3 className="font-semibold text-gray-900">{region.name}</h3>
-                            <p className="text-sm text-gray-500 mt-1">
+                          <div className="border-8 border-transparent">
+                            <h3 className="font-semibold text-gray-900 px-2 py-1 border-8 border-transparent">{region.name}</h3>
+                            <p className="text-sm text-gray-500 mt-2 px-2 py-1 border-8 border-transparent">
                               {region.hotel_count || 0} hotels
                             </p>
                           </div>
-                          <div className="flex gap-2">
-                            <button
-                              onClick={() => {
-                                setSelectedRegion(region)
-                                setShowImport(true)
-                                loadHotels(region.id)
-                              }}
-                              className="border border-blue-600 text-blue-600 px-3 py-1.5 rounded-lg text-sm hover:bg-blue-50"
-                            >
-                              {t('regionalData.importHotels') || 'Import Hotels'}
-                            </button>
-                            <button
-                              onClick={() => handleDeleteRegion(region.id)}
-                              className="border border-red-600 text-red-600 px-3 py-1.5 rounded-lg text-sm hover:bg-red-50"
-                            >
-                              {t('regionalData.delete') || 'Delete'}
-                            </button>
+                          <div className="flex gap-3">
+                            <div className="border-8 border-transparent">
+                              <button
+                                onClick={() => {
+                                  setSelectedRegion(region)
+                                  setShowImport(true)
+                                  loadHotels(region.id)
+                                }}
+                                className="border-8 border-transparent border border-blue-600 text-blue-600 px-4 py-2 rounded-lg text-sm hover:bg-blue-50"
+                              >
+                                <span className="border-8 border-transparent px-3 py-1">{t('regionalData.importHotels') || 'Import Hotels'}</span>
+                              </button>
+                            </div>
+                            <div className="border-8 border-transparent">
+                              <button
+                                onClick={() => handleDeleteRegion(region.id)}
+                                className="border-8 border-transparent border border-red-600 text-red-600 px-4 py-2 rounded-lg text-sm hover:bg-red-50"
+                              >
+                                <span className="border-8 border-transparent px-3 py-1">{t('regionalData.delete') || 'Delete'}</span>
+                              </button>
+                            </div>
                           </div>
                         </div>
                       </div>
