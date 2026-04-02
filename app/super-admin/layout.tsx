@@ -80,10 +80,10 @@ export default function SuperAdminLayout({ children }: { children: React.ReactNo
 
   return (
     <div className="h-screen flex flex-col bg-gray-50 overflow-hidden">
-      {/* Top Navigation */}
+      {/* Top Navigation - No border */}
       <header className="bg-white flex-shrink-0">
-        <div className="px-4 py-3 border-b border-gray-300">
-          <div className="flex items-center justify-between">
+        <div className="px-4 py-3 border-8 border-transparent">
+          <div className="flex items-center justify-between px-4 py-3">
             {/* Logo + Title */}
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 bg-purple-600 rounded-lg flex items-center justify-center text-white font-bold text-sm">
@@ -96,14 +96,14 @@ export default function SuperAdminLayout({ children }: { children: React.ReactNo
             <div className="flex items-center gap-3">
               {/* Language Toggle */}
               <LanguageToggle />
-              
+
               {/* Notifications */}
-              <button className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center hover:bg-gray-200">
+              <button className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center hover:bg-gray-200 relative">
                 🔔
               </button>
-              
+
               {/* User Button */}
-              <button 
+              <button
                 onClick={() => setShowUserMenu(true)}
                 className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center hover:bg-gray-300"
               >
@@ -117,7 +117,9 @@ export default function SuperAdminLayout({ children }: { children: React.ReactNo
       {/* Main Content */}
       <main className="flex-1 overflow-hidden bg-white border-8 border-transparent">
         <div className="w-full h-full overflow-auto px-10 py-6 border-8 border-transparent">
-          {children}
+          <div className="h-full flex flex-col">
+            {children}
+          </div>
         </div>
       </main>
 
