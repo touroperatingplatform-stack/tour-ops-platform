@@ -115,8 +115,10 @@ export default function SuperAdminLayout({ children }: { children: React.ReactNo
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 overflow-hidden">
-        {children}
+      <main className="flex-1 overflow-hidden bg-white border-8 border-transparent">
+        <div className="w-full h-full overflow-auto px-10 py-6 border-8 border-transparent">
+          {children}
+        </div>
       </main>
 
       {/* Bottom Navigation */}
