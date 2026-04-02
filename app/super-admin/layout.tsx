@@ -5,25 +5,27 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase/client'
 import LanguageToggle from '@/components/LanguageToggle'
+import { useTranslation } from '@/lib/i18n/useTranslation'
 
 const navItems = [
-  { href: '/super-admin', label: 'Dashboard', icon: '📊' },
-  { href: '/super-admin/clients', label: 'Clients', icon: '👥' },
-  { href: '/super-admin/companies', label: 'Companies', icon: '🏢' },
+  { href: '/super-admin', labelKey: 'nav.dashboard', icon: '📊' },
+  { href: '/super-admin/clients', labelKey: 'nav.clients', icon: '👥' },
+  { href: '/super-admin/companies', labelKey: 'nav.companies', icon: '🏢' },
 ]
 
 const moreItems = [
-  { href: '/super-admin/regional-data', label: 'Regional', icon: '🗺️' },
-  { href: '/super-admin/brands', label: 'Brands', icon: '🏷️' },
-  { href: '/super-admin/users', label: 'Users', icon: '👤' },
-  { href: '/super-admin/demo', label: 'Demo Data', icon: '📦' },
-  { href: '/super-admin/import', label: 'Import', icon: '📥' },
-  { href: '/super-admin/settings', label: 'Settings', icon: '⚙️' },
+  { href: '/super-admin/regional-data', labelKey: 'nav.regional', icon: '🗺️' },
+  { href: '/super-admin/brands', labelKey: 'nav.brands', icon: '🏷️' },
+  { href: '/super-admin/users', labelKey: 'nav.users', icon: '👤' },
+  { href: '/super-admin/demo', labelKey: 'nav.demoData', icon: '📦' },
+  { href: '/super-admin/import', labelKey: 'nav.import', icon: '📥' },
+  { href: '/super-admin/settings', labelKey: 'nav.settings', icon: '⚙️' },
 ]
 
 export default function SuperAdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const router = useRouter()
+  const { t } = useTranslation()
   const [loading, setLoading] = useState(true)
   const [authorized, setAuthorized] = useState(false)
   const [showMore, setShowMore] = useState(false)
@@ -87,7 +89,7 @@ export default function SuperAdminLayout({ children }: { children: React.ReactNo
               <div className="w-8 h-8 bg-purple-600 rounded-lg flex items-center justify-center text-white font-bold text-sm">
                 S
               </div>
-              <span className="font-bold text-gray-900">Super Admin</span>
+              <span className="font-bold text-gray-900">{t('nav.superAdmin')}</span>
             </div>
 
             {/* Right side */}
@@ -131,7 +133,7 @@ export default function SuperAdminLayout({ children }: { children: React.ReactNo
                 }`}
               >
                 <span className="text-xl mb-1">{item.icon}</span>
-                <span className="text-xs">{item.label}</span>
+                <span className="text-xs">{t(item.labelKey)}</span>
               </Link>
             )
           })}
@@ -140,7 +142,7 @@ export default function SuperAdminLayout({ children }: { children: React.ReactNo
             className="flex flex-col items-center justify-center py-2 px-2 min-w-[48px] text-gray-500"
           >
             <span className="text-xl mb-1">☰</span>
-            <span className="text-xs">More</span>
+            <span className="text-xs">{t('nav.menu')}</span>
           </button>
         </div>
       </nav>
@@ -155,7 +157,7 @@ export default function SuperAdminLayout({ children }: { children: React.ReactNo
           <div className="fixed inset-4 bg-white rounded-2xl shadow-2xl z-50 flex flex-col">
             <div className="p-4 flex flex-col h-full">
               <div className="flex items-center justify-center mb-4 p-4">
-                <span className="font-bold text-2xl">Menu</span>
+                <span className="font-bold text-2xl">{t('nav.menu')}</span>
                 <button 
                   onClick={() => setShowMore(false)}
                   className="absolute right-10 p-4 hover:bg-gray-100 rounded-lg"
@@ -172,7 +174,7 @@ export default function SuperAdminLayout({ children }: { children: React.ReactNo
                     className="flex flex-col items-center justify-center gap-2 p-4 rounded-xl text-gray-600 hover:bg-gray-50 bg-gray-50 h-full"
                   >
                     <span className="text-3xl">{item.icon}</span>
-                    <span className="text-sm font-medium">{item.label}</span>
+                    <span className="text-sm font-medium">{t(item.labelKey)}</span>
                   </Link>
                 ))}
               </div>

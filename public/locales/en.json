@@ -34,7 +34,16 @@
     "reports": "Reports",
     "expenses": "Expenses",
     "menu": "Menu",
-    "team": "Team"
+    "team": "Team",
+    "superAdmin": "Super Admin",
+    "clients": "Clients",
+    "companies": "Companies",
+    "regional": "Regional",
+    "brands": "Brands",
+    "users": "Users",
+    "demoData": "Demo Data",
+    "import": "Import",
+    "settings": "Settings"
   },
   "guests": {
     "allGuests": "All Guests",
@@ -629,6 +638,15 @@
     "expenses": "Expenses",
     "menu": "Menu",
     "team": "Team",
+    "superAdmin": "Super Admin",
+    "clients": "Clients",
+    "companies": "Companies",
+    "regional": "Regional",
+    "brands": "Brands",
+    "users": "Users",
+    "demoData": "Demo Data",
+    "import": "Import",
+    "settings": "Settings",
     "checklists": "Checklists",
     "templates": "Templates",
     "data": "Data"
@@ -663,3 +681,4 @@
     "hotelsIn": "Hotels in"
   }
 }
+

@@ -34,7 +34,16 @@
     "reports": "Reportes",
     "expenses": "Gastos",
     "menu": "MenÃº",
-    "team": "Equipo"
+    "team": "Equipo",
+    "superAdmin": "Super Admin",
+    "clients": "Clientes",
+    "companies": "Empresas",
+    "regional": "Regional",
+    "brands": "Marcas",
+    "users": "Usuarios",
+    "demoData": "Datos Demo",
+    "import": "Importar",
+    "settings": "Configuración"
   },
   "common": {
     "loading": "Cargando...",
@@ -616,6 +625,15 @@
     "expenses": "Gastos",
     "menu": "MenÃº",
     "team": "Equipo",
+    "superAdmin": "Super Admin",
+    "clients": "Clientes",
+    "companies": "Empresas",
+    "regional": "Regional",
+    "brands": "Marcas",
+    "users": "Usuarios",
+    "demoData": "Datos Demo",
+    "import": "Importar",
+    "settings": "Configuración",
     "checklists": "Listas",
     "templates": "Plantillas",
     "data": "Datos"
@@ -650,3 +668,4 @@
     "hotelsIn": "Hoteles en"
   }
 }
+
