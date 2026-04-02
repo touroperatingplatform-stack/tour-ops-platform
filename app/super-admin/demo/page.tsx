@@ -941,10 +941,16 @@ export default function SuperAdminDemoPage() {
         const startMinute = tour.startMin % 60
         const startTime = `${String(startHour).padStart(2, '0')}:${String(startMinute).padStart(2, '0')}`
         
-        // Determine status based on current time
+        // Determine status based on current time - ensure realistic distribution
         const endMin = tour.startMin + tour.duration
         let status = 'scheduled'
-        if (endMin < currentTimeMinutes - 30) {
+        
+        // Force realistic distribution: 40% completed, 20% in_progress, 40% scheduled
+        if (i < Math.floor(tourSchedule.length * 0.4)) {
+          status = 'completed'  // First 40% are completed (morning/early tours)
+        } else if (i < Math.floor(tourSchedule.length * 0.6)) {
+          status = 'in_progress'  // Next 20% are in progress
+        } else if (tour.startMin < currentTimeMinutes - 60) {
           status = 'completed'
         } else if (tour.startMin < currentTimeMinutes) {
           status = 'in_progress'

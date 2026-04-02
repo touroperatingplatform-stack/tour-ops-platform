@@ -224,10 +224,55 @@ Add missing keys to `public/locales/en.json` and `public/locales/es.json`:
 - [ ] Translation keys exist in both `en.json` and `es.json`
 - [ ] Language switch works without page refresh
 
-## Invisible Borders (Debug)
+## Invisible Borders (MANDATORY - NOT DEBUG)
 
-Use `border-8 border-transparent` to visualize padding areas:
-- Top nav inner area
-- Main content container
-- Each section/card wrapper
-- Remove before production: delete border classes
+**Every element MUST have `border-8 border-transparent`**
+
+This is NOT optional debug - it's the standard for proper spacing.
+
+### Apply to EVERY Element:
+
+```tsx
+// Containers
+<div className="border-8 border-transparent bg-white rounded-xl">
+  <div className="border-8 border-transparent p-4">
+    {/* content */}
+  </div>
+</div>
+
+// Text
+<h1 className="border-8 border-transparent">Title</h1>
+<p className="border-8 border-transparent">Text</p>
+
+// Buttons (wrapper + inner span)
+<div className="border-8 border-transparent">
+  <button className="border-8 border-transparent bg-blue-600 rounded-lg">
+    <span className="border-8 border-transparent px-4 py-2">Button</span>
+  </button>
+</div>
+
+// Form fields
+<div className="border-8 border-transparent">
+  <label className="border-8 border-transparent">Label</label>
+  <div className="border-8 border-transparent">
+    <input className="border-8 border-transparent w-full" />
+  </div>
+</div>
+
+// Table cells
+<td className="border-8 border-transparent">Cell</td>
+<th className="border-8 border-transparent">Header</th>
+```
+
+### Why This Works
+- `border-8` reserves 8px space (like padding)
+- `border-transparent` makes it invisible
+- Consistent spacing everywhere
+- No squished text or buttons
+
+### Reference Implementation
+- `app/super-admin/regional-data/page.tsx` - Complete example
+- `docs/LAYOUT-CONVENTION.md` - Full documentation
+
+### DO NOT Remove Before Production
+Keep `border-8 border-transparent` on all elements. It's the standard.
