@@ -1203,7 +1203,7 @@ export default function SuperAdminDemoPage() {
         for (const tourId of createdTourIds) {
           const status = tourStatusMap[tourId]
           if (status === 'in_progress' || status === 'completed') {
-            const { data: tour } = await supabase.from('tours').select('guide_id, brand_id, start_time').eq('id', tourId).single()
+            const { data: tour } = await supabase.from('tours').select('company_id, guide_id, brand_id, start_time').eq('id', tourId).single()
             if (tour) {
               const [hours, minutes] = (tour.start_time || '08:00').split(':').map(Number)
               const checkinTime = new Date()
@@ -1211,6 +1211,7 @@ export default function SuperAdminDemoPage() {
               
               await supabase.from('checklist_completions').insert({
                 tour_id: tourId,
+                company_id: tour.company_id,
                 brand_id: tour.brand_id,
                 guide_id: tour.guide_id,
                 template_id: checklistId,
@@ -1486,7 +1487,7 @@ export default function SuperAdminDemoPage() {
       for (const tourId of createdTourIds) {
         const status = tourStatusMap[tourId]
         if (status === 'completed') {
-          const { data: tour } = await supabase.from('tours').select('guide_id, brand_id, price, guest_count').eq('id', tourId).single()
+          const { data: tour } = await supabase.from('tours').select('company_id, guide_id, brand_id, price, guest_count').eq('id', tourId).single()
           if (tour) {
             const expectedCash = (tour.price || 100) * (tour.guest_count || 2) * 0.2 // 20% cash payments
             const actualCash = expectedCash + (Math.random() * 40 - 20) // ±$20 variance
@@ -1494,6 +1495,7 @@ export default function SuperAdminDemoPage() {
             
             await supabase.from('cash_confirmations').insert({
               tour_id: tourId,
+              company_id: tour.company_id,
               brand_id: tour.brand_id,
               guide_id: tour.guide_id,
               cash_expected: Math.round(expectedCash),
