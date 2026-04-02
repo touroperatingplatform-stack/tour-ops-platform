@@ -44,37 +44,36 @@ export default function TestLayout({ children }: { children: React.ReactNode }) 
       {/* Top Navigation */}
       <header className="bg-white flex-shrink-0 border-b border-gray-200">
         <div className="flex items-center justify-between px-6 py-4">
-            {/* Logo + Dashboard */}
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold text-sm">
-                T
-              </div>
-              <span className="font-bold text-gray-900">{t('nav.dashboard')}</span>
+          {/* Logo + Dashboard */}
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold text-sm">
+              T
             </div>
+            <span className="font-bold text-gray-900">{t('nav.dashboard')}</span>
+          </div>
 
-            {/* Right side */}
-            <div className="flex items-center gap-3">
-              {/* Language Toggle */}
-              <LanguageToggle />
-              
-              {/* Notifications */}
-              <button className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center hover:bg-gray-200 relative">
-                🔔
-                {notifications > 0 && (
-                  <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full text-white text-xs flex items-center justify-center">
-                    {notifications}
-                  </span>
-                )}
-              </button>
-              
-              {/* User Button */}
-              <button 
-                onClick={() => setShowUserMenu(true)}
-                className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center hover:bg-gray-300"
-              >
-                👤
-              </button>
-            </div>
+          {/* Right side */}
+          <div className="flex items-center gap-3">
+            {/* Language Toggle */}
+            <LanguageToggle />
+            
+            {/* Notifications */}
+            <button className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center hover:bg-gray-200 relative">
+              🔔
+              {notifications > 0 && (
+                <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full text-white text-xs flex items-center justify-center">
+                  {notifications}
+                </span>
+              )}
+            </button>
+            
+            {/* User Button */}
+            <button 
+              onClick={() => setShowUserMenu(true)}
+              className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center hover:bg-gray-300"
+            >
+              👤
+            </button>
           </div>
         </div>
       </header>
