@@ -318,19 +318,23 @@ export default function RegionalDataPage() {
             </div>
             
             <div className="border-8 border-transparent p-4 border-t border-gray-100 flex justify-end gap-2">
-              <button
-                onClick={() => setShowAddRegion(false)}
-                className="border-8 border-transparent bg-gray-50 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-100"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleAddRegion}
-                disabled={!regionName.trim()}
-                className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 disabled:opacity-50"
-              >
-                Add Region
-              </button>
+              <div className="border-8 border-transparent">
+                <button
+                  onClick={() => setShowAddRegion(false)}
+                  className="border-8 border-transparent bg-gray-50 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-100"
+                >
+                  <span className="border-8 border-transparent px-2 py-1">Cancel</span>
+                </button>
+              </div>
+              <div className="border-8 border-transparent">
+                <button
+                  onClick={handleAddRegion}
+                  disabled={!regionName.trim()}
+                  className="border-8 border-transparent bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 disabled:opacity-50"
+                >
+                  <span className="border-8 border-transparent px-2 py-1">Add Region</span>
+                </button>
+              </div>
             </div>
           </div>
         </div>
