@@ -9,6 +9,7 @@ const navItems = [
   { href: '/super-admin', label: 'Dashboard', icon: '📊' },
   { href: '/super-admin/clients', label: 'Clients', icon: '👥' },
   { href: '/super-admin/companies', label: 'Companies', icon: '🏢' },
+  { href: '/super-admin/regional-data', label: 'Regional', icon: '🗺️' },
   { href: '/super-admin/import', label: 'Import', icon: '📥' },
   { href: '/super-admin/system', label: 'System', icon: '💚' },
   { href: '/super-admin/demo', label: 'Demo Data', icon: '📦' },
@@ -77,6 +78,7 @@ export default function SuperAdminLayout({ children }: { children: React.ReactNo
               {pathname === '/super-admin' ? 'Platform Dashboard' :
                pathname.includes('/clients') ? 'Client Management' :
                pathname.includes('/companies') ? 'Company Registry' :
+               pathname.includes('/regional-data') ? 'Regional Data' :
                pathname.includes('/demo') ? 'Demo Data' :
                pathname.includes('/settings') ? 'Platform Settings' :
                'Super Admin'}
