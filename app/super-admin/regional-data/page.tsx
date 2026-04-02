@@ -178,7 +178,7 @@ export default function RegionalDataPage() {
   }
 
   return (
-    <RoleGuard requiredRole="superadmin">
+    <RoleGuard requiredRole="super_admin">
       <div className="min-h-screen bg-gray-100">
         <AdminNav />
         
