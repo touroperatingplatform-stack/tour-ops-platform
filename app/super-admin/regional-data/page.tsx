@@ -8,10 +8,6 @@ import { useTranslation } from '@/lib/i18n/useTranslation'
 interface Region {
   id: string
   name: string
-  timezone: string
-  currency: string
-  language: string
-  status: string
   hotel_count?: number
 }
 
@@ -26,9 +22,6 @@ export default function RegionalDataPage() {
   
   // Form state
   const [regionName, setRegionName] = useState('')
-  const [regionTimezone, setRegionTimezone] = useState('America/Cancun')
-  const [regionCurrency, setRegionCurrency] = useState('MXN')
-  const [regionLanguage, setRegionLanguage] = useState('ES,EN')
   
   // Import state
   const [importFile, setImportFile] = useState<File | null>(null)
@@ -76,10 +69,7 @@ export default function RegionalDataPage() {
     const { error } = await supabase
       .from('regions')
       .insert({
-        name: regionName,
-        timezone: regionTimezone,
-        currency: regionCurrency,
-        language: regionLanguage
+        name: regionName
       })
     
     if (!error) {
@@ -215,7 +205,7 @@ export default function RegionalDataPage() {
                           <div>
                             <h3 className="font-semibold text-gray-900">{region.name}</h3>
                             <p className="text-sm text-gray-500 mt-1">
-                              {region.hotel_count || 0} hotels • {region.timezone} • {region.currency}
+                              {region.hotel_count || 0} hotels
                             </p>
                           </div>
                           <div className="flex gap-2">
@@ -257,7 +247,7 @@ export default function RegionalDataPage() {
               </h2>
             </div>
             
-            <div className="border-8 border-transparent p-4 space-y-4">
+            <div className="border-8 border-transparent p-4">
               <div className="border-8 border-transparent">
                 <label className="block text-sm font-medium text-gray-700 mb-1 px-1">Region Name</label>
                 <div className="border-8 border-transparent rounded-lg">
@@ -266,51 +256,6 @@ export default function RegionalDataPage() {
                     value={regionName}
                     onChange={e => setRegionName(e.target.value)}
                     placeholder="e.g., Riviera Maya"
-                    className="w-full bg-transparent px-3 py-2 focus:outline-none"
-                  />
-                </div>
-              </div>
-              
-              <div className="border-8 border-transparent">
-                <label className="block text-sm font-medium text-gray-700 mb-1 px-1">Timezone</label>
-                <div className="border-8 border-transparent rounded-lg">
-                  <select
-                    value={regionTimezone}
-                    onChange={e => setRegionTimezone(e.target.value)}
-                    className="w-full bg-transparent px-3 py-2 focus:outline-none"
-                  >
-                    <option value="America/Cancun">America/Cancun</option>
-                    <option value="America/Panama">America/Panama</option>
-                    <option value="America/Bogota">America/Bogota</option>
-                    <option value="America/Lima">America/Lima</option>
-                  </select>
-                </div>
-              </div>
-              
-              <div className="border-8 border-transparent">
-                <label className="block text-sm font-medium text-gray-700 mb-1 px-1">Currency</label>
-                <div className="border-8 border-transparent rounded-lg">
-                  <select
-                    value={regionCurrency}
-                    onChange={e => setRegionCurrency(e.target.value)}
-                    className="w-full bg-transparent px-3 py-2 focus:outline-none"
-                  >
-                    <option value="MXN">MXN - Mexican Peso</option>
-                    <option value="USD">USD - US Dollar</option>
-                    <option value="EUR">EUR - Euro</option>
-                    <option value="PAB">PAB - Balboa</option>
-                  </select>
-                </div>
-              </div>
-              
-              <div className="border-8 border-transparent">
-                <label className="block text-sm font-medium text-gray-700 mb-1 px-1">Languages</label>
-                <div className="border-8 border-transparent rounded-lg">
-                  <input
-                    type="text"
-                    value={regionLanguage}
-                    onChange={e => setRegionLanguage(e.target.value)}
-                    placeholder="e.g., ES,EN"
                     className="w-full bg-transparent px-3 py-2 focus:outline-none"
                   />
                 </div>
