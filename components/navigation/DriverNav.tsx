@@ -23,7 +23,7 @@ export default function DriverNav({ children }: { children: React.ReactNode }) {
     <div className="h-screen flex flex-col bg-gray-50 overflow-hidden">
       {/* Top Header */}
       <header className="bg-white flex-shrink-0">
-        <div className="px-4 py-3 border-8 border-transparent">
+        <div className="px-4 py-3 border-4 border-transparent">
           <div className="flex items-center justify-between px-4 py-3">
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold text-sm">
@@ -40,8 +40,8 @@ export default function DriverNav({ children }: { children: React.ReactNode }) {
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 overflow-hidden bg-white border-8 border-transparent">
-        <div className="h-full overflow-auto border-8 border-transparent">
+      <main className="flex-1 overflow-hidden bg-white border-4 border-transparent">
+        <div className="h-full overflow-auto border-4 border-transparent">
           {children}
         </div>
       </main>
