@@ -10,7 +10,7 @@ CREATE TABLE checklist_completions (
   company_id UUID NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
   brand_id UUID REFERENCES brands(id) ON DELETE SET NULL,
   guide_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
-  template_id UUID,
+  template_id UUID REFERENCES checklists(id) ON DELETE SET NULL,
   
   stage TEXT NOT NULL,
   completed_at TIMESTAMPTZ DEFAULT NOW(),
