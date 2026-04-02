@@ -455,24 +455,24 @@ export default function GuideTourPage() {
           <button
             onClick={startTour}
             disabled={!canStartTour || uploading}
-            className={`w-full py-4 rounded-xl font-semibold text-lg transition-colors flex items-center justify-center gap-3 ${
+            className={`w-full py-5 rounded-2xl font-bold text-xl transition-colors flex items-center justify-center gap-3 ${
               canStartTour && !uploading
-                ? 'bg-blue-600 text-white hover:bg-blue-700'
+                ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-lg'
                 : 'bg-gray-300 text-gray-500 cursor-not-allowed'
             }`}
           >
             {uploading ? (
               <>
                 <span className="animate-spin">⟳</span>
-                Uploading...
+                Uploading photos...
               </>
             ) : canStartTour ? (
               <>
-                <span>🚐</span>
+                <span className="text-2xl">🚐</span>
                 START TOUR
               </>
             ) : (
-              'Complete all steps to start'
+              'Complete all steps above to start'
             )}
           </button>
         </>
