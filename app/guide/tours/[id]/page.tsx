@@ -15,7 +15,18 @@ interface Tour {
   status: string
   pickup_location: string
   acknowledged_at: string | null
-  guide: { first_name: string; last_name: string } | null
+  brand_id: string
+  activity_type: string
+  tour_date: string
+  vehicle_id: string | null
+  vehicles?: { plate_number: string; model: string }
+}
+
+interface TourEquipment {
+  id: string
+  name: string
+  description: string | null
+  sort_order: number
 }
 
 interface Stop {
@@ -51,57 +62,73 @@ interface Reservation {
   no_show: boolean
 }
 
-interface ChecklistTemplate {
-  id: string
-  name: string
-  items: { id: string; text: string; required: boolean }[]
-}
-
-interface ChecklistState {
-  [key: string]: boolean
-}
+// Pre-departure checklist items (always shown)
+const preDepartureItems = [
+  { id: 'van_inspection', label: 'Van Inspection', description: 'Tires, fuel, cleanliness', icon: '🚐' },
+  { id: 'first_aid', label: 'First Aid Kit', description: 'Present and stocked', icon: '🩹' },
+  { id: 'emergency_contacts', label: 'Emergency Contacts', description: 'Reviewed', icon: '📞' },
+  { id: 'guest_manifest', label: 'Guest Manifest', description: 'Reviewed', icon: '📋' },
+]
 
 export default function GuideTourPage() {
   const params = useParams()
   const router = useRouter()
   const [tour, setTour] = useState<Tour | null>(null)
   const [loading, setLoading] = useState(true)
-  const [checklist, setChecklist] = useState<ChecklistTemplate | null>(null)
-  const [checklistState, setChecklistState] = useState<ChecklistState>({})
-  const [notes, setNotes] = useState('')
   const [uploading, setUploading] = useState(false)
   const [equipmentPhoto, setEquipmentPhoto] = useState<string | null>(null)
   const [vanPhoto, setVanPhoto] = useState<string | null>(null)
-  const [hasCheckedIn, setHasCheckedIn] = useState(false)
+  const [tourEquipment, setTourEquipment] = useState<TourEquipment[]>([])
   const [reservations, setReservations] = useState<Reservation[]>([])
   const [stops, setStops] = useState<Stop[]>([])
   const [checkins, setCheckins] = useState<Checkin[]>([])
 
+  // Checklist state
+  const [preDepartureChecked, setPreDepartureChecked] = useState<Record<string, boolean>>({})
+  const [equipmentChecked, setEquipmentChecked] = useState<Record<string, boolean>>({})
+
+  // Guest manifest expanded
+  const [showGuestManifest, setShowGuestManifest] = useState(false)
+
   useEffect(() => {
     loadTour()
     loadReservations()
-    loadChecklist()
     loadStops()
   }, [])
 
-  async function loadChecklist() {
-    // Load pre_departure checklist template
-    const { data } = await supabase
-      .from('checklists')
-      .select('id, name, items')
-      .eq('is_active', true)
-      .limit(1)
+  async function loadTour() {
+    const { data: tourData } = await supabase
+      .from('tours')
+      .select('*, vehicles(plate_number, model)')
+      .eq('id', params.id)
       .single()
-    
-    if (data) {
-      setChecklist(data)
-      // Initialize checklist state
-      const state: ChecklistState = {}
-      data.items.forEach((item: { id: string; text: string; required: boolean }) => {
-        state[item.id] = false
-      })
-      setChecklistState(state)
+
+    if (tourData) {
+      setTour(tourData)
+      
+      if (tourData.equipment_photo_url) setEquipmentPhoto(tourData.equipment_photo_url)
+      if (tourData.van_photo_url) setVanPhoto(tourData.van_photo_url)
+
+      // Load tour-specific equipment
+      if (tourData.brand_id && tourData.activity_type) {
+        const { data: equipment } = await supabase
+          .from('tour_equipment')
+          .select('id, name, description, sort_order')
+          .eq('brand_id', tourData.brand_id)
+          .eq('activity_type', tourData.activity_type)
+          .eq('is_active', true)
+          .order('sort_order')
+        
+        if (equipment) {
+          setTourEquipment(equipment)
+          // Initialize equipment checked state
+          const checked: Record<string, boolean> = {}
+          equipment.forEach(item => { checked[item.id] = false })
+          setEquipmentChecked(checked)
+        }
+      }
     }
+    setLoading(false)
   }
 
   async function loadReservations() {
@@ -123,7 +150,6 @@ export default function GuideTourPage() {
     
     if (stopsData) setStops(stopsData)
 
-    // Load existing checkins
     const { data: checkinsData } = await supabase
       .from('guide_checkins')
       .select('id, pickup_stop_id, checkin_type, checked_in_at')
@@ -132,84 +158,37 @@ export default function GuideTourPage() {
     if (checkinsData) setCheckins(checkinsData)
   }
 
-  async function toggleReservationCheckin(reservationId: string, checked: boolean) {
-    const reservation = reservations.find(r => r.id === reservationId)
-    if (!reservation) return
-
-    const { error } = await supabase
-      .from('reservation_manifest')
-      .update({ 
-        checked_in: checked,
-        checked_in_at: checked ? new Date().toISOString() : null,
-      })
-      .eq('id', reservationId)
-    
-    if (!error) {
-      setReservations(prev => prev.map(r => 
-        r.id === reservationId ? { ...r, checked_in: checked } : r
-      ))
-    }
-  }
-
-  async function markNoShow(reservationId: string) {
-    const { error } = await supabase
-      .from('reservation_manifest')
-      .update({ no_show: true })
-      .eq('id', reservationId)
-    
-    if (!error) {
-      setReservations(prev => prev.map(r => 
-        r.id === reservationId ? { ...r, no_show: true } : r
-      ))
-    }
-  }
-
-  async function loadTour() {
-    const { data: tourData } = await supabase
-      .from('tours')
-      .select('id, name, start_time, status, pickup_location, guide_id, equipment_photo_url, van_photo_url, acknowledged_at, brand_id')
-      .eq('id', params.id)
-      .single()
-
-    if (tourData) {
-      if (tourData.guide_id) {
-        const { data: guide } = await supabase
-          .from('profiles')
-          .select('first_name, last_name')
-          .eq('id', tourData.guide_id)
-          .single()
-        setTour({ ...tourData, guide })
-      } else {
-        setTour(tourData as any)
-      }
-      
-      if (tourData.equipment_photo_url) setEquipmentPhoto(tourData.equipment_photo_url)
-      if (tourData.van_photo_url) setVanPhoto(tourData.van_photo_url)
-
-      // Check for existing checkins
-      const { data: checkins } = await supabase
-        .from('guide_checkins')
-        .select('id')
-        .eq('tour_id', params.id)
-        .eq('checkin_type', 'pre_pickup')
-        .limit(1)
-      
-      setHasCheckedIn(!!checkins && checkins.length > 0)
-    }
-    setLoading(false)
-  }
-
   // Redirect to acknowledgment if not acknowledged
-  if (tour && tour.status === 'scheduled' && !tour.acknowledged_at) {
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-gray-500">Loading tour...</div>
+      </div>
+    )
+  }
+
+  if (!tour) {
+    return (
+      <div className="text-center py-12">
+        <h1 className="text-2xl font-bold text-gray-900 mb-2">Tour not found</h1>
+        <Link href="/guide" className="text-blue-600 hover:underline">
+          ← Back to my tours
+        </Link>
+      </div>
+    )
+  }
+
+  if (tour.status === 'scheduled' && !tour.acknowledged_at) {
     router.push(`/guide/tours/${params.id}/acknowledge`)
     return null
   }
 
-  function toggleChecklistItem(itemId: string) {
-    setChecklistState(prev => ({
-      ...prev,
-      [itemId]: !prev[itemId]
-    }))
+  function togglePreDeparture(itemId: string) {
+    setPreDepartureChecked(prev => ({ ...prev, [itemId]: !prev[itemId] }))
+  }
+
+  function toggleEquipment(itemId: string) {
+    setEquipmentChecked(prev => ({ ...prev, [itemId]: !prev[itemId] }))
   }
 
   async function handlePhotoUpload(type: 'equipment' | 'van', file: File) {
@@ -232,61 +211,36 @@ export default function GuideTourPage() {
     }
   }
 
-  async function startTour() {
-    // Check all required checklist items
-    if (checklist) {
-      const allRequired = checklist.items
-        .filter(item => item.required)
-        .every(item => checklistState[item.id])
-      
-      if (!allRequired) {
-        alert('Please complete all required checklist items')
-        return
-      }
-    }
+  const allPreDepartureDone = preDepartureItems.every(item => preDepartureChecked[item.id])
+  const allEquipmentDone = tourEquipment.length === 0 || tourEquipment.every(item => equipmentChecked[item.id])
+  const allPhotosDone = equipmentPhoto && vanPhoto
+  const canStartTour = allPreDepartureDone && allEquipmentDone && allPhotosDone
 
-    if (!equipmentPhoto || !vanPhoto) {
-      alert('Please upload both required photos')
-      return
-    }
+  async function startTour() {
+    if (!canStartTour) return
 
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
 
-    // Get brand_id from tour
-    const { data: tourData } = await supabase
-      .from('tours')
-      .select('brand_id')
-      .eq('id', params.id)
-      .single()
-
     // Save checklist completion
-    if (checklist && tourData) {
-      await supabase
-        .from('checklist_completions')
-        .insert({
-          tour_id: params.id,
-          brand_id: tourData.brand_id,
-          guide_id: user.id,
-          template_id: checklist.id,
-          stage: 'pre_departure',
-          completed_at: new Date().toISOString(),
-          is_confirmed: true
-        })
-    }
+    await supabase.from('checklist_completions').insert({
+      tour_id: params.id,
+      brand_id: tour.brand_id,
+      guide_id: user.id,
+      stage: 'pre_departure',
+      completed_at: new Date().toISOString(),
+      is_confirmed: true,
+      notes: JSON.stringify({ pre_departure: preDepartureChecked, equipment: equipmentChecked })
+    })
 
     // Create pre_departure checkin
-    if (tourData) {
-      await supabase
-        .from('guide_checkins')
-        .insert({
-          tour_id: params.id,
-          brand_id: tourData.brand_id,
-          guide_id: user.id,
-          checkin_type: 'pre_departure',
-          checked_in_at: new Date().toISOString()
-        })
-    }
+    await supabase.from('guide_checkins').insert({
+      tour_id: params.id,
+      brand_id: tour.brand_id,
+      guide_id: user.id,
+      checkin_type: 'pre_departure',
+      checked_in_at: new Date().toISOString()
+    })
 
     // Update tour status
     const { error } = await supabase
@@ -301,315 +255,387 @@ export default function GuideTourPage() {
     }
   }
 
-  async function completeTour() {
-    router.push(`/guide/tours/${params.id}/complete`)
-  }
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-gray-500">Loading tour...</div>
-      </div>
-    )
-  }
-
-  if (!tour) {
-    return (
-      <div className="text-center py-12">
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">Tour not found</h1>
-        <Link href="/guide" className="text-blue-600 hover:underline">
-          ← Back to my tours
-        </Link>
-      </div>
-    )
-  }
-
-  const allRequiredChecked = checklist?.items
-    .filter((item: { id: string; text: string; required: boolean }) => item.required)
-    .every((item: { id: string; text: string; required: boolean }) => checklistState[item.id]) ?? true
+  // Check if all pickups are done
+  const pickupStops = stops.filter(s => s.stop_type === 'pickup')
+  const allPickupsDone = pickupStops.every(stop => 
+    checkins.some(c => c.pickup_stop_id === stop.id && c.checkin_type === 'pickup')
+  )
 
   return (
-    <div className="space-y-6 p-4">
+    <div className="space-y-6 p-4 pb-24">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">{tour.name}</h1>
-        <p className="text-gray-500 mt-1">{tour.start_time?.slice(0, 5)} • {tour.pickup_location}</p>
-      </div>
-
-      {/* Status */}
-      <div className={`px-4 py-2 rounded-full text-sm font-medium inline-block ${
-        tour.status === 'in_progress' ? 'bg-blue-100 text-blue-700' :
-        tour.status === 'completed' ? 'bg-green-100 text-green-700' :
-        'bg-gray-100 text-gray-700'
-      }`}>
-        {tour.status.replace('_', ' ')}
-      </div>
-
-      {/* Pre-Trip Checklist - Only show before tour starts */}
-      {tour.status === 'scheduled' && checklist && (
-        <div className="bg-white rounded-2xl border border-gray-200 p-6">
-          <h2 className="font-semibold text-gray-900 mb-4">{checklist.name}</h2>
-          <div className="space-y-3">
-            {checklist.items.map((item: { id: string; text: string; required: boolean }) => (
-              <label key={item.id} className="flex items-center gap-3">
-                <input
-                  type="checkbox"
-                  checked={checklistState[item.id] || false}
-                  onChange={() => toggleChecklistItem(item.id)}
-                  className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                />
-                <span className="text-gray-700">
-                  {item.text}
-                  {item.required && <span className="text-red-500 ml-1">*</span>}
-                </span>
-              </label>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Photo Uploads - Only show when starting or in progress */}
-      {(tour.status === 'scheduled' || tour.status === 'in_progress') && (
-        <div className="bg-white rounded-2xl border border-gray-200 p-6 space-y-4">
-          <h2 className="font-semibold text-gray-900">Required Photos</h2>
-          
-          {/* Equipment Photo */}
+      <div className="bg-white rounded-2xl border border-gray-200 p-6">
+        <div className="flex items-start justify-between">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Equipment Check Photo</label>
-            {equipmentPhoto ? (
-              <div className="relative">
-                <img src={equipmentPhoto} alt="Equipment" className="w-full h-48 object-cover rounded-lg" />
-                <button 
-                  onClick={() => setEquipmentPhoto(null)}
-                  className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full text-xs"
-                >
-                  Retake
-                </button>
-              </div>
-            ) : (
-              <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50">
-                <span className="text-3xl mb-2">📷</span>
-                <span className="text-sm text-gray-500">Tap to take photo</span>
-                <input 
-                  type="file" 
-                  accept="image/*" 
-                  capture="environment"
-                  className="hidden" 
-                  onChange={(e) => e.target.files?.[0] && handlePhotoUpload('equipment', e.target.files[0])}
-                  disabled={uploading}
-                />
-              </label>
+            <h1 className="text-2xl font-bold text-gray-900">{tour.name}</h1>
+            <p className="text-gray-500 mt-1">
+              {new Date(tour.tour_date).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
+            </p>
+            {tour.vehicles && (
+              <p className="text-sm text-blue-600 mt-1 font-medium">
+                🚐 {tour.vehicles.plate_number} • {tour.vehicles.model}
+              </p>
             )}
           </div>
-
-          {/* Van Photo */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Vehicle Photo</label>
-            {vanPhoto ? (
-              <div className="relative">
-                <img src={vanPhoto} alt="Van" className="w-full h-48 object-cover rounded-lg" />
-                <button 
-                  onClick={() => setVanPhoto(null)}
-                  className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full text-xs"
-                >
-                  Retake
-                </button>
-              </div>
-            ) : (
-              <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50">
-                <span className="text-3xl mb-2">🚐</span>
-                <span className="text-sm text-gray-500">Tap to take photo</span>
-                <input 
-                  type="file" 
-                  accept="image/*" 
-                  capture="environment"
-                  className="hidden" 
-                  onChange={(e) => e.target.files?.[0] && handlePhotoUpload('van', e.target.files[0])}
-                  disabled={uploading}
-                />
-              </label>
-            )}
+          <div className={`px-3 py-1 rounded-full text-sm font-medium ${
+            tour.status === 'in_progress' ? 'bg-blue-100 text-blue-700' :
+            tour.status === 'completed' ? 'bg-green-100 text-green-700' :
+            'bg-gray-100 text-gray-700'
+          }`}>
+            {tour.status.replace('_', ' ')}
           </div>
         </div>
-      )}
+      </div>
 
-      {/* Tour Stops - Only show when in progress */}
-      {tour.status === 'in_progress' && stops.length > 0 && (
-        <div className="bg-white rounded-2xl border border-gray-200 p-6">
-          <h2 className="font-semibold text-gray-900 mb-4">Tour Stops</h2>
-          <div className="space-y-3">
-            {stops.map((stop) => {
-              const checkin = checkins.find(c => c.pickup_stop_id === stop.id)
-              const isCheckedIn = !!checkin
-              return (
-                <div key={stop.id} className={`p-4 rounded-xl border-2 ${isCheckedIn ? 'bg-green-50 border-green-200' : 'bg-white border-gray-200'}`}>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-lg">
-                          {stop.stop_type === 'pickup' ? '📍' : stop.stop_type === 'activity' ? '🎯' : '🏁'}
-                        </span>
-                        <span className="font-medium">{stop.location_name}</span>
-                      </div>
-                      <p className="text-sm text-gray-500 mt-1">
-                        {stop.scheduled_time?.slice(0, 5)}
-                        {stop.guest_count && ` • ${stop.guest_count} guests`}
-                      </p>
-                      {isCheckedIn && (
-                        <p className="text-xs text-green-600 mt-1">
-                          ✓ Checked in at {new Date(checkin.checked_in_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
-                        </p>
-                      )}
-                    </div>
-                    {!isCheckedIn && (
-                      <Link
-                        href={`/guide/tours/${tour.id}/checkin?type=${stop.stop_type}`}
-                        className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700"
-                      >
-                        Check In
-                      </Link>
+      {/* Tour Start Wizard - Only show when scheduled */}
+      {tour.status === 'scheduled' && (
+        <>
+          {/* Pre-Departure Checklist */}
+          <div className="bg-white rounded-2xl border border-gray-200 p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
+                <span className="text-blue-600 font-bold">1</span>
+              </div>
+              <h2 className="font-semibold text-gray-900 text-lg">Pre-Departure Checklist</h2>
+            </div>
+            <div className="space-y-3">
+              {preDepartureItems.map((item) => (
+                <button
+                  key={item.id}
+                  onClick={() => togglePreDeparture(item.id)}
+                  className={`w-full flex items-center gap-4 p-4 rounded-xl border-2 transition-all text-left ${
+                    preDepartureChecked[item.id]
+                      ? 'bg-green-50 border-green-200'
+                      : 'bg-white border-gray-200 hover:border-gray-300'
+                  }`}
+                >
+                  <span className="text-2xl">{item.icon}</span>
+                  <div className="flex-1">
+                    <div className="font-medium text-gray-900">{item.label}</div>
+                    <div className="text-sm text-gray-500">{item.description}</div>
+                  </div>
+                  <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
+                    preDepartureChecked[item.id]
+                      ? 'bg-green-500 border-green-500'
+                      : 'border-gray-300'
+                  }`}>
+                    {preDepartureChecked[item.id] && (
+                      <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
                     )}
                   </div>
-                </div>
-              )
-            })}
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
-      )}
 
-      {/* Reservation Manifest */}
-      {reservations.length > 0 && (
-        <div className="bg-white rounded-2xl border border-gray-200 p-6">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h2 className="font-semibold text-gray-900">Reservations</h2>
-              <div className="text-sm text-gray-500 mt-1">
-                <span className="font-medium">
-                  {reservations.filter(r => r.checked_in).length}/{reservations.length} 
-                </span>
-                reservations checked in
+          {/* Tour Equipment */}
+          {tourEquipment.length > 0 && (
+            <div className="bg-white rounded-2xl border border-gray-200 p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
+                  <span className="text-blue-600 font-bold">2</span>
+                </div>
+                <h2 className="font-semibold text-gray-900 text-lg">Tour Equipment</h2>
+              </div>
+              <div className="space-y-3">
+                {tourEquipment.map((item) => (
+                  <button
+                    key={item.id}
+                    onClick={() => toggleEquipment(item.id)}
+                    className={`w-full flex items-center gap-4 p-4 rounded-xl border-2 transition-all text-left ${
+                      equipmentChecked[item.id]
+                        ? 'bg-green-50 border-green-200'
+                        : 'bg-white border-gray-200 hover:border-gray-300'
+                    }`}
+                  >
+                    <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center">
+                      <span className="text-xl">🎒</span>
+                    </div>
+                    <div className="flex-1">
+                      <div className="font-medium text-gray-900">{item.name}</div>
+                      {item.description && (
+                        <div className="text-sm text-gray-500">{item.description}</div>
+                      )}
+                    </div>
+                    <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
+                      equipmentChecked[item.id]
+                        ? 'bg-green-500 border-green-500'
+                        : 'border-gray-300'
+                    }`}>
+                      {equipmentChecked[item.id] && (
+                        <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                      )}
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Required Photos */}
+          <div className="bg-white rounded-2xl border border-gray-200 p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
+                <span className="text-blue-600 font-bold">3</span>
+              </div>
+              <h2 className="font-semibold text-gray-900 text-lg">Required Photos</h2>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              {/* Van Photo */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Van Photo</label>
+                {vanPhoto ? (
+                  <div className="relative rounded-xl overflow-hidden">
+                    <img src={vanPhoto} alt="Van" className="w-full h-32 object-cover" />
+                    <button 
+                      onClick={() => setVanPhoto(null)}
+                      className="absolute top-2 right-2 w-8 h-8 bg-red-500 text-white rounded-full flex items-center justify-center text-sm font-bold"
+                    >
+                      ⟳
+                    </button>
+                    <div className="absolute bottom-2 left-2 bg-green-500 text-white px-2 py-1 rounded-full text-xs font-medium">
+                      ✓ Captured
+                    </div>
+                  </div>
+                ) : (
+                  <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-gray-300 rounded-xl cursor-pointer hover:border-blue-400 hover:bg-blue-50 transition-colors">
+                    <span className="text-3xl mb-1">🚐</span>
+                    <span className="text-sm text-gray-500">Tap to capture</span>
+                    <input 
+                      type="file" 
+                      accept="image/*" 
+                      capture="environment"
+                      className="hidden" 
+                      onChange={(e) => e.target.files?.[0] && handlePhotoUpload('van', e.target.files[0])}
+                      disabled={uploading}
+                    />
+                  </label>
+                )}
+              </div>
+
+              {/* Equipment Photo */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Equipment Photo</label>
+                {equipmentPhoto ? (
+                  <div className="relative rounded-xl overflow-hidden">
+                    <img src={equipmentPhoto} alt="Equipment" className="w-full h-32 object-cover" />
+                    <button 
+                      onClick={() => setEquipmentPhoto(null)}
+                      className="absolute top-2 right-2 w-8 h-8 bg-red-500 text-white rounded-full flex items-center justify-center text-sm font-bold"
+                    >
+                      ⟳
+                    </button>
+                    <div className="absolute bottom-2 left-2 bg-green-500 text-white px-2 py-1 rounded-full text-xs font-medium">
+                      ✓ Captured
+                    </div>
+                  </div>
+                ) : (
+                  <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-gray-300 rounded-xl cursor-pointer hover:border-blue-400 hover:bg-blue-50 transition-colors">
+                    <span className="text-3xl mb-1">🎒</span>
+                    <span className="text-sm text-gray-500">Tap to capture</span>
+                    <input 
+                      type="file" 
+                      accept="image/*" 
+                      capture="environment"
+                      className="hidden" 
+                      onChange={(e) => e.target.files?.[0] && handlePhotoUpload('equipment', e.target.files[0])}
+                      disabled={uploading}
+                    />
+                  </label>
+                )}
               </div>
             </div>
           </div>
-          
-          <div className="space-y-3">
-            {reservations.map((reservation) => (
-              <div 
-                key={reservation.id}
-                className={`p-4 rounded-xl border-2 transition-all ${
-                  reservation.no_show 
-                    ? 'bg-red-50 border-red-200' 
-                    : reservation.checked_in 
-                      ? 'bg-green-50 border-green-200' 
-                      : 'bg-white border-gray-200'
-                }`}
-              >
-                <div className="flex items-start gap-3">
-                  <label className="flex items-center gap-3 flex-1">
-                    <input
-                      type="checkbox"
-                      checked={reservation.checked_in}
-                      onChange={(e) => toggleReservationCheckin(reservation.id, e.target.checked)}
-                      disabled={reservation.no_show}
-                      className="w-5 h-5 rounded border-gray-300 text-blue-600"
-                    />
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2">
-                        <span className={`font-medium ${reservation.no_show ? 'line-through text-gray-400' : 'text-gray-900'}`}>
-                          {reservation.primary_contact_name || 'Guest'}
-                        </span>
-                        <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-600">
-                          {reservation.booking_reference}
-                        </span>
+
+          {/* Start Tour Button */}
+          <button
+            onClick={startTour}
+            disabled={!canStartTour || uploading}
+            className={`w-full py-4 rounded-xl font-semibold text-lg transition-colors flex items-center justify-center gap-3 ${
+              canStartTour && !uploading
+                ? 'bg-blue-600 text-white hover:bg-blue-700'
+                : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+            }`}
+          >
+            {uploading ? (
+              <>
+                <span className="animate-spin">⟳</span>
+                Uploading...
+              </>
+            ) : canStartTour ? (
+              <>
+                <span>🚐</span>
+                START TOUR
+              </>
+            ) : (
+              'Complete all steps to start'
+            )}
+          </button>
+        </>
+      )}
+
+      {/* In Progress - Show Tour Stops */}
+      {tour.status === 'in_progress' && (
+        <>
+          {/* Progress Summary */}
+          <div className="bg-blue-50 rounded-2xl border border-blue-200 p-6">
+            <h2 className="font-semibold text-gray-900 mb-4">Tour Progress</h2>
+            <div className="grid grid-cols-3 gap-4 text-center">
+              <div>
+                <div className={`text-2xl font-bold ${pickupStops.every(s => checkins.some(c => c.pickup_stop_id === s.id && c.checkin_type === 'pickup')) ? 'text-green-600' : 'text-gray-400'}`}>
+                  {pickupStops.filter(s => checkins.some(c => c.pickup_stop_id === s.id && c.checkin_type === 'pickup')).length}/{pickupStops.length}
+                </div>
+                <div className="text-sm text-gray-500">Pickups</div>
+              </div>
+              <div>
+                <div className="text-2xl font-bold text-gray-400">
+                  {reservations.filter(r => r.checked_in).length}/{reservations.length}
+                </div>
+                <div className="text-sm text-gray-500">Checked In</div>
+              </div>
+              <div>
+                <div className="text-2xl font-bold text-gray-400">
+                  {stops.filter(s => s.stop_type === 'dropoff').every(s => 
+                    checkins.some(c => c.pickup_stop_id === s.id && c.checkin_type === 'dropoff')
+                  ) ? '✓' : '...'}
+                </div>
+                <div className="text-sm text-gray-500">Dropoffs</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Tour Stops */}
+          <div className="bg-white rounded-2xl border border-gray-200 p-6">
+            <h2 className="font-semibold text-gray-900 mb-4">Tour Stops</h2>
+            <div className="space-y-3">
+              {stops.map((stop) => {
+                const checkin = checkins.find(c => c.pickup_stop_id === stop.id)
+                const isCheckedIn = !!checkin
+                const icon = stop.stop_type === 'pickup' ? '📍' : stop.stop_type === 'activity' ? '🎯' : '🏁'
+                
+                return (
+                  <div key={stop.id} className={`p-4 rounded-xl border-2 ${
+                    isCheckedIn ? 'bg-green-50 border-green-200' : 'bg-white border-gray-200'
+                  }`}>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <span className="text-2xl">{icon}</span>
+                        <div>
+                          <div className="font-medium text-gray-900">{stop.location_name}</div>
+                          <div className="text-sm text-gray-500">
+                            {stop.scheduled_time?.slice(0, 5)} • {stop.guest_count} guests
+                          </div>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-2 mt-1">
-                        <span className="text-sm font-semibold text-blue-600">
-                          {reservation.adult_pax}.{reservation.child_pax} PAX
-                        </span>
-                        {reservation.infant_pax > 0 && (
-                          <span className="text-xs text-gray-500">+{reservation.infant_pax} infant</span>
-                        )}
+                      {isCheckedIn ? (
+                        <div className="bg-green-500 text-white px-3 py-1 rounded-full text-sm font-medium">
+                          ✓ Done
+                        </div>
+                      ) : (
+                        <Link
+                          href={`/guide/tours/${tour.id}/checkin?type=${stop.stop_type}`}
+                          className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700"
+                        >
+                          Check In
+                        </Link>
+                      )}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+
+          {/* Guest Manifest */}
+          {reservations.length > 0 && (
+            <div className="bg-white rounded-2xl border border-gray-200 p-6">
+              <button
+                onClick={() => setShowGuestManifest(!showGuestManifest)}
+                className="w-full flex items-center justify-between"
+              >
+                <div>
+                  <h2 className="font-semibold text-gray-900">Guest Manifest</h2>
+                  <p className="text-sm text-gray-500 mt-1">
+                    {reservations.filter(r => r.checked_in).length}/{reservations.length} checked in
+                  </p>
+                </div>
+                <span className={`transform transition-transform ${showGuestManifest ? 'rotate-180' : ''}`}>
+                  ▼
+                </span>
+              </button>
+              
+              {showGuestManifest && (
+                <div className="mt-4 space-y-3">
+                  {reservations.map((reservation) => (
+                    <div key={reservation.id} className={`p-3 rounded-xl border ${
+                      reservation.no_show ? 'bg-red-50 border-red-200' :
+                      reservation.checked_in ? 'bg-green-50 border-green-200' : 'bg-gray-50 border-gray-200'
+                    }`}>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <div className="font-medium text-gray-900">
+                            {reservation.primary_contact_name || 'Guest'}
+                          </div>
+                          <div className="text-sm text-gray-500">
+                            {reservation.adult_pax}A {reservation.child_pax > 0 ? `${reservation.child_pax}C` : ''} {reservation.infant_pax > 0 ? `${reservation.infant_pax}I` : ''}
+                          </div>
+                        </div>
+                        <div className={`px-2 py-1 rounded-full text-xs font-medium ${
+                          reservation.no_show ? 'bg-red-100 text-red-700' :
+                          reservation.checked_in ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-600'
+                        }`}>
+                          {reservation.no_show ? 'No Show' : reservation.checked_in ? 'Checked In' : 'Pending'}
+                        </div>
                       </div>
                       {reservation.dietary_restrictions?.length > 0 && (
                         <p className="text-xs text-orange-600 mt-1">
                           🍽️ {reservation.dietary_restrictions.join(', ')}
                         </p>
                       )}
-                      {reservation.special_requests && (
-                        <p className="text-xs text-gray-500 mt-1">
-                          📝 {reservation.special_requests}
-                        </p>
-                      )}
                     </div>
-                  </label>
-                  
-                  {!reservation.checked_in && !reservation.no_show && tour?.status !== 'completed' && (
-                    <button
-                      onClick={() => markNoShow(reservation.id)}
-                      className="text-xs text-red-500 hover:text-red-700 px-2 py-1"
-                    >
-                      No show
-                    </button>
-                  )}
+                  ))}
                 </div>
-              </div>
-            ))}
-          </div>
+              )}
+            </div>
+          )}
+
+          {/* Complete Tour Button */}
+          <Link
+            href={`/guide/tours/${tour.id}/complete`}
+            className="block w-full bg-green-600 text-white py-4 rounded-xl font-semibold text-lg text-center hover:bg-green-700"
+          >
+            🚐 Complete Tour
+          </Link>
+        </>
+      )}
+
+      {/* Completed */}
+      {tour.status === 'completed' && (
+        <div className="bg-green-50 rounded-2xl border border-green-200 p-6 text-center">
+          <div className="text-4xl mb-2">✓</div>
+          <h2 className="text-xl font-bold text-gray-900">Tour Completed</h2>
+          <p className="text-gray-500 mt-1">Great work!</p>
         </div>
       )}
 
-      {/* Actions */}
-      <div className="flex gap-3">
-        {tour.status === 'scheduled' && (
-          <button
-            onClick={startTour}
-            disabled={uploading || !equipmentPhoto || !vanPhoto || !allRequiredChecked}
-            className="flex-1 bg-blue-600 text-white px-6 py-4 rounded-xl hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed text-lg font-semibold"
-          >
-            {uploading ? 'Uploading...' : 'Start Tour'}
-          </button>
-        )}
-        {tour.status === 'in_progress' && (
-          <div className="flex-1">
-            {!hasCheckedIn ? (
-              <Link
-                href={`/guide/tours/${tour.id}/checkin`}
-                className="block w-full bg-blue-600 text-white px-6 py-4 rounded-xl hover:bg-blue-700 transition-colors text-lg font-semibold text-center"
-              >
-                📍 Check In at Pickup
-              </Link>
-            ) : (
-              <button
-                onClick={completeTour}
-                className="w-full bg-green-600 text-white px-6 py-4 rounded-xl hover:bg-green-700 transition-colors text-lg font-semibold"
-              >
-                Complete Tour
-              </button>
-            )}
-          </div>
-        )}
-        {['completed', 'cancelled'].includes(tour.status) && (
-          <div className="flex-1 text-center text-gray-500 py-4">
-            Tour {tour.status}
-          </div>
-        )}
-      </div>
-
-      {/* Report Incident */}
-      {tour?.status !== 'completed' && tour?.status !== 'cancelled' && (
-        <div className="space-y-3">
+      {/* Quick Actions */}
+      {tour.status !== 'completed' && (
+        <div className="grid grid-cols-2 gap-4">
           <Link
-            href={`/guide/tours/${tour?.id}/incident`}
-            className="block w-full bg-red-50 border-2 border-red-200 text-red-700 px-6 py-4 rounded-xl hover:bg-red-100 transition-colors text-lg font-semibold text-center"
+            href={`/guide/tours/${tour.id}/incident`}
+            className="bg-red-50 border-2 border-red-200 text-red-700 px-4 py-4 rounded-xl font-semibold text-center hover:bg-red-100"
           >
-            🚨 Report Incident
+            🚨 Incident
           </Link>
-          
           <Link
-            href={`/guide/tours/${tour?.id}/expense`}
-            className="block w-full bg-blue-50 border-2 border-blue-200 text-blue-700 px-6 py-4 rounded-xl hover:bg-blue-100 transition-colors text-lg font-semibold text-center"
+            href={`/guide/tours/${tour.id}/expense`}
+            className="bg-blue-50 border-2 border-blue-200 text-blue-700 px-4 py-4 rounded-xl font-semibold text-center hover:bg-blue-100"
           >
-            💵 Log Expense
+            💵 Expense
           </Link>
         </div>
       )}
