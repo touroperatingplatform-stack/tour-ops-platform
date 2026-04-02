@@ -217,7 +217,7 @@ export default function GuideTourPage() {
   const canStartTour = allPreDepartureDone && allEquipmentDone && allPhotosDone
 
   async function startTour() {
-    if (!canStartTour) return
+    if (!canStartTour || !tour) return
 
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
