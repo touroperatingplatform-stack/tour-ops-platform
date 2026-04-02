@@ -64,8 +64,8 @@ export default function OperationsLayout({ children }: { children: React.ReactNo
       <TopNav />
 
       {/* Scrollable Content */}
-      <main className="flex-1 overflow-hidden">
-        <div className="w-full h-full overflow-auto px-4 sm:px-6 lg:px-12 py-4">
+      <main className="flex-1 overflow-hidden border-4 border-transparent">
+        <div className="w-full h-full overflow-auto px-4 sm:px-6 lg:px-12 py-4 border-4 border-transparent">
           {children}
         </div>
       </main>

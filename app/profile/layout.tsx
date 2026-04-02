@@ -34,8 +34,8 @@ export default function ProfileLayout({
           </header>
 
           {/* Page Content - padding inside scroll area */}
-          <main className="flex-1 overflow-y-auto">
-            <div className="p-3">{children}</div>
+          <main className="flex-1 overflow-y-auto border-4 border-transparent">
+            <div className="p-3 border-4 border-transparent">{children}</div>
           </main>
         </div>
       </div>

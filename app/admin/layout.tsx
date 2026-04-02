@@ -87,8 +87,10 @@ export default function AdminLayout({
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 overflow-hidden">
-        {children}
+      <main className="flex-1 overflow-hidden border-4 border-transparent">
+        <div className="border-4 border-transparent">
+          {children}
+        </div>
       </main>
 
       {/* Bottom Navigation */}
