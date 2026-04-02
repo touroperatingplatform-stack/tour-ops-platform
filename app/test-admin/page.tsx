@@ -10,28 +10,30 @@ export default function TestPage() {
 
           {/* KPI CARDS ROW */}
           <div className="flex-none">
-            <div className="grid grid-cols-4 gap-6">
-              <div className="bg-white rounded-lg border border-gray-200 p-5 text-center">
-                <div className="flex items-baseline justify-center gap-2">
-                  <span className="text-3xl font-bold">17/19</span>
-                  <span className="text-xs text-green-600 font-medium">LIVE</span>
+            <div className="border-8 border-transparent">
+              <div className="grid grid-cols-4 gap-6">
+                <div className="bg-white rounded-lg border border-gray-200 p-5 text-center">
+                  <div className="flex items-baseline justify-center gap-2">
+                    <span className="text-3xl font-bold">17/19</span>
+                    <span className="text-xs text-green-600 font-medium">LIVE</span>
+                  </div>
+                  <p className="text-xs text-gray-500 uppercase font-medium mt-2">Tours Today</p>
                 </div>
-                <p className="text-xs text-gray-500 uppercase font-medium mt-2">Tours Today</p>
-              </div>
 
-              <div className="bg-white rounded-lg border border-gray-200 p-5 text-center">
-                <p className="text-3xl font-bold text-blue-600">132</p>
-                <p className="text-xs text-blue-600 uppercase font-medium mt-2">Guests Today</p>
-              </div>
+                <div className="bg-white rounded-lg border border-gray-200 p-5 text-center">
+                  <p className="text-3xl font-bold text-blue-600">132</p>
+                  <p className="text-xs text-blue-600 uppercase font-medium mt-2">Guests Today</p>
+                </div>
 
-              <div className="bg-white rounded-lg border border-gray-200 p-5 text-center">
-                <p className="text-3xl font-bold text-green-600">94%</p>
-                <p className="text-xs text-green-600 uppercase font-medium mt-2">On Time %</p>
-              </div>
+                <div className="bg-white rounded-lg border border-gray-200 p-5 text-center">
+                  <p className="text-3xl font-bold text-green-600">94%</p>
+                  <p className="text-xs text-green-600 uppercase font-medium mt-2">On Time %</p>
+                </div>
 
-              <div className="bg-white rounded-lg border border-gray-200 p-5 text-center">
-                <p className="text-3xl font-bold text-red-600">0</p>
-                <p className="text-xs text-red-600 uppercase font-medium mt-2">Incidents</p>
+                <div className="bg-white rounded-lg border border-gray-200 p-5 text-center">
+                  <p className="text-3xl font-bold text-red-600">0</p>
+                  <p className="text-xs text-red-600 uppercase font-medium mt-2">Incidents</p>
+                </div>
               </div>
             </div>
           </div>
