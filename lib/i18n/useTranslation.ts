@@ -14,8 +14,11 @@ function notifyListeners() {
   listeners.forEach(fn => fn())
 }
 
-// Load translations immediately
+// Load translations only on client side
 async function loadTranslations(locale: Locale) {
+  // Skip during SSR
+  if (typeof window === 'undefined') return
+  
   try {
     const response = await fetch(`/locales/${locale}.json`)
     translations = await response.json()
@@ -28,8 +31,10 @@ async function loadTranslations(locale: Locale) {
   }
 }
 
-// Initial load
-loadTranslations('en')
+// Initial load only on client
+if (typeof window !== 'undefined') {
+  loadTranslations('en')
+}
 
 export function useTranslation() {
   const [, forceUpdate] = useState({})
