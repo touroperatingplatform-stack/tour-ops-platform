@@ -38,6 +38,8 @@ export default function CompleteTourPage() {
   const router = useRouter()
   const [submitting, setSubmitting] = useState(false)
   const [location, setLocation] = useState<{lat: number, lng: number} | null>(null)
+  const [tour, setTour] = useState<{id: string; status: string; acknowledged_at: string | null} | null>(null)
+  const [loading, setLoading] = useState(true)
   
   // Form state
   const [weather, setWeather] = useState('sunny')
@@ -67,7 +69,33 @@ export default function CompleteTourPage() {
         () => {} // Silently fail
       )
     }
+    loadTour()
   }, [])
+
+  async function loadTour() {
+    const { data: tourData } = await supabase
+      .from('tours')
+      .select('id, status, acknowledged_at')
+      .eq('id', params.id)
+      .single()
+    
+    if (tourData) {
+      setTour(tourData)
+      
+      // Enforce wizard order: must acknowledge first
+      if (!tourData.acknowledged_at) {
+        router.push(`/guide/tours/${params.id}/acknowledge`)
+        return
+      }
+      
+      // Enforce wizard order: must be in_progress to complete
+      if (tourData.status !== 'in_progress') {
+        router.push(`/guide/tours/${params.id}`)
+        return
+      }
+    }
+    setLoading(false)
+  }
 
   async function handlePhotoUpload(file: File) {
     setUploading(true)
@@ -146,6 +174,14 @@ export default function CompleteTourPage() {
       router.push('/guide')
     }
     setSubmitting(false)
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-gray-500">Loading...</div>
+      </div>
+    )
   }
 
   return (

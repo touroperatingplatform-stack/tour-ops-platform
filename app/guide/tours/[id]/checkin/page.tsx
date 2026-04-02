@@ -52,11 +52,25 @@ export default function PickupCheckinPage() {
   async function loadTourData() {
     const { data: tourData } = await supabase
       .from('tours')
-      .select('id, name, start_time, status')
+      .select('id, name, start_time, status, acknowledged_at')
       .eq('id', tourId)
       .single()
     
-    if (tourData) setTour(tourData)
+    if (tourData) {
+      setTour(tourData)
+      
+      // Enforce wizard order: must acknowledge first
+      if (!tourData.acknowledged_at) {
+        router.push(`/guide/tours/${tourId}/acknowledge`)
+        return
+      }
+      
+      // Enforce wizard order: must start tour (in_progress) before checking in
+      if (tourData.status === 'scheduled') {
+        router.push(`/guide/tours/${tourId}`)
+        return
+      }
+    }
 
     // Load stops filtered by type
     const { data: stopsData } = await supabase
