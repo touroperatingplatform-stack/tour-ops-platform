@@ -104,7 +104,7 @@ export default function AcknowledgeTourPage() {
       // Load reservations for special needs
       const { data: resData } = await supabase
         .from('reservation_manifest')
-        .select('adult_pax, child_pax, infant_pax, dietary_restrictions, accessibility_needs, special_requests')
+        .select('id, adult_pax, child_pax, infant_pax, dietary_restrictions, accessibility_needs, special_requests')
         .eq('tour_id', params.id)
       
       if (resData) setReservations(resData)
