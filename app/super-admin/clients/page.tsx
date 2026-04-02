@@ -745,7 +745,7 @@ export default function SuperAdminClientsPage() {
       {/* Create Client Modal */}
       {showCreateModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+          <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto border border-gray-300">
             <div className="p-6 border-b sticky top-0 bg-white">
               <h2 className="text-2xl font-bold">Create New Client</h2>
               <p className="text-gray-600">Set up a new client account with features and limits</p>
@@ -1044,7 +1044,7 @@ export default function SuperAdminClientsPage() {
       {/* Edit Client Modal */}
       {showEditModal && selectedClient && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+          <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto border border-gray-300">
             <div className="p-6 border-b sticky top-0 bg-white">
               <h2 className="text-2xl font-bold">Edit Client</h2>
               <p className="text-gray-600">Update client info, company, and settings</p>
