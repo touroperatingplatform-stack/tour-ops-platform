@@ -779,7 +779,7 @@ export default function SuperAdminDemoPage() {
       // Get company and brands
       const { data: companies } = await supabase.from('companies').select('id').limit(1)
       const { data: brands } = await supabase.from('brands').select('id')
-      const { data: checklists } = await supabase.from('checklist_templates').select('id, label').limit(1)
+      const { data: checklists } = await supabase.from('checklists').select('id, name').limit(1)
       
       if (!companies || companies.length === 0) {
         throw new Error('No companies found. Please create a company first.')
