@@ -765,7 +765,7 @@ export default function SuperAdminClientsPage() {
                       required
                       value={formData.email}
                       onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                      className="w-full border rounded-lg px-3 py-2"
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                       placeholder="client@example.com"
                     />
                   </div>
@@ -778,7 +778,7 @@ export default function SuperAdminClientsPage() {
                       required
                       value={formData.password}
                       onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                      className="w-full border rounded-lg px-3 py-2"
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                       placeholder="Minimum 8 characters"
                       minLength={8}
                     />
@@ -791,7 +791,7 @@ export default function SuperAdminClientsPage() {
                       type="text"
                       value={formData.first_name}
                       onChange={(e) => setFormData({ ...formData, first_name: e.target.value })}
-                      className="w-full border rounded-lg px-3 py-2"
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
                   <div>
@@ -802,7 +802,7 @@ export default function SuperAdminClientsPage() {
                       type="text"
                       value={formData.last_name}
                       onChange={(e) => setFormData({ ...formData, last_name: e.target.value })}
-                      className="w-full border rounded-lg px-3 py-2"
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
                   <div>
@@ -813,7 +813,7 @@ export default function SuperAdminClientsPage() {
                       type="tel"
                       value={formData.phone}
                       onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                      className="w-full border rounded-lg px-3 py-2"
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
                   <div>
@@ -823,7 +823,7 @@ export default function SuperAdminClientsPage() {
                     <select
                       value={formData.status}
                       onChange={(e) => setFormData({ ...formData, status: e.target.value as any })}
-                      className="w-full border rounded-lg px-3 py-2"
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     >
                       <option value="active">Active</option>
                       <option value="trial">Trial</option>
@@ -846,7 +846,7 @@ export default function SuperAdminClientsPage() {
                       required
                       value={formData.company_name}
                       onChange={(e) => setFormData({ ...formData, company_name: e.target.value })}
-                      className="w-full border rounded-lg px-3 py-2"
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                       placeholder="e.g., Gavin Eco Adventures"
                     />
                   </div>
@@ -858,7 +858,7 @@ export default function SuperAdminClientsPage() {
                       type="text"
                       value={formData.company_slug}
                       onChange={(e) => setFormData({ ...formData, company_slug: e.target.value })}
-                      className="w-full border rounded-lg px-3 py-2"
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                       placeholder="e.g., gavin-eco-adventures"
                     />
                     <p className="text-xs text-gray-500 mt-1">Leave blank to auto-generate from company name</p>
@@ -945,7 +945,7 @@ export default function SuperAdminClientsPage() {
                         ...formData, 
                         limits: { ...formData.limits, maxCompanies: parseInt(e.target.value) }
                       })}
-                      className="w-full border rounded-lg px-3 py-2"
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
                   <div>
@@ -959,7 +959,7 @@ export default function SuperAdminClientsPage() {
                         ...formData, 
                         limits: { ...formData.limits, maxUsers: parseInt(e.target.value) }
                       })}
-                      className="w-full border rounded-lg px-3 py-2"
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
                   <div>
@@ -973,7 +973,7 @@ export default function SuperAdminClientsPage() {
                         ...formData, 
                         limits: { ...formData.limits, maxGuides: parseInt(e.target.value) }
                       })}
-                      className="w-full border rounded-lg px-3 py-2"
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
                   <div>
@@ -987,7 +987,7 @@ export default function SuperAdminClientsPage() {
                         ...formData, 
                         limits: { ...formData.limits, maxDrivers: parseInt(e.target.value) }
                       })}
-                      className="w-full border rounded-lg px-3 py-2"
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
                   <div>
@@ -1001,7 +1001,7 @@ export default function SuperAdminClientsPage() {
                         ...formData, 
                         limits: { ...formData.limits, maxToursPerDay: parseInt(e.target.value) }
                       })}
-                      className="w-full border rounded-lg px-3 py-2"
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
                   <div>
@@ -1015,7 +1015,7 @@ export default function SuperAdminClientsPage() {
                         ...formData, 
                         limits: { ...formData.limits, maxGuestsPerMonth: parseInt(e.target.value) }
                       })}
-                      className="w-full border rounded-lg px-3 py-2"
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
                 </div>
@@ -1074,7 +1074,7 @@ export default function SuperAdminClientsPage() {
                       type="password"
                       value={formData.password}
                       onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                      className="w-full border rounded-lg px-3 py-2"
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                       placeholder="Enter new password to change"
                     />
                   </div>
@@ -1086,7 +1086,7 @@ export default function SuperAdminClientsPage() {
                       type="text"
                       value={formData.first_name}
                       onChange={(e) => setFormData({ ...formData, first_name: e.target.value })}
-                      className="w-full border rounded-lg px-3 py-2"
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
                   <div>
@@ -1097,7 +1097,7 @@ export default function SuperAdminClientsPage() {
                       type="text"
                       value={formData.last_name}
                       onChange={(e) => setFormData({ ...formData, last_name: e.target.value })}
-                      className="w-full border rounded-lg px-3 py-2"
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
                   <div>
@@ -1108,7 +1108,7 @@ export default function SuperAdminClientsPage() {
                       type="tel"
                       value={formData.phone}
                       onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                      className="w-full border rounded-lg px-3 py-2"
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
                   <div>
@@ -1118,7 +1118,7 @@ export default function SuperAdminClientsPage() {
                     <select
                       value={formData.status}
                       onChange={(e) => setFormData({ ...formData, status: e.target.value as any })}
-                      className="w-full border rounded-lg px-3 py-2"
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     >
                       <option value="active">Active</option>
                       <option value="trial">Trial</option>
@@ -1141,7 +1141,7 @@ export default function SuperAdminClientsPage() {
                       required
                       value={formData.company_name}
                       onChange={(e) => setFormData({ ...formData, company_name: e.target.value })}
-                      className="w-full border rounded-lg px-3 py-2"
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                       placeholder="e.g., Gavin Eco Adventures"
                     />
                   </div>
@@ -1153,7 +1153,7 @@ export default function SuperAdminClientsPage() {
                       type="text"
                       value={formData.company_slug}
                       onChange={(e) => setFormData({ ...formData, company_slug: e.target.value })}
-                      className="w-full border rounded-lg px-3 py-2"
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                       placeholder="e.g., gavin-eco-adventures"
                     />
                     <p className="text-xs text-gray-500 mt-1">Leave blank to auto-generate</p>
@@ -1240,7 +1240,7 @@ export default function SuperAdminClientsPage() {
                         ...formData, 
                         limits: { ...formData.limits, maxCompanies: parseInt(e.target.value) }
                       })}
-                      className="w-full border rounded-lg px-3 py-2"
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
                   <div>
@@ -1254,7 +1254,7 @@ export default function SuperAdminClientsPage() {
                         ...formData, 
                         limits: { ...formData.limits, maxUsers: parseInt(e.target.value) }
                       })}
-                      className="w-full border rounded-lg px-3 py-2"
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
                   <div>
@@ -1268,7 +1268,7 @@ export default function SuperAdminClientsPage() {
                         ...formData, 
                         limits: { ...formData.limits, maxGuides: parseInt(e.target.value) }
                       })}
-                      className="w-full border rounded-lg px-3 py-2"
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
                   <div>
@@ -1282,7 +1282,7 @@ export default function SuperAdminClientsPage() {
                         ...formData, 
                         limits: { ...formData.limits, maxDrivers: parseInt(e.target.value) }
                       })}
-                      className="w-full border rounded-lg px-3 py-2"
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
                   <div>
@@ -1296,7 +1296,7 @@ export default function SuperAdminClientsPage() {
                         ...formData, 
                         limits: { ...formData.limits, maxToursPerDay: parseInt(e.target.value) }
                       })}
-                      className="w-full border rounded-lg px-3 py-2"
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
                   <div>
@@ -1310,7 +1310,7 @@ export default function SuperAdminClientsPage() {
                         ...formData, 
                         limits: { ...formData.limits, maxGuestsPerMonth: parseInt(e.target.value) }
                       })}
-                      className="w-full border rounded-lg px-3 py-2"
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
                 </div>
