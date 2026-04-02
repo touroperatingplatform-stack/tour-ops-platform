@@ -41,55 +41,57 @@ export default function TestLayout({ children }: { children: React.ReactNode }) 
 
   return (
     <div className="h-screen flex flex-col bg-gray-50 overflow-hidden">
-      {/* Top Navigation */}
-      <header className="bg-white flex-shrink-0 border-b border-gray-200">
-        <div className="flex items-center justify-between px-6 py-4">
-          {/* Logo + Dashboard */}
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold text-sm">
-              T
+      {/* Top Navigation - No border */}
+      <header className="bg-white flex-shrink-0">
+        <div className="px-4 py-3 border-8 border-transparent">
+          <div className="flex items-center justify-between px-4 py-3">
+            {/* Logo + Dashboard */}
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold text-sm">
+                T
+              </div>
+              <span className="font-bold text-gray-900">{t('nav.dashboard')}</span>
             </div>
-            <span className="font-bold text-gray-900">{t('nav.dashboard')}</span>
-          </div>
 
-          {/* Right side */}
-          <div className="flex items-center gap-3">
-            {/* Language Toggle */}
-            <LanguageToggle />
-            
-            {/* Notifications */}
-            <button className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center hover:bg-gray-200 relative">
-              🔔
-              {notifications > 0 && (
-                <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full text-white text-xs flex items-center justify-center">
-                  {notifications}
-                </span>
-              )}
-            </button>
-            
-            {/* User Button */}
-            <button 
-              onClick={() => setShowUserMenu(true)}
-              className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center hover:bg-gray-300"
-            >
-              👤
-            </button>
+            {/* Right side */}
+            <div className="flex items-center gap-3">
+              {/* Language Toggle */}
+              <LanguageToggle />
+              
+              {/* Notifications */}
+              <button className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center hover:bg-gray-200 relative">
+                🔔
+                {notifications > 0 && (
+                  <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full text-white text-xs flex items-center justify-center">
+                    {notifications}
+                  </span>
+                )}
+              </button>
+              
+              {/* User Button */}
+              <button 
+                onClick={() => setShowUserMenu(true)}
+                className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center hover:bg-gray-300"
+              >
+                👤
+              </button>
+            </div>
           </div>
         </div>
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 overflow-hidden">
-        <div className="w-full h-full overflow-auto px-6 py-8">
-          <div className="max-w-7xl mx-auto h-full flex flex-col">
+      <main className="flex-1 overflow-hidden bg-white border-8 border-transparent">
+        <div className="w-full h-full overflow-auto px-10 py-6 border-8 border-transparent">
+          <div className="h-full flex flex-col">
             {children}
           </div>
         </div>
       </main>
 
-      {/* Bottom Navigation */}
-      <nav className="flex-none bg-white border-t border-gray-200 z-50">
-        <div className="flex justify-around items-center px-4 py-3">
+      {/* Bottom Navigation - No border */}
+      <nav className="flex-none bg-white z-50">
+        <div className="flex justify-around items-center px-2 py-2">
           {navItems.map((item) => {
             const active = isActive(item.href)
             return (
