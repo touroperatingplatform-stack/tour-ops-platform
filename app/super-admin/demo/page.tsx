@@ -2193,151 +2193,252 @@ export default function SuperAdminDemoPage() {
   return (
     <RoleGuard requiredRole="super_admin">
       <AdminNav />
-      <div className="min-h-screen bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <h1 className="text-2xl font-bold text-gray-900 mb-6">Demo Management</h1>
-          
+      
+      <div className="h-full border-8 border-transparent p-4">
+        <div className="h-full flex flex-col border-8 border-transparent">
+
+          {/* Page Header */}
+          <div className="border-8 border-transparent bg-white rounded-xl flex-shrink-0 mb-4">
+            <div className="border-8 border-transparent p-4">
+              <div className="border-8 border-transparent">
+                <h1 className="text-2xl font-bold text-gray-900">Demo Management</h1>
+              </div>
+            </div>
+          </div>
+
           {demoMessage && (
-            <div className={`mb-6 p-4 rounded-lg ${demoMessage.type === 'success' ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'}`}>
-              {demoMessage.text}
+            <div className="border-8 border-transparent flex-none">
+              <div className={`border-8 border-transparent p-4 rounded-lg ${demoMessage.type === 'success' ? 'bg-green-50 text-green-800 border border-green-200' : 'bg-red-50 text-red-800 border border-red-200'}`}>
+                {demoMessage.text}
+              </div>
             </div>
           )}
 
           {demoLoading && demoProgress && (
-            <div className="mb-6 p-4 rounded-lg bg-blue-50 border border-blue-200 text-blue-800">
-              <div className="flex items-center gap-3">
-                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
-                <p className="font-medium">{demoProgress}</p>
+            <div className="border-8 border-transparent flex-none">
+              <div className="border-8 border-transparent p-4 rounded-lg bg-blue-50 border border-blue-200 text-blue-800">
+                <div className="border-8 border-transparent flex items-center gap-3">
+                  <div className="border-8 border-transparent">
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
+                  </div>
+                  <div className="border-8 border-transparent">
+                    <p className="border-8 border-transparent font-medium">{demoProgress}</p>
+                  </div>
+                </div>
               </div>
             </div>
           )}
 
           {/* Quick Actions */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-            {/* Clear Demo Data */}
-            <div className="bg-white rounded-xl border border-red-200 p-6">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="text-3xl">🗑️</div>
-                <div>
-                  <h3 className="font-semibold text-gray-900 text-lg">Clear Demo Data</h3>
-                  <p className="text-sm text-gray-500">Reset for client trial</p>
+          <div className="border-8 border-transparent flex-none mb-4">
+            <div className="border-8 border-transparent grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Clear Demo Data */}
+              <div className="border-8 border-transparent bg-white rounded-lg border border-red-200">
+                <div className="border-8 border-transparent p-6">
+                  <div className="border-8 border-transparent flex items-center gap-3 mb-4">
+                    <div className="border-8 border-transparent text-3xl">🗑️</div>
+                    <div className="border-8 border-transparent">
+                      <div className="border-8 border-transparent">
+                        <h3 className="border-8 border-transparent font-semibold text-gray-900 text-lg">Clear Demo Data</h3>
+                      </div>
+                      <div className="border-8 border-transparent">
+                        <p className="border-8 border-transparent text-sm text-gray-500">Reset for client trial</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="border-8 border-transparent">
+                    <p className="border-8 border-transparent text-sm text-gray-600 mb-4">
+                      Removes all demo data (guests, check-ins, incidents, expenses, feedback, vehicles) while preserving users, brands, and configuration.
+                    </p>
+                  </div>
+                  <div className="border-8 border-transparent">
+                    <button
+                      onClick={handleClearDemoData}
+                      disabled={demoLoading}
+                      className="border-8 border-transparent w-full bg-red-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-red-700 disabled:opacity-50"
+                    >
+                      {demoLoading ? 'Clearing...' : '🗑️ Clear All Demo Data'}
+                    </button>
+                  </div>
                 </div>
               </div>
-              <p className="text-sm text-gray-600 mb-4">
-                Removes all demo data (guests, check-ins, incidents, expenses, feedback, vehicles) while preserving users, brands, and configuration.
-              </p>
-              <button
-                onClick={handleClearDemoData}
-                disabled={demoLoading}
-                className="w-full bg-red-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-red-700 disabled:opacity-50"
-              >
-                {demoLoading ? 'Clearing...' : '🗑️ Clear All Demo Data'}
-              </button>
-            </div>
 
-            {/* Generate Demo Data */}
-            <div className="bg-white rounded-xl border border-green-200 p-6">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="text-3xl">📦</div>
-                <div>
-                  <h3 className="font-semibold text-gray-900 text-lg">Generate Demo Data</h3>
-                  <p className="text-sm text-gray-500">Populate with sample data</p>
+              {/* Generate Demo Data */}
+              <div className="border-8 border-transparent bg-white rounded-lg border border-green-200">
+                <div className="border-8 border-transparent p-6">
+                  <div className="border-8 border-transparent flex items-center gap-3 mb-4">
+                    <div className="border-8 border-transparent text-3xl">📦</div>
+                    <div className="border-8 border-transparent">
+                      <div className="border-8 border-transparent">
+                        <h3 className="border-8 border-transparent font-semibold text-gray-900 text-lg">Generate Demo Data</h3>
+                      </div>
+                      <div className="border-8 border-transparent">
+                        <p className="border-8 border-transparent text-sm text-gray-500">Populate with sample data</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="border-8 border-transparent">
+                    <p className="border-8 border-transparent text-sm text-gray-600 mb-4">
+                      Creates realistic demo data including vehicles, tours, guests, check-ins, incidents, expenses, and feedback for testing and demos.
+                    </p>
+                  </div>
+                  <div className="border-8 border-transparent">
+                    <button
+                      onClick={handleGenerateDemoData}
+                      disabled={demoLoading}
+                      className="border-8 border-transparent w-full bg-green-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-green-700 disabled:opacity-50"
+                    >
+                      {demoLoading ? 'Generating...' : '📦 Generate Full Demo'}
+                    </button>
+                  </div>
                 </div>
               </div>
-              <p className="text-sm text-gray-600 mb-4">
-                Creates realistic demo data including vehicles, tours, guests, check-ins, incidents, expenses, and feedback for testing and demos.
-              </p>
-              <button
-                onClick={handleGenerateDemoData}
-                disabled={demoLoading}
-                className="w-full bg-green-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-green-700 disabled:opacity-50"
-              >
-                {demoLoading ? 'Generating...' : '📦 Generate Full Demo'}
-              </button>
-            </div>
 
-            {/* Generate V2 Demo Data */}
-            <div className="bg-white rounded-xl border border-purple-200 p-6">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="text-3xl">🚀</div>
-                <div>
-                  <h3 className="font-semibold text-gray-900 text-lg">V2: Perfect Live Demo</h3>
-                  <p className="text-sm text-gray-500">Complete 24hr live operation</p>
+              {/* Generate V2 Demo Data */}
+              <div className="border-8 border-transparent bg-white rounded-lg border border-purple-200">
+                <div className="border-8 border-transparent p-6">
+                  <div className="border-8 border-transparent flex items-center gap-3 mb-4">
+                    <div className="border-8 border-transparent text-3xl">🚀</div>
+                    <div className="border-8 border-transparent">
+                      <div className="border-8 border-transparent">
+                        <h3 className="border-8 border-transparent font-semibold text-gray-900 text-lg">V2: Perfect Live Demo</h3>
+                      </div>
+                      <div className="border-8 border-transparent">
+                        <p className="border-8 border-transparent text-sm text-gray-500">Complete 24hr live operation</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="border-8 border-transparent">
+                    <p className="border-8 border-transparent text-sm text-gray-600 mb-4">
+                      Creates PERFECT live demo: vehicles assigned, drivers assigned, realistic guest counts, cash confirmations, payments, checklists, manifest entries. Times match current time.
+                    </p>
+                  </div>
+                  <div className="border-8 border-transparent">
+                    <button
+                      onClick={handleGenerateDemoDataV2}
+                      disabled={demoLoading}
+                      className="border-8 border-transparent w-full bg-purple-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-purple-700 disabled:opacity-50"
+                    >
+                      {demoLoading ? 'Generating...' : '🚀 Generate V2 Live Demo'}
+                    </button>
+                  </div>
                 </div>
               </div>
-              <p className="text-sm text-gray-600 mb-4">
-                Creates PERFECT live demo: vehicles assigned, drivers assigned, realistic guest counts, cash confirmations, payments, checklists, manifest entries. Times match current time.
-              </p>
-              <button
-                onClick={handleGenerateDemoDataV2}
-                disabled={demoLoading}
-                className="w-full bg-purple-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-purple-700 disabled:opacity-50"
-              >
-                {demoLoading ? 'Generating...' : '🚀 Generate V2 Live Demo'}
-              </button>
-            </div>
 
-            {/* Generate V3 Demo Data */}
-            <div className="bg-white rounded-xl border border-indigo-200 p-6">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="text-3xl">🌟</div>
-                <div>
-                  <h3 className="font-semibold text-gray-900 text-lg">V3: Complete 24-Hour Demo</h3>
-                  <p className="text-sm text-gray-500">Full workflow + night tours</p>
+              {/* Generate V3 Demo Data */}
+              <div className="border-8 border-transparent bg-white rounded-lg border border-indigo-200">
+                <div className="border-8 border-transparent p-6">
+                  <div className="border-8 border-transparent flex items-center gap-3 mb-4">
+                    <div className="border-8 border-transparent text-3xl">🌟</div>
+                    <div className="border-8 border-transparent">
+                      <div className="border-8 border-transparent">
+                        <h3 className="border-8 border-transparent font-semibold text-gray-900 text-lg">V3: Complete 24-Hour Demo</h3>
+                      </div>
+                      <div className="border-8 border-transparent">
+                        <p className="border-8 border-transparent text-sm text-gray-500">Full workflow + night tours</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="border-8 border-transparent">
+                    <p className="border-8 border-transparent text-sm text-gray-600 mb-4">
+                      Complete demo: tours 06:00-23:00 (night tours), full checkin workflow (pre-departure → pickup → activity → dropoff → office return), cash confirmations, checklist completions, reservation manifest, realistic timestamps.
+                    </p>
+                  </div>
+                  <div className="border-8 border-transparent">
+                    <button
+                      onClick={handleGenerateDemoDataV3}
+                      disabled={demoLoading}
+                      className="border-8 border-transparent w-full bg-indigo-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-indigo-700 disabled:opacity-50"
+                    >
+                      {demoLoading ? 'Generating...' : '🌟 Generate V3 Complete Demo'}
+                    </button>
+                  </div>
                 </div>
               </div>
-              <p className="text-sm text-gray-600 mb-4">
-                Complete demo: tours 06:00-23:00 (night tours), full checkin workflow (pre-departure → pickup → activity → dropoff → office return), cash confirmations, checklist completions, reservation manifest, realistic timestamps.
-              </p>
-              <button
-                onClick={handleGenerateDemoDataV3}
-                disabled={demoLoading}
-                className="w-full bg-indigo-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-indigo-700 disabled:opacity-50"
-              >
-                {demoLoading ? 'Generating...' : '🌟 Generate V3 Complete Demo'}
-              </button>
             </div>
           </div>
 
           {/* Current Stats */}
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <h2 className="font-semibold text-gray-900 mb-4">Current Demo Data</h2>
-            <div className="grid grid-cols-3 md:grid-cols-5 gap-4">
-              <div className="text-center p-3 bg-gray-50 rounded-lg">
-                <p className="text-xl font-bold text-gray-900">{demoStats.tours}</p>
-                <p className="text-xs text-gray-500">Tours</p>
-              </div>
-              <div className="text-center p-3 bg-gray-50 rounded-lg">
-                <p className="text-xl font-bold text-gray-900">{demoStats.guests}</p>
-                <p className="text-xs text-gray-500">Guests</p>
-              </div>
-              <div className="text-center p-3 bg-gray-50 rounded-lg">
-                <p className="text-xl font-bold text-gray-900">{demoStats.vehicles}</p>
-                <p className="text-xs text-gray-500">Vehicles</p>
-              </div>
-              <div className="text-center p-3 bg-gray-50 rounded-lg">
-                <p className="text-xl font-bold text-gray-900">{demoStats.checkins}</p>
-                <p className="text-xs text-gray-500">Check-ins</p>
-              </div>
-              <div className="text-center p-3 bg-gray-50 rounded-lg">
-                <p className="text-xl font-bold text-gray-900">{demoStats.incidents}</p>
-                <p className="text-xs text-gray-500">Incidents</p>
-              </div>
-              <div className="text-center p-3 bg-gray-50 rounded-lg">
-                <p className="text-xl font-bold text-gray-900">{demoStats.expenses}</p>
-                <p className="text-xs text-gray-500">Expenses</p>
-              </div>
-              <div className="text-center p-3 bg-gray-50 rounded-lg">
-                <p className="text-xl font-bold text-gray-900">{demoStats.feedback}</p>
-                <p className="text-xs text-gray-500">Reviews</p>
-              </div>
-              <div className="text-center p-3 bg-gray-50 rounded-lg">
-                <p className="text-xl font-bold text-gray-900">{demoStats.activity}</p>
-                <p className="text-xs text-gray-500">Activity</p>
-              </div>
-              <div className="text-center p-3 bg-gray-50 rounded-lg">
-                <p className="text-xl font-bold text-gray-900">{demoStats.pickup_stops}</p>
-                <p className="text-xs text-gray-500">Pickups</p>
+          <div className="border-8 border-transparent flex-none">
+            <div className="border-8 border-transparent bg-white rounded-lg border border-gray-200">
+              <div className="border-8 border-transparent p-6">
+                <div className="border-8 border-transparent">
+                  <h2 className="border-8 border-transparent font-semibold text-gray-900 mb-4">Current Demo Data</h2>
+                </div>
+                <div className="border-8 border-transparent grid grid-cols-3 md:grid-cols-5 gap-4">
+                  <div className="border-8 border-transparent text-center p-3 bg-gray-50 rounded-lg border border-gray-200">
+                    <div className="border-8 border-transparent">
+                      <p className="border-8 border-transparent text-xl font-bold text-gray-900">{demoStats.tours}</p>
+                    </div>
+                    <div className="border-8 border-transparent">
+                      <p className="border-8 border-transparent text-xs text-gray-500">Tours</p>
+                    </div>
+                  </div>
+                  <div className="border-8 border-transparent text-center p-3 bg-gray-50 rounded-lg border border-gray-200">
+                    <div className="border-8 border-transparent">
+                      <p className="border-8 border-transparent text-xl font-bold text-gray-900">{demoStats.guests}</p>
+                    </div>
+                    <div className="border-8 border-transparent">
+                      <p className="border-8 border-transparent text-xs text-gray-500">Guests</p>
+                    </div>
+                  </div>
+                  <div className="border-8 border-transparent text-center p-3 bg-gray-50 rounded-lg border border-gray-200">
+                    <div className="border-8 border-transparent">
+                      <p className="border-8 border-transparent text-xl font-bold text-gray-900">{demoStats.vehicles}</p>
+                    </div>
+                    <div className="border-8 border-transparent">
+                      <p className="border-8 border-transparent text-xs text-gray-500">Vehicles</p>
+                    </div>
+                  </div>
+                  <div className="border-8 border-transparent text-center p-3 bg-gray-50 rounded-lg border border-gray-200">
+                    <div className="border-8 border-transparent">
+                      <p className="border-8 border-transparent text-xl font-bold text-gray-900">{demoStats.checkins}</p>
+                    </div>
+                    <div className="border-8 border-transparent">
+                      <p className="border-8 border-transparent text-xs text-gray-500">Check-ins</p>
+                    </div>
+                  </div>
+                  <div className="border-8 border-transparent text-center p-3 bg-gray-50 rounded-lg border border-gray-200">
+                    <div className="border-8 border-transparent">
+                      <p className="border-8 border-transparent text-xl font-bold text-gray-900">{demoStats.incidents}</p>
+                    </div>
+                    <div className="border-8 border-transparent">
+                      <p className="border-8 border-transparent text-xs text-gray-500">Incidents</p>
+                    </div>
+                  </div>
+                  <div className="border-8 border-transparent text-center p-3 bg-gray-50 rounded-lg border border-gray-200">
+                    <div className="border-8 border-transparent">
+                      <p className="border-8 border-transparent text-xl font-bold text-gray-900">{demoStats.expenses}</p>
+                    </div>
+                    <div className="border-8 border-transparent">
+                      <p className="border-8 border-transparent text-xs text-gray-500">Expenses</p>
+                    </div>
+                  </div>
+                  <div className="border-8 border-transparent text-center p-3 bg-gray-50 rounded-lg border border-gray-200">
+                    <div className="border-8 border-transparent">
+                      <p className="border-8 border-transparent text-xl font-bold text-gray-900">{demoStats.feedback}</p>
+                    </div>
+                    <div className="border-8 border-transparent">
+                      <p className="border-8 border-transparent text-xs text-gray-500">Reviews</p>
+                    </div>
+                  </div>
+                  <div className="border-8 border-transparent text-center p-3 bg-gray-50 rounded-lg border border-gray-200">
+                    <div className="border-8 border-transparent">
+                      <p className="border-8 border-transparent text-xl font-bold text-gray-900">{demoStats.activity}</p>
+                    </div>
+                    <div className="border-8 border-transparent">
+                      <p className="border-8 border-transparent text-xs text-gray-500">Activity</p>
+                    </div>
+                  </div>
+                  <div className="border-8 border-transparent text-center p-3 bg-gray-50 rounded-lg border border-gray-200">
+                    <div className="border-8 border-transparent">
+                      <p className="border-8 border-transparent text-xl font-bold text-gray-900">{demoStats.pickup_stops}</p>
+                    </div>
+                    <div className="border-8 border-transparent">
+                      <p className="border-8 border-transparent text-xs text-gray-500">Pickups</p>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
