@@ -80,7 +80,7 @@ export default function SuperAdminLayout({ children }: { children: React.ReactNo
     <div className="h-screen flex flex-col bg-gray-50 overflow-hidden">
       {/* Top Navigation */}
       <header className="bg-white flex-shrink-0">
-        <div className="px-4 py-3 border-b border-gray-200">
+        <div className="px-4 py-3 border-b border-gray-300">
           <div className="flex items-center justify-between">
             {/* Logo + Title */}
             <div className="flex items-center gap-3">
