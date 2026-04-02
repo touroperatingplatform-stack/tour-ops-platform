@@ -778,35 +778,16 @@ export default function SuperAdminDemoPage() {
 
       // Get company and brands
       const { data: companies } = await supabase.from('companies').select('id').limit(1)
-      const { data: brands } = await supabase.from('brands').select('id')
-      const { data: checklists } = await supabase.from('checklists').select('id').limit(1)
-      
-      // Create demo checklist if none exists
-      let demoChecklistId = checklists?.[0]?.id
-      if (!demoChecklistId) {
-        const { data: newChecklist } = await supabase.from('checklists').insert({
-          company_id: companyId,
-          name: 'Pre-Departure Checklist',
-          description: 'Standard pre-tour vehicle and equipment inspection',
-          is_active: true,
-          items: [
-            { id: crypto.randomUUID(), text: 'Cooler box with drinks', required: true, photo_required: false },
-            { id: crypto.randomUUID(), text: 'Equipment checklist complete', required: true, photo_required: false },
-            { id: crypto.randomUUID(), text: 'Petty cash verified', required: true, photo_required: false },
-            { id: crypto.randomUUID(), text: 'Vehicle inspection photos (3)', required: true, photo_required: true },
-            { id: crypto.randomUUID(), text: 'Arrived at pickup 20 min early', required: true, photo_required: false }
-          ]
-        }).select('id').single()
-        demoChecklistId = newChecklist?.id
-      }
       
       if (!companies || companies.length === 0) {
         throw new Error('No companies found. Please create a company first.')
       }
-
+      
       const companyId = companies[0].id
+      const { data: brands } = await supabase.from('brands').select('id')
       const brandIds = brands?.map(b => b.id) || []
-      const checklistId = checklists?.[0]?.id
+      const { data: checklists } = await supabase.from('checklists').select('id').limit(1)
+      const demoChecklistId = checklists?.[0]?.id
       const randomSuffix = Math.floor(Math.random() * 10000)
 
       // Step 0: Setup drivers
