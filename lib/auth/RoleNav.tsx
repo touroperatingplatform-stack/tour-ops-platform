@@ -76,6 +76,7 @@ export const NAV_CONFIGS = {
   super_admin: [
     { href: '/super-admin', label: 'Dashboard', icon: '🎛️', minRole: 'super_admin' as Role },
     { href: '/super-admin/companies', label: 'Companies', icon: '🏢', minRole: 'super_admin' as Role },
+    { href: '/super-admin/regional-data', label: 'Regional Data', icon: '🗺️', minRole: 'super_admin' as Role },
     { href: '/super-admin/brands', label: 'Brands', icon: '🏷️', minRole: 'super_admin' as Role },
     { href: '/super-admin/users', label: 'Users', icon: '👥', minRole: 'super_admin' as Role },
     { href: '/super-admin/demo', label: 'Demo Data', icon: '📦', minRole: 'super_admin' as Role },
