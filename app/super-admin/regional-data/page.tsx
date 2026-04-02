@@ -1,0 +1,425 @@
+'use client'
+
+import { useState, useEffect } from 'react'
+import { supabase } from '@/lib/supabase/client'
+import RoleGuard from '@/lib/auth/RoleGuard'
+import AdminNav from '@/components/navigation/AdminNav'
+import { useTranslation } from '@/lib/i18n/useTranslation'
+
+interface Region {
+  id: string
+  name: string
+  timezone: string
+  currency: string
+  language: string
+  status: string
+  hotel_count?: number
+}
+
+export default function RegionalDataPage() {
+  const { t } = useTranslation()
+  const [regions, setRegions] = useState<Region[]>([])
+  const [loading, setLoading] = useState(true)
+  const [showAddRegion, setShowAddRegion] = useState(false)
+  const [showImport, setShowImport] = useState(false)
+  const [selectedRegion, setSelectedRegion] = useState<Region | null>(null)
+  const [hotels, setHotels] = useState<any[]>([])
+  
+  // Form state
+  const [regionName, setRegionName] = useState('')
+  const [regionTimezone, setRegionTimezone] = useState('America/Cancun')
+  const [regionCurrency, setRegionCurrency] = useState('MXN')
+  const [regionLanguage, setRegionLanguage] = useState('ES,EN')
+  
+  // Import state
+  const [importFile, setImportFile] = useState<File | null>(null)
+  const [importing, setImporting] = useState(false)
+  const [importResult, setImportResult] = useState<{success: number, errors: string[]} | null>(null)
+
+  useEffect(() => {
+    loadRegions()
+  }, [])
+
+  async function loadRegions() {
+    setLoading(true)
+    const { data, error } = await supabase
+      .from('regions')
+      .select('*')
+      .order('name')
+    
+    if (!error && data) {
+      // Get hotel counts
+      const regionsWithCounts = await Promise.all(
+        data.map(async (region) => {
+          const { count } = await supabase
+            .from('pickup_locations_platform')
+            .select('*', { count: 'exact', head: true })
+            .eq('region_id', region.id)
+          return { ...region, hotel_count: count || 0 }
+        })
+      )
+      setRegions(regionsWithCounts)
+    }
+    setLoading(false)
+  }
+
+  async function loadHotels(regionId: string) {
+    const { data } = await supabase
+      .from('pickup_locations_platform')
+      .select('*')
+      .eq('region_id', regionId)
+      .order('sort_order')
+    if (data) setHotels(data)
+  }
+
+  async function handleAddRegion() {
+    if (!regionName.trim()) return
+    
+    const { error } = await supabase
+      .from('regions')
+      .insert({
+        name: regionName,
+        timezone: regionTimezone,
+        currency: regionCurrency,
+        language: regionLanguage
+      })
+    
+    if (!error) {
+      setRegionName('')
+      setShowAddRegion(false)
+      loadRegions()
+    }
+  }
+
+  async function handleDeleteRegion(id: string) {
+    if (!confirm('Delete this region and all its hotels?')) return
+    await supabase.from('regions').delete().eq('id', id)
+    loadRegions()
+  }
+
+  async function handleImportHotels() {
+    if (!importFile || !selectedRegion) return
+    
+    setImporting(true)
+    setImportResult(null)
+    
+    const errors: string[] = []
+    let success = 0
+    
+    try {
+      const text = await importFile.text()
+      const lines = text.split('\n').filter(line => line.trim())
+      
+      // Skip header row
+      for (let i = 1; i < lines.length; i++) {
+        const parts = lines[i].split(',').map(p => p.trim().replace(/^"|"$/g, ''))
+        
+        if (parts.length < 4) {
+          errors.push(`Row ${i}: Not enough columns`)
+          continue
+        }
+        
+        const [name, address, lat, lng, zone] = parts
+        const latitude = parseFloat(lat)
+        const longitude = parseFloat(lng)
+        
+        if (!name) {
+          errors.push(`Row ${i}: Missing hotel name`)
+          continue
+        }
+        
+        if (isNaN(latitude) || isNaN(longitude)) {
+          errors.push(`Row ${i}: Invalid coordinates for ${name}`)
+          continue
+        }
+        
+        const { error } = await supabase
+          .from('pickup_locations_platform')
+          .insert({
+            region_id: selectedRegion.id,
+            name,
+            address: address || null,
+            latitude,
+            longitude,
+            zone: zone || null,
+            sort_order: i
+          })
+        
+        if (error) {
+          errors.push(`Row ${i}: ${error.message}`)
+        } else {
+          success++
+        }
+      }
+      
+      setImportResult({ success, errors })
+      if (success > 0) {
+        loadHotels(selectedRegion.id)
+        loadRegions()
+      }
+    } catch (e: any) {
+      setImportResult({ success: 0, errors: [e.message] })
+    }
+    
+    setImporting(false)
+  }
+
+  function downloadTemplate() {
+    const csv = 'name,address,latitude,longitude,zone\n' +
+      'Marriott Cancun Resort,Blvd Kukulcan KM 14.5,21.1021,-86.7645,Cancun Hotel Zone\n' +
+      'Hard Rock Hotel Cancun,Blvd Kukulcan KM 14.5,21.1021,-86.7645,Cancun Hotel Zone'
+    
+    const blob = new Blob([csv], { type: 'text/csv' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = 'hotel_import_template.csv'
+    a.click()
+  }
+
+  return (
+    <RoleGuard requiredRole="superadmin">
+      <div className="min-h-screen bg-gray-100">
+        <AdminNav />
+        
+        <div className="max-w-7xl mx-auto px-4 py-6">
+          <div className="flex justify-between items-center mb-6">
+            <h1 className="text-2xl font-bold">{t('regionalData.title') || 'Regional Data'}</h1>
+            <button
+              onClick={() => setShowAddRegion(true)}
+              className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+            >
+              + {t('regionalData.addRegion') || 'Add Region'}
+            </button>
+          </div>
+
+          {/* Regions List */}
+          <div className="bg-white rounded-lg shadow p-6 mb-6">
+            <h2 className="text-lg font-semibold mb-4">{t('regionalData.regions') || 'Regions'}</h2>
+            
+            {loading ? (
+              <p className="text-gray-500">Loading...</p>
+            ) : regions.length === 0 ? (
+              <p className="text-gray-500">No regions yet</p>
+            ) : (
+              <div className="space-y-4">
+                {regions.map(region => (
+                  <div key={region.id} className="border rounded-lg p-4">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <h3 className="font-semibold text-lg">{region.name}</h3>
+                        <p className="text-sm text-gray-500">
+                          {region.hotel_count || 0} hotels • {region.timezone} • {region.currency}
+                        </p>
+                      </div>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => {
+                            setSelectedRegion(region)
+                            setShowImport(true)
+                            loadHotels(region.id)
+                          }}
+                          className="text-blue-600 hover:text-blue-800 text-sm"
+                        >
+                          {t('regionalData.importHotels') || 'Import Hotels'}
+                        </button>
+                        <button
+                          onClick={() => handleDeleteRegion(region.id)}
+                          className="text-red-600 hover:text-red-800 text-sm"
+                        >
+                          {t('regionalData.delete') || 'Delete'}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Add Region Modal */}
+          {showAddRegion && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+              <div className="bg-white rounded-lg p-6 w-full max-w-md">
+                <h2 className="text-xl font-bold mb-4">{t('regionalData.addNewRegion') || 'Add New Region'}</h2>
+                
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Region Name</label>
+                    <input
+                      type="text"
+                      value={regionName}
+                      onChange={e => setRegionName(e.target.value)}
+                      placeholder="e.g., Riviera Maya"
+                      className="w-full border rounded px-3 py-2"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Timezone</label>
+                    <select
+                      value={regionTimezone}
+                      onChange={e => setRegionTimezone(e.target.value)}
+                      className="w-full border rounded px-3 py-2"
+                    >
+                      <option value="America/Cancun">America/Cancun</option>
+                      <option value="America/Panama">America/Panama</option>
+                      <option value="America/Bogota">America/Bogota</option>
+                      <option value="America/Lima">America/Lima</option>
+                    </select>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Currency</label>
+                    <select
+                      value={regionCurrency}
+                      onChange={e => setRegionCurrency(e.target.value)}
+                      className="w-full border rounded px-3 py-2"
+                    >
+                      <option value="MXN">MXN - Mexican Peso</option>
+                      <option value="USD">USD - US Dollar</option>
+                      <option value="EUR">EUR - Euro</option>
+                      <option value="PAB">PAB - Balboa</option>
+                    </select>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Languages</label>
+                    <input
+                      type="text"
+                      value={regionLanguage}
+                      onChange={e => setRegionLanguage(e.target.value)}
+                      placeholder="e.g., ES,EN"
+                      className="w-full border rounded px-3 py-2"
+                    />
+                  </div>
+                </div>
+                
+                <div className="flex justify-end gap-2 mt-6">
+                  <button
+                    onClick={() => setShowAddRegion(false)}
+                    className="px-4 py-2 text-gray-600 hover:text-gray-800"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleAddRegion}
+                    disabled={!regionName.trim()}
+                    className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:opacity-50"
+                  >
+                    Add Region
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Import Hotels Modal */}
+          {showImport && selectedRegion && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+              <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+                <h2 className="text-xl font-bold mb-4">
+                  Import Hotels - {selectedRegion.name}
+                </h2>
+                
+                <div className="mb-4">
+                  <button
+                    onClick={downloadTemplate}
+                    className="text-blue-600 hover:text-blue-800 text-sm"
+                  >
+                    Download CSV Template
+                  </button>
+                </div>
+                
+                <div className="border-2 border-dashed rounded-lg p-6 mb-4">
+                  <input
+                    type="file"
+                    accept=".csv,.xlsx"
+                    onChange={e => setImportFile(e.target.files?.[0] || null)}
+                    className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:bg-blue-50 file:text-blue-700"
+                  />
+                  <p className="text-xs text-gray-500 mt-2">
+                    CSV or Excel file with columns: name, address, latitude, longitude, zone
+                  </p>
+                </div>
+                
+                <div className="flex justify-end gap-2 mb-4">
+                  <button
+                    onClick={handleImportHotels}
+                    disabled={!importFile || importing}
+                    className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 disabled:opacity-50"
+                  >
+                    {importing ? 'Importing...' : 'Import Hotels'}
+                  </button>
+                </div>
+                
+                {/* Import Results */}
+                {importResult && (
+                  <div className={`p-4 rounded-lg ${importResult.errors.length > 0 ? 'bg-yellow-50' : 'bg-green-50'}`}>
+                    <p className="font-semibold">Imported: {importResult.success} hotels</p>
+                    {importResult.errors.length > 0 && (
+                      <div className="mt-2">
+                        <p className="font-semibold text-red-600">Errors:</p>
+                        <ul className="text-sm text-red-600 max-h-40 overflow-y-auto">
+                          {importResult.errors.slice(0, 10).map((err, i) => (
+                            <li key={i}>{err}</li>
+                          ))}
+                          {importResult.errors.length > 10 && (
+                            <li>...and {importResult.errors.length - 10} more</li>
+                          )}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                )}
+                
+                {/* Hotels List */}
+                {hotels.length > 0 && (
+                  <div className="mt-6">
+                    <h3 className="font-semibold mb-2">Hotels in {selectedRegion.name} ({hotels.length})</h3>
+                    <div className="max-h-60 overflow-y-auto border rounded">
+                      <table className="w-full text-sm">
+                        <thead className="bg-gray-50 sticky top-0">
+                          <tr>
+                            <th className="text-left p-2">Name</th>
+                            <th className="text-left p-2">Zone</th>
+                            <th className="text-right p-2">Lat</th>
+                            <th className="text-right p-2">Lng</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {hotels.map(hotel => (
+                            <tr key={hotel.id} className="border-t">
+                              <td className="p-2">{hotel.name}</td>
+                              <td className="p-2 text-gray-500">{hotel.zone}</td>
+                              <td className="p-2 text-right">{hotel.latitude}</td>
+                              <td className="p-2 text-right">{hotel.longitude}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
+                
+                <div className="flex justify-end mt-6">
+                  <button
+                    onClick={() => {
+                      setShowImport(false)
+                      setSelectedRegion(null)
+                      setImportFile(null)
+                      setImportResult(null)
+                    }}
+                    className="px-4 py-2 text-gray-600 hover:text-gray-800"
+                  >
+                    Close
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </RoleGuard>
+  )
+}

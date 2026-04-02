@@ -641,5 +641,25 @@
     "seats": "seats",
     "manageVehicles": "Manage vehicles",
     "noVehicles": "No vehicles found"
+  },
+  "regionalData": {
+    "title": "Regional Data",
+    "addRegion": "Add Region",
+    "regions": "Regions",
+    "importHotels": "Import Hotels",
+    "delete": "Delete",
+    "addNewRegion": "Add New Region",
+    "regionName": "Region Name",
+    "timezone": "Timezone",
+    "currency": "Currency",
+    "languages": "Languages",
+    "hotels": "hotels",
+    "importTitle": "Import Hotels",
+    "downloadTemplate": "Download CSV Template",
+    "selectFile": "Select CSV or Excel file",
+    "importing": "Importing...",
+    "importSuccess": "Imported:",
+    "errors": "Errors:",
+    "hotelsIn": "Hotels in"
   }
 }
