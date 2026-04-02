@@ -288,111 +288,133 @@ export default function RegionalDataPage() {
       {/* Import Hotels Modal */}
       {showImport && selectedRegion && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="border-8 border-transparent bg-white rounded-xl w-full max-w-2xl max-h-[90vh] overflow-hidden shadow-xl flex flex-col">
-            <div className="p-4 border-b border-gray-100">
-              <h2 className="text-lg font-bold text-gray-900">
+          <div className="bg-white rounded-xl w-full max-w-2xl max-h-[90vh] overflow-hidden shadow-xl flex flex-col border-8 border-transparent">
+            <div className="border-8 border-transparent p-4 border-b border-gray-100">
+              <h2 className="text-lg font-bold text-gray-900 px-2">
                 Import Hotels - {selectedRegion.name}
               </h2>
             </div>
             
-            <div className="p-4 border-b border-gray-100">
-              <button
-                onClick={downloadTemplate}
-                className="text-purple-600 hover:text-purple-800 text-sm underline"
-              >
-                Download CSV Template
-              </button>
+            <div className="border-8 border-transparent p-4 border-b border-gray-100">
+              <div className="border-8 border-transparent">
+                <button
+                  onClick={downloadTemplate}
+                  className="text-purple-600 hover:text-purple-800 text-sm underline px-2 py-1 border-8 border-transparent inline-block"
+                >
+                  Download CSV Template
+                </button>
+              </div>
             </div>
             
-            <div className="p-4 flex-1 overflow-y-auto">
-              <div className="border-2 border-dashed border-gray-200 rounded-xl p-6 mb-4">
-                <input
-                  type="file"
-                  accept=".csv,.xlsx"
-                  onChange={e => setImportFile(e.target.files?.[0] || null)}
-                  className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:bg-purple-50 file:text-purple-700"
-                />
-                <p className="text-xs text-gray-500 mt-2">
-                  CSV or Excel file with columns: name, address, latitude, longitude, zone
-                </p>
+            <div className="border-8 border-transparent p-4 flex-1 overflow-y-auto">
+              <div className="border-8 border-transparent mb-4">
+                <div className="border-2 border-dashed border-gray-200 rounded-xl p-6">
+                  <div className="border-8 border-transparent">
+                    <input
+                      type="file"
+                      accept=".csv,.xlsx"
+                      onChange={e => setImportFile(e.target.files?.[0] || null)}
+                      className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:bg-purple-50 file:text-purple-700"
+                    />
+                    <p className="text-xs text-gray-500 mt-2 px-1">
+                      CSV or Excel file with columns: name, address, latitude, longitude, zone
+                    </p>
+                  </div>
+                </div>
               </div>
               
-              <div className="flex justify-end mb-4">
-                <button
-                  onClick={handleImportHotels}
-                  disabled={!importFile || importing}
-                  className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 disabled:opacity-50"
-                >
-                  {importing ? 'Importing...' : 'Import Hotels'}
-                </button>
+              <div className="border-8 border-transparent flex justify-end mb-4">
+                <div className="border-8 border-transparent">
+                  <button
+                    onClick={handleImportHotels}
+                    disabled={!importFile || importing}
+                    className="border-8 border-transparent bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 disabled:opacity-50"
+                  >
+                    <span className="border-8 border-transparent px-2 py-1">
+                      {importing ? 'Importing...' : 'Import Hotels'}
+                    </span>
+                  </button>
+                </div>
               </div>
               
               {/* Import Results */}
               {importResult && (
-                <div className={`p-4 rounded-xl border mb-4 ${importResult.errors.length > 0 ? 'bg-yellow-50 border-yellow-200' : 'bg-green-50 border-green-200'}`}>
-                  <p className="font-semibold text-gray-900">Imported: {importResult.success} hotels</p>
-                  {importResult.errors.length > 0 && (
-                    <div className="mt-2">
-                      <p className="font-semibold text-red-600">Errors:</p>
-                      <ul className="text-sm text-red-600 max-h-40 overflow-y-auto">
-                        {importResult.errors.slice(0, 10).map((err, i) => (
-                          <li key={i}>{err}</li>
-                        ))}
-                        {importResult.errors.length > 10 && (
-                          <li>...and {importResult.errors.length - 10} more</li>
-                        )}
-                      </ul>
+                <div className="border-8 border-transparent mb-4">
+                  <div className={`p-4 rounded-xl border ${importResult.errors.length > 0 ? 'bg-yellow-50 border-yellow-200' : 'bg-green-50 border-green-200'}`}>
+                    <div className="border-8 border-transparent">
+                      <p className="font-semibold text-gray-900 px-2">Imported: {importResult.success} hotels</p>
                     </div>
-                  )}
+                    {importResult.errors.length > 0 && (
+                      <div className="border-8 border-transparent mt-2">
+                        <div className="border-8 border-transparent px-2">
+                          <p className="font-semibold text-red-600">Errors:</p>
+                        </div>
+                        <div className="border-8 border-transparent">
+                          <ul className="text-sm text-red-600 max-h-40 overflow-y-auto px-2">
+                            {importResult.errors.slice(0, 10).map((err, i) => (
+                              <li key={i} className="border-8 border-transparent py-1">{err}</li>
+                            ))}
+                            {importResult.errors.length > 10 && (
+                              <li className="border-8 border-transparent py-1">...and {importResult.errors.length - 10} more</li>
+                            )}
+                          </ul>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
               
               {/* Hotels List */}
               {hotels.length > 0 && (
-                <div className="border border-gray-200 rounded-xl overflow-hidden">
-                  <div className="p-3 bg-gray-50 border-b border-gray-200">
-                    <h3 className="font-semibold text-gray-900">
-                      Hotels in {selectedRegion.name} ({hotels.length})
-                    </h3>
-                  </div>
-                  <div className="max-h-60 overflow-y-auto">
-                    <table className="w-full text-sm">
-                      <thead className="bg-gray-50 sticky top-0">
-                        <tr>
-                          <th className="text-left p-2 font-medium text-gray-700">Name</th>
-                          <th className="text-left p-2 font-medium text-gray-700">Zone</th>
-                          <th className="text-right p-2 font-medium text-gray-700">Lat</th>
-                          <th className="text-right p-2 font-medium text-gray-700">Lng</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-100">
-                        {hotels.map(hotel => (
-                          <tr key={hotel.id} className="hover:bg-gray-50">
-                            <td className="p-2 text-gray-900">{hotel.name}</td>
-                            <td className="p-2 text-gray-500">{hotel.zone}</td>
-                            <td className="p-2 text-right text-gray-600">{hotel.latitude}</td>
-                            <td className="p-2 text-right text-gray-600">{hotel.longitude}</td>
+                <div className="border-8 border-transparent">
+                  <div className="border border-gray-200 rounded-xl overflow-hidden">
+                    <div className="border-8 border-transparent p-3 bg-gray-50 border-b border-gray-200">
+                      <h3 className="font-semibold text-gray-900 px-2">
+                        Hotels in {selectedRegion.name} ({hotels.length})
+                      </h3>
+                    </div>
+                    <div className="border-8 border-transparent max-h-60 overflow-y-auto">
+                      <table className="w-full text-sm">
+                        <thead className="bg-gray-50 sticky top-0">
+                          <tr>
+                            <th className="text-left p-2 font-medium text-gray-700 border-8 border-transparent">Name</th>
+                            <th className="text-left p-2 font-medium text-gray-700 border-8 border-transparent">Zone</th>
+                            <th className="text-right p-2 font-medium text-gray-700 border-8 border-transparent">Lat</th>
+                            <th className="text-right p-2 font-medium text-gray-700 border-8 border-transparent">Lng</th>
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                        </thead>
+                        <tbody className="divide-y divide-gray-100">
+                          {hotels.map(hotel => (
+                            <tr key={hotel.id} className="hover:bg-gray-50">
+                              <td className="p-2 text-gray-900 border-8 border-transparent">{hotel.name}</td>
+                              <td className="p-2 text-gray-500 border-8 border-transparent">{hotel.zone}</td>
+                              <td className="p-2 text-right text-gray-600 border-8 border-transparent">{hotel.latitude}</td>
+                              <td className="p-2 text-right text-gray-600 border-8 border-transparent">{hotel.longitude}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
                   </div>
                 </div>
               )}
             </div>
             
-            <div className="p-4 border-t border-gray-100 flex justify-end">
-              <button
-                onClick={() => {
-                  setShowImport(false)
-                  setSelectedRegion(null)
-                  setImportFile(null)
-                  setImportResult(null)
-                }}
-                className="border border-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-50"
-              >
-                Close
-              </button>
+            <div className="border-8 border-transparent p-4 border-t border-gray-100 flex justify-end">
+              <div className="border-8 border-transparent">
+                <button
+                  onClick={() => {
+                    setShowImport(false)
+                    setSelectedRegion(null)
+                    setImportFile(null)
+                    setImportResult(null)
+                  }}
+                  className="border-8 border-transparent border border-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-50"
+                >
+                  <span className="border-8 border-transparent px-2 py-1">Close</span>
+                </button>
+              </div>
             </div>
           </div>
         </div>
