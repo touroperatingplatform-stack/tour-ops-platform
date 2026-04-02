@@ -370,7 +370,7 @@ export default function PickupCheckinPage() {
             <div className="flex-1">
               <div className="font-medium">GPS Location</div>
               <div className="text-sm text-gray-500">
-                {location ? `${Math.round(location.lat, 6)}, ${Math.round(location.lng, 6)} (±${Math.round(location.accuracy || 0)}m)` : locationError || 'Getting location...'}
+                {location ? `${location.lat.toFixed(6)}, ${location.lng.toFixed(6)} (±${Math.round(location.accuracy || 0)}m)` : locationError || 'Getting location...'}
               </div>
             </div>
             {locationError && (
