@@ -186,7 +186,7 @@ export default function RegionalDataPage() {
               </h1>
               <button
                 onClick={() => setShowAddRegion(true)}
-                className="border border-purple-600 text-purple-600 px-4 py-2 rounded-lg hover:bg-purple-50"
+                className="border-8 border-transparent bg-purple-50 text-purple-600 px-4 py-2 rounded-lg hover:bg-purple-100"
               >
                 + {t('regionalData.addRegion') || 'Add Region'}
               </button>
@@ -312,7 +312,7 @@ export default function RegionalDataPage() {
             <div className="p-4 border-t border-gray-100 flex justify-end gap-2">
               <button
                 onClick={() => setShowAddRegion(false)}
-                className="border border-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-50"
+                className="border-8 border-transparent bg-gray-50 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-100"
               >
                 Cancel
               </button>
