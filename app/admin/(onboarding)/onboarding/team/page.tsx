@@ -20,6 +20,7 @@ interface Vehicle {
   id: string
   plate_number: string
   name: string | null
+  capacity: number
 }
 
 export default function OnboardingTeam() {
@@ -32,6 +33,7 @@ export default function OnboardingTeam() {
   const [drivers, setDrivers] = useState<Driver[]>([])
   const [vehicles, setVehicles] = useState<Vehicle[]>([])
   const [vehicleNames, setVehicleNames] = useState<Record<string, string>>({})
+  const [vehicleCapacities, setVehicleCapacities] = useState<Record<string, number>>({})
 
   useEffect(() => {
     loadTeam()
@@ -70,7 +72,7 @@ export default function OnboardingTeam() {
     // Load vehicles
     const { data: vehicleData } = await supabase
       .from('vehicles')
-      .select('id, plate_number, name')
+      .select('id, plate_number, name, capacity')
       .eq('company_id', profile.company_id)
       .order('plate_number')
 
@@ -79,8 +81,13 @@ export default function OnboardingTeam() {
     if (vehicleData) {
       setVehicles(vehicleData)
       const names: Record<string, string> = {}
-      vehicleData.forEach(v => { names[v.id] = v.name || v.plate_number })
+      const capacities: Record<string, number> = {}
+      vehicleData.forEach(v => {
+        names[v.id] = v.name || v.plate_number
+        capacities[v.id] = v.capacity || 12
+      })
       setVehicleNames(names)
+      setVehicleCapacities(capacities)
     }
 
     setLoading(false)
@@ -96,6 +103,10 @@ export default function OnboardingTeam() {
 
   function updateVehicleName(id: string, name: string) {
     setVehicleNames(prev => ({ ...prev, [id]: name }))
+  }
+
+  function updateVehicleCapacity(id: string, capacity: number) {
+    setVehicleCapacities(prev => ({ ...prev, [id]: capacity }))
   }
 
   async function handleNext() {
@@ -117,11 +128,14 @@ export default function OnboardingTeam() {
           .eq('id', driver.id)
       }
 
-      // Save vehicle names
+      // Save vehicle names and capacity
       for (const vehicle of vehicles) {
         await supabase
           .from('vehicles')
-          .update({ name: vehicleNames[vehicle.id] || vehicle.plate_number })
+          .update({
+            name: vehicleNames[vehicle.id] || vehicle.plate_number,
+            capacity: vehicleCapacities[vehicle.id] || vehicle.capacity || 12
+          })
           .eq('id', vehicle.id)
       }
 
@@ -237,7 +251,19 @@ export default function OnboardingTeam() {
                     placeholder="Van name"
                     className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
-                  <span className="text-xs text-gray-400 flex-shrink-0">{vehicle.plate_number}</span>
+                  <div className="flex items-center gap-1">
+                    <input
+                      type="number"
+                      value={vehicleCapacities[vehicle.id] || ''}
+                      onChange={(e) => updateVehicleCapacity(vehicle.id, parseInt(e.target.value) || 0)}
+                      placeholder="Seats"
+                      min="1"
+                      max="50"
+                      className="w-16 border border-gray-200 rounded-lg px-2 py-2 text-gray-900 text-center focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                    <span className="text-xs text-gray-400">seats</span>
+                  </div>
+                  <span className="text-xs text-gray-400 flex-shrink-0 hidden sm:block">{vehicle.plate_number}</span>
                 </div>
               ))}
             </div>
