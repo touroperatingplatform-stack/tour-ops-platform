@@ -220,35 +220,42 @@ export default function CompaniesPage() {
         .update({ trial_id: trialRecord.id })
         .eq('id', companyId)
 
-      // 4. Link existing demo_ users (Group 1)
-      const demoEmails = [
-        'demo_guide1@lifeoperations.com',
-        'demo_guide2@lifeoperations.com',
-        'demo_guide3@lifeoperations.com',
-        'demo_guide4@lifeoperations.com',
-        'demo_guide5@lifeoperations.com',
-        'demo_driver1@lifeoperations.com',
-        'demo_driver2@lifeoperations.com',
-        'demo_driver3@lifeoperations.com',
-        'demo_driver4@lifeoperations.com',
-        'demo_driver5@lifeoperations.com',
-        'demo_ops@lifeoperations.com',
-        'demo_supervisor@lifeoperations.com',
-        'demo_admin@lifeoperations.com',
+      // 4. Link existing demo_ users (Group 1) - reset names to defaults
+      const guideNames = ['Trial Guide 1', 'Trial Guide 2', 'Trial Guide 3', 'Trial Guide 4', 'Trial Guide 5']
+      const driverNames = ['Trial Driver 1', 'Trial Driver 2', 'Trial Driver 3', 'Trial Driver 4', 'Trial Driver 5']
+      const demoUsers = [
+        { email: 'demo_guide1@lifeoperations.com', name: guideNames[0] },
+        { email: 'demo_guide2@lifeoperations.com', name: guideNames[1] },
+        { email: 'demo_guide3@lifeoperations.com', name: guideNames[2] },
+        { email: 'demo_guide4@lifeoperations.com', name: guideNames[3] },
+        { email: 'demo_guide5@lifeoperations.com', name: guideNames[4] },
+        { email: 'demo_driver1@lifeoperations.com', name: driverNames[0] },
+        { email: 'demo_driver2@lifeoperations.com', name: driverNames[1] },
+        { email: 'demo_driver3@lifeoperations.com', name: driverNames[2] },
+        { email: 'demo_driver4@lifeoperations.com', name: driverNames[3] },
+        { email: 'demo_driver5@lifeoperations.com', name: driverNames[4] },
+        { email: 'demo_ops@lifeoperations.com', name: 'Trial Ops' },
+        { email: 'demo_supervisor@lifeoperations.com', name: 'Trial Supervisor' },
+        { email: 'demo_admin@lifeoperations.com', name: 'Trial Admin' },
       ]
 
-      for (const email of demoEmails) {
+      for (const user of demoUsers) {
         await supabase
           .from('profiles')
-          .update({ company_id: companyId, onboarding_completed: false })
-          .eq('email', email)
+          .update({
+            company_id: companyId,
+            full_name: user.name,
+            onboarding_completed: false
+          })
+          .eq('email', user.email)
       }
 
-      // 3. Create 5 demo vehicles
+      // 3. Create 5 demo vehicles with names set
       const vehicleNames = ['Van 1', 'Van 2', 'Van 3', 'Van 4', 'Van 5']
       for (let i = 0; i < 5; i++) {
         await supabase.from('vehicles').insert({
           company_id: companyId,
+          name: vehicleNames[i],
           plate_number: `TRL-${companyId.slice(0,4).toUpperCase()}-${i + 1}`,
           make: 'Toyota',
           model: 'Hiace',
