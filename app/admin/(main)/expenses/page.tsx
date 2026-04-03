@@ -36,12 +36,24 @@ export default function ExpensesPage() {
   }, [])
 
   async function loadExpenses() {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('company_id')
+      .eq('id', user.id)
+      .single()
+
+    if (!profile?.company_id) return
+
     const today = getLocalDate()
     const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
 
     const { data } = await supabase
       .from('tour_expenses')
       .select('id, amount, category, description, created_at')
+      .eq('company_id', profile.company_id)
       .order('created_at', { ascending: false })
       .limit(20)
 
