@@ -20,6 +20,10 @@ interface DashboardStats {
   onTimeRate: number
   guidesActive: number
   guidesTotal: number
+  vehiclesTotal: number
+  vehiclesInUse: number
+  vehiclesAvailable: number
+  vehiclesMaintenance: number
 }
 
 interface AttentionItem {
@@ -41,9 +45,13 @@ export default function AdminDashboard() {
     guestsToday: 0,
     incidentsOpen: 0,
     incidentsTotal: 0,
-    onTimeRate: 94,
+    onTimeRate: 0,
     guidesActive: 0,
-    guidesTotal: 0
+    guidesTotal: 0,
+    vehiclesTotal: 0,
+    vehiclesInUse: 0,
+    vehiclesAvailable: 0,
+    vehiclesMaintenance: 0,
   })
   const [attentionItems, setAttentionItems] = useState<AttentionItem[]>([])
   const [loading, setLoading] = useState(true)
@@ -60,7 +68,7 @@ export default function AdminDashboard() {
 
     const { data: profile } = await supabase
       .from('profiles')
-      .select('onboarding_completed')
+      .select('onboarding_completed, company_id')
       .eq('id', user.id)
       .single()
 
@@ -69,15 +77,30 @@ export default function AdminDashboard() {
       return
     }
 
-    loadDashboardData()
+    loadDashboardData(profile?.company_id)
   }
 
-  async function loadDashboardData() {
+  async function loadDashboardData(companyId?: string) {
     const today = getLocalDate()
+
+    // Get company_id from profile if not provided
+    let cid = companyId
+    if (!cid) {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('company_id')
+          .eq('id', user.id)
+          .single()
+        cid = profile?.company_id
+      }
+    }
+    if (!cid) return
 
     const { data: tours } = await supabase
       .from('tours')
-      .select('id, status, guest_count, guide_id')
+      .select('id, status, guest_count, guide_id, actual_end_time')
       .eq('tour_date', today)
       .neq('status', 'cancelled')
 
@@ -90,13 +113,46 @@ export default function AdminDashboard() {
     const { count: guidesCount } = await supabase
       .from('profiles')
       .select('*', { count: 'exact', head: true })
+      .eq('company_id', cid)
+      .eq('role', 'guide')
+
+    const { count: activeGuidesCount } = await supabase
+      .from('profiles')
+      .select('*', { count: 'exact', head: true })
+      .eq('company_id', cid)
       .eq('role', 'guide')
       .eq('status', 'active')
 
+    const { data: vehicles } = await supabase
+      .from('vehicles')
+      .select('id, status')
+      .eq('company_id', cid)
+
+    const { data: completedTours } = await supabase
+      .from('tours')
+      .select('id, actual_end_time, scheduled_end_time')
+      .eq('tour_date', today)
+      .eq('status', 'completed')
+
     const activeTours = tours?.filter(t => t.status === 'in_progress').length || 0
-    const completedTours = tours?.filter(t => t.status === 'completed').length || 0
+    const completedToursCount = tours?.filter(t => t.status === 'completed').length || 0
     const totalGuests = tours?.reduce((sum, t) => sum + (t.guest_count || 0), 0) || 0
     const openIncidents = incidents?.filter(i => i.status !== 'resolved').length || 0
+
+    // Calculate on-time rate from completed tours
+    let onTimeRate = 0
+    if (completedTours && completedTours.length > 0) {
+      const onTime = completedTours.filter(t => {
+        if (!t.actual_end_time || !t.scheduled_end_time) return true
+        return new Date(t.actual_end_time) <= new Date(t.scheduled_end_time)
+      }).length
+      onTimeRate = Math.round((onTime / completedTours.length) * 100)
+    }
+
+    // Vehicle counts by status
+    const vehiclesInUse = vehicles?.filter(v => v.status === 'in_use').length || 0
+    const vehiclesAvailable = vehicles?.filter(v => v.status === 'available').length || 0
+    const vehiclesMaintenance = vehicles?.filter(v => v.status === 'maintenance').length || 0
 
     const attention: AttentionItem[] = []
     incidents?.forEach(inc => {
@@ -115,13 +171,17 @@ export default function AdminDashboard() {
     setStats({
       toursTotal: tours?.length || 0,
       toursActive: activeTours,
-      toursCompleted: completedTours,
+      toursCompleted: completedToursCount,
       guestsToday: totalGuests,
       incidentsOpen: openIncidents,
       incidentsTotal: incidents?.length || 0,
-      onTimeRate: 94,
-      guidesActive: activeTours,
-      guidesTotal: guidesCount || 0
+      onTimeRate,
+      guidesActive: activeGuidesCount || 0,
+      guidesTotal: guidesCount || 0,
+      vehiclesTotal: vehicles?.length || 0,
+      vehiclesInUse,
+      vehiclesAvailable,
+      vehiclesMaintenance,
     })
 
     setAttentionItems(attention.slice(0, 3))
@@ -153,35 +213,36 @@ export default function AdminDashboard() {
           {/* Spacer for header in layout */}
           <div className="flex-none" />
 
-          {/* KPI CARDS ROW - gap-3, p-3, centered text */}
+          {/* KPI CARDS ROW */}
           <div className="flex-none">
             <div className="grid grid-cols-4 gap-3">
-            <div className="bg-white rounded-lg border border-gray-100 p-3 text-center border-8 border-transparent">
-              <div className="flex items-baseline justify-center gap-2">
-                <span className="text-2xl font-bold">{stats.toursCompleted}/{stats.toursTotal}</span>
-                <span className="text-xs text-green-600 font-medium">{t('adminDashboard.live')}</span>
+              <div className="bg-white rounded-lg border border-gray-100 p-3 text-center border-8 border-transparent">
+                <div className="flex items-baseline justify-center gap-2">
+                  <span className="text-2xl font-bold">{stats.toursCompleted}/{stats.toursTotal}</span>
+                  <span className="text-xs text-green-600 font-medium">{t('adminDashboard.live')}</span>
+                </div>
+                <p className="text-xs text-gray-500 uppercase font-medium mt-2">{t('adminDashboard.toursToday')}</p>
               </div>
-              <p className="text-xs text-gray-500 uppercase font-medium mt-2">{t('adminDashboard.toursToday')}</p>
-            </div>
 
-            <div className="bg-white rounded-lg border border-gray-100 p-3 text-center border-8 border-transparent">
-              <p className="text-2xl font-bold text-blue-600">{stats.guestsToday}</p>
-              <p className="text-xs text-blue-600 uppercase font-medium mt-2">{t('adminDashboard.guestsToday')}</p>
-            </div>
+              <div className="bg-white rounded-lg border border-gray-100 p-3 text-center border-8 border-transparent">
+                <p className="text-2xl font-bold text-blue-600">{stats.guestsToday}</p>
+                <p className="text-xs text-blue-600 uppercase font-medium mt-2">{t('adminDashboard.guestsToday')}</p>
+              </div>
 
-            <div className="bg-white rounded-lg border border-gray-100 p-3 text-center border-8 border-transparent">
-              <p className="text-2xl font-bold text-green-600">{stats.onTimeRate}%</p>
-              <p className="text-xs text-green-600 uppercase font-medium mt-2">{t('adminDashboard.onTimeRate')}</p>
-            </div>
+              <div className="bg-white rounded-lg border border-gray-100 p-3 text-center border-8 border-transparent">
+                <p className="text-2xl font-bold text-green-600">{stats.onTimeRate}%</p>
+                <p className="text-xs text-green-600 uppercase font-medium mt-2">{t('adminDashboard.onTimeRate')}</p>
+              </div>
 
-            <div className="bg-white rounded-lg border border-gray-100 p-3 text-center border-8 border-transparent">
-              <p className="text-2xl font-bold text-red-600">{stats.incidentsOpen}</p>
-              <p className="text-xs text-red-600 uppercase font-medium mt-2">{t('adminDashboard.incidents')}</p>
+              <div className="bg-white rounded-lg border border-gray-100 p-3 text-center border-8 border-transparent">
+                <p className="text-2xl font-bold text-red-600">{stats.incidentsOpen}</p>
+                <p className="text-xs text-red-600 uppercase font-medium mt-2">{t('adminDashboard.incidents')}</p>
+              </div>
             </div>
           </div>
         </div>
 
-        {/* MIDDLE SECTION - Timeline | Fleet Status | Active Tours + Team */}
+        {/* MIDDLE SECTION */}
         <div className="flex-1 min-h-0 overflow-hidden">
           <div className="h-full grid grid-cols-12 gap-6">
             {/* Timeline - Left */}
@@ -193,9 +254,9 @@ export default function AdminDashboard() {
               <div className="flex-1 flex items-end gap-1">
                 {['06:00', '09:00', '12:00', '15:00', '18:00', '21:00'].map((time, i) => (
                   <div key={time} className="flex-1 text-center">
-                    <div 
+                    <div
                       className={`w-full rounded-t ${i < 3 ? 'bg-green-500' : i === 3 ? 'bg-blue-500' : 'bg-gray-200'}`}
-                      style={{ height: `${30 + Math.random() * 20}px` }} 
+                      style={{ height: `${30 + Math.random() * 20}px` }}
                     />
                     <div className="text-xs text-gray-400 mt-1">{time}</div>
                   </div>
@@ -209,15 +270,15 @@ export default function AdminDashboard() {
               <div className="flex-1 flex flex-col justify-between">
                 <div className="flex items-center justify-between px-4 py-3 bg-gray-50 rounded-lg">
                   <span className="text-sm">{t('adminDashboard.inUse')}</span>
-                  <span className="font-bold text-xl">4</span>
+                  <span className="font-bold text-xl">{stats.vehiclesInUse}</span>
                 </div>
                 <div className="flex items-center justify-between px-4 py-3 bg-gray-50 rounded-lg">
                   <span className="text-sm">{t('adminDashboard.available')}</span>
-                  <span className="font-bold text-xl">2</span>
+                  <span className="font-bold text-xl">{stats.vehiclesAvailable}</span>
                 </div>
                 <div className="flex items-center justify-between px-4 py-3 bg-gray-50 rounded-lg">
                   <span className="text-sm">{t('adminDashboard.maintenance')}</span>
-                  <span className="font-bold text-xl text-red-600">0</span>
+                  <span className="font-bold text-xl text-red-600">{stats.vehiclesMaintenance}</span>
                 </div>
               </div>
             </div>
@@ -241,7 +302,7 @@ export default function AdminDashboard() {
                       <p className="text-xs text-gray-500">{t('adminDashboard.guides')}</p>
                     </div>
                     <div className="text-center">
-                      <p className="text-xl font-bold">6</p>
+                      <p className="text-xl font-bold">{stats.vehiclesTotal}</p>
                       <p className="text-xs text-gray-500">{t('adminDashboard.vehicles')}</p>
                     </div>
                   </div>
@@ -251,7 +312,7 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        {/* BOTTOM SECTION - Attention Required | Quick Actions */}
+        {/* BOTTOM SECTION */}
         <div className="flex-1 min-h-0 overflow-hidden">
           <div className="h-full grid grid-cols-12 gap-6">
             {/* Attention Required - Left */}
@@ -288,29 +349,29 @@ export default function AdminDashboard() {
             <div className="col-span-6 h-full overflow-auto bg-white rounded-lg border border-gray-100 p-3 flex flex-col border-8 border-transparent">
               <span className="font-semibold text-sm text-center mb-4">{t('adminDashboard.quickActions')}</span>
               <div className="flex-1 grid grid-cols-2 gap-4">
-                <Link 
-                  href="/admin/tours/new" 
+                <Link
+                  href="/admin/tours/new"
                   className="flex flex-col items-center justify-center p-2 bg-blue-50 hover:bg-blue-100 rounded transition-colors"
                 >
                   <span className="text-xl mb-1">🚌</span>
                   <span className="text-xs font-medium">{t('adminDashboard.newTour')}</span>
                 </Link>
-                <Link 
-                  href="/admin/users/new" 
+                <Link
+                  href="/admin/users/new"
                   className="flex flex-col items-center justify-center p-2 bg-green-50 hover:bg-green-100 rounded transition-colors"
                 >
                   <span className="text-xl mb-1">👤</span>
                   <span className="text-xs font-medium">{t('adminDashboard.addUser')}</span>
                 </Link>
-                <Link 
-                  href="/admin/reports" 
+                <Link
+                  href="/admin/reports"
                   className="flex flex-col items-center justify-center p-2 bg-purple-50 hover:bg-purple-100 rounded transition-colors"
                 >
                   <span className="text-xl mb-1">📊</span>
                   <span className="text-xs font-medium">{t('nav.reports')}</span>
                 </Link>
-                <Link 
-                  href="/admin/vehicles" 
+                <Link
+                  href="/admin/vehicles"
                   className="flex flex-col items-center justify-center p-2 bg-orange-50 hover:bg-orange-100 rounded transition-colors"
                 >
                   <span className="text-xl mb-1">🚗</span>
@@ -321,7 +382,6 @@ export default function AdminDashboard() {
           </div>
         </div>
       </div>
-    </div>
-  </RoleGuard>
+    </RoleGuard>
   )
 }
