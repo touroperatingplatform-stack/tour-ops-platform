@@ -49,7 +49,10 @@ export default function OnboardingTeam() {
       .eq('id', user.id)
       .single()
 
-    if (!profile?.company_id) return
+    if (!profile?.company_id) {
+      router.push('/super-admin/companies')
+      return
+    }
 
     setCompanyId(profile.company_id)
 

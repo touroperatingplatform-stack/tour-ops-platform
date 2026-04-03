@@ -72,7 +72,12 @@ export default function AdminDashboard() {
       .eq('id', user.id)
       .single()
 
-    if (profile && profile.onboarding_completed === false) {
+    if (!profile?.company_id) {
+      router.push('/super-admin/companies')
+      return
+    }
+
+    if (profile.onboarding_completed === false) {
       router.push('/admin/onboarding')
       return
     }
