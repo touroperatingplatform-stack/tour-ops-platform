@@ -28,44 +28,63 @@ export default function CompaniesPage() {
   async function loadCompanies() {
     setLoading(true)
     try {
-      const { data, error } = await supabase
+      // Get companies
+      const { data: companiesData, error } = await supabase
         .from('companies')
-        .select(`
-          *,
-          profiles:company_admin_id(email),
-          tours:tours(count),
-          profiles!company_admin_id(count)
-        `)
+        .select('*')
         .order('created_at', { ascending: false })
 
       if (error) throw error
 
-      const companiesWithCounts = await Promise.all(
-        (data || []).map(async (company: any) => {
-          const { count: toursCount } = await supabase
-            .from('tours')
-            .select('*', { count: 'exact', head: true })
-            .eq('company_id', company.id)
+      // Get counts for each company
+      const [toursData, profilesData, vehiclesData] = await Promise.all([
+        supabase.from('tours').select('company_id'),
+        supabase.from('profiles').select('company_id'),
+        supabase.from('vehicles').select('company_id')
+      ])
 
-          const { count: usersCount } = await supabase
-            .from('profiles')
-            .select('*', { count: 'exact', head: true })
-            .eq('company_id', company.id)
+      // Get admin profiles
+      const adminIds = companiesData?.map(c => c.company_admin_id).filter(Boolean) || []
+      let adminsMap: Record<string, string> = {}
+      if (adminIds.length > 0) {
+        const { data: adminsData } = await supabase
+          .from('profiles')
+          .select('id, email')
+          .in('id', adminIds)
+        adminsData?.forEach(a => { adminsMap[a.id] = a.email })
+      }
 
-          const { count: vehiclesCount } = await supabase
-            .from('vehicles')
-            .select('*', { count: 'exact', head: true })
-            .eq('company_id', company.id)
+      // Count tours per company
+      const toursCountMap: Record<string, number> = {}
+      toursData?.data?.forEach((t: any) => {
+        if (t.company_id) {
+          toursCountMap[t.company_id] = (toursCountMap[t.company_id] || 0) + 1
+        }
+      })
 
-          return {
-            ...company,
-            company_admin_email: company.profiles?.email || null,
-            tours_count: toursCount || 0,
-            users_count: usersCount || 0,
-            vehicles_count: vehiclesCount || 0
-          }
-        })
-      )
+      // Count profiles per company
+      const profilesCountMap: Record<string, number> = {}
+      profilesData?.data?.forEach((p: any) => {
+        if (p.company_id) {
+          profilesCountMap[p.company_id] = (profilesCountMap[p.company_id] || 0) + 1
+        }
+      })
+
+      // Count vehicles per company
+      const vehiclesCountMap: Record<string, number> = {}
+      vehiclesData?.data?.forEach((v: any) => {
+        if (v.company_id) {
+          vehiclesCountMap[v.company_id] = (vehiclesCountMap[v.company_id] || 0) + 1
+        }
+      })
+
+      const companiesWithCounts = (companiesData || []).map((company: any) => ({
+        ...company,
+        company_admin_email: adminsMap[company.company_admin_id] || null,
+        tours_count: toursCountMap[company.id] || 0,
+        users_count: profilesCountMap[company.id] || 0,
+        vehicles_count: vehiclesCountMap[company.id] || 0
+      }))
 
       setCompanies(companiesWithCounts)
     } catch (error) {
