@@ -29,6 +29,7 @@ export default function TrialManagePage() {
   const [extendDays, setExtendDays] = useState('7')
   const [extending, setExtending] = useState(false)
   const [cancelling, setCancelling] = useState(false)
+  const [deleting, setDeleting] = useState(false)
   const [error, setError] = useState('')
   const [savingConfig, setSavingConfig] = useState<string | null>(null)
 
@@ -152,6 +153,62 @@ export default function TrialManagePage() {
       alert('Error: ' + err.message)
     } finally {
       setCancelling(false)
+    }
+  }
+
+  async function handleDelete() {
+    if (!trial) return
+    const msg = `Delete trial "${trial.company_name}"?\n\nThis will:\n1. Unlink all demo users (set company_id to null)\n2. Delete all company_configs\n3. Delete all vehicles\n4. Delete the company and trial record\n\nThis cannot be undone.`
+    if (!confirm(msg)) return
+    setDeleting(true)
+    try {
+      // 1. Unlink demo users
+      const { data: linkedUsers } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('company_id', trial.company_id)
+
+      if (linkedUsers && linkedUsers.length > 0) {
+        await supabase
+          .from('profiles')
+          .update({ company_id: null, onboarding_completed: false })
+          .eq('company_id', trial.company_id)
+      }
+
+      // 2. Delete company configs
+      await supabase
+        .from('company_configs')
+        .delete()
+        .eq('company_id', trial.company_id)
+
+      // 3. Delete vehicles
+      await supabase
+        .from('vehicles')
+        .delete()
+        .eq('company_id', trial.company_id)
+
+      // 4. Delete trial record
+      if (trial.trial_id) {
+        await supabase
+          .from('trials')
+          .delete()
+          .eq('id', trial.trial_id)
+      }
+
+      // 5. Delete company
+      const { error } = await supabase
+        .from('companies')
+        .delete()
+        .eq('id', trial.company_id)
+
+      if (error) throw error
+
+      alert('Trial deleted successfully.')
+      router.push('/super-admin/companies?tab=trials')
+    } catch (err: any) {
+      alert('Error: ' + err.message)
+    } finally {
+      setDeleting(false)
     }
   }
 
@@ -289,28 +346,37 @@ export default function TrialManagePage() {
               </div>
 
               {/* Actions */}
-              {trial.status === 'active' && (
-                <div className="border-8 border-transparent bg-white rounded-xl flex-shrink-0">
-                  <div className="border-8 border-transparent p-4">
-                    <h2 className="text-lg font-semibold text-gray-900 mb-4">Actions</h2>
-                    <div className="flex gap-4">
+              <div className="border-8 border-transparent bg-white rounded-xl flex-shrink-0">
+                <div className="border-8 border-transparent p-4">
+                  <h2 className="text-lg font-semibold text-gray-900 mb-4">Actions</h2>
+                  <div className="flex gap-4">
+                    {trial.status === 'active' && (
                       <button
                         onClick={() => setShowExtendModal(true)}
                         className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700"
                       >
                         Extend Trial
                       </button>
+                    )}
+                    {trial.status !== 'cancelled' && (
                       <button
                         onClick={handleCancel}
                         disabled={cancelling}
-                        className="bg-red-600 text-white px-6 py-2 rounded-lg hover:bg-red-700 disabled:opacity-50"
+                        className="bg-yellow-600 text-white px-6 py-2 rounded-lg hover:bg-yellow-700 disabled:opacity-50"
                       >
                         {cancelling ? 'Cancelling...' : 'Cancel Trial'}
                       </button>
-                    </div>
+                    )}
+                    <button
+                      onClick={handleDelete}
+                      disabled={deleting}
+                      className="bg-red-600 text-white px-6 py-2 rounded-lg hover:bg-red-700 disabled:opacity-50"
+                    >
+                      {deleting ? 'Deleting...' : 'Delete Trial'}
+                    </button>
                   </div>
                 </div>
-              )}
+              </div>
             </>
           )}
         </div>
