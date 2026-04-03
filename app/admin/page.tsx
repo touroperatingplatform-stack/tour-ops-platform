@@ -49,10 +49,28 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    loadDashboardData()
+    checkOnboardingAndLoad()
     const interval = setInterval(loadDashboardData, 30000)
     return () => clearInterval(interval)
   }, [])
+
+  async function checkOnboardingAndLoad() {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('onboarding_completed')
+      .eq('id', user.id)
+      .single()
+
+    if (profile && profile.onboarding_completed === false) {
+      router.push('/admin/onboarding')
+      return
+    }
+
+    loadDashboardData()
+  }
 
   async function loadDashboardData() {
     const today = getLocalDate()
