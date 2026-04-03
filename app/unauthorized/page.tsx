@@ -1,6 +1,17 @@
+'use client'
+
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { supabase } from '@/lib/supabase/client'
 
 export default function UnauthorizedPage() {
+  const router = useRouter()
+
+  async function handleSignOut() {
+    await supabase.auth.signOut()
+    router.push('/login')
+  }
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
       <div className="text-center max-w-md">
@@ -10,17 +21,18 @@ export default function UnauthorizedPage() {
           You don't have permission to access this area.
         </p>
         <div className="space-y-3">
-          <Link 
-            href="/" 
-            className="block w-full bg-blue-600 text-white py-3 rounded-xl font-semibold hover:bg-blue-700 transition-colors"
+          <button
+            onClick={handleSignOut}
+            className="w-full bg-blue-600 text-white py-3 rounded-xl font-semibold hover:bg-blue-700 transition-colors"
           >
-            Go Home
-          </Link>
-          <Link 
-            href="/login" 
-            className="block text-gray-600 hover:text-gray-900"
+            Sign Out & Switch Account
+          </button>
+          <Link
+            href="/login"
+            onClick={handleSignOut}
+            className="block w-full text-gray-600 hover:text-gray-900 py-2"
           >
-            Sign in with different account
+            Or sign in with different account
           </Link>
         </div>
       </div>
