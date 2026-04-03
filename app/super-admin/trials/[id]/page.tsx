@@ -39,13 +39,17 @@ export default function TrialManagePage() {
 
   async function loadTrial() {
     try {
-      const { data: company, error: coError } = await supabase
+      const { data: company } = await supabase
         .from('companies')
         .select('id, name, trial_id, created_at')
         .eq('id', trialId)
-        .single()
+        .maybeSingle()
 
-      if (coError || !company) throw new Error('Trial company not found')
+      if (!company) {
+        setError('Trial not found — it may have been deleted.')
+        setLoading(false)
+        return
+      }
 
       let started_at = company.created_at
       let expires_at = ''
@@ -56,7 +60,7 @@ export default function TrialManagePage() {
           .from('trials')
           .select('started_at, expires_at, status')
           .eq('id', company.trial_id)
-          .single()
+          .maybeSingle()
 
         if (trialRec) {
           started_at = trialRec.started_at
