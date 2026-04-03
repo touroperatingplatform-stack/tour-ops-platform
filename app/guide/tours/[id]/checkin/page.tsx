@@ -228,8 +228,16 @@ export default function PickupCheckinPage() {
         }
       }
 
-      // Redirect to dashboard
-      router.push('/guide')
+      // Check if there are remaining stops of this type
+      const remainingStops = stops.filter(s => s.id !== selectedStopId)
+      
+      if (remainingStops.length > 0) {
+        // There are more stops of this type - reload checkin for next stop
+        router.refresh()
+      } else {
+        // All stops of this type are done - return to dashboard
+        router.push('/guide')
+      }
     } catch (err: any) {
       alert(err.message || 'Failed to check in')
     } finally {
