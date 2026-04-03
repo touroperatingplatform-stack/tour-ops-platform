@@ -42,49 +42,55 @@ export default function ClientsPage() {
   async function loadClients() {
     setLoading(true)
     try {
-      // Get company admins - they're linked via companies.company_admin_id = auth.users.id
-      // First get all companies with their admin info
+      // companies.company_admin_id is just a UUID column (not a FK constraint)
+      // Get all companies with their admin ID
       const { data: companiesData, error: companiesError } = await supabase
         .from('companies')
-        .select('company_admin_id, name')
+        .select('company_admin_id')
 
       if (companiesError) throw companiesError
 
-      // Get profiles for company admins
-      const adminIds = companiesData?.map(c => c.company_admin_id).filter(Boolean) || []
+      // Get unique admin IDs
+      const adminIds = [...new Set(companiesData?.map(c => c.company_admin_id).filter(Boolean) || [])]
       
+      // Get profiles for these admin IDs
       let adminsMap: Record<string, any> = {}
       if (adminIds.length > 0) {
         const { data: profilesData } = await supabase
           .from('profiles')
           .select('id, email, first_name, last_name, phone, status, created_at')
           .in('id', adminIds)
-          .eq('role', 'company_admin')
         
         profilesData?.forEach(p => { adminsMap[p.id] = p })
       }
 
-      // Count companies and users per admin
+      // Count companies per admin
       const companyCountMap: Record<string, number> = {}
-      const userCountMap: Record<string, number> = {}
-      
       companiesData?.forEach((c: any) => {
         if (c.company_admin_id) {
           companyCountMap[c.company_admin_id] = (companyCountMap[c.company_admin_id] || 0) + 1
         }
       })
 
-      // Count users per company
+      // Count users per admin (users belong to companies)
+      const companyToAdmin: Record<string, string> = {}
+      companiesData?.forEach((c: any) => {
+        if (c.company_admin_id && c.id) {
+          companyToAdmin[c.id] = c.company_admin_id
+        }
+      })
+
       const { data: allProfiles } = await supabase
         .from('profiles')
         .select('company_id, role')
         .neq('role', 'super_admin')
         .not('company_id', 'is', null)
 
+      const userCountMap: Record<string, number> = {}
       allProfiles?.forEach((p: any) => {
-        const company = companiesData?.find((c: any) => c.id === p.company_id)
-        if (company?.company_admin_id) {
-          userCountMap[company.company_admin_id] = (userCountMap[company.company_admin_id] || 0) + 1
+        const adminId = companyToAdmin[p.company_id]
+        if (adminId) {
+          userCountMap[adminId] = (userCountMap[adminId] || 0) + 1
         }
       })
 
@@ -101,7 +107,7 @@ export default function ClientsPage() {
           companies_count: companyCountMap[adminId] || 0,
           users_count: userCountMap[adminId] || 0
         }
-      })
+      }).filter(c => c.email !== 'Unknown') // filter out admins without profiles
 
       setClients(clients)
     } catch (error) {
