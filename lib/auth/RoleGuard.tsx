@@ -32,7 +32,7 @@ export default function RoleGuard({ children, requiredRole, fallback }: RoleGuar
         // Get user's role from profile
         const { data: profile } = await supabase
           .from('profiles')
-          .select('role')
+          .select('role, company_id')
           .eq('id', user.id)
           .single()
 
@@ -43,6 +43,28 @@ export default function RoleGuard({ children, requiredRole, fallback }: RoleGuar
           ? requiredRole.some(r => hasRole(role, r))
           : hasRole(role, requiredRole)
         setAuthorized(isAuthorized)
+
+        // Trial expiry check - only for authorized users on trial companies
+        if (isAuthorized && profile?.company_id) {
+          const { data: company } = await supabase
+            .from('companies')
+            .select('is_trial, trial_id')
+            .eq('id', profile.company_id)
+            .single()
+
+          if (company?.is_trial && company?.trial_id) {
+            const { data: trial } = await supabase
+              .from('trials')
+              .select('expires_at, status')
+              .eq('id', company.trial_id)
+              .single()
+
+            if (trial && (trial.status === 'expired' || new Date(trial.expires_at) < new Date())) {
+              window.location.href = '/trial-expired'
+              return
+            }
+          }
+        }
       } catch (error) {
         console.error('RoleGuard auth check failed:', error)
         setAuthorized(false)

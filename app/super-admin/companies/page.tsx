@@ -19,6 +19,7 @@ interface Company {
 
 interface Trial {
   id: string
+  trial_id: string | null
   company_id: string
   company_name: string
   user_group: string
@@ -129,14 +130,15 @@ export default function CompaniesPage() {
   }
 
   async function loadTrials() {
-    // For now, trials are just companies - in future they'll have their own table
     try {
-      const { data: companiesData } = await supabase
+      const { data: companiesData, error } = await supabase
         .from('companies')
         .select('*')
+        .eq('is_trial', true)
         .order('created_at', { ascending: false })
 
-      // Get profiles to count guides/drivers per company
+      if (error) throw error
+
       const { data: profilesData } = await supabase
         .from('profiles')
         .select('company_id, role')
@@ -145,6 +147,7 @@ export default function CompaniesPage() {
         const companyProfiles = profilesData?.filter(p => p.company_id === company.id) || []
         return {
           id: company.id,
+          trial_id: company.trial_id,
           company_id: company.id,
           company_name: company.name,
           user_group: 'group_1',
@@ -176,7 +179,8 @@ export default function CompaniesPage() {
         .insert({
           name: trialForm.companyName,
           slug: trialForm.companyName.toLowerCase().replace(/\s+/g, '-'),
-          company_admin_id: null
+          company_admin_id: null,
+          is_trial: true
         })
         .select('id')
         .single()
@@ -184,7 +188,27 @@ export default function CompaniesPage() {
       if (companyError) throw companyError
       const companyId = company.id
 
-      // 2. Link existing demo_ users (Group 1)
+      // 2. Create trial record (7 days)
+      const { data: trialRecord, error: trialError } = await supabase
+        .from('trials')
+        .insert({
+          company_id: companyId,
+          expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+          max_users: 5,
+          status: 'active'
+        })
+        .select('id')
+        .single()
+
+      if (trialError) throw trialError
+
+      // 3. Link trial_id to company
+      await supabase
+        .from('companies')
+        .update({ trial_id: trialRecord.id })
+        .eq('id', companyId)
+
+      // 4. Link existing demo_ users (Group 1)
       const demoEmails = [
         'demo_guide1@lifeoperations.com',
         'demo_guide2@lifeoperations.com',
@@ -234,12 +258,28 @@ export default function CompaniesPage() {
   }
 
   async function handleExtendTrial() {
-    if (!extendingTrial) return
+    if (!extendingTrial || !extendingTrial.trial_id) return
     setExtending(true)
     try {
-      // TODO: update companies set trial_expires_at = trial_expires_at + extend_days
-      // For now, just show a placeholder alert
-      alert('Trial extended by ' + extendDays + ' days.\n\n(DB update coming in step 1-3)')
+      const { data: trialData } = await supabase
+        .from('trials')
+        .select('expires_at')
+        .eq('id', extendingTrial.trial_id)
+        .single()
+
+      if (!trialData) throw new Error('Trial not found')
+
+      const currentExpiry = new Date(trialData.expires_at)
+      const newExpiry = new Date(currentExpiry.getTime() + parseInt(extendDays) * 24 * 60 * 60 * 1000)
+
+      const { error } = await supabase
+        .from('trials')
+        .update({ expires_at: newExpiry.toISOString() })
+        .eq('id', extendingTrial.trial_id)
+
+      if (error) throw error
+
+      alert('Trial extended by ' + extendDays + ' days. New expiry: ' + newExpiry.toLocaleDateString())
       setShowExtendModal(false)
       setExtendingTrial(null)
       setExtendDays('7')
