@@ -23,9 +23,9 @@ interface Trial {
   company_id: string
   company_name: string
   user_group: string
-  created_at: string
+  started_at: string
   expires_at: string | null
-  status: 'active' | 'expired' | 'converted'
+  status: 'active' | 'expired' | 'cancelled' | 'converted'
   guide_count: number
   driver_count: number
 }
@@ -143,7 +143,19 @@ export default function CompaniesPage() {
         .from('profiles')
         .select('company_id, role')
 
+      // Get trial records for companies that have them
+      const companyIds = (companiesData || []).map(c => c.id)
+      let trialsMap: Record<string, { started_at: string; expires_at: string; status: string }> = {}
+      if (companyIds.length > 0) {
+        const { data: trialsData } = await supabase
+          .from('trials')
+          .select('id, company_id, started_at, expires_at, status')
+          .in('company_id', companyIds)
+        trialsData?.forEach((t: any) => { trialsMap[t.company_id] = t })
+      }
+
       const trialsData: Trial[] = (companiesData || []).map((company: any) => {
+        const trial = trialsMap[company.id]
         const companyProfiles = profilesData?.filter(p => p.company_id === company.id) || []
         return {
           id: company.id,
@@ -151,9 +163,9 @@ export default function CompaniesPage() {
           company_id: company.id,
           company_name: company.name,
           user_group: 'group_1',
-          created_at: company.created_at,
-          expires_at: null,
-          status: 'active' as const,
+          started_at: trial?.started_at || company.created_at,
+          expires_at: trial?.expires_at || null,
+          status: (trial?.status as Trial['status']) || 'active',
           guide_count: companyProfiles.filter(p => p.role === 'guide').length,
           driver_count: companyProfiles.filter(p => p.role === 'driver').length
         }
@@ -460,6 +472,7 @@ OPERATIONS:
                           <th className="border-8 border-transparent px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">User Group</th>
                           <th className="border-8 border-transparent px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Guides</th>
                           <th className="border-8 border-transparent px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Drivers</th>
+                          <th className="border-8 border-transparent px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Days Left</th>
                           <th className="border-8 border-transparent px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Created</th>
                           <th className="border-8 border-transparent px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
                         </tr>
@@ -480,8 +493,21 @@ OPERATIONS:
                             <td className="border-8 border-transparent px-6 py-4 text-sm">{trial.user_group}</td>
                             <td className="border-8 border-transparent px-6 py-4 text-sm">{trial.guide_count}</td>
                             <td className="border-8 border-transparent px-6 py-4 text-sm">{trial.driver_count}</td>
+                            <td className="border-8 border-transparent px-6 py-4 text-sm">
+                              {trial.expires_at ? (
+                                Math.ceil((new Date(trial.expires_at).getTime() - Date.now()) / (1000 * 60 * 60 * 24)) > 0 ? (
+                                  <span className="text-green-600 font-medium">
+                                    {Math.ceil((new Date(trial.expires_at).getTime() - Date.now()) / (1000 * 60 * 60 * 24))} days
+                                  </span>
+                                ) : (
+                                  <span className="text-red-600 font-medium">Expired</span>
+                                )
+                              ) : (
+                                <span className="text-gray-400">N/A</span>
+                              )}
+                            </td>
                             <td className="border-8 border-transparent px-6 py-4 text-sm text-gray-500">
-                              {new Date(trial.created_at).toLocaleDateString()}
+                              {new Date(trial.started_at).toLocaleDateString()}
                             </td>
                             <td className="border-8 border-transparent px-6 py-4">
                               <div className="flex gap-2">
@@ -490,12 +516,6 @@ OPERATIONS:
                                   className="text-blue-600 hover:text-blue-800 text-sm font-medium"
                                 >
                                   Download Credentials
-                                </button>
-                                <button
-                                  onClick={() => { setExtendingTrial(trial); setShowExtendModal(true) }}
-                                  className="text-purple-600 hover:text-purple-800 text-sm font-medium"
-                                >
-                                  Extend
                                 </button>
                                 <Link
                                   href={`/super-admin/trials/${trial.id}`}

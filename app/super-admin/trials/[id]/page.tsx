@@ -15,6 +15,7 @@ interface TrialDetail {
   status: 'active' | 'expired' | 'cancelled' | 'converted'
   guide_count: number
   driver_count: number
+  configs: Record<string, boolean>
 }
 
 export default function TrialManagePage() {
@@ -29,6 +30,7 @@ export default function TrialManagePage() {
   const [extending, setExtending] = useState(false)
   const [cancelling, setCancelling] = useState(false)
   const [error, setError] = useState('')
+  const [savingConfig, setSavingConfig] = useState<string | null>(null)
 
   useEffect(() => {
     loadTrial()
@@ -70,6 +72,17 @@ export default function TrialManagePage() {
       const guide_count = profiles?.filter(p => p.role === 'guide').length || 0
       const driver_count = profiles?.filter(p => p.role === 'driver').length || 0
 
+      // Load company configs
+      const { data: configsData } = await supabase
+        .from('company_configs')
+        .select('config_key, config_value')
+        .eq('company_id', company.id)
+
+      const configs: Record<string, boolean> = {}
+      configsData?.forEach((cfg: any) => {
+        configs[cfg.config_key] = cfg.config_value
+      })
+
       setTrial({
         id: company.id,
         trial_id: company.trial_id || '',
@@ -79,7 +92,8 @@ export default function TrialManagePage() {
         expires_at,
         status,
         guide_count,
-        driver_count
+        driver_count,
+        configs
       })
     } catch (err: any) {
       setError(err.message)
@@ -138,6 +152,31 @@ export default function TrialManagePage() {
       alert('Error: ' + err.message)
     } finally {
       setCancelling(false)
+    }
+  }
+
+  async function handleToggleConfig(key: string, value: boolean) {
+    if (!trial) return
+    setSavingConfig(key)
+    try {
+      const { error } = await supabase
+        .from('company_configs')
+        .upsert({
+          company_id: trial.company_id,
+          config_key: key,
+          config_value: value
+        }, { onConflict: 'company_id,config_key' })
+
+      if (error) throw error
+
+      setTrial(prev => prev ? {
+        ...prev,
+        configs: { ...prev.configs, [key]: value }
+      } : null)
+    } catch (err: any) {
+      alert('Error: ' + err.message)
+    } finally {
+      setSavingConfig(null)
     }
   }
 
@@ -212,6 +251,39 @@ export default function TrialManagePage() {
                       <span className="text-sm text-gray-500">Drivers</span>
                       <p className="text-gray-900">{trial.driver_count}</p>
                     </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* OEM Flags */}
+              <div className="border-8 border-transparent bg-white rounded-xl flex-shrink-0 mb-4">
+                <div className="border-8 border-transparent p-4">
+                  <h2 className="text-lg font-semibold text-gray-900 mb-4">OEM Features</h2>
+                  <div className="grid grid-cols-2 gap-4">
+                    {[
+                      { key: 'guide_app', label: 'Guide App' },
+                      { key: 'driver_app', label: 'Driver App' },
+                      { key: 'operations_dashboard', label: 'Operations Dashboard' },
+                      { key: 'supervisor_dashboard', label: 'Supervisor Dashboard' },
+                      { key: 'orden_import', label: 'ORDEN Import' },
+                      { key: 'csv_import', label: 'CSV Import' },
+                      { key: 'push_notifications', label: 'Push Notifications' },
+                      { key: 'sms_notifications', label: 'SMS Notifications' },
+                      { key: 'offline_mode', label: 'Offline Mode' },
+                      { key: 'photo_uploads', label: 'Photo Uploads' },
+                      { key: 'incident_reporting', label: 'Incident Reporting' },
+                    ].map(({ key, label }) => (
+                      <div key={key} className="flex items-center justify-between border border-gray-200 rounded-lg px-4 py-2">
+                        <span className="text-sm text-gray-900">{label}</span>
+                        <button
+                          onClick={() => handleToggleConfig(key, !trial.configs[key])}
+                          disabled={savingConfig === key}
+                          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors disabled:opacity-50 ${trial.configs[key] ? 'bg-blue-600' : 'bg-gray-200'}`}
+                        >
+                          <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${trial.configs[key] ? 'translate-x-6' : 'translate-x-1'}`} />
+                        </button>
+                      </div>
+                    ))}
                   </div>
                 </div>
               </div>
