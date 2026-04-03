@@ -28,9 +28,21 @@ export default function VehiclesPage() {
   }, [])
 
   async function loadVehicles() {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('company_id')
+      .eq('id', user.id)
+      .single()
+
+    if (!profile?.company_id) return
+
     const { data, error } = await supabase
       .from('vehicles')
       .select('id, plate_number, make, model, year, capacity, status')
+      .eq('company_id', profile.company_id)
       .order('plate_number')
 
     if (error) {
