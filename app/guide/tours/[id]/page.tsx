@@ -455,9 +455,9 @@ export default function GuideTourPage() {
           <button
             onClick={startTour}
             disabled={!canStartTour || uploading}
-            className={`w-full py-5 rounded-2xl font-bold text-xl transition-colors flex items-center justify-center gap-3 ${
+            className={`w-full py-6 rounded-2xl font-bold text-xl transition-colors flex items-center justify-center gap-3 ${
               canStartTour && !uploading
-                ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-lg'
+                ? 'bg-green-600 text-white hover:bg-green-700 shadow-lg'
                 : 'bg-gray-300 text-gray-500 cursor-not-allowed'
             }`}
           >
@@ -619,24 +619,6 @@ export default function GuideTourPage() {
           <div className="text-4xl mb-2">✓</div>
           <h2 className="text-xl font-bold text-gray-900">Tour Completed</h2>
           <p className="text-gray-500 mt-1">Great work!</p>
-        </div>
-      )}
-
-      {/* Quick Actions */}
-      {tour.status !== 'completed' && (
-        <div className="grid grid-cols-2 gap-4">
-          <Link
-            href={`/guide/tours/${tour.id}/incident`}
-            className="bg-red-50 border-2 border-red-200 text-red-700 px-4 py-4 rounded-xl font-semibold text-center hover:bg-red-100"
-          >
-            🚨 Incident
-          </Link>
-          <Link
-            href={`/guide/tours/${tour.id}/expense`}
-            className="bg-blue-50 border-2 border-blue-200 text-blue-700 px-4 py-4 rounded-xl font-semibold text-center hover:bg-blue-100"
-          >
-            💵 Expense
-          </Link>
         </div>
       )}
 
