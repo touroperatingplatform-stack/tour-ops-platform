@@ -46,58 +46,81 @@ export default function SuperAdminDashboard() {
 
   async function loadDashboardData() {
     try {
-      // Load counts in parallel
+      // Load all data in parallel where possible
       const [
-        clientsResult,
-        companiesResult,
-        usersResult,
-        toursResult,
-        guestsResult,
-        incidentsResult,
-        recentClientsResult
+        companiesData,
+        profilesData,
+        toursData,
+        incidentsData
       ] = await Promise.all([
-        supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('role', 'company_admin'),
-        supabase.from('companies').select('*', { count: 'exact', head: true }),
-        supabase.from('profiles').select('*', { count: 'exact', head: true }),
-        supabase.from('tours').select('*', { count: 'exact', head: true }).eq('status', 'in_progress'),
-        supabase.from('guests').select('*', { count: 'exact', head: true }),
-        supabase.from('incidents').select('*', { count: 'exact', head: true }).eq('status', 'reported'),
-        supabase
-          .from('profiles')
-          .select(`
-            *,
-            companies:companies(count),
-            users:profiles!inner(count)
-          `)
-          .eq('role', 'company_admin')
-          .order('created_at', { ascending: false })
-          .limit(10)
+        supabase.from('companies').select('company_admin_id'),
+        supabase.from('profiles').select('id, company_id, role'),
+        supabase.from('tours').select('id, status'),
+        supabase.from('incidents').select('id, status')
       ])
 
-      setStats({
-        totalClients: clientsResult.count || 0,
-        totalCompanies: companiesResult.count || 0,
-        totalUsers: usersResult.count || 0,
-        activeToursToday: toursResult.count || 0,
-        totalGuestsToday: guestsResult.count || 0,
-        openIncidents: incidentsResult.count || 0
+      // Get unique admin IDs from companies
+      const adminIds = [...new Set(companiesData.data?.map(c => c.company_admin_id).filter(Boolean) || [])]
+
+      // Build company -> admin mapping
+      const companyToAdmin: Record<string, string> = {}
+      companiesData.data?.forEach((c: any) => {
+        if (c.company_admin_id && c.id) {
+          companyToAdmin[c.id] = c.company_admin_id
+        }
       })
 
-      // Transform recent clients data
-      if (recentClientsResult.data) {
-        const clientsWithCounts = recentClientsResult.data.map((client: any) => ({
-          id: client.id,
-          email: client.email,
-          first_name: client.first_name,
-          last_name: client.last_name,
-          phone: client.phone,
-          status: client.status,
-          created_at: client.created_at,
-          companies_count: client.companies?.[0]?.count || 0,
-          users_count: client.users?.[0]?.count || 0
-        }))
-        setRecentClients(clientsWithCounts)
-      }
+      // Count companies per admin
+      const companyCountMap: Record<string, number> = {}
+      companiesData.data?.forEach((c: any) => {
+        if (c.company_admin_id) {
+          companyCountMap[c.company_admin_id] = (companyCountMap[c.company_admin_id] || 0) + 1
+        }
+      })
+
+      // Count users per admin
+      const userCountMap: Record<string, number> = {}
+      profilesData.data?.forEach((p: any) => {
+        if (p.role !== 'super_admin' && p.company_id) {
+          const adminId = companyToAdmin[p.company_id]
+          if (adminId) {
+            userCountMap[adminId] = (userCountMap[adminId] || 0) + 1
+          }
+        }
+      })
+
+      // Count tours in progress
+      const activeTours = toursData.data?.filter(t => t.status === 'in_progress').length || 0
+
+      // Count open incidents
+      const openIncidents = incidentsData.data?.filter(i => i.status === 'reported' || i.status === 'open').length || 0
+
+      setStats({
+        totalClients: adminIds.length,
+        totalCompanies: companiesData.data?.length || 0,
+        totalUsers: profilesData.data?.length || 0,
+        activeToursToday: activeTours,
+        totalGuestsToday: 0, // Would need separate query
+        openIncidents: openIncidents
+      })
+
+      // Get recent clients (first 10 admins with profiles)
+      const recentClientsList = adminIds.slice(0, 10).map(adminId => {
+        const profile = profilesData.data?.find((p: any) => p.id === adminId)
+        return {
+          id: adminId,
+          email: profile?.email || 'Unknown',
+          first_name: profile?.first_name || null,
+          last_name: profile?.last_name || null,
+          phone: profile?.phone || null,
+          status: profile?.status || 'active',
+          created_at: profile?.created_at || new Date().toISOString(),
+          companies_count: companyCountMap[adminId] || 0,
+          users_count: userCountMap[adminId] || 0
+        }
+      }).filter(c => c.email !== 'Unknown')
+
+      setRecentClients(recentClientsList)
     } catch (error) {
       console.error('Error loading dashboard data:', error)
     } finally {
