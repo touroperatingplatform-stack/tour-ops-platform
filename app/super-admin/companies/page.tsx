@@ -23,9 +23,7 @@ export default function CompaniesPage() {
   const [showCreateTrial, setShowCreateTrial] = useState(false)
   const [creating, setCreating] = useState(false)
   const [trialForm, setTrialForm] = useState({
-    companyName: '',
-    adminEmail: '',
-    adminPassword: ''
+    companyName: ''
   })
 
   useEffect(() => {
@@ -102,78 +100,55 @@ export default function CompaniesPage() {
   }
 
   async function handleCreateTrial() {
-    if (!trialForm.companyName || !trialForm.adminEmail || !trialForm.adminPassword) {
-      alert('Please fill in all fields')
+    if (!trialForm.companyName) {
+      alert('Please enter a company name')
       return
     }
 
     setCreating(true)
     try {
-      // 1. Create auth user for admin
-      const { data: authUser, error: authError } = await supabase.auth.admin.createUser({
-        email: trialForm.adminEmail,
-        password: trialForm.adminPassword,
-        email_confirm: true,
-        user_metadata: { role: 'company_admin' }
-      })
-
-      if (authError) throw authError
-
-      const adminId = authUser.user.id
-
-      // 2. Create company with admin
+      // 1. Create company
       const { data: company, error: companyError } = await supabase
         .from('companies')
         .insert({
           name: trialForm.companyName,
           slug: trialForm.companyName.toLowerCase().replace(/\s+/g, '-'),
-          company_admin_id: adminId
+          company_admin_id: null // Will be set when admin logs in
         })
         .select('id')
         .single()
 
       if (companyError) throw companyError
-
       const companyId = company.id
 
-      // 3. Update admin profile with company_id
-      await supabase
-        .from('profiles')
-        .update({ company_id: companyId })
-        .eq('id', adminId)
-
-      // 4. Create demo users (guides, drivers, ops, supervisor)
-      const demoUsers = [
-        { email: `demo_guide1@${trialForm.companyName.toLowerCase().replace(/\s+/g, '')}.com`, role: 'guide', full_name: 'Demo Guide 1' },
-        { email: `demo_guide2@${trialForm.companyName.toLowerCase().replace(/\s+/g, '')}.com`, role: 'guide', full_name: 'Demo Guide 2' },
-        { email: `demo_driver1@${trialForm.companyName.toLowerCase().replace(/\s+/g, '')}.com`, role: 'driver', full_name: 'Demo Driver 1' },
-        { email: `demo_driver2@${trialForm.companyName.toLowerCase().replace(/\s+/g, '')}.com`, role: 'driver', full_name: 'Demo Driver 2' },
-        { email: `demo_ops@${trialForm.companyName.toLowerCase().replace(/\s+/g, '')}.com`, role: 'operations', full_name: 'Demo Ops' },
+      // 2. Link existing demo_ users to this company
+      const demoEmails = [
+        'demo_guide1@lifeoperations.com',
+        'demo_guide2@lifeoperations.com',
+        'demo_guide3@lifeoperations.com',
+        'demo_guide4@lifeoperations.com',
+        'demo_guide5@lifeoperations.com',
+        'demo_driver1@lifeoperations.com',
+        'demo_driver2@lifeoperations.com',
+        'demo_driver3@lifeoperations.com',
+        'demo_driver4@lifeoperations.com',
+        'demo_driver5@lifeoperations.com',
+        'demo_ops@lifeoperations.com',
+        'demo_supervisor@lifeoperations.com',
+        'demo_admin@lifeoperations.com',
       ]
 
-      for (const user of demoUsers) {
-        const { data: newAuth } = await supabase.auth.admin.createUser({
-          email: user.email,
-          password: 'demo1234',
-          email_confirm: true,
-          user_metadata: { role: user.role }
-        })
-
-        if (newAuth?.user) {
-          await supabase.from('profiles').insert({
-            id: newAuth.user.id,
-            email: user.email,
-            full_name: user.full_name,
-            role: user.role,
-            company_id: companyId
-          })
-        }
+      for (const email of demoEmails) {
+        await supabase
+          .from('profiles')
+          .update({ company_id: companyId })
+          .eq('email', email)
       }
 
-      // 5. Create demo vehicles
+      // 3. Create demo vehicles for the company
       const vehicles = [
-        { plate: `${trialForm.companyName.slice(0,3).toUpperCase()}-001`, make: 'Toyota', model: 'Hiace', capacity: 13 },
-        { plate: `${trialForm.companyName.slice(0,3).toUpperCase()}-002`, make: 'Mercedes', model: 'Sprinter', capacity: 15 },
+        { plate: `${companyId.slice(0,3).toUpperCase()}-001`, make: 'Toyota', model: 'Hiace', capacity: 13 },
+        { plate: `${companyId.slice(0,3).toUpperCase()}-002`, make: 'Mercedes', model: 'Sprinter', capacity: 15 },
       ]
 
       for (const v of vehicles) {
@@ -187,7 +162,7 @@ export default function CompaniesPage() {
         })
       }
 
-      alert('✅ Trial company created successfully!')
+      alert(`✅ Trial company "${trialForm.companyName}" created!\n\nDemo users are now linked.\nLogin: demo_guide5@lifeoperations.com\nPassword: demo1234`)
       setShowCreateTrial(false)
       setTrialForm({ companyName: '', adminEmail: '', adminPassword: '' })
       loadCompanies()
@@ -324,7 +299,7 @@ export default function CompaniesPage() {
             </div>
             <div className="border-8 border-transparent p-4 space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700">Company Name</label>
+                <label className="block text-sm font-medium text-gray-700">Trial Company Name</label>
                 <input
                   type="text"
                   value={trialForm.companyName}
@@ -333,29 +308,10 @@ export default function CompaniesPage() {
                   placeholder="My Tour Company"
                 />
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Admin Email</label>
-                <input
-                  type="email"
-                  value={trialForm.adminEmail}
-                  onChange={e => setTrialForm({...trialForm, adminEmail: e.target.value})}
-                  className="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2"
-                  placeholder="admin@company.com"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Admin Password</label>
-                <input
-                  type="password"
-                  value={trialForm.adminPassword}
-                  onChange={e => setTrialForm({...trialForm, adminPassword: e.target.value})}
-                  className="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2"
-                  placeholder="••••••••"
-                />
-              </div>
               <div className="text-sm text-gray-500 bg-gray-50 p-3 rounded-lg">
-                <p className="font-medium">Demo accounts created:</p>
-                <p>2 Guides, 2 Drivers, 1 Ops (password: demo1234)</p>
+                <p className="font-medium">This will link existing demo users:</p>
+                <p>5 Guides, 5 Drivers, 1 Ops, 1 Supervisor, 1 Admin</p>
+                <p className="mt-1">Login: demo_guide5@lifeoperations.com / demo1234</p>
               </div>
             </div>
             <div className="border-8 border-transparent p-4 border-t border-gray-100 flex justify-end gap-2">
