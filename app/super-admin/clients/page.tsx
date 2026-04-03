@@ -45,34 +45,38 @@ export default function ClientsPage() {
       // Load clients (company admins)
       const { data: profilesData, error } = await supabase
         .from('profiles')
-        .select('id, email, first_name, last_name, phone, status, created_at, client_id')
+        .select('id, email, first_name, last_name, phone, status, created_at')
         .eq('role', 'company_admin')
         .order('created_at', { ascending: false })
 
       if (error) throw error
 
-      // Load company counts per client
+      // Load company counts per client (companies.client_id = profiles.id)
       const { data: companiesData } = await supabase
         .from('companies')
         .select('client_id')
 
-      // Count users per client
-      const { data: usersData } = await supabase
-        .from('profiles')
-        .select('client_id')
-        .neq('role', 'super_admin')
-
       // Build company count map
       const companyCountMap: Record<string, number> = {}
       companiesData?.forEach((c: any) => {
-        companyCountMap[c.client_id] = (companyCountMap[c.client_id] || 0) + 1
+        if (c.client_id) {
+          companyCountMap[c.client_id] = (companyCountMap[c.client_id] || 0) + 1
+        }
       })
+
+      // Users have company_id which links to companies that have client_id
+      // So we need to get all users with their company->client chain
+      const { data: usersWithCompanies } = await supabase
+        .from('profiles')
+        .select('company_id, companies!inner(client_id)')
+        .neq('role', 'super_admin')
 
       // Build user count map
       const userCountMap: Record<string, number> = {}
-      usersData?.forEach((u: any) => {
-        if (u.client_id) {
-          userCountMap[u.client_id] = (userCountMap[u.client_id] || 0) + 1
+      usersWithCompanies?.forEach((u: any) => {
+        const clientId = u.companies?.client_id
+        if (clientId) {
+          userCountMap[clientId] = (userCountMap[clientId] || 0) + 1
         }
       })
 
