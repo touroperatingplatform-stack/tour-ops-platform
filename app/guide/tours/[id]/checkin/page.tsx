@@ -228,46 +228,8 @@ export default function PickupCheckinPage() {
         }
       }
 
-      // Redirect
-      if (stopType === 'pickup') {
-        const remainingPickups = stops.filter(s => s.id !== selectedStopId)
-        if (remainingPickups.length > 0) {
-          router.push(`/guide/tours/${tourId}/checkin?type=pickup`)
-        } else {
-          // Check if there are activities next
-          const { data: activities } = await supabase
-            .from('pickup_stops')
-            .select('id')
-            .eq('tour_id', tourId)
-            .eq('stop_type', 'activity')
-          
-          if (activities && activities.length > 0) {
-            router.push(`/guide/tours/${tourId}/checkin?type=activity`)
-          } else {
-            router.push(`/guide/tours/${tourId}`)
-          }
-        }
-      } else if (stopType === 'activity') {
-        const remainingActivities = stops.filter(s => s.id !== selectedStopId)
-        if (remainingActivities.length > 0) {
-          router.push(`/guide/tours/${tourId}/checkin?type=activity`)
-        } else {
-          // Check if there are dropoffs
-          const { data: dropoffs } = await supabase
-            .from('pickup_stops')
-            .select('id')
-            .eq('tour_id', tourId)
-            .eq('stop_type', 'dropoff')
-          
-          if (dropoffs && dropoffs.length > 0) {
-            router.push(`/guide/tours/${tourId}/checkin?type=dropoff`)
-          } else {
-            router.push(`/guide/tours/${tourId}`)
-          }
-        }
-      } else {
-        router.push(`/guide/tours/${tourId}`)
-      }
+      // Redirect to dashboard
+      router.push('/guide')
     } catch (err: any) {
       alert(err.message || 'Failed to check in')
     } finally {

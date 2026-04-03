@@ -147,7 +147,7 @@ export default function AcknowledgeTourPage() {
       return
     }
 
-    router.push(`/guide/tours/${params.id}`)
+    router.push('/guide')
   }
 
   if (loading) {
@@ -168,7 +168,7 @@ export default function AcknowledgeTourPage() {
   }
 
   if (tour.acknowledged_at) {
-    router.push(`/guide/tours/${params.id}`)
+    router.push('/guide')
     return null
   }
 
