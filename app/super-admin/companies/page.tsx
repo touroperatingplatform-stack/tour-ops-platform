@@ -284,9 +284,13 @@ export default function CompaniesPage() {
         .from('trials')
         .select('expires_at')
         .eq('id', extendingTrial.trial_id)
-        .single()
+        .maybeSingle()
 
-      if (!trialData) throw new Error('Trial not found')
+      if (!trialData) {
+        alert('Trial record not found. It may have been deleted.')
+        setExtending(false)
+        return
+      }
 
       const currentExpiry = new Date(trialData.expires_at)
       const newExpiry = new Date(currentExpiry.getTime() + parseInt(extendDays) * 24 * 60 * 60 * 1000)
