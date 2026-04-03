@@ -54,7 +54,7 @@ export default function SuperAdminDashboard() {
         incidentsData
       ] = await Promise.all([
         supabase.from('companies').select('company_admin_id'),
-        supabase.from('profiles').select('id, company_id, role'),
+        supabase.from('profiles').select('id, email, first_name, last_name, phone, status, created_at, company_id, role'),
         supabase.from('tours').select('id, status'),
         supabase.from('incidents').select('id, status')
       ])
