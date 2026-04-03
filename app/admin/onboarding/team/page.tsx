@@ -165,7 +165,7 @@ export default function OnboardingTeam() {
       </div>
 
       {/* Content */}
-      <div className="max-w-2xl mx-auto px-4 py-6 space-y-6">
+      <div className="max-w-2xl mx-auto px-4 py-6 space-y-6 pb-24">
         {/* Guides */}
         {guides.length > 0 && (
           <div className="bg-white rounded-2xl border border-gray-200 p-6">
