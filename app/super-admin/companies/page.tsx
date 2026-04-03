@@ -498,7 +498,7 @@ OPERATIONS:
                                   Extend
                                 </button>
                                 <Link
-                                  href={`/admin/companies/${trial.id}`}
+                                  href={`/super-admin/trials/${trial.id}`}
                                   className="text-green-600 hover:text-green-800 text-sm font-medium"
                                 >
                                   Manage
