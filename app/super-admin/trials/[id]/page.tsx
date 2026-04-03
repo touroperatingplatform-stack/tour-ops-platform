@@ -38,7 +38,7 @@ export default function TrialManagePage() {
     try {
       const { data: company, error: coError } = await supabase
         .from('companies')
-        .select('id, name, trial_id')
+        .select('id, name, trial_id, created_at')
         .eq('id', trialId)
         .single()
 
