@@ -42,29 +42,68 @@ export default function ClientsPage() {
   async function loadClients() {
     setLoading(true)
     try {
-      // Load company admins - they are the "clients" of super-admin
-      const { data, error } = await supabase
+      // Get company admins - they're linked via companies.company_admin_id = auth.users.id
+      // First get all companies with their admin info
+      const { data: companiesData, error: companiesError } = await supabase
+        .from('companies')
+        .select('company_admin_id, name')
+
+      if (companiesError) throw companiesError
+
+      // Get profiles for company admins
+      const adminIds = companiesData?.map(c => c.company_admin_id).filter(Boolean) || []
+      
+      let adminsMap: Record<string, any> = {}
+      if (adminIds.length > 0) {
+        const { data: profilesData } = await supabase
+          .from('profiles')
+          .select('id, email, first_name, last_name, phone, status, created_at')
+          .in('id', adminIds)
+          .eq('role', 'company_admin')
+        
+        profilesData?.forEach(p => { adminsMap[p.id] = p })
+      }
+
+      // Count companies and users per admin
+      const companyCountMap: Record<string, number> = {}
+      const userCountMap: Record<string, number> = {}
+      
+      companiesData?.forEach((c: any) => {
+        if (c.company_admin_id) {
+          companyCountMap[c.company_admin_id] = (companyCountMap[c.company_admin_id] || 0) + 1
+        }
+      })
+
+      // Count users per company
+      const { data: allProfiles } = await supabase
         .from('profiles')
-        .select('id, email, first_name, last_name, phone, status, created_at, company_id')
-        .eq('role', 'company_admin')
-        .order('created_at', { ascending: false })
+        .select('company_id, role')
+        .neq('role', 'super_admin')
+        .not('company_id', 'is', null)
 
-      if (error) throw error
+      allProfiles?.forEach((p: any) => {
+        const company = companiesData?.find((c: any) => c.id === p.company_id)
+        if (company?.company_admin_id) {
+          userCountMap[company.company_admin_id] = (userCountMap[company.company_admin_id] || 0) + 1
+        }
+      })
 
-      // For now, no company/user counts - schema doesn't support it cleanly
-      const clientsWithCounts = data?.map((client: any) => ({
-        id: client.id,
-        email: client.email,
-        first_name: client.first_name,
-        last_name: client.last_name,
-        phone: client.phone,
-        status: client.status,
-        created_at: client.created_at,
-        companies_count: 0,
-        users_count: 0
-      })) || []
+      const clients = adminIds.map(adminId => {
+        const profile = adminsMap[adminId]
+        return {
+          id: adminId,
+          email: profile?.email || 'Unknown',
+          first_name: profile?.first_name || null,
+          last_name: profile?.last_name || null,
+          phone: profile?.phone || null,
+          status: profile?.status || 'active',
+          created_at: profile?.created_at || new Date().toISOString(),
+          companies_count: companyCountMap[adminId] || 0,
+          users_count: userCountMap[adminId] || 0
+        }
+      })
 
-      setClients(clientsWithCounts)
+      setClients(clients)
     } catch (error) {
       console.error('Error loading clients:', error)
     } finally {
