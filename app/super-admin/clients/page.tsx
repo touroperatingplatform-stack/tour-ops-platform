@@ -42,57 +42,17 @@ export default function ClientsPage() {
   async function loadClients() {
     setLoading(true)
     try {
-      // Load clients (company admins)
-      const { data: profilesData, error } = await supabase
+      // Load company admins - they are the "clients" of super-admin
+      const { data, error } = await supabase
         .from('profiles')
-        .select('id, email, first_name, last_name, phone, status, created_at')
+        .select('id, email, first_name, last_name, phone, status, created_at, company_id')
         .eq('role', 'company_admin')
         .order('created_at', { ascending: false })
 
       if (error) throw error
 
-      // Load company counts per client (companies.client_id = profiles.id)
-      const { data: companiesData } = await supabase
-        .from('companies')
-        .select('client_id')
-
-      // Build company count map
-      const companyCountMap: Record<string, number> = {}
-      companiesData?.forEach((c: any) => {
-        if (c.client_id) {
-          companyCountMap[c.client_id] = (companyCountMap[c.client_id] || 0) + 1
-        }
-      })
-
-      // Get all companies to build company -> client mapping
-      const { data: allCompanies } = await supabase
-        .from('companies')
-        .select('id, client_id')
-
-      const companyToClient: Record<string, string> = {}
-      allCompanies?.forEach((c: any) => {
-        if (c.client_id) {
-          companyToClient[c.id] = c.client_id
-        }
-      })
-
-      // Get all users (non-admins) with their company_id
-      const { data: usersData } = await supabase
-        .from('profiles')
-        .select('company_id')
-        .neq('role', 'super_admin')
-        .not('company_id', 'is', null)
-
-      // Build user count map (user -> company -> client)
-      const userCountMap: Record<string, number> = {}
-      usersData?.forEach((u: any) => {
-        const clientId = companyToClient[u.company_id]
-        if (clientId) {
-          userCountMap[clientId] = (userCountMap[clientId] || 0) + 1
-        }
-      })
-
-      const clientsWithCounts = profilesData?.map((client: any) => ({
+      // For now, no company/user counts - schema doesn't support it cleanly
+      const clientsWithCounts = data?.map((client: any) => ({
         id: client.id,
         email: client.email,
         first_name: client.first_name,
@@ -100,8 +60,8 @@ export default function ClientsPage() {
         phone: client.phone,
         status: client.status,
         created_at: client.created_at,
-        companies_count: companyCountMap[client.id] || 0,
-        users_count: userCountMap[client.id] || 0
+        companies_count: 0,
+        users_count: 0
       })) || []
 
       setClients(clientsWithCounts)
