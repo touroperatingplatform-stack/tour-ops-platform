@@ -1,8 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase/client'
 import LanguageToggle from '@/components/LanguageToggle'
 
@@ -31,9 +31,42 @@ export default function AdminLayout({
   children: React.ReactNode
 }) {
   const pathname = usePathname()
+  const router = useRouter()
   const [showMore, setShowMore] = useState(false)
   const [showUserMenu, setShowUserMenu] = useState(false)
   const [notifications, setNotifications] = useState(3)
+  const [loading, setLoading] = useState(true)
+
+  // Onboarding guard - redirect to onboarding if not completed
+  useEffect(() => {
+    async function checkOnboarding() {
+      // Skip if already on onboarding page
+      if (pathname.startsWith('/admin/onboarding')) {
+        setLoading(false)
+        return
+      }
+
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) {
+        router.push('/login')
+        return
+      }
+
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('onboarding_completed')
+        .eq('id', user.id)
+        .single()
+
+      if (profile && profile.onboarding_completed === false) {
+        router.push('/admin/onboarding')
+      } else {
+        setLoading(false)
+      }
+    }
+
+    checkOnboarding()
+  }, [pathname])
 
   const isActive = (href: string) => {
     if (href === '/admin') return pathname === '/admin'
@@ -43,6 +76,17 @@ export default function AdminLayout({
   async function handleSignOut() {
     await supabase.auth.signOut()
     window.location.href = '/login'
+  }
+
+  if (loading) {
+    return (
+      <div className="h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -63,7 +107,7 @@ export default function AdminLayout({
             <div className="flex items-center gap-3">
               {/* Language Toggle */}
               <LanguageToggle />
-              
+
               {/* Notifications */}
               <button className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center hover:bg-gray-200 relative">
                 🔔
@@ -73,9 +117,9 @@ export default function AdminLayout({
                   </span>
                 )}
               </button>
-              
+
               {/* User Button */}
-              <button 
+              <button
                 onClick={() => setShowUserMenu(true)}
                 className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center hover:bg-gray-300"
               >
@@ -124,7 +168,7 @@ export default function AdminLayout({
       {/* More Menu */}
       {showMore && (
         <>
-          <div 
+          <div
             className="fixed inset-0 bg-white z-50"
             onClick={() => setShowMore(false)}
           />
@@ -132,7 +176,7 @@ export default function AdminLayout({
             <div className="p-4 flex flex-col h-full">
               <div className="flex items-center justify-center mb-4 p-4">
                 <span className="font-bold text-2xl">Menu</span>
-                <button 
+                <button
                   onClick={() => setShowMore(false)}
                   className="absolute right-10 p-4 hover:bg-gray-100 rounded-lg"
                 >
@@ -160,7 +204,7 @@ export default function AdminLayout({
       {/* User Menu */}
       {showUserMenu && (
         <>
-          <div 
+          <div
             className="fixed inset-0 z-40"
             onClick={() => setShowUserMenu(false)}
           />

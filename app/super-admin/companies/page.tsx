@@ -240,7 +240,7 @@ export default function CompaniesPage() {
       for (const email of demoEmails) {
         await supabase
           .from('profiles')
-          .update({ company_id: companyId })
+          .update({ company_id: companyId, onboarding_completed: false })
           .eq('email', email)
       }
 
