@@ -50,6 +50,11 @@ export default function CompaniesPage() {
   // Create trial modal
   const [showCreateTrial, setShowCreateTrial] = useState(false)
   const [creating, setCreating] = useState(false)
+  // Extend trial modal
+  const [showExtendModal, setShowExtendModal] = useState(false)
+  const [extendingTrial, setExtendingTrial] = useState<Trial | null>(null)
+  const [extendDays, setExtendDays] = useState('7')
+  const [extending, setExtending] = useState(false)
   const [trialForm, setTrialForm] = useState({
     companyName: '',
     userGroup: 'group_1'
@@ -227,6 +232,25 @@ export default function CompaniesPage() {
       setCreating(false)
     }
   }
+
+  async function handleExtendTrial() {
+    if (!extendingTrial) return
+    setExtending(true)
+    try {
+      // TODO: update companies set trial_expires_at = trial_expires_at + extend_days
+      // For now, just show a placeholder alert
+      alert('Trial extended by ' + extendDays + ' days.\n\n(DB update coming in step 1-3)')
+      setShowExtendModal(false)
+      setExtendingTrial(null)
+      setExtendDays('7')
+      loadTrials()
+    } catch (error: any) {
+      alert('Error: ' + error.message)
+    } finally {
+      setExtending(false)
+    }
+  }
+
 
   function generatePDF(trial: Trial) {
     // Generate credentials document
@@ -427,6 +451,12 @@ OPERATIONS:
                                 >
                                   Download Credentials
                                 </button>
+                                <button
+                                  onClick={() => { setExtendingTrial(trial); setShowExtendModal(true) }}
+                                  className="text-purple-600 hover:text-purple-800 text-sm font-medium"
+                                >
+                                  Extend
+                                </button>
                                 <Link
                                   href={`/admin/trials/${trial.id}`}
                                   className="text-green-600 hover:text-green-800 text-sm font-medium"
@@ -515,6 +545,53 @@ OPERATIONS:
           </div>
         </div>
       )}
+
+      {/* Extend Trial Modal */}
+      {showExtendModal && extendingTrial && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="border-8 border-transparent bg-white rounded-xl w-full max-w-md shadow-xl">
+            <div className="border-8 border-transparent p-4 border-b border-gray-200">
+              <h2 className="text-lg font-bold text-gray-900">Extend Trial</h2>
+              <p className="text-sm text-gray-500 mt-1">
+                Adding days to &quot;{extendingTrial.company_name}&quot;
+              </p>
+            </div>
+            <div className="border-8 border-transparent p-4 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Extend by (days)</label>
+                <input
+                  type="number"
+                  value={extendDays}
+                  onChange={e => setExtendDays(e.target.value)}
+                  className="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  min="1"
+                  max="365"
+                />
+              </div>
+              <div className="text-sm text-gray-500 bg-gray-50 p-3 rounded-lg">
+                <p>Current expiry: <strong>{extendingTrial.expires_at ? new Date(extendingTrial.expires_at).toLocaleDateString() : 'Not set'}</strong></p>
+                <p>New expiry: <strong>{(() => { const d = new Date(); d.setDate(d.getDate() + parseInt(extendDays || '0')); return d.toLocaleDateString(); })()}</strong></p>
+              </div>
+            </div>
+            <div className="border-8 border-transparent p-4 border-t border-gray-100 flex justify-end gap-2">
+              <button
+                onClick={() => { setShowExtendModal(false); setExtendingTrial(null) }}
+                className="border-8 border-transparent bg-gray-50 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-100"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleExtendTrial}
+                disabled={extending}
+                className="border-8 border-transparent bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 disabled:opacity-50"
+              >
+                {extending ? 'Extending...' : 'Extend Trial'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </RoleGuard>
   )
 }
