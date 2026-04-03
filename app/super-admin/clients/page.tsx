@@ -42,19 +42,41 @@ export default function ClientsPage() {
   async function loadClients() {
     setLoading(true)
     try {
-      const { data, error } = await supabase
+      // Load clients (company admins)
+      const { data: profilesData, error } = await supabase
         .from('profiles')
-        .select(`
-          *,
-          companies:companies(count),
-          users:profiles!inner(count)
-        `)
+        .select('id, email, first_name, last_name, phone, status, created_at, client_id')
         .eq('role', 'company_admin')
         .order('created_at', { ascending: false })
 
       if (error) throw error
 
-      const clientsWithCounts = data?.map((client: any) => ({
+      // Load company counts per client
+      const { data: companiesData } = await supabase
+        .from('companies')
+        .select('client_id')
+
+      // Count users per client
+      const { data: usersData } = await supabase
+        .from('profiles')
+        .select('client_id')
+        .neq('role', 'super_admin')
+
+      // Build company count map
+      const companyCountMap: Record<string, number> = {}
+      companiesData?.forEach((c: any) => {
+        companyCountMap[c.client_id] = (companyCountMap[c.client_id] || 0) + 1
+      })
+
+      // Build user count map
+      const userCountMap: Record<string, number> = {}
+      usersData?.forEach((u: any) => {
+        if (u.client_id) {
+          userCountMap[u.client_id] = (userCountMap[u.client_id] || 0) + 1
+        }
+      })
+
+      const clientsWithCounts = profilesData?.map((client: any) => ({
         id: client.id,
         email: client.email,
         first_name: client.first_name,
@@ -62,8 +84,8 @@ export default function ClientsPage() {
         phone: client.phone,
         status: client.status,
         created_at: client.created_at,
-        companies_count: client.companies?.[0]?.count || 0,
-        users_count: client.users?.[0]?.count || 0
+        companies_count: companyCountMap[client.id] || 0,
+        users_count: userCountMap[client.id] || 0
       })) || []
 
       setClients(clientsWithCounts)
