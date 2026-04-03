@@ -64,17 +64,29 @@ export default function ClientsPage() {
         }
       })
 
-      // Users have company_id which links to companies that have client_id
-      // So we need to get all users with their company->client chain
-      const { data: usersWithCompanies } = await supabase
-        .from('profiles')
-        .select('company_id, companies!inner(client_id)')
-        .neq('role', 'super_admin')
+      // Get all companies to build company -> client mapping
+      const { data: allCompanies } = await supabase
+        .from('companies')
+        .select('id, client_id')
 
-      // Build user count map
+      const companyToClient: Record<string, string> = {}
+      allCompanies?.forEach((c: any) => {
+        if (c.client_id) {
+          companyToClient[c.id] = c.client_id
+        }
+      })
+
+      // Get all users (non-admins) with their company_id
+      const { data: usersData } = await supabase
+        .from('profiles')
+        .select('company_id')
+        .neq('role', 'super_admin')
+        .not('company_id', 'is', null)
+
+      // Build user count map (user -> company -> client)
       const userCountMap: Record<string, number> = {}
-      usersWithCompanies?.forEach((u: any) => {
-        const clientId = u.companies?.client_id
+      usersData?.forEach((u: any) => {
+        const clientId = companyToClient[u.company_id]
         if (clientId) {
           userCountMap[clientId] = (userCountMap[clientId] || 0) + 1
         }
