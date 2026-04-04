@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getDocument } from 'pdfjs-dist'
+import * as pdfjsLib from 'pdfjs-dist/legacy/build/pdf'
+
+// Disable worker - we're in Node.js
+pdfjsLib.GlobalWorkerOptions.workerSrc = ''
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 interface ParsedReservation {
@@ -96,7 +99,7 @@ function parseOrdenText(text: string): ParsedTour[] {
 // ─── Extract text from PDF ──────────────────────────────────────────────────
 async function extractTextFromPDF(buffer: ArrayBuffer): Promise<string> {
   const uint8Array = new Uint8Array(buffer)
-  const loadingTask = getDocument({ data: uint8Array })
+  const loadingTask = pdfjsLib.getDocument({ data: uint8Array })
   const pdf = await loadingTask.promise
   
   let fullText = ''
