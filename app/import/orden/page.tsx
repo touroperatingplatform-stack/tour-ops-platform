@@ -447,6 +447,7 @@ export default function OrdenImportPage() {
 
     const created: CreatedTour[] = []
 
+    console.log('handleConfirm started, tours:', parsedTours.length)
     try {
       for (const tour of parsedTours) {
         const { data: newTour, error: tourErr } = await supabase
@@ -469,6 +470,8 @@ export default function OrdenImportPage() {
           console.error('Tour create error:', tourErr)
           continue
         }
+
+        console.log('tour created:', newTour?.id, 'error:', tourErr)
 
         let stopOrder = 1
         for (const res of tour.reservations) {
