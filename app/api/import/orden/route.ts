@@ -69,7 +69,7 @@ function parseOrdenText(text: string): ParsedTour[] {
     // DEBUG: log raw pax token for first reservation of each group
     const firstResLine = lines.slice(1).find(l => reservationLine.test(l) && !l.includes('HOTEL') && !l.includes('TOTAL') && !l.includes('---'))
     if (firstResLine) {
-      const paxMatch = firstResLine.match(/\b\d{3,4}\s+(\d{1,2}(?:\.\d+)*)\s+(?:[`´']\S+|\d+[A-Z]+)/)
+      const paxMatch = firstResLine.match(/\b\d{3,4}\s+(\d{1,2}(?:\.\d+)*)\s+(?:[`´']\S+|\d+[A-Z]+|\d+\+\d+)/)
       const firstPax = paxMatch ? paxMatch[1] : 'NOT_FOUND'
       console.log('Group', groupIdx, 'first reservation pax raw token:', firstPax)
     }
@@ -115,8 +115,9 @@ function parseOrdenText(text: string): ParsedTour[] {
       const hab = firstCouponIdx > 0 && firstCouponIdx + 1 < (secondCouponIdx > 0 ? secondCouponIdx : timeIdx) 
         ? tokens[firstCouponIdx + 1] : ''
       
-      // Pax: find 3-4 digit HAB, then pax (1-2 digits or dotted), then confirmation (´-prefixed OR 2OO style)
-      const paxMatch = line.match(/\b\d{3,4}\s+(\d{1,2}(?:\.\d+)*)\s+(?:[`´']\S+|\d+[A-Z]+)/)
+      // Pax: find 3-4 digit HAB, then pax (1-2 digits or dotted), then confirmation
+      // Confirmation can be: ´-prefixed (´070), lettered (2OO), or numeric-only (188+1200)
+      const paxMatch = line.match(/\b\d{3,4}\s+(\d{1,2}(?:\.\d+)*)\s+(?:[`´']\S+|\d+[A-Z]+|\d+\+\d+)/)
       const paxStr = paxMatch ? paxMatch[1] : '1'
       
       // Confirmation is second coupon token
