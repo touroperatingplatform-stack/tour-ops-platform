@@ -423,7 +423,6 @@ export default function OrdenImportPage() {
             adult_pax: res.adults,
             child_pax: res.children,
             infant_pax: res.infants,
-            total_pax: res.adults + res.children + res.infants,
             hotel_name: res.hotel,
             room_number: null,
             pickup_time: res.pickupTime,
@@ -458,7 +457,9 @@ export default function OrdenImportPage() {
 
         try {
           await supabase.rpc('update_tour_guest_count', { tour_id: newTour.id })
-        } catch {}
+        } catch (e) {
+          console.error('RPC error:', e)
+        }
 
         created.push({
           id: newTour.id,
