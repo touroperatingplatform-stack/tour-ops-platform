@@ -121,6 +121,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Parse ORDEN format
+    console.log('RAW TEXT:', text.substring(0, 500))
     const tours = parseOrdenText(text)
 
     if (tours.length === 0) {
