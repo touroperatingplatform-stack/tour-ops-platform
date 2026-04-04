@@ -229,7 +229,7 @@ export default function OrdenImportPage() {
         
         // Find the line that contains key identifying info from first reservation
         // Look for lines with the pickup time (e.g., "7:50") that aren't headers
-        const resLine = rawLines.find(line => {
+        const resLine = rawLines.find((line: string) => {
           const hasTime = line.includes(firstRes.pickupTime)
           const isHeader = line.includes('SERVICIO') || line.includes('OPERADOR') || line.includes('GUIA')
           return hasTime && !isHeader
@@ -261,7 +261,7 @@ export default function OrdenImportPage() {
         ...tour,
         reservations: tour.reservations.map((res: ParsedReservation) => {
           // Find the line in rawText that contains this reservation's pickup time
-          const resLine = rawLines.find(line => 
+          const resLine = rawLines.find((line: string) => 
             line.includes(res.pickupTime) && 
             !line.includes('SERVICIO') && 
             !line.includes('OPERADOR')
