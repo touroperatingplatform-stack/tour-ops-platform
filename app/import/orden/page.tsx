@@ -121,6 +121,7 @@ export default function OrdenImportPage() {
         .select('id, full_name')
         .eq('company_id', profile.company_id)
         .eq('role', 'driver')
+        .eq('status', 'active')
       if (driverData) setDrivers(driverData)
 
       const { data: guideData } = await supabase
@@ -128,6 +129,7 @@ export default function OrdenImportPage() {
         .select('id, full_name')
         .eq('company_id', profile.company_id)
         .eq('role', 'guide')
+        .eq('status', 'active')
       if (guideData) setGuides(guideData)
     }
     loadData()
