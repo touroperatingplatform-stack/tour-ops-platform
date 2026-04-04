@@ -20,7 +20,8 @@ const allMenuItems = [
   { href: '/admin/guides', label: 'Guides', icon: '🎯' },
   { href: '/admin/templates', label: 'Templates', icon: '📋' },
   { href: '/admin/data', label: 'Data', icon: '💾' },
-  { href: '/admin/import', label: 'Import', icon: '📥' },
+  { href: '/admin/import', label: 'CSV Import', icon: '📥' },
+  { href: '/import/orden', label: 'ORDEN Import', icon: '📋' },
   { href: '/admin/settings', label: 'Settings', icon: '⚙️' },
 ]
 
