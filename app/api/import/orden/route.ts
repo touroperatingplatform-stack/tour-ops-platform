@@ -110,7 +110,7 @@ export async function POST(request: NextRequest) {
       // Parse PDF server-side with unpdf
       const buffer = await file.arrayBuffer()
       const { text: extractedText } = await extractText(new Uint8Array(buffer))
-      text = extractedText
+      text = Array.isArray(extractedText) ? extractedText.join('\n') : extractedText
 
       if (!text || text.length < 50) {
         return NextResponse.json({ error: 'Could not extract text from PDF' }, { status: 400 })
