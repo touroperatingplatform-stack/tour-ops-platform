@@ -237,7 +237,7 @@ export default function OrdenImportPage() {
         
         if (resLine) {
           // Split by whitespace to get word tokens
-          const tokens = resLine.trim().split(/\s+/).filter(t => t.length > 0)
+          const tokens = resLine.trim().split(/\s+/).filter((t: string) => t.length > 0)
           setSampleTokens(tokens)
         } else {
           // Fallback: combine parsed fields into a display string
@@ -269,7 +269,7 @@ export default function OrdenImportPage() {
           
           let resTokens: string[] = []
           if (resLine) {
-            resTokens = resLine.trim().split(/\s+/).filter(t => t.length > 0)
+            resTokens = resLine.trim().split(/\s+/).filter((t: string) => t.length > 0)
           } else {
             // Fallback: use parsed fields in standard order
             resTokens = [
