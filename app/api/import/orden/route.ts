@@ -194,12 +194,20 @@ export async function POST(request: NextRequest) {
     console.log('SERVICIO count:', (text.match(/SERVICIO:/gi) || []).length)
     const tours = parseOrdenText(text)
     console.log('NUMBER OF GROUPS FOUND:', tours.length)
-    console.log('PARSED TOURS:', JSON.stringify(tours.map(t => ({ 
-      service: t.service, 
-      operador: t.operador, 
-      guia: t.guia, 
+    console.log('PARSED TOURS:', JSON.stringify(tours.map(t => ({
+      service: t.service,
+      operador: t.operador,
+      guia: t.guia,
       totalPax: t.totalPax,
-      reservations: t.reservations.length
+      reservations: t.reservations.length,
+      firstRes: {
+        hotel: t.reservations[0]?.hotel,
+        client: t.reservations[0]?.clientName,
+        pax: t.reservations[0]?.pax,
+        rep: t.reservations[0]?.rep,
+        agency: t.reservations[0]?.agency,
+        time: t.reservations[0]?.pickupTime
+      }
     })), null, 2))
 
     if (tours.length === 0) {
