@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
+import * as pdfjsLib from 'pdfjs-dist/legacy/build/pdf'
 
-// Use Node.js runtime for this route
-export const runtime = 'nodejs'
+// Disable worker - we're in Node.js
+pdfjsLib.GlobalWorkerOptions.workerSrc = ''
 
 // ─── Types ─────────────────────────────────────────────────────────────────---
 interface ParsedReservation {
@@ -95,32 +96,26 @@ function parseOrdenText(text: string): ParsedTour[] {
   return tours
 }
 
-// ─── Extract text from PDF (basic, no external deps) ───────────────────────
+// ─── Extract text from PDF using pdfjs-dist ─────────────────────────────────
 async function extractTextFromPDF(buffer: ArrayBuffer): Promise<string> {
   const uint8Array = new Uint8Array(buffer)
-  const text = new TextDecoder('latin1').decode(uint8Array)
+  const loadingTask = pdfjsLib.getDocument({ data: uint8Array })
+  const pdf = await loadingTask.promise
   
-  // Extract text between BT (Begin Text) and ET (End Text) markers
-  const textBlocks: string[] = []
-  const btMatches = text.match(/BT[\s\S]*?ET/g) || []
+  let fullText = ''
   
-  for (const block of btMatches) {
-    // Extract string literals from parentheses
-    const strings = block.match(/\(([^)]+)\)/g) || []
-    for (const str of strings) {
-      const cleaned = str.slice(1, -1)
-        .replace(/\\(\d{3})/g, (_, octal) => String.fromCharCode(parseInt(octal, 8)))
-        .replace(/\\n/g, '\n')
-        .replace(/\\r/g, '\r')
-        .replace(/\\t/g, '\t')
-        .replace(/\\([()\\])/g, '$1')
-      if (cleaned.trim()) {
-        textBlocks.push(cleaned)
-      }
-    }
+  for (let i = 1; i <= pdf.numPages; i++) {
+    const page = await pdf.getPage(i)
+    const textContent = await page.getTextContent()
+    // Preserve line breaks using hasEOL flag
+    const pageText = textContent.items.map((item: any) => {
+      const str = item.str
+      return item.hasEOL ? str + '\n' : str
+    }).join(' ')
+    fullText += pageText + '\n'
   }
   
-  return textBlocks.join(' ')
+  return fullText
 }
 
 // POST /api/import/orden
