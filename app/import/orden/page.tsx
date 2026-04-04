@@ -79,184 +79,199 @@ function parsePax(pax: string) {
   }
 }
 
-// ─── Anchor-based mapping analysis ─────────────────────────────────────────────
-interface MappingAnalysis {
-  anchorField: FieldId
-  offsets: Record<FieldId, number>  // offset from anchor position (positive = after anchor, negative = before)
-  counts: Record<FieldId, number>    // number of tokens for this field (1 for single-word, N for multi-word)
+// ─── Zone-based mapping ─────────────────────────────────────────────────────────
+interface SampleRow {
+  tourIdx: number
+  resIdx: number
+  tokens: string[]
 }
 
-function analyzeAnchorMapping(
-  tours: ParsedTour[],
+interface ZoneMapping {
+  // Zone 1: fields before pax, offsets relative to pax (negative = before pax)
+  zone1: Record<string, [number, number]>
+  // Zone 3: fields after time, offsets relative to time (positive = after time)
+  zone3: Record<string, [number, number]>
+}
+
+// ─── Select two sample rows ─────────────────────────────────────────────────
+function selectSampleRows(tours: ParsedTour[]): { rowA: SampleRow; rowB: SampleRow } | null {
+  // Collect all rows with their token counts
+  interface RowInfo {
+    tourIdx: number
+    resIdx: number
+    tokens: string[]
+    tokenCount: number
+  }
+  const allRows: RowInfo[] = []
+  
+  for (let ti = 0; ti < tours.length; ti++) {
+    const tour = tours[ti]
+    for (let ri = 0; ri < tour.reservations.length; ri++) {
+      const res = tour.reservations[ri]
+      const tokens = res.tokens || []
+      if (tokens.length > 0) {
+        allRows.push({ tourIdx: ti, resIdx: ri, tokens, tokenCount: tokens.length })
+      }
+    }
+  }
+  
+  if (allRows.length < 2) return null
+  
+  // Group by token count to find most common
+  const countFreq: Record<number, number> = {}
+  for (const row of allRows) {
+    countFreq[row.tokenCount] = (countFreq[row.tokenCount] || 0) + 1
+  }
+  
+  // Row A = token count with highest frequency
+  let modeCount = 0
+  let modeTokenCount = allRows[0].tokenCount
+  for (const [tc, freq] of Object.entries(countFreq)) {
+    if (freq > modeCount) {
+      modeCount = freq
+      modeTokenCount = parseInt(tc)
+    }
+  }
+  
+  // Find a row with mode token count
+  const rowA = allRows.find(r => r.tokenCount === modeTokenCount) || allRows[0]
+  
+  // Row B = row with token count furthest from Row A
+  let maxDiff = 0
+  let rowB = allRows.find(r => r !== rowA) || allRows[1]
+  for (const r of allRows) {
+    if (r === rowA) continue
+    const diff = Math.abs(r.tokenCount - rowA.tokenCount)
+    if (diff > maxDiff) {
+      maxDiff = diff
+      rowB = r
+    }
+  }
+  
+  return {
+    rowA: { tourIdx: rowA.tourIdx, resIdx: rowA.resIdx, tokens: rowA.tokens },
+    rowB: { tourIdx: rowB.tourIdx, resIdx: rowB.resIdx, tokens: rowB.tokens }
+  }
+}
+
+// ─── Build zone mapping from user's tap positions ─────────────────────────────
+function buildZoneMapping(
+  tokens: string[],
   mapping: Record<FieldId, number[]>,
-  sampleTokens: string[]
-): MappingAnalysis | null {
+  paxIdx: number,
+  timeIdx: number
+): ZoneMapping {
+  const zone1: Record<string, [number, number]> = {}
+  const zone3: Record<string, [number, number]> = {}
+  
   const fieldIds: FieldId[] = ['hotel', 'clientName', 'coupon', 'pax', 'confirmation', 'pickupTime', 'rep', 'agency']
   
-  // Collect position data for each mapped field across all rows
-  const fieldPositions: Record<FieldId, number[]> = {
-    hotel: [], clientName: [], coupon: [], pax: [],
-    confirmation: [], pickupTime: [], rep: [], agency: []
-  }
-  
-  for (const tour of tours) {
-    for (const res of tour.reservations) {
-      const tokens = res.tokens || sampleTokens
-      
-      for (const field of fieldIds) {
-        const indices = mapping[field]
-        if ((indices?.length ?? 0) === 0) continue
-        
-        // Get the value from this field's mapped position in this row
-        const firstIdx = indices[0]
-        if (firstIdx >= 0 && firstIdx < tokens.length) {
-          fieldPositions[field].push(firstIdx)
-        }
-      }
-    }
-  }
-  
-  // Calculate variance (standard deviation) for each field
-  const fieldVariance: Record<FieldId, number> = {} as any
   for (const field of fieldIds) {
-    const positions = fieldPositions[field]
-    if (positions.length === 0) {
-      fieldVariance[field] = Infinity
-      continue
-    }
-    const mean = positions.reduce((a, b) => a + b, 0) / positions.length
-    const variance = positions.reduce((sum, pos) => sum + Math.pow(pos - mean, 2), 0) / positions.length
-    fieldVariance[field] = variance
-  }
-  
-  // Prefer pickupTime first if it was mapped and has reasonable variance
-  if ((mapping['pickupTime']?.length ?? 0) > 0 && fieldVariance['pickupTime'] < Infinity) {
-    const anchorField: FieldId = 'pickupTime'
-    const offsets: Record<FieldId, number> = {} as any
+    const indices = mapping[field] || []
+    if (indices.length === 0) continue
     
-    // Get anchor's average position
-    const anchorPositions = fieldPositions[anchorField]
-    const anchorMean = anchorPositions.reduce((a, b) => a + b, 0) / anchorPositions.length
-    
-    // Calculate offsets for all other fields
-    for (const field of fieldIds) {
-      if (field === anchorField) continue
-      const positions = fieldPositions[field]
-      if (positions.length === 0) {
-        offsets[field] = 0
-        continue
-      }
-      const fieldMean = positions.reduce((a, b) => a + b, 0) / positions.length
-      offsets[field] = Math.round(fieldMean - anchorMean)
+    // Calculate offset range relative to pax or time
+    if (field === 'pax') {
+      zone1[field] = [0, 0] // pax is the anchor itself
+    } else if (field === 'pickupTime') {
+      zone3[field] = [0, 0] // time is the anchor itself
+    } else if (indices[0] < paxIdx) {
+      // Zone 1: before pax — offset from pax (negative)
+      const startOffset = indices[0] - paxIdx
+      const endOffset = indices[indices.length - 1] - paxIdx
+      zone1[field] = [startOffset, endOffset]
+    } else if (indices[0] > timeIdx) {
+      // Zone 3: after time — offset from time (positive)
+      const startOffset = indices[0] - timeIdx
+      const endOffset = indices[indices.length - 1] - timeIdx
+      zone3[field] = [startOffset, endOffset]
     }
-    
-    // Build counts from the user's mapping
-    const counts: Record<FieldId, number> = {} as any
-    for (const field of fieldIds) {
-      counts[field] = (mapping[field]?.length ?? 0) > 0 ? mapping[field].length : 1
-    }
-    
-    return { anchorField, offsets, counts }
+    // Fields between pax and time are not handled in this simplified approach
   }
   
-  // Fall back to field with lowest variance
-  let bestField: FieldId | null = null
-  let bestVariance = Infinity
-  for (const field of fieldIds) {
-    if ((mapping[field]?.length ?? 0) === 0) continue
-    if (fieldVariance[field] < bestVariance) {
-      bestVariance = fieldVariance[field]
-      bestField = field
-    }
-  }
-  
-  if (!bestField) return null
-  
-  const anchorPositions = fieldPositions[bestField]
-  const anchorMean = anchorPositions.reduce((a, b) => a + b, 0) / anchorPositions.length
-  
-  const offsets: Record<FieldId, number> = {} as any
-  for (const field of fieldIds) {
-    if (field === bestField) continue
-    const positions = fieldPositions[field]
-    if (positions.length === 0) {
-      offsets[field] = 0
-      continue
-    }
-    const fieldMean = positions.reduce((a, b) => a + b, 0) / positions.length
-    offsets[field] = Math.round(fieldMean - anchorMean)
-  }
-  
-  // Build counts from the user's mapping
-  const counts: Record<FieldId, number> = {} as any
-  for (const field of fieldIds) {
-    counts[field] = (mapping[field]?.length ?? 0) > 0 ? mapping[field].length : 1
-  }
-  
-  return { anchorField: bestField, offsets, counts }
+  return { zone1, zone3 }
 }
 
-// ─── Apply offset-based mapping ───────────────────────────────────────────────
-function applyOffsetMapping(
+// ─── Apply zone mapping to a row ────────────────────────────────────────────
+function applyZoneMapping(
+  tokens: string[],
+  mapping: ZoneMapping,
+  paxIdx: number,
+  timeIdx: number
+): Record<string, string | number> {
+  const result: Record<string, string | number> = {}
+  
+  // Apply zone 1 fields (before pax)
+  for (const [field, [startOff, endOff]] of Object.entries(mapping.zone1)) {
+    const startIdx = paxIdx + startOff
+    const endIdx = paxIdx + endOff
+    const resolvedTokens: string[] = []
+    for (let i = startIdx; i <= endOff && i < tokens.length; i++) {
+      if (i >= 0) resolvedTokens.push(tokens[i])
+    }
+    result[field] = resolvedTokens.join(' ')
+  }
+  
+  // Apply zone 3 fields (after time)
+  for (const [field, [startOff, endOff]] of Object.entries(mapping.zone3)) {
+    const startIdx = timeIdx + startOff
+    const endIdx = timeIdx + endOff
+    const resolvedTokens: string[] = []
+    for (let i = startIdx; i <= endIdx && i < tokens.length; i++) {
+      if (i >= 0) resolvedTokens.push(tokens[i])
+    }
+    result[field] = resolvedTokens.join(' ')
+  }
+  
+  return result
+}
+
+// ─── Apply zone-based mapping to all rows ───────────────────────────────────
+function applyZoneBasedMapping(
   tours: ParsedTour[],
-  analysis: MappingAnalysis,
+  zoneMapping: ZoneMapping,
   sampleTokens: string[]
 ): ParsedTour[] {
-  const fieldIds: FieldId[] = ['hotel', 'clientName', 'coupon', 'pax', 'confirmation', 'pickupTime', 'rep', 'agency']
+  const timePattern = /^\d{1,2}:\d{2}$/
   
   return tours.map(tour => {
     const newReservations = tour.reservations.map(res => {
       const tokens = res.tokens || sampleTokens
-      const newRes: Record<string, string | number> = {}
       
-      // Find anchor position in this row
-      const anchorIndices = analysis.anchorField === 'pickupTime'
-        ? (res.tokens || sampleTokens).map((t, i) => /^\d{1,2}:\d{2}$/.test(t) ? i : -1).filter(i => i >= 0)
-        : []
-      const anchorPos = anchorIndices.length > 0 ? anchorIndices[0] : -1
+      // Find pax and time positions by pattern
+      const paxIdx = tokens.findIndex(t => /^\d+(\.\d+)*$/.test(t))
+      const timeIdx = tokens.findIndex(t => timePattern.test(t))
       
-      if (anchorPos < 0) {
-        // Anchor not found — leave all fields blank
-        for (const field of fieldIds) {
-          newRes[field] = ''
+      if (paxIdx < 0 || timeIdx < 0) {
+        // Missing anchors — leave all fields blank
+        const blank: Record<string, string | number> = {
+          hotel: '', clientName: '', coupon: '', pax: '', confirmation: '',
+          pickupTime: '', rep: '', agency: '', adults: 0, children: 0, infants: 0
         }
-        newRes['adults'] = 0
-        newRes['children'] = 0
-        newRes['infants'] = 0
-        newRes['pax'] = ''
-        return { ...res, ...newRes } as ParsedReservation
+        return { ...res, ...blank } as ParsedReservation
       }
       
-      // Resolve each field using offsets from anchor
-      for (const field of fieldIds) {
-        const offset = analysis.offsets[field] ?? 0
-        const resolvedIdx = anchorPos + offset
-        const count = analysis.counts[field] ?? 1
-        
-        if (field === 'pax') {
-          const paxStr = resolvedIdx >= 0 && resolvedIdx < tokens.length ? tokens[resolvedIdx] : ''
-          newRes['pax'] = paxStr
-          const paxData = parsePax(paxStr || '1')
-          newRes['adults'] = paxData.adults
-          newRes['children'] = paxData.children
-          newRes['infants'] = paxData.infants
-        } else if (count > 1) {
-          // Multi-word field: resolve a range of tokens
-          const resolvedTokens: string[] = []
-          for (let i = 0; i < count; i++) {
-            const tokIdx = resolvedIdx + i
-            if (tokIdx >= 0 && tokIdx < tokens.length) {
-              resolvedTokens.push(tokens[tokIdx])
-            }
-          }
-          newRes[field] = resolvedTokens.join(' ')
-        } else {
-          // Single-word field: resolve one token
-          newRes[field] = resolvedIdx >= 0 && resolvedIdx < tokens.length ? tokens[resolvedIdx] : ''
-        }
-      }
+      // Apply zone mapping
+      const mapped = applyZoneMapping(tokens, zoneMapping, paxIdx, timeIdx)
       
-      return { ...res, ...newRes } as ParsedReservation
+      // Parse pax
+      const paxStr = mapped['pax'] as string || '1'
+      const paxData = parsePax(paxStr)
+      
+      return {
+        ...res,
+        hotel: mapped['hotel'] as string || '',
+        clientName: mapped['clientName'] as string || '',
+        coupon: mapped['coupon'] as string || '',
+        pax: paxStr,
+        confirmation: mapped['confirmation'] as string || '',
+        pickupTime: mapped['pickupTime'] as string || '',
+        rep: mapped['rep'] as string || '',
+        agency: mapped['agency'] as string || '',
+        adults: paxData.adults,
+        children: paxData.children,
+        infants: paxData.infants
+      } as ParsedReservation
     })
     
     return { ...tour, reservations: newReservations, totalPax: tour.totalPax }
@@ -284,6 +299,7 @@ export default function OrdenImportPage() {
   
   // Column mapping
   const [sampleTokens, setSampleTokens] = useState<string[]>([])
+  const [sampleRows, setSampleRows] = useState<{ rowA: SampleRow; rowB: SampleRow } | null>(null)
   const [assignedTokenIndices, setAssignedTokenIndices] = useState<Set<number>>(new Set())
   const [mappingStep, setMappingStep] = useState(0)
   const [tokenMapping, setTokenMapping] = useState<Record<FieldId, number[]>>({
@@ -298,7 +314,8 @@ export default function OrdenImportPage() {
   })
   const [currentSelection, setCurrentSelection] = useState<number[]>([])
   const [showMappingSummary, setShowMappingSummary] = useState(false)
-  const [mappingAnalysis, setMappingAnalysis] = useState<MappingAnalysis | null>(null)
+  const [zoneMapping, setZoneMapping] = useState<ZoneMapping | null>(null)
+  const [verifiedMapping, setVerifiedMapping] = useState<ZoneMapping | null>(null) // Row B verified
   
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -493,6 +510,14 @@ export default function OrdenImportPage() {
       }))
 
       const toursWithStaff = matchStaff(toursWithTokens)
+      
+      // Select two sample rows for mapping
+      const rows = selectSampleRows(toursWithStaff)
+      if (rows) {
+        setSampleRows(rows)
+        setSampleTokens(rows.rowA.tokens)
+      }
+      
       setParsedTours(toursWithStaff)
       setStep(2)
       setMappingStep(0)
@@ -509,6 +534,8 @@ export default function OrdenImportPage() {
         agency: [],
       })
       setShowMappingSummary(false)
+      setZoneMapping(null)
+      setVerifiedMapping(null)
     } catch (err: any) {
       setError('Failed to parse file: ' + (err.message || 'Unknown error'))
     } finally {
@@ -564,21 +591,31 @@ export default function OrdenImportPage() {
   }
 
   const confirmMapping = () => {
-    // Analyze anchor positions across all rows
-    const analysis = analyzeAnchorMapping(parsedTours, tokenMapping, sampleTokens)
-    console.log('anchor analysis full:', JSON.stringify(analysis))
+    // Build zone mapping from user's tap positions on Row A
+    const rowATokens = sampleRows?.rowA.tokens || sampleTokens
+    const paxIdx = rowATokens.findIndex(t => /^\d+(\.\d+)*$/.test(t))
+    const timeIdx = rowATokens.findIndex(t => /^\d{1,2}:\d{2}$/.test(t))
     
-    if (!analysis) {
-      setError('Could not determine anchor field. Please remap columns.')
+    if (paxIdx < 0 || timeIdx < 0) {
+      setError('Could not find pax or time anchors in Row A. Please re-map.')
       return
     }
     
-    setMappingAnalysis(analysis)
+    const zm = buildZoneMapping(rowATokens, tokenMapping, paxIdx, timeIdx)
+    console.log('zone mapping:', JSON.stringify(zm))
     
-    // Apply offset-based mapping to all reservation rows
-    const remappedTours = applyOffsetMapping(parsedTours, analysis, sampleTokens)
-    setParsedTours(remappedTours)
+    setZoneMapping(zm)
     setShowMappingSummary(false)
+    // Next: verify on Row B
+  }
+
+  const confirmRowB = () => {
+    if (!zoneMapping) return
+    
+    // Apply zone mapping to all rows
+    const remappedTours = applyZoneBasedMapping(parsedTours, zoneMapping, sampleTokens)
+    setParsedTours(remappedTours)
+    setVerifiedMapping(zoneMapping)
     setStep(3)
   }
 
@@ -897,40 +934,57 @@ export default function OrdenImportPage() {
               </div>
             )}
 
-            {/* ── Step 2b: Mapping Summary ── */}
-            {step === 2 && showMappingSummary && (
+            {/* ── Step 2b: Row B Verification ── */}
+            {step === 2 && showMappingSummary && sampleRows && (
               <div className="border-8 border-transparent bg-white rounded-xl border border-gray-200 p-6 max-w-2xl mx-auto">
                 <div className="text-center mb-6">
-                  <h2 className="text-2xl font-bold text-gray-900 mb-2">Review Your Mapping</h2>
-                  <p className="text-gray-500">Here&apos;s how each column will be extracted from every row</p>
+                  <h2 className="text-2xl font-bold text-gray-900 mb-2">Verify on Different Row</h2>
+                  <p className="text-gray-500">Here&apos;s how the mapping looks on a structurally different row</p>
                 </div>
 
-                {/* Summary cards */}
-                <div className="space-y-3 mb-6">
-                  {FIELDS.map((field, idx) => {
-                    const savedTokens = tokenMapping[field.id] || []
-                    const preview = savedTokens.length > 0
-                      ? savedTokens.map(i => sampleTokens[i]).join(' ')
-                      : '(not set)'
-                    
-                    return (
-                      <div key={field.id} className="flex items-center gap-3 p-4 bg-gray-50 rounded-xl">
-                        <div className="flex-1">
-                          <p className="text-sm font-semibold text-gray-700">{field.label}</p>
-                          <p className="text-lg font-bold text-purple-600 mt-1">
-                            {preview}
-                          </p>
-                        </div>
-                        <button
-                          onClick={() => editField(idx)}
-                          className="px-4 py-2 text-sm text-purple-600 border border-purple-200 rounded-lg hover:bg-purple-50 font-medium"
-                        >
-                          Edit
-                        </button>
+                {/* Row B preview */}
+                {(() => {
+                  const rowB = sampleRows.rowB
+                  const timePattern = /^\d{1,2}:\d{2}$/
+                  const paxIdx = rowB.tokens.findIndex(t => /^\d+(\.\d+)*$/.test(t))
+                  const timeIdx = rowB.tokens.findIndex(t => timePattern.test(t))
+                  
+                  // Build zone mapping from current tokenMapping
+                  const zm = zoneMapping || buildZoneMapping(rowB.tokens, tokenMapping, paxIdx, timeIdx)
+                  
+                  // Apply to get field values
+                  const mapped = applyZoneMapping(rowB.tokens, zm, paxIdx, timeIdx)
+                  
+                  return (
+                    <div className="space-y-3 mb-6">
+                      <div className="bg-gray-100 rounded-xl p-4">
+                        <p className="text-xs text-gray-500 mb-2">Row B tokens ({rowB.tokens.length} tokens):</p>
+                        <p className="font-mono text-sm text-gray-700">{rowB.tokens.join(' ')}</p>
                       </div>
-                    )
-                  })}
-                </div>
+                      
+                      <div className="border border-gray-200 rounded-xl overflow-hidden">
+                        <table className="w-full text-sm">
+                          <thead className="bg-gray-50">
+                            <tr>
+                              <th className="text-left px-4 py-2 font-medium text-gray-600">Field</th>
+                              <th className="text-left px-4 py-2 font-medium text-gray-600">Value</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-gray-100">
+                            {FIELDS.map(field => (
+                              <tr key={field.id}>
+                                <td className="px-4 py-2 text-gray-600">{field.label}</td>
+                                <td className="px-4 py-2 font-medium text-purple-700">
+                                  {(mapped[field.id] as string) || <span className="text-gray-400 italic">empty</span>}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )
+                })()}
 
                 {/* Actions */}
                 <div className="flex gap-3">
@@ -941,13 +995,13 @@ export default function OrdenImportPage() {
                     }}
                     className="px-6 py-4 border-2 border-gray-300 text-gray-600 rounded-xl hover:bg-gray-50 font-medium text-lg"
                   >
-                    ← Edit Mapping
+                    ← Fix it
                   </button>
                   <button
-                    onClick={confirmMapping}
+                    onClick={confirmRowB}
                     className="flex-1 px-6 py-4 bg-green-600 text-white rounded-xl hover:bg-green-700 font-bold text-lg"
                   >
-                    ✅ Looks Good — Continue →
+                    ✅ Looks correct
                   </button>
                 </div>
               </div>
