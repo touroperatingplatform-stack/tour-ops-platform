@@ -164,7 +164,7 @@ export default function OrdenImportPage() {
                guiaLower === fullLower ||
                fullLower.includes(guiaLower) ||
                guiaLower.includes(firstName)
-      })
+      }) : undefined
 
       return {
         ...tour,
