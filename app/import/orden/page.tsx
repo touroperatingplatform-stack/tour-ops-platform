@@ -16,6 +16,7 @@ interface ParsedReservation {
   children: number
   infants: number
   confirmation: string
+  balanceDue: number
   pickupTime: string
   agency: string
 }
@@ -437,6 +438,20 @@ export default function OrdenImportPage() {
             guest_count: res.adults + res.children + res.infants,
             stop_type: 'pickup'
           })
+          
+          // Create payment record for balance due
+          if (res.balanceDue > 0) {
+            await supabase.from('payments').insert({
+              tour_id: newTour.id,
+              guest_id: null,
+              company_id: companyId,
+              amount: res.balanceDue,
+              currency: 'MXN',
+              payment_type: 'cash_collection',
+              status: 'pending',
+              notes: `${res.clientName} - ${res.hotel}`
+            })
+          }
         }
 
         try {

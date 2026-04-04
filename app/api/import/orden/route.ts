@@ -11,6 +11,7 @@ interface ParsedReservation {
   children: number
   infants: number
   confirmation: string
+  balanceDue: number
   pickupTime: string
   rep: string
   agency: string
@@ -156,6 +157,20 @@ function parseOrdenText(text: string): ParsedTour[] {
       const timeAndAfter = line.match(/\d+:\d+\s+(.+)$/)?.[1] || ''
       const rep = timeAndAfter.replace(agency, '').trim()
       
+      // Balance due: parse from confirmation
+      // 188+1200 = 1200 balance, INC = 0 balance, plain number = 0 balance
+      let balanceDue = 0
+      const confToken = tokens[secondCouponIdx] || ''
+      const afterConf = tokens[secondCouponIdx + 1] || ''
+      if (afterConf.toUpperCase() === 'INC') {
+        balanceDue = 0
+      } else if (confToken.includes('+')) {
+        const parts = confToken.split('+')
+        balanceDue = parseInt(parts[1]) || 0
+      } else if (afterConf.startsWith('+')) {
+        balanceDue = parseInt(afterConf.replace('+', '')) || 0
+      }
+      
       const paxData = parsePax(paxStr)
       tour.reservations.push({
         hotel: hotelClient,
@@ -166,6 +181,7 @@ function parseOrdenText(text: string): ParsedTour[] {
         children: paxData.children,
         infants: paxData.infants,
         confirmation,
+        balanceDue,
         pickupTime,
         rep,
         agency
