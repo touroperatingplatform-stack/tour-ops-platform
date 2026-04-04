@@ -48,22 +48,24 @@ interface CreatedTour {
 }
 
 // ─── Column mapping step types ────────────────────────────────────────────────
-type FieldId = 'hotel' | 'clientName' | 'coupon' | 'pax' | 'confirmation' | 'pickupTime' | 'agency'
+type FieldId = 'hotel' | 'clientName' | 'coupon' | 'pax' | 'confirmation' | 'pickupTime' | 'rep' | 'agency'
 
 interface FieldDef {
   id: FieldId
   label: string
   hint: string
+  multiWord: boolean
 }
 
 const FIELDS: FieldDef[] = [
-  { id: 'hotel', label: 'HOTEL', hint: 'Tap the hotel name' },
-  { id: 'clientName', label: 'CLIENT', hint: 'Tap the client name' },
-  { id: 'coupon', label: 'COUPON', hint: 'Tap the coupon code' },
-  { id: 'pax', label: 'PAX', hint: 'Tap the guest count' },
-  { id: 'confirmation', label: 'CONFIRMATION', hint: 'Tap the confirmation number' },
-  { id: 'pickupTime', label: 'TIME', hint: 'Tap the pickup time' },
-  { id: 'agency', label: 'AGENCY', hint: 'Tap the agency name' },
+  { id: 'hotel', label: 'Hotel / Location', hint: 'Tap ALL words that make up the hotel or pickup location', multiWord: true },
+  { id: 'clientName', label: 'Guest Name', hint: 'Tap the guest or client name', multiWord: true },
+  { id: 'coupon', label: 'Coupon Code', hint: 'Tap the booking coupon or voucher code', multiWord: false },
+  { id: 'pax', label: 'Guest Count', hint: 'Tap the number of guests (e.g. 2 or 2.1.1)', multiWord: false },
+  { id: 'confirmation', label: 'Confirmation #', hint: 'Tap the confirmation number', multiWord: false },
+  { id: 'pickupTime', label: 'Pickup Time', hint: 'Tap the pickup time', multiWord: false },
+  { id: 'rep', label: 'Rep Name', hint: 'Tap the rep name', multiWord: true },
+  { id: 'agency', label: 'Agency Name', hint: 'Tap the agency name', multiWord: true },
 ]
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
@@ -96,9 +98,11 @@ export default function OrdenImportPage() {
     pax: [],
     confirmation: [],
     pickupTime: [],
+    rep: [],
     agency: [],
   })
   const [currentSelection, setCurrentSelection] = useState<number[]>([])
+  const [showMappingSummary, setShowMappingSummary] = useState(false)
   
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -222,13 +226,11 @@ export default function OrdenImportPage() {
       setRawText(data.rawText || '')
       
       // Build sample tokens from first tour's first reservation
-      // Extract actual word tokens from the raw PDF text
       const firstRes = data.tours[0]?.reservations[0]
       if (firstRes && data.rawText) {
         const rawLines = data.rawText.split('\n')
         
         // Find the line that contains key identifying info from first reservation
-        // Look for lines with the pickup time (e.g., "7:50") that aren't headers
         const resLine = rawLines.find((line: string) => {
           const hasTime = line.includes(firstRes.pickupTime)
           const isHeader = line.includes('SERVICIO') || line.includes('OPERADOR') || line.includes('GUIA')
@@ -236,11 +238,10 @@ export default function OrdenImportPage() {
         })
         
         if (resLine) {
-          // Split by whitespace to get word tokens
           const tokens = resLine.trim().split(/\s+/).filter((t: string) => t.length > 0)
           setSampleTokens(tokens)
         } else {
-          // Fallback: combine parsed fields into a display string
+          // Fallback: combine parsed fields
           const displayParts = [
             firstRes.hotel,
             firstRes.clientName, 
@@ -248,19 +249,19 @@ export default function OrdenImportPage() {
             firstRes.pax,
             firstRes.confirmation,
             firstRes.pickupTime,
+            firstRes.rep,
             firstRes.agency
           ].filter(Boolean)
           setSampleTokens(displayParts.length > 0 ? displayParts : ['No', 'data', 'found'])
         }
       }
 
-      // Attach tokens to each reservation for mapping
+      // Attach tokens to each reservation by finding its line in rawText
       const rawLines = data.rawText.split('\n')
       
       const toursWithTokens = data.tours.map((tour: ParsedTour) => ({
         ...tour,
         reservations: tour.reservations.map((res: ParsedReservation) => {
-          // Find the line in rawText that contains this reservation's pickup time
           const resLine = rawLines.find((line: string) => 
             line.includes(res.pickupTime) && 
             !line.includes('SERVICIO') && 
@@ -271,7 +272,6 @@ export default function OrdenImportPage() {
           if (resLine) {
             resTokens = resLine.trim().split(/\s+/).filter((t: string) => t.length > 0)
           } else {
-            // Fallback: use parsed fields in standard order
             resTokens = [
               res.hotel,
               res.clientName,
@@ -279,6 +279,7 @@ export default function OrdenImportPage() {
               res.pax,
               res.confirmation,
               res.pickupTime,
+              res.rep,
               res.agency
             ].filter(Boolean)
           }
@@ -303,8 +304,10 @@ export default function OrdenImportPage() {
         pax: [],
         confirmation: [],
         pickupTime: [],
+        rep: [],
         agency: [],
       })
+      setShowMappingSummary(false)
     } catch (err: any) {
       setError('Failed to parse file: ' + (err.message || 'Unknown error'))
     } finally {
@@ -335,91 +338,79 @@ export default function OrdenImportPage() {
     currentSelection.forEach(i => newAssigned.add(i))
     setAssignedTokenIndices(newAssigned)
     
-    // Move to next field or finish
+    // Move to next field or show summary
     if (mappingStep < FIELDS.length - 1) {
       setTokenMapping(newMapping)
       setMappingStep(mappingStep + 1)
       setCurrentSelection([])
     } else {
-      // All fields assigned - apply mapping and go to staff step
+      // Last field done — save mapping and show summary
       setTokenMapping(newMapping)
-      const remappedTours = applyMapping(parsedTours, newMapping, sampleTokens)
-      setParsedTours(remappedTours)
-      setStep(3)
+      setShowMappingSummary(true)
     }
   }
 
-  const skipField = () => {
-    setTokenMapping(prev => ({
-      ...prev,
-      [FIELDS[mappingStep].id]: []
-    }))
-    
-    if (mappingStep < FIELDS.length - 1) {
-      setMappingStep(mappingStep + 1)
-      setCurrentSelection([])
-    } else {
-      setStep(3)
-    }
+  const editField = (fieldIdx: number) => {
+    const field = FIELDS[fieldIdx]
+    // Unassign the tokens that were used for this field
+    const indicesToRemove = tokenMapping[field.id] || []
+    const newAssigned = new Set(assignedTokenIndices)
+    indicesToRemove.forEach(i => newAssigned.delete(i))
+    setAssignedTokenIndices(newAssigned)
+    // Go back to that field
+    setMappingStep(fieldIdx)
+    setCurrentSelection([])
+  }
+
+  const confirmMapping = () => {
+    // Apply the complete mapping to all reservation rows
+    const remappedTours = applyMapping(parsedTours, tokenMapping, sampleTokens)
+    setParsedTours(remappedTours)
+    setShowMappingSummary(false)
+    setStep(3)
   }
 
   // ─── Apply token mapping to all reservations ───────────────────────────────
+// Pure index-based lookup — no pattern matching, no fallbacks
   function applyMapping(tours: ParsedTour[], mapping: Record<FieldId, number[]>, tokens: string[]): ParsedTour[] {
-    const fieldNames: FieldId[] = ['hotel', 'clientName', 'coupon', 'pax', 'confirmation']
+    const fieldIds: FieldId[] = ['hotel', 'clientName', 'coupon', 'pax', 'confirmation', 'pickupTime', 'rep', 'agency']
     
     return tours.map(tour => {
       const newReservations = tour.reservations.map(res => {
-        // Use the reservation's own token array
+        // Each reservation has its own token array from its row in rawText
         const resTokens = res.tokens || tokens
         
-        // Helper: get token at absolute index position, or closest available if out of bounds
+        // Pure index lookup — if position doesn't exist, leave blank
         const getTokenAt = (idx: number): string => {
-          if (idx < resTokens.length) return resTokens[idx]
-          return resTokens.length > 0 ? resTokens[resTokens.length - 1] : ''
+          return idx < resTokens.length ? resTokens[idx] : ''
         }
         
-        // Pattern match pickupTime - always find the time token (e.g., "7:50")
-        const timePattern = /^\d{1,2}:\d{2}$/
-        const pickupTimeToken = resTokens.find(t => timePattern.test(t)) || ''
+        // Build new reservation from saved token indices
+        const newRes: Record<string, string | number> = {}
         
-        // Pattern match agency - tokens ending with VACATIONS, CHARTERS, or TOURS
-        const agencyPattern = /(VACATIONS|CHARTERS|TOURS)$/i
-        const agencyTokens = resTokens.filter(t => agencyPattern.test(t))
-        const agencyValue = agencyTokens.join(' ')
-        
-        // Handle pax separately since it can be "2" or "2.1.0"
+        // Pax: indices map to a pax string like "2" or "2.1.1"
         const paxIndices = mapping['pax']
-        let paxStr = ''
-        if (paxIndices?.length > 0) {
-          paxStr = paxIndices.map(i => getTokenAt(i)).join(' ').trim()
-        }
-        if (!paxStr) paxStr = res.pax || '1'
+        const paxStr = (paxIndices?.length ?? 0) > 0
+          ? paxIndices.map(i => getTokenAt(i)).join('').trim()
+          : ''
+        const paxData = parsePax(paxStr || '1')
+        newRes['pax'] = paxStr || '1'
+        newRes['adults'] = paxData.adults
+        newRes['children'] = paxData.children
+        newRes['infants'] = paxData.infants
         
-        const paxData = parsePax(paxStr)
-        
-        // Build new reservation using stored token indices for hotel, client, coupon, pax, confirmation
-        const newRes: Record<string, string | number> = {
-          adults: paxData.adults,
-          children: paxData.children,
-          infants: paxData.infants,
-          pax: paxStr,
-          pickupTime: pickupTimeToken,
-          agency: agencyValue,
-        }
-        
-        for (const field of fieldNames) {
+        // All other fields: pure index lookup
+        for (const field of fieldIds) {
+          if (field === 'pax') continue
           const indices = mapping[field]
-          if (indices && indices.length > 0) {
+          if ((indices?.length ?? 0) > 0) {
             newRes[field] = indices.map(i => getTokenAt(i)).join(' ').trim()
           } else {
             newRes[field] = ''
           }
         }
         
-        return {
-          ...res,
-          ...newRes
-        } as ParsedReservation
+        return { ...res, ...newRes } as ParsedReservation
       })
       
       return { ...tour, reservations: newReservations, totalPax: tour.totalPax }
@@ -475,10 +466,7 @@ export default function OrdenImportPage() {
         let stopOrder = 1
         for (const res of tour.reservations) {
           // Validate pickupTime is a proper time format
-          console.log('pickupTime raw:', res.pickupTime)
           const validTime = /^\d{1,2}:\d{2}$/.test(res.pickupTime) ? res.pickupTime + ':00' : null
-          console.log('validTime result:', validTime)
-          console.log('brandId:', brandId)
           
           const { error: manifestError } = await supabase.from('reservation_manifest').insert({
             tour_id: newTour.id,
@@ -650,26 +638,26 @@ export default function OrdenImportPage() {
             )}
 
             {/* ── Step 2: Token Mapping ── */}
-            {step === 2 && sampleTokens.length > 0 && (
+            {step === 2 && sampleTokens.length > 0 && !showMappingSummary && (
               <div className="border-8 border-transparent bg-white rounded-xl border border-gray-200 p-6 max-w-2xl mx-auto">
                 <div className="text-center mb-6">
-                  <div className="text-sm text-gray-500 mb-1">
-                    Step {mappingStep + 1} of {FIELDS.length}
+                  <div className="text-sm text-gray-400 mb-2">
+                    Column Mapping
                   </div>
-                  <h2 className="text-2xl font-bold text-purple-600 mb-2">
+                  <h2 className="text-3xl font-bold text-purple-600 mb-3">
                     {FIELDS[mappingStep].label}
                   </h2>
-                  <p className="text-gray-500">
+                  <p className="text-gray-500 text-base leading-relaxed">
                     {FIELDS[mappingStep].hint}
                   </p>
                 </div>
 
-                {/* Available tokens as tappable chips */}
-                <div className="border-8 border-transparent bg-gray-50 rounded-xl p-4 mb-6">
-                  <p className="text-xs text-gray-500 mb-3 text-center">
-                    TAP TOKENS TO ASSIGN ({availableTokens.length} remaining):
+                {/* Token grid — large and finger-friendly */}
+                <div className="border-8 border-transparent bg-gray-50 rounded-2xl p-5 mb-6">
+                  <p className="text-xs text-gray-400 mb-4 text-center uppercase tracking-wide">
+                    Tap tokens for this field • {availableTokens.length} remaining
                   </p>
-                  <div className="flex flex-wrap gap-2 justify-center">
+                  <div className="flex flex-wrap gap-3 justify-center">
                     {sampleTokens.map((token, idx) => {
                       const isAssigned = assignedTokenIndices.has(idx)
                       const isSelected = currentSelection.includes(idx)
@@ -679,12 +667,12 @@ export default function OrdenImportPage() {
                           key={idx}
                           onClick={() => !isAssigned && toggleToken(idx)}
                           disabled={isAssigned}
-                          className={`px-4 py-3 rounded-xl text-lg font-medium transition-all touch-manipulation
+                          className={`px-5 py-4 rounded-2xl text-xl font-semibold transition-all touch-manipulation select-none min-w-[60px]
                             ${isAssigned 
                               ? 'bg-gray-200 text-gray-400 cursor-not-allowed line-through'
                               : isSelected
-                                ? 'bg-purple-600 text-white shadow-lg scale-105'
-                                : 'bg-white border-2 border-gray-200 text-gray-700 hover:border-purple-400'
+                                ? 'bg-purple-600 text-white shadow-xl scale-110 ring-4 ring-purple-200'
+                                : 'bg-white border-2 border-gray-200 text-gray-700 hover:border-purple-400 active:scale-95'
                             }`}
                         >
                           {token}
@@ -694,44 +682,101 @@ export default function OrdenImportPage() {
                   </div>
                 </div>
 
-                {/* Selected value preview */}
+                {/* Selected preview */}
                 {currentSelection.length > 0 && (
-                  <div className="border-8 border-transparent bg-green-50 rounded-xl p-4 mb-6">
-                    <p className="text-xs text-green-600 mb-1">SELECTED:</p>
-                    <p className="text-xl font-bold text-green-700">
+                  <div className="border-8 border-transparent bg-green-50 rounded-2xl p-5 mb-6 text-center">
+                    <p className="text-xs text-green-600 uppercase tracking-wide mb-2">Your selection:</p>
+                    <p className="text-2xl font-bold text-green-700">
                       {currentSelection.map(i => sampleTokens[i]).join(' ')}
                     </p>
                   </div>
                 )}
 
+                {/* Progress bar */}
+                <div className="mb-6">
+                  <div className="flex justify-between text-xs text-gray-400 mb-2">
+                    <span>Field {mappingStep + 1} of {FIELDS.length}</span>
+                    <span>{Math.round(((mappingStep + 1) / FIELDS.length) * 100)}%</span>
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-2">
+                    <div 
+                      className="bg-purple-600 h-2 rounded-full transition-all duration-300"
+                      style={{ width: `${((mappingStep + 1) / FIELDS.length) * 100}%` }}
+                    />
+                  </div>
+                </div>
+
                 {/* Action buttons */}
-                <div className="border-8 border-transparent flex gap-3">
+                <div className="flex gap-3">
                   <button
-                    onClick={skipField}
+                    onClick={() => setStep(1)}
                     className="px-6 py-4 border-2 border-gray-300 text-gray-600 rounded-xl hover:bg-gray-50 font-medium text-lg"
                   >
-                    Skip
+                    ← Back
                   </button>
                   <button
                     onClick={confirmField}
                     disabled={currentSelection.length === 0}
-                    className="flex-1 px-6 py-4 bg-purple-600 text-white rounded-xl hover:bg-purple-700 disabled:opacity-50 font-bold text-lg"
+                    className="flex-1 px-6 py-4 bg-purple-600 text-white rounded-xl hover:bg-purple-700 disabled:opacity-40 font-bold text-lg transition-all"
                   >
-                    {mappingStep < FIELDS.length - 1 ? 'Next →' : 'Done ✓'}
+                    {mappingStep < FIELDS.length - 1 ? 'Next →' : 'Review Mapping ✓'}
                   </button>
                 </div>
+              </div>
+            )}
 
-                {/* Progress dots */}
-                <div className="flex justify-center gap-2 mt-6">
-                  {FIELDS.map((_, idx) => (
-                    <div
-                      key={idx}
-                      className={`w-3 h-3 rounded-full ${
-                        idx === mappingStep ? 'bg-purple-600' :
-                        idx < mappingStep ? 'bg-green-500' : 'bg-gray-200'
-                      }`}
-                    />
-                  ))}
+            {/* ── Step 2b: Mapping Summary ── */}
+            {step === 2 && showMappingSummary && (
+              <div className="border-8 border-transparent bg-white rounded-xl border border-gray-200 p-6 max-w-2xl mx-auto">
+                <div className="text-center mb-6">
+                  <h2 className="text-2xl font-bold text-gray-900 mb-2">Review Your Mapping</h2>
+                  <p className="text-gray-500">Here&apos;s how each column will be extracted from every row</p>
+                </div>
+
+                {/* Summary cards */}
+                <div className="space-y-3 mb-6">
+                  {FIELDS.map((field, idx) => {
+                    const savedTokens = tokenMapping[field.id] || []
+                    const preview = savedTokens.length > 0
+                      ? savedTokens.map(i => sampleTokens[i]).join(' ')
+                      : '(not set)'
+                    
+                    return (
+                      <div key={field.id} className="flex items-center gap-3 p-4 bg-gray-50 rounded-xl">
+                        <div className="flex-1">
+                          <p className="text-sm font-semibold text-gray-700">{field.label}</p>
+                          <p className="text-lg font-bold text-purple-600 mt-1">
+                            {preview}
+                          </p>
+                        </div>
+                        <button
+                          onClick={() => editField(idx)}
+                          className="px-4 py-2 text-sm text-purple-600 border border-purple-200 rounded-lg hover:bg-purple-50 font-medium"
+                        >
+                          Edit
+                        </button>
+                      </div>
+                    )
+                  })}
+                </div>
+
+                {/* Actions */}
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => {
+                      setShowMappingSummary(false)
+                      setMappingStep(FIELDS.length - 1)
+                    }}
+                    className="px-6 py-4 border-2 border-gray-300 text-gray-600 rounded-xl hover:bg-gray-50 font-medium text-lg"
+                  >
+                    ← Edit Mapping
+                  </button>
+                  <button
+                    onClick={confirmMapping}
+                    className="flex-1 px-6 py-4 bg-green-600 text-white rounded-xl hover:bg-green-700 font-bold text-lg"
+                  >
+                    ✅ Looks Good — Continue →
+                  </button>
                 </div>
               </div>
             )}
