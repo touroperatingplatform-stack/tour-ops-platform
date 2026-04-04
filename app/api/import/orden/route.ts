@@ -38,82 +38,84 @@ function parsePax(paxStr: string): { adults: number; children: number; infants: 
 function parseOrdenText(text: string): ParsedTour[] {
   const tours: ParsedTour[] = []
   
-  // Split by SERVICIO: to get all tour sections
-  const sections = text.split(/(?=SERVICIO:)/i)
+  // Step 1: Split by SERVICIO: into groups
+  const groups = text.split(/SERVICIO:/g).slice(1)
   
-  for (const section of sections) {
-    const trimmed = section.trim()
-    if (!trimmed) continue
+  for (const group of groups) {
+    const lines = group.split('\n').map(l => l.trim()).filter(Boolean)
+    if (lines.length === 0) continue
     
-    // Skip header section (doesn't start with SERVICIO)
-    if (!trimmed.startsWith('SERVICIO:')) continue
-    
-    // Parse tour header
-    const tourMatch = trimmed.match(/SERVICIO:\s*(.+?)\s+OPERADOR:\s*(\S+)\s+GUIA:\s*(\S+)/i)
-    if (!tourMatch) continue
+    // Step 2: Parse tour header (first line)
+    const headerMatch = lines[0].match(/^(.+?)\s+OPERADOR:\s*(\S+)\s+GUIA:\s*(\S+)/i)
+    if (!headerMatch) continue
     
     const tour: ParsedTour = {
-      service: tourMatch[1].trim(),
-      operador: tourMatch[2].trim(),
-      guia: tourMatch[3].trim(),
+      service: headerMatch[1].trim(),
+      operador: headerMatch[2].trim(),
+      guia: headerMatch[3].trim(),
       reservations: [],
       totalPax: 0
     }
     
-    // Get lines after the header line for this tour
-    const lines = trimmed.split('\n').slice(1)
+    // Step 3: Find reservation lines (have time and aren't header/footer)
+    const reservationLine = /^\s*\S+.*\d+:\d+.*$/
     
-    for (const line of lines) {
-      const cleanLine = line.trim()
-      if (!cleanLine) continue
+    for (const line of lines.slice(1)) {
+      if (!reservationLine.test(line)) continue
+      if (line.includes('HOTEL') || line.includes('TOTAL') || line.includes('---')) continue
       
-      // Skip headers/footers
-      if (cleanLine.startsWith('PLAYA DEL CARMEN') || cleanLine.startsWith('TENOCH') ||
-          cleanLine.startsWith('HOTEL CLIENTE') || cleanLine.startsWith('TOTAL') ||
-          cleanLine.startsWith('---') || cleanLine.startsWith('*') ||
-          cleanLine.startsWith('SERVICIO:')) continue
+      // Step 4: Extract pax - standalone number between spaces followed by ´
+      // e.g. "2930 2 ´070" - the 2 is pax
+      const paxMatch = line.match(/\s(\d{1,3})\s+´/)
+      const paxStr = paxMatch ? paxMatch[1] : '1'
       
-      // Parse reservation line with exact pattern:
-      // HOTEL CLIENT COUPON HAB PAX CONF TOUR_TYPE IN/ES TIME REP AGENCY
-      // Right-to-left: Agency → Rep → Time → IN/ES → TourType → CONF → Pax → HAB → Coupon → Hotel+Client
-      // Example: RIU LUPITA BEATRICE DURRANI ´055 2930 2 ´070 TCA IN 7:50 SUSANA O NS VACATIONS
+      // Extract confirmation - number after second ´
+      const confMatch = line.match(/´(\d+)/)
+      const confirmation = confMatch ? confMatch[1] : ''
       
-      const resMatch = cleanLine.match(
-        /^(.+?)\s+´\S+\s+(\d+)\s+(\d+)\s+´\S+\s+(TCA|CAX|AX|TU|XC)\s+(IN|ES)\s+(\d{1,2}:\d{2})\s+(.+?)\s+(NS VACATIONS|VACATIONS)$/i
-      )
+      // Extract time - H:MM or HH:MM
+      const timeMatch = line.match(/(\d{1,2}:\d{2})/)
+      const pickupTime = timeMatch ? timeMatch[1] : '09:00'
       
-      if (resMatch) {
-        const hotelClient = resMatch[1].trim()
-        const paxStr = resMatch[3]
-        const conf = resMatch[4]
-        const pickupTime = resMatch[6]
-        
-        // Split hotel from client - client name is typically 2-3 words
-        // Hotel names are usually all caps or known resort names
-        const hotelMatch = hotelClient.match(/^(.+?)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+){1,3})$/)
-        
-        let hotel = hotelClient
-        let clientName = ''
-        if (hotelMatch) {
-          hotel = hotelMatch[1].trim()
-          clientName = hotelMatch[2].trim()
-        }
-        
-        const paxData = parsePax(paxStr)
-        tour.reservations.push({
-          hotel,
-          clientName,
-          coupon: '', // Coupon is the first ´ prefixed word in original line
-          pax: paxStr,
-          adults: paxData.adults,
-          children: paxData.children,
-          infants: paxData.infants,
-          confirmation: conf,
-          pickupTime,
-          agency: resMatch[8]
-        })
-        tour.totalPax += paxData.adults + paxData.children + paxData.infants
+      // Extract agency - ends with VACATIONS or similar
+      const agencyMatch = line.match(/(.+?)\s+(VACACIONES?|NS\s?VACATIONS?|CHARTERS?|[A-Z]{2,}\s?VAC[A-Z]*)\s*$/i)
+      const agency = agencyMatch ? agencyMatch[2].trim() : ''
+      
+      // Hotel + client = everything before the coupon (first ´ word)
+      const firstCouponIdx = line.indexOf('´')
+      let hotelClient = line
+      let coupon = ''
+      if (firstCouponIdx > 0) {
+        hotelClient = line.substring(0, firstCouponIdx).trim()
+        // Get coupon word after ´
+        const couponMatch = line.substring(firstCouponIdx).match(/´(\S+)/)
+        coupon = couponMatch ? couponMatch[1] : ''
       }
+      
+      // Split hotel from client - client name has capitalized words
+      const hotelMatch = hotelClient.match(/^(.+?)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+){1,3})$/)
+      
+      let hotel = hotelClient
+      let clientName = ''
+      if (hotelMatch) {
+        hotel = hotelMatch[1].trim()
+        clientName = hotelMatch[2].trim()
+      }
+      
+      const paxData = parsePax(paxStr)
+      tour.reservations.push({
+        hotel,
+        clientName,
+        coupon: '´' + coupon,
+        pax: paxStr,
+        adults: paxData.adults,
+        children: paxData.children,
+        infants: paxData.infants,
+        confirmation,
+        pickupTime,
+        agency
+      })
+      tour.totalPax += paxData.adults + paxData.children + paxData.infants
     }
     
     if (tour.reservations.length > 0) {
@@ -149,7 +151,6 @@ export async function POST(request: NextRequest) {
     }
 
     console.log('RAW TEXT:', text.substring(0, 1000))
-    console.log('FIRST ROW RAW:', text.split('\n').find(l => l.includes('RIU') || l.includes('PRINCESS') || l.includes('HM')))
     const tours = parseOrdenText(text)
     console.log('NUMBER OF GROUPS FOUND:', tours.length)
     console.log('PARSED TOURS:', JSON.stringify(tours.map(t => ({ 
@@ -157,13 +158,12 @@ export async function POST(request: NextRequest) {
       operador: t.operador, 
       guia: t.guia, 
       totalPax: t.totalPax,
-      reservations: t.reservations.length,
-      sampleReservation: t.reservations[0]
+      reservations: t.reservations.length
     })), null, 2))
 
     if (tours.length === 0) {
       return NextResponse.json({ 
-        error: 'No tours found in file. Make sure the file has SERVICIO/OPERADOR/GUIA headers.',
+        error: 'No tours found. Make sure the file has SERVICIO/OPERADOR/GUIA headers.',
         rawText: text.substring(0, 500)
       }, { status: 400 })
     }
