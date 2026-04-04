@@ -102,15 +102,29 @@ export default function OrdenImportPage() {
   // ─── Match staff names ─────────────────────────────────────────────────────
   function matchStaff(tours: ParsedTour[]): ParsedTour[] {
     return tours.map(tour => {
-      const driverMatch = drivers.find(d => 
-        d.full_name.toLowerCase().includes(tour.operador.toLowerCase()) ||
-        tour.operador.toLowerCase().includes(d.full_name.toLowerCase().split(' ')[0])
-      )
+      // Driver matching - more flexible
+      const operadorLower = tour.operador.toLowerCase()
+      const driverMatch = drivers.find(d => {
+        const fullLower = d.full_name.toLowerCase()
+        // Check first name match
+        const firstName = fullLower.split(' ')[0]
+        return operadorLower === firstName ||
+               operadorLower === fullLower ||
+               fullLower.includes(operadorLower) ||
+               operadorLower.includes(firstName)
+      })
       
-      const guideMatch = guides.find(g =>
-        g.full_name.toLowerCase().includes(tour.guia.toLowerCase()) ||
-        tour.guia.toLowerCase().includes(g.full_name.toLowerCase().split(' ')[0])
-      )
+      // Guide matching - more flexible
+      const guiaLower = tour.guia.toLowerCase()
+      const guideMatch = guides.find(g => {
+        const fullLower = g.full_name.toLowerCase()
+        // Check first name match
+        const firstName = fullLower.split(' ')[0]
+        return guiaLower === firstName ||
+               guiaLower === fullLower ||
+               fullLower.includes(guiaLower) ||
+               guiaLower.includes(firstName)
+      })
 
       return {
         ...tour,
@@ -161,8 +175,11 @@ export default function OrdenImportPage() {
         return
       }
 
-      // Match staff names to IDs
-      const toursWithStaff = matchStaff(data.tours)
+      // Match staff names to IDs and recalculate totalPax from parsed pax strings
+      const toursWithStaff = matchStaff(data.tours).map(tour => ({
+        ...tour,
+        totalPax: tour.reservations.reduce((sum, r) => sum + (parseInt(r.pax) || 0), 0)
+      }))
       setParsedTours(toursWithStaff)
       setStep(2)
     } catch (err: any) {
