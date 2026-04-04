@@ -490,6 +490,8 @@ export default function OrdenImportPage() {
           })
           if (manifestError) console.error('reservation_manifest error:', manifestError)
 
+          console.log('inserting pickup_stop, pickupTime:', res.pickupTime, 'validTime:', validTime)
+          
           const { error: stopsError } = await supabase.from('pickup_stops').insert({
             tour_id: newTour.id,
             brand_id: brandId,
