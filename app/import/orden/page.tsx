@@ -375,10 +375,17 @@ export default function OrdenImportPage() {
   function applyMapping(tours: ParsedTour[], mapping: Record<FieldId, number[]>, tokens: string[]): ParsedTour[] {
     const fieldIds: FieldId[] = ['hotel', 'clientName', 'coupon', 'pax', 'confirmation', 'pickupTime', 'rep', 'agency']
     
-    return tours.map(tour => {
-      const newReservations = tour.reservations.map(res => {
+    return tours.map((tour, tourIdx) => {
+      const newReservations = tour.reservations.map((res, resIdx) => {
         // Each reservation has its own token array from its row in rawText
         const resTokens = res.tokens || tokens
+        
+        // DEBUG: log pickupTime mapping for first reservation of first tour
+        if (tourIdx === 0 && resIdx === 0) {
+          console.log('pickupTime mapping indices:', mapping['pickupTime'])
+          console.log('resTokens:', resTokens)
+          console.log('resolved pickupTime:', mapping['pickupTime']?.map(i => resTokens[i]))
+        }
         
         // Pure index lookup — if position doesn't exist, leave blank
         const getTokenAt = (idx: number): string => {
