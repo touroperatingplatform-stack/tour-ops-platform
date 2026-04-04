@@ -317,20 +317,20 @@ export default function OrdenImportPage() {
 
   const confirmField = () => {
     const field = FIELDS[mappingStep]
-    
-    // Save current selection to mapping
-    setTokenMapping(prev => ({
-      ...prev,
+    const newMapping = {
+      ...tokenMapping,
       [field.id]: currentSelection
-    }))
+    }
     
     // Move to next step
     if (mappingStep < FIELDS.length - 1) {
+      setTokenMapping(newMapping)
       setMappingStep(mappingStep + 1)
       setCurrentSelection([])
     } else {
       // All fields assigned - apply mapping and go to staff step
-      const remappedTours = applyMapping(parsedTours, tokenMapping)
+      setTokenMapping(newMapping)
+      const remappedTours = applyMapping(parsedTours, newMapping)
       setParsedTours(remappedTours)
       setStep(3)
     }
@@ -598,7 +598,7 @@ export default function OrdenImportPage() {
                   </button>
                   <button
                     onClick={confirmField}
-                    disabled={selectedIndices.length === 0}
+                    disabled={currentSelection.length === 0}
                     className="flex-1 px-6 py-4 bg-purple-600 text-white rounded-xl hover:bg-purple-700 disabled:opacity-50 font-bold text-lg"
                   >
                     {mappingStep < FIELDS.length - 1 ? 'Next →' : 'Done ✓'}
