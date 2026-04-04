@@ -212,6 +212,14 @@ export default function OrdenImportPage() {
       setCompanyId(profile.company_id)
       setBrandId(profile.brand_id)
 
+      // Check if trial company
+      const { data: company } = await supabase
+        .from('companies')
+        .select('is_trial')
+        .eq('id', profile.company_id)
+        .maybeSingle()
+      if (company?.is_trial) setIsTrial(true)
+
       // Load drivers
       const { data: driverData } = await supabase
         .from('profiles')
