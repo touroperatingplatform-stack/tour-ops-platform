@@ -34,7 +34,7 @@ export default function RoleGuard({ children, requiredRole, fallback }: RoleGuar
           .from('profiles')
           .select('role, company_id')
           .eq('id', user.id)
-          .single()
+          .maybeSingle()
 
         const role = profile?.role as Role | null
         setUserRole(role)
@@ -50,14 +50,14 @@ export default function RoleGuard({ children, requiredRole, fallback }: RoleGuar
             .from('companies')
             .select('is_trial, trial_id')
             .eq('id', profile.company_id)
-            .single()
+            .maybeSingle()
 
           if (company?.is_trial && company?.trial_id) {
             const { data: trial } = await supabase
               .from('trials')
               .select('expires_at, status')
               .eq('id', company.trial_id)
-              .single()
+              .maybeSingle()
 
             if (trial && (trial.status === 'expired' || new Date(trial.expires_at) < new Date())) {
               window.location.href = '/trial-expired'
