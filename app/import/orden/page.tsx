@@ -372,11 +372,18 @@ export default function OrdenImportPage() {
         // Use the reservation's own token array
         const resTokens = res.tokens || tokens
         
+        // Helper: get token at index, or closest available if out of bounds
+        const getTokenAt = (idx: number): string => {
+          if (idx < resTokens.length) return resTokens[idx]
+          // Out of bounds - use closest available (last token)
+          return resTokens.length > 0 ? resTokens[resTokens.length - 1] : ''
+        }
+        
         // Handle pax separately since it can be "2" or "2.1.0"
         const paxIndices = mapping['pax']
         let paxStr = ''
         if (paxIndices?.length > 0) {
-          paxStr = paxIndices.map(i => resTokens[i] || '').join(' ').trim()
+          paxStr = paxIndices.map(i => getTokenAt(i)).join(' ').trim()
         }
         if (!paxStr) paxStr = res.pax || '1'
         
@@ -394,8 +401,8 @@ export default function OrdenImportPage() {
           if (field === 'pax') continue
           const indices = mapping[field]
           if (indices && indices.length > 0) {
-            // Get value from reservation's tokens at mapped indices
-            newRes[field] = indices.map(i => resTokens[i] || '').join(' ').trim()
+            // Get value from reservation's tokens at mapped indices (or closest available)
+            newRes[field] = indices.map(i => getTokenAt(i)).join(' ').trim()
           } else {
             // No mapping - leave blank
             newRes[field] = ''
