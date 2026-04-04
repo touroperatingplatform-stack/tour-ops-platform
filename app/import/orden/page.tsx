@@ -421,7 +421,7 @@ export default function OrdenImportPage() {
           
           console.log('brandId:', brandId)
           
-          await supabase.from('reservation_manifest').insert({
+          const { error: manifestError } = await supabase.from('reservation_manifest').insert({
             tour_id: newTour.id,
             brand_id: brandId,
             booking_reference: res.confirmation,
@@ -434,8 +434,9 @@ export default function OrdenImportPage() {
             agency_name: res.agency,
             primary_contact_name: res.clientName
           })
+          if (manifestError) console.error('reservation_manifest error:', manifestError)
 
-          await supabase.from('pickup_stops').insert({
+          const { error: stopsError } = await supabase.from('pickup_stops').insert({
             tour_id: newTour.id,
             brand_id: brandId,
             sort_order: stopOrder++,
@@ -444,10 +445,11 @@ export default function OrdenImportPage() {
             guest_count: res.adults + res.children + res.infants,
             stop_type: 'pickup'
           })
+          if (stopsError) console.error('pickup_stops error:', stopsError)
           
           // Create payment record for balance due
           if (res.balanceDue > 0) {
-            await supabase.from('payments').insert({
+            const { error: paymentError } = await supabase.from('payments').insert({
               tour_id: newTour.id,
               guest_id: null,
               company_id: companyId,
@@ -457,6 +459,7 @@ export default function OrdenImportPage() {
               status: 'pending',
               notes: `${res.clientName} - ${res.hotel}`
             })
+            if (paymentError) console.error('payments error:', paymentError)
           }
         }
 
