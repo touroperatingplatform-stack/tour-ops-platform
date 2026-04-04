@@ -416,6 +416,11 @@ export default function OrdenImportPage() {
 
         let stopOrder = 1
         for (const res of tour.reservations) {
+          // Validate pickupTime is a proper time format
+          const validTime = /^\d{1,2}:\d{2}$/.test(res.pickupTime) ? res.pickupTime + ':00' : null
+          
+          console.log('brandId:', brandId)
+          
           await supabase.from('reservation_manifest').insert({
             tour_id: newTour.id,
             brand_id: brandId,
@@ -425,7 +430,7 @@ export default function OrdenImportPage() {
             infant_pax: res.infants,
             hotel_name: res.hotel,
             room_number: null,
-            pickup_time: res.pickupTime,
+            pickup_time: validTime,
             agency_name: res.agency,
             primary_contact_name: res.clientName
           })
@@ -435,7 +440,7 @@ export default function OrdenImportPage() {
             brand_id: brandId,
             sort_order: stopOrder++,
             location_name: res.hotel,
-            scheduled_time: res.pickupTime + ':00',
+            scheduled_time: validTime,
             guest_count: res.adults + res.children + res.infants,
             stop_type: 'pickup'
           })
@@ -456,7 +461,7 @@ export default function OrdenImportPage() {
         }
 
         try {
-          await supabase.rpc('update_tour_guest_count', { tour_id: newTour.id })
+          await supabase.rpc('update_tour_guest_count', { p_tour_id: newTour.id })
         } catch (e) {
           console.error('RPC error:', e)
         }
