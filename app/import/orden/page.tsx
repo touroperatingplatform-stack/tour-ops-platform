@@ -304,10 +304,17 @@ export default function OrdenImportPage() {
         setSampleTokens(tokens.length > 0 ? tokens : ['No', 'data', 'found'])
       }
 
-      const toursWithStaff = matchStaff(data.tours).map(tour => ({
-        ...tour,
-        totalPax: tour.reservations.reduce((sum, r) => sum + parsePax(r.pax).total, 0)
-      }))
+      const toursWithStaff = matchStaff(data.tours).map((tour, ti) => {
+        if (ti === 0) {
+          tour.reservations.forEach((r, i) => 
+            console.log(`Group 0 res ${i} pax:`, r.pax, 'parsed:', parsePax(r.pax))
+          )
+        }
+        return {
+          ...tour,
+          totalPax: tour.reservations.reduce((sum, r) => sum + parsePax(r.pax).total, 0)
+        }
+      })
       setParsedTours(toursWithStaff)
       setStep(2)
       setMappingStep(0)
