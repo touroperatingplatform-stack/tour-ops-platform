@@ -48,7 +48,8 @@ interface CreatedTour {
 async function extractTextFromPDF(file: File): Promise<string> {
   // Dynamically import pdfjs-dist only on client
   const pdfjsLib = await import('pdfjs-dist')
-  pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`
+  // Use a fixed version that exists on CDN
+  pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js`
   
   const arrayBuffer = await file.arrayBuffer()
   const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise
@@ -210,14 +211,6 @@ export default function OrdenImportPage() {
       if (!profile?.company_id) return
       setCompanyId(profile.company_id)
       setBrandId(profile.brand_id)
-
-      // Check if trial
-      const { data: company } = await supabase
-        .from('companies')
-        .select('name, status')
-        .eq('id', profile.company_id)
-        .maybeSingle()
-      if (company?.status === 'trial') setIsTrial(true)
 
       // Load drivers
       const { data: driverData } = await supabase
