@@ -46,9 +46,7 @@ interface CreatedTour {
 
 // ─── Extract text from PDF (client-side only) ─────────────────────────────────
 async function extractTextFromPDF(file: File): Promise<string> {
-  // Dynamically import pdfjs-dist only on client
   const pdfjsLib = await import('pdfjs-dist')
-  // Use a fixed version that exists on CDN
   pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js`
   
   const arrayBuffer = await file.arrayBuffer()
@@ -66,44 +64,6 @@ async function extractTextFromPDF(file: File): Promise<string> {
   }
   
   return fullText
-}
-
-// ─── Demo data for trial companies ───────────────────────────────────────────
-function getDemoOrdenData(): ParsedTour[] {
-  return [
-    {
-      service: 'TULUM EXPRESS',
-      operador: 'CARLOS',
-      guia: 'MARIA',
-      totalPax: 12,
-      reservations: [
-        { hotel: 'RIU YUCATAN', clientName: 'JUAN PEREZ', coupon: 'T-001', pax: '2.1.0', adults: 2, children: 1, infants: 0, confirmation: 'CONF-001', pickupTime: '08:30', agency: 'CANCUN TOURS' },
-        { hotel: 'GRAND OASIS', clientName: 'MARIA LOPEZ', coupon: 'T-002', pax: '2.0.0', adults: 2, children: 0, infants: 0, confirmation: 'CONF-002', pickupTime: '08:45', agency: 'CANCUN TOURS' },
-        { hotel: 'MEXICO LINDO', clientName: 'PEDRO SANCHEZ', coupon: 'T-003', pax: '3.2.1', adults: 3, children: 2, infants: 1, confirmation: 'CONF-003', pickupTime: '09:00', agency: 'PLAYA SHUTTLE' },
-      ]
-    },
-    {
-      service: 'CENOTE ADVENTURE',
-      operador: 'JOSE',
-      guia: 'ANA',
-      totalPax: 8,
-      reservations: [
-        { hotel: 'BELLAVISTA', clientName: 'LAURA GOMEZ', coupon: 'C-001', pax: '2.0.0', adults: 2, children: 0, infants: 0, confirmation: 'CONF-004', pickupTime: '09:15', agency: 'ADVENTURE TOURS' },
-        { hotel: 'PLAYA PALACE', clientName: 'ROBERTO DIAZ', coupon: 'C-002', pax: '2.2.0', adults: 2, children: 2, infants: 0, confirmation: 'CONF-005', pickupTime: '09:30', agency: 'ADVENTURE TOURS' },
-      ]
-    },
-    {
-      service: 'XCARET PLUS',
-      operador: 'MIGUEL',
-      guia: 'PEDRO',
-      totalPax: 16,
-      reservations: [
-        { hotel: 'SANDOS CANCUN', clientName: 'ANA MARTINEZ', coupon: 'X-001', pax: '4.0.0', adults: 4, children: 0, infants: 0, confirmation: 'CONF-006', pickupTime: '07:30', agency: 'XCARET TOURS' },
-        { hotel: 'DREAM PALACE', clientName: 'CARLOS RUIZ', coupon: 'X-002', pax: '2.3.0', adults: 2, children: 3, infants: 0, confirmation: 'CONF-007', pickupTime: '07:45', agency: 'XCARET TOURS' },
-        { hotel: 'SUNSET SPA', clientName: 'ELENA VARGAS', coupon: 'X-003', pax: '2.1.1', adults: 2, children: 1, infants: 1, confirmation: 'CONF-008', pickupTime: '08:00', agency: 'XCARET TOURS' },
-      ]
-    }
-  ]
 }
 
 // ─── Parse PAX format (adults.children.infants) ───────────────────────────────
@@ -177,11 +137,10 @@ function parseOrdenText(text: string): ParsedTour[] {
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function OrdenImportPage() {
   const router = useRouter()
-  const [step, setStep] = useState<1 | 2 | 3 | 4 | 5 | 6>(1)
+  const [step, setStep] = useState<1 | 2 | 3 | 4 | 5>(1)
   const [file, setFile] = useState<File | null>(null)
   const [fileText, setFileText] = useState('')
   const [parsedTours, setParsedTours] = useState<ParsedTour[]>([])
-  const [isTrial, setIsTrial] = useState(false)
   const [companyId, setCompanyId] = useState<string | null>(null)
   const [brandId, setBrandId] = useState<string | null>(null)
   const [error, setError] = useState('')
@@ -211,14 +170,6 @@ export default function OrdenImportPage() {
       if (!profile?.company_id) return
       setCompanyId(profile.company_id)
       setBrandId(profile.brand_id)
-
-      // Check if trial company
-      const { data: company } = await supabase
-        .from('companies')
-        .select('is_trial')
-        .eq('id', profile.company_id)
-        .maybeSingle()
-      if (company?.is_trial) setIsTrial(true)
 
       // Load drivers
       const { data: driverData } = await supabase
@@ -260,7 +211,7 @@ export default function OrdenImportPage() {
     })
   }
 
-  // ─── Step 1: Handle file upload ────────────────────────────────────────────
+  // ─── Step 1: Handle file upload & parse ────────────────────────────────────
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0]
     if (!f) return
@@ -269,7 +220,7 @@ export default function OrdenImportPage() {
   }
 
   const handleParse = async () => {
-    if (!file && !isTrial) {
+    if (!file) {
       setError('Please select a file')
       return
     }
@@ -280,36 +231,26 @@ export default function OrdenImportPage() {
     try {
       let text = ''
 
-      if (isTrial) {
-        text = '' // Demo mode doesn't need text
-      } else if (file) {
-        // Extract text based on file type
-        if (file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')) {
-          text = await extractTextFromPDF(file)
-        } else {
-          // Plain text file
-          text = await file.text()
-        }
+      // Extract text based on file type
+      if (file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')) {
+        text = await extractTextFromPDF(file)
+      } else {
+        // Plain text file
+        text = await file.text()
       }
 
-      let tours: ParsedTour[] = []
-
-      if (isTrial) {
-        tours = getDemoOrdenData()
-      } else {
-        tours = parseOrdenText(text)
-        if (tours.length === 0) {
-          setError('No tours found. Make sure the file has SERVICIO/OPERADOR/GUIA headers.')
-          setParsing(false)
-          return
-        }
+      const tours = parseOrdenText(text)
+      if (tours.length === 0) {
+        setError('No tours found. Make sure the file has SERVICIO/OPERADOR/GUIA headers.')
+        setParsing(false)
+        return
       }
 
       // Match staff names to IDs
-      tours = matchStaff(tours)
+      const toursWithStaff = matchStaff(tours)
 
       setFileText(text)
-      setParsedTours(tours)
+      setParsedTours(toursWithStaff)
       setStep(2)
     } catch (err: any) {
       setError('Failed to parse file: ' + (err.message || 'Unknown error'))
@@ -414,7 +355,7 @@ export default function OrdenImportPage() {
       }
 
       setCreatedTours(created)
-      setStep(6)
+      setStep(5)
     } catch (err: any) {
       setError(err.message || 'Failed to create tours')
     } finally {
@@ -439,11 +380,7 @@ export default function OrdenImportPage() {
             <div className="border-8 border-transparent p-4 flex justify-between items-center">
               <div className="border-8 border-transparent">
                 <h1 className="text-2xl font-bold text-gray-900">📋 ORDEN Import Wizard</h1>
-                <p className="text-sm text-gray-500 mt-1">
-                  {isTrial 
-                    ? 'Trial mode — creating demo tours for testing'
-                    : 'Import your daily operation plan from ORDEN document'}
-                </p>
+                <p className="text-sm text-gray-500 mt-1">Import your daily operation plan</p>
               </div>
               <Link href="/admin" className="text-sm text-gray-500 hover:text-gray-700">
                 ← Back to Dashboard
@@ -459,7 +396,7 @@ export default function OrdenImportPage() {
                 { num: 2, label: 'Staff' },
                 { num: 3, label: 'Date' },
                 { num: 4, label: 'Confirm' },
-                { num: 5, label: 'Notify' }
+                { num: 5, label: 'Done' }
               ].map((s, i) => (
                 <div key={s.num} className="flex items-center gap-2">
                   <span className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold
@@ -480,44 +417,32 @@ export default function OrdenImportPage() {
             {/* ── Step 1: Upload ── */}
             {step === 1 && (
               <div className="border-8 border-transparent bg-white rounded-xl border border-gray-200 p-6 max-w-2xl">
-                {isTrial && (
-                  <div className="border-8 border-transparent bg-blue-50 rounded-lg border border-blue-200 p-4 mb-6">
-                    <p className="text-sm text-blue-700">
-                      <strong>🧪 Trial Company:</strong> Demo ORDEN will create 3 sample tours with reservations for testing.
-                    </p>
-                  </div>
-                )}
+                <div className="border-8 border-transparent mb-6">
+                  <h2 className="text-lg font-semibold mb-2">Upload ORDEN File</h2>
+                  <p className="text-sm text-gray-500 mb-4">
+                    Supported formats: <strong>PDF</strong>, <strong>Excel</strong> (export as .txt), or <strong>Text</strong> files
+                  </p>
+                </div>
 
-                {!isTrial && (
-                  <>
-                    <div className="border-8 border-transparent mb-6">
-                      <h2 className="text-lg font-semibold mb-2">Upload ORDEN File</h2>
-                      <p className="text-sm text-gray-500 mb-4">
-                        Supported formats: <strong>PDF</strong>, <strong>Excel</strong> (export as .txt), or <strong>Text</strong> files
-                      </p>
-                    </div>
-
-                    <div
-                      className="border-8 border-transparent border-2 border-dashed border-gray-300 rounded-lg p-8 text-center cursor-pointer hover:border-purple-400 transition-colors"
-                      onClick={() => fileInputRef.current?.click()}
-                    >
-                      <input
-                        ref={fileInputRef}
-                        type="file"
-                        accept=".pdf,.txt,.text,.csv"
-                        onChange={handleFileChange}
-                        className="hidden"
-                      />
-                      <div className="text-4xl mb-2">📄</div>
-                      <p className="font-medium text-gray-700">
-                        {file ? file.name : 'Click to select file'}
-                      </p>
-                      <p className="text-xs text-gray-400 mt-1">
-                        {file ? `${(file.size / 1024).toFixed(1)} KB` : 'PDF, TXT, CSV'}
-                      </p>
-                    </div>
-                  </>
-                )}
+                <div
+                  className="border-8 border-transparent border-2 border-dashed border-gray-300 rounded-lg p-8 text-center cursor-pointer hover:border-purple-400 transition-colors"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept=".pdf,.txt,.text,.csv"
+                    onChange={handleFileChange}
+                    className="hidden"
+                  />
+                  <div className="text-4xl mb-2">📄</div>
+                  <p className="font-medium text-gray-700">
+                    {file ? file.name : 'Click to select file'}
+                  </p>
+                  <p className="text-xs text-gray-400 mt-1">
+                    {file ? `${(file.size / 1024).toFixed(1)} KB` : 'PDF, TXT, CSV'}
+                  </p>
+                </div>
 
                 {error && (
                   <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
@@ -527,10 +452,10 @@ export default function OrdenImportPage() {
 
                 <button
                   onClick={handleParse}
-                  disabled={(!file && !isTrial) || parsing}
+                  disabled={!file || parsing}
                   className="mt-6 w-full px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 font-medium"
                 >
-                  {parsing ? '⏳ Parsing...' : isTrial ? 'Use Demo ORDEN →' : 'Parse File →'}
+                  {parsing ? '⏳ Parsing...' : 'Parse File →'}
                 </button>
               </div>
             )}
@@ -674,8 +599,8 @@ export default function OrdenImportPage() {
               </div>
             )}
 
-            {/* ── Step 6: Done + Notify ── */}
-            {step === 6 && (
+            {/* ── Step 5: Done ── */}
+            {step === 5 && (
               <div className="border-8 border-transparent bg-white rounded-xl border border-gray-200 p-6 max-w-2xl">
                 <div className="text-center py-6">
                   <div className="text-5xl mb-4">🎉</div>
