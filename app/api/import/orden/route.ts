@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import pdfParse from 'pdf-parse'
+import * as pdfParse from 'pdf-parse'
 
 // ─── Parse ORDEN text ──────────────────────────────────────────────────────
 interface ParsedReservation {
@@ -107,7 +107,7 @@ export async function POST(request: NextRequest) {
     if (file.name.toLowerCase().endsWith('.pdf')) {
       // Parse PDF server-side
       const buffer = Buffer.from(await file.arrayBuffer())
-      const data = await pdfParse(buffer)
+      const data = await pdfParse.default(buffer)
       text = data.text
 
       if (!text || text.length < 50) {
