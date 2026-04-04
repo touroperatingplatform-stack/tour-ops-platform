@@ -447,11 +447,27 @@ export default function OrdenImportPage() {
       const toursWithTokens = data.tours.map((tour: ParsedTour) => ({
         ...tour,
         reservations: tour.reservations.map((res: ParsedReservation) => {
-          const resLine = rawLines.find((line: string) => 
-            line.includes(res.pickupTime) && 
-            !line.includes('SERVICIO') && 
-            !line.includes('OPERADOR')
-          )
+          // Try to find this reservation's line using confirmation (unique per reservation)
+          let resLine: string | undefined
+          if (res.confirmation) {
+            resLine = rawLines.find((line: string) =>
+              res.confirmation &&
+              line.includes(res.confirmation) &&
+              !line.includes('SERVICIO') &&
+              !line.includes('OPERADOR') &&
+              !line.includes('HOTEL')
+            )
+          }
+          
+          // Fall back to matching both pickup time AND hotel name
+          if (!resLine && res.pickupTime && res.hotel) {
+            resLine = rawLines.find((line: string) =>
+              line.includes(res.pickupTime) &&
+              line.includes(res.hotel.split(' ')[0]) &&
+              !line.includes('SERVICIO') &&
+              !line.includes('OPERADOR')
+            )
+          }
           
           let resTokens: string[] = []
           if (resLine) {
