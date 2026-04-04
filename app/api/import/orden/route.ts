@@ -73,6 +73,18 @@ function parseOrdenText(text: string): ParsedTour[] {
       const paxMatch = firstResLine.match(/\b(?:\d{3,4}|´\S+)\s+(\d{1,2}(?:\.\d+)*)\s+(?:[`´']\S+|\d+[A-Z]+|\d+\+\d+)/)
       const firstPax = paxMatch ? paxMatch[1] : 'NOT_FOUND'
       console.log('Group', groupIdx, 'first reservation pax raw token:', firstPax)
+      if (groupIdx === 1) {
+        console.log('Group 1 raw line:', firstResLine)
+      }
+      if (groupIdx === 6) {
+        console.log('Group 6 first reservation raw line:', firstResLine)
+        // Also log all reservations pax for group 6
+        const allResLines = lines.slice(1).filter(l => reservationLine.test(l) && !l.includes('HOTEL') && !l.includes('TOTAL') && !l.includes('---'))
+        allResLines.forEach((l, i) => {
+          const pMatch = l.match(/\b(?:\d{3,4}|´\S+)\s+(\d{1,2}(?:\.\d+)*)\s+(?:[`´']\S+|\d+[A-Z]+|\d+\+\d+)/)
+          console.log(`Group 6 res ${i} pax: ${pMatch ? pMatch[1] : 'NOT_FOUND'} line: ${l}`)
+        })
+      }
     }
     groupIdx++
     
