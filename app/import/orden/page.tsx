@@ -150,6 +150,11 @@ export default function OrdenImportPage() {
     })
   }
 
+  // ─── Parse pax string to number ───────────────────────────────────────────
+  function parsePax(pax: string): number {
+    return parseInt(pax) || 1
+  }
+
   // ─── Apply column mapping to all reservations ──────────────────────────────
   // Mapping lets user swap which parsed field goes to which database column
   function applyMapping(tours: ParsedTour[], mapping: Record<FieldName, number>): ParsedTour[] {
@@ -177,7 +182,7 @@ export default function OrdenImportPage() {
         
         // Rebuild reservation with corrected fields
         const paxStr = newRes.pax || '1'
-        const paxData = parsePax(paxStr)
+        const adults = parsePax(paxStr)
         
         return {
           ...res,
@@ -185,16 +190,16 @@ export default function OrdenImportPage() {
           clientName: newRes.clientName || '',
           coupon: newRes.coupon || '',
           pax: paxStr,
-          adults: paxData.adults,
-          children: paxData.children,
-          infants: paxData.infants,
+          adults,
+          children: 0,
+          infants: 0,
           confirmation: newRes.confirmation || '',
           pickupTime: newRes.pickupTime || '09:00',
           agency: newRes.agency || ''
         }
       })
       
-      const totalPax = newReservations.reduce((sum, r) => sum + (parseInt(r.pax) || 0), 0)
+      const totalPax = newReservations.reduce((sum, r) => sum + parsePax(r.pax), 0)
       return { ...tour, reservations: newReservations, totalPax }
     })
   }
