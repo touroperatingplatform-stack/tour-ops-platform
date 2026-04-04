@@ -417,7 +417,9 @@ export default function OrdenImportPage() {
         let stopOrder = 1
         for (const res of tour.reservations) {
           // Validate pickupTime is a proper time format
+          console.log('pickupTime raw:', res.pickupTime)
           const validTime = /^\d{1,2}:\d{2}$/.test(res.pickupTime) ? res.pickupTime + ':00' : null
+          console.log('validTime result:', validTime)
           
           console.log('brandId:', brandId)
           
