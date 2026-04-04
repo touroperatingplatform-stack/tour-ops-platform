@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import * as pdfParse from 'pdf-parse'
+import { getDocument } from 'pdfjs-dist'
 
-// ─── Parse ORDEN text ──────────────────────────────────────────────────────
+// ─── Types ───────────────────────────────────────────────────────────────────
 interface ParsedReservation {
   hotel: string
   clientName: string
@@ -25,6 +25,7 @@ interface ParsedTour {
   totalPax: number
 }
 
+// ─── Parse PAX format ──────────────────────────────────────────────────────
 function parsePax(paxStr: string): { adults: number; children: number; infants: number } {
   const parts = paxStr.split('.')
   const adults = parseInt(parts[0]) || 1
@@ -33,7 +34,8 @@ function parsePax(paxStr: string): { adults: number; children: number; infants: 
   return { adults, children, infants }
 }
 
-export async function parseOrdenText(text: string): Promise<ParsedTour[]> {
+// ─── Parse ORDEN text ──────────────────────────────────────────────────────
+function parseOrdenText(text: string): ParsedTour[] {
   const lines = text.split('\n').map(l => l.trim()).filter(Boolean)
   const tours: ParsedTour[] = []
   let currentTour: Partial<ParsedTour> = {}
@@ -60,7 +62,7 @@ export async function parseOrdenText(text: string): Promise<ParsedTour[]> {
       continue
     }
 
-    // Data line: HOTEL CLIENTE CUPONHAB PAX #CONF. TOUR_ID HORA REP AGENCIA
+    // Data line
     const parts = line.split(/\s+/)
     if (parts.length >= 6 && currentTour.service) {
       const paxData = parsePax(parts[3] || '1')
@@ -91,6 +93,26 @@ export async function parseOrdenText(text: string): Promise<ParsedTour[]> {
   return tours
 }
 
+// ─── Extract text from PDF ──────────────────────────────────────────────────
+async function extractTextFromPDF(buffer: ArrayBuffer): Promise<string> {
+  const uint8Array = new Uint8Array(buffer)
+  const loadingTask = getDocument({ data: uint8Array })
+  const pdf = await loadingTask.promise
+  
+  let fullText = ''
+  
+  for (let i = 1; i <= pdf.numPages; i++) {
+    const page = await pdf.getPage(i)
+    const textContent = await page.getTextContent()
+    const pageText = textContent.items
+      .map((item: any) => item.str)
+      .join(' ')
+    fullText += pageText + '\n'
+  }
+  
+  return fullText
+}
+
 // POST /api/import/orden
 export async function POST(request: NextRequest) {
   try {
@@ -106,9 +128,8 @@ export async function POST(request: NextRequest) {
 
     if (file.name.toLowerCase().endsWith('.pdf')) {
       // Parse PDF server-side
-      const buffer = Buffer.from(await file.arrayBuffer())
-      const data = await pdfParse.default(buffer)
-      text = data.text
+      const buffer = await file.arrayBuffer()
+      text = await extractTextFromPDF(buffer)
 
       if (!text || text.length < 50) {
         return NextResponse.json({ error: 'Could not extract text from PDF' }, { status: 400 })
@@ -124,14 +145,14 @@ export async function POST(request: NextRequest) {
     if (tours.length === 0) {
       return NextResponse.json({ 
         error: 'No tours found in file. Make sure the file has SERVICIO/OPERADOR/GUIA headers.',
-        rawText: text.substring(0, 500) // Return first 500 chars for debugging
+        rawText: text.substring(0, 500)
       }, { status: 400 })
     }
 
     return NextResponse.json({ 
       success: true, 
       tours,
-      rawText: text.substring(0, 1000) // For debugging
+      rawText: text.substring(0, 1000)
     })
 
   } catch (error: any) {
