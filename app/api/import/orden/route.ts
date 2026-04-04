@@ -1,10 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
-import * as pdfjsLib from 'pdfjs-dist/legacy/build/pdf'
 
-// Disable worker - we're in Node.js
-pdfjsLib.GlobalWorkerOptions.workerSrc = ''
+// Use Node.js runtime for this route
+export const runtime = 'nodejs'
 
-// ─── Types ───────────────────────────────────────────────────────────────────
+// ─── Types ─────────────────────────────────────────────────────────────────---
 interface ParsedReservation {
   hotel: string
   clientName: string
@@ -28,7 +27,7 @@ interface ParsedTour {
   totalPax: number
 }
 
-// ─── Parse PAX format ──────────────────────────────────────────────────────
+// ─── Parse PAX format ───────────────────────────────────────────────────────
 function parsePax(paxStr: string): { adults: number; children: number; infants: number } {
   const parts = paxStr.split('.')
   const adults = parseInt(parts[0]) || 1
@@ -96,24 +95,32 @@ function parseOrdenText(text: string): ParsedTour[] {
   return tours
 }
 
-// ─── Extract text from PDF ──────────────────────────────────────────────────
+// ─── Extract text from PDF (basic, no external deps) ───────────────────────
 async function extractTextFromPDF(buffer: ArrayBuffer): Promise<string> {
   const uint8Array = new Uint8Array(buffer)
-  const loadingTask = pdfjsLib.getDocument({ data: uint8Array })
-  const pdf = await loadingTask.promise
+  const text = new TextDecoder('latin1').decode(uint8Array)
   
-  let fullText = ''
+  // Extract text between BT (Begin Text) and ET (End Text) markers
+  const textBlocks: string[] = []
+  const btMatches = text.match(/BT[\s\S]*?ET/g) || []
   
-  for (let i = 1; i <= pdf.numPages; i++) {
-    const page = await pdf.getPage(i)
-    const textContent = await page.getTextContent()
-    const pageText = textContent.items
-      .map((item: any) => item.str)
-      .join(' ')
-    fullText += pageText + '\n'
+  for (const block of btMatches) {
+    // Extract string literals from parentheses
+    const strings = block.match(/\(([^)]+)\)/g) || []
+    for (const str of strings) {
+      const cleaned = str.slice(1, -1)
+        .replace(/\\(\d{3})/g, (_, octal) => String.fromCharCode(parseInt(octal, 8)))
+        .replace(/\\n/g, '\n')
+        .replace(/\\r/g, '\r')
+        .replace(/\\t/g, '\t')
+        .replace(/\\([()\\])/g, '$1')
+      if (cleaned.trim()) {
+        textBlocks.push(cleaned)
+      }
+    }
   }
   
-  return fullText
+  return textBlocks.join(' ')
 }
 
 // POST /api/import/orden
