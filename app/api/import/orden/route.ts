@@ -191,7 +191,9 @@ export async function POST(request: NextRequest) {
     }
 
     console.log('RAW TEXT:', text.substring(0, 1000))
+    console.log('FIRST ROW RAW:', text.split('\n').find(l => l.includes('RIU') || l.includes('PRINCESS') || l.includes('HM')))
     const tours = parseOrdenText(text)
+    console.log('NUMBER OF GROUPS FOUND:', tours.length)
     console.log('PARSED TOURS:', JSON.stringify(tours.map(t => ({ 
       service: t.service, 
       operador: t.operador, 
