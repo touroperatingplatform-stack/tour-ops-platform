@@ -255,9 +255,6 @@ export default function OrdenImportPage() {
       }
 
       // Attach tokens to each reservation for mapping
-      const toursWithTokens = data.tours.map((tour: ParsedTour) => ({
-        ...tour,
-        // Attach tokens to each reservation by finding its line in rawText
       const rawLines = data.rawText.split('\n')
       
       const toursWithTokens = data.tours.map((tour: ParsedTour) => ({
@@ -291,7 +288,6 @@ export default function OrdenImportPage() {
             tokens: resTokens
           }
         })
-      }))
       }))
 
       const toursWithStaff = matchStaff(toursWithTokens)
