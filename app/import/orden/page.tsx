@@ -114,25 +114,6 @@ function parsePax(paxStr: string): { adults: number; children: number; infants: 
   return { adults, children, infants }
 }
 
-// ─── Extract text from PDF ─────────────────────────────────────────────────────
-async function extractTextFromPDF(file: File): Promise<string> {
-  const arrayBuffer = await file.arrayBuffer()
-  const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise
-  
-  let fullText = ''
-  
-  for (let i = 1; i <= pdf.numPages; i++) {
-    const page = await pdf.getPage(i)
-    const textContent = await page.getTextContent()
-    const pageText = textContent.items
-      .map((item: any) => item.str)
-      .join(' ')
-    fullText += pageText + '\n'
-  }
-  
-  return fullText
-}
-
 // ─── Parse ORDEN text ──────────────────────────────────────────────────────
 function parseOrdenText(text: string): ParsedTour[] {
   const lines = text.split('\n').map(l => l.trim()).filter(Boolean)
