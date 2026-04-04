@@ -151,26 +151,51 @@ export default function OrdenImportPage() {
   }
 
   // ─── Apply column mapping to all reservations ──────────────────────────────
+  // Mapping lets user swap which parsed field goes to which database column
   function applyMapping(tours: ParsedTour[], mapping: Record<FieldName, number>): ParsedTour[] {
+    const fieldNames: FieldName[] = ['hotel', 'clientName', 'coupon', 'pax', 'confirmation', 'pickupTime', 'agency']
+    
     return tours.map(tour => {
       const newReservations = tour.reservations.map(res => {
-        const parts = res.pax.split(/\s+/)
+        // Get current values in field order
+        const values = [
+          res.hotel,
+          res.clientName,
+          res.coupon,
+          res.pax,
+          res.confirmation,
+          res.pickupTime,
+          res.agency
+        ]
+        
+        // Build new reservation by mapping values to their new field positions
+        const newRes: Record<string, string> = {}
+        for (const field of fieldNames) {
+          const valueIndex = mapping[field]
+          newRes[field] = values[valueIndex] || ''
+        }
+        
+        // Rebuild reservation with corrected fields
+        const paxStr = newRes.pax || '1'
+        const paxData = parsePax(paxStr)
+        
         return {
           ...res,
-          hotel: parts[mapping.hotel] || '',
-          clientName: parts[mapping.clientName] || '',
-          coupon: parts[mapping.coupon] || '',
-          pax: parts[mapping.pax] || '1',
-          confirmation: parts[mapping.confirmation] || '',
-          pickupTime: parts[mapping.pickupTime] || '09:00',
-          agency: parts[mapping.agency] || ''
+          hotel: newRes.hotel || '',
+          clientName: newRes.clientName || '',
+          coupon: newRes.coupon || '',
+          pax: paxStr,
+          adults: paxData.adults,
+          children: paxData.children,
+          infants: paxData.infants,
+          confirmation: newRes.confirmation || '',
+          pickupTime: newRes.pickupTime || '09:00',
+          agency: newRes.agency || ''
         }
       })
-      return {
-        ...tour,
-        reservations: newReservations,
-        totalPax: newReservations.reduce((sum, r) => sum + (parseInt(r.pax) || 0), 0)
-      }
+      
+      const totalPax = newReservations.reduce((sum, r) => sum + (parseInt(r.pax) || 0), 0)
+      return { ...tour, reservations: newReservations, totalPax }
     })
   }
 
