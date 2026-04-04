@@ -5,10 +5,6 @@ import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase/client'
 import RoleGuard from '@/lib/auth/RoleGuard'
 import Link from 'next/link'
-import * as pdfjsLib from 'pdfjs-dist'
-
-// Configure PDF.js worker
-pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 interface ParsedReservation {
@@ -46,6 +42,29 @@ interface CreatedTour {
   driver?: string
   guide?: string
   guestCount: number
+}
+
+// ─── Extract text from PDF (client-side only) ─────────────────────────────────
+async function extractTextFromPDF(file: File): Promise<string> {
+  // Dynamically import pdfjs-dist only on client
+  const pdfjsLib = await import('pdfjs-dist')
+  pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`
+  
+  const arrayBuffer = await file.arrayBuffer()
+  const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise
+  
+  let fullText = ''
+  
+  for (let i = 1; i <= pdf.numPages; i++) {
+    const page = await pdf.getPage(i)
+    const textContent = await page.getTextContent()
+    const pageText = textContent.items
+      .map((item: any) => item.str)
+      .join(' ')
+    fullText += pageText + '\n'
+  }
+  
+  return fullText
 }
 
 // ─── Demo data for trial companies ───────────────────────────────────────────
