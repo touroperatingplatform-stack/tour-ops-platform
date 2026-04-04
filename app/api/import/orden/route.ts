@@ -26,13 +26,18 @@ interface ParsedTour {
 }
 
 // ─── Parse PAX format ───────────────────────────────────────────────────────
-function parsePax(paxStr: string): { adults: number; children: number; infants: number } {
-  const parts = paxStr.split('.')
-  const adults = parseInt(parts[0]) || 1
-  const children = parseInt(parts[1]) || 0
-  const infants = parseInt(parts[2]) || 0
-  return { adults, children, infants }
+function parsePax(raw: string) {
+  const parts = raw.split('.').map(n => parseInt(n) || 0)
+  return {
+    adults: parts[0] || 0,
+    children: parts[1] || 0,
+    infants: parts[2] || 0,
+    total: parts.reduce((sum, n) => sum + n, 0)
+  }
 }
+
+// Temporary debug log for PAX
+let paxLogCount = 0
 
 // ─── Parse ORDEN text ──────────────────────────────────────────────────────
 function parseOrdenText(text: string): ParsedTour[] {
@@ -42,6 +47,8 @@ function parseOrdenText(text: string): ParsedTour[] {
   const groups = text.split(/SERVICIO:/g).slice(1)
   console.log('Groups found:', groups.length)
   groups.forEach((g, i) => console.log('Group', i, 'first line:', g.split('\n')[0]))
+  
+  let groupIdx = 0
   
   for (const group of groups) {
     const lines = group.split('\n').map(l => l.trim()).filter(Boolean)
@@ -58,6 +65,17 @@ function parseOrdenText(text: string): ParsedTour[] {
       reservations: [],
       totalPax: 0
     }
+    
+    // DEBUG: log raw pax token for first reservation of each group
+    const firstResLine = lines.slice(1).find(l => reservationLine.test(l) && !l.includes('HOTEL') && !l.includes('TOTAL') && !l.includes('---'))
+    if (firstResLine) {
+      const firstTokens = firstResLine.trim().split(/\s+/)
+      const firstCouponIdx = firstTokens.findIndex(t => t.startsWith('´') || /^\d{4,}$/.test(t))
+      const secondCouponIdx = firstTokens.findIndex((t, i) => i > firstCouponIdx && (t.startsWith('´') || /^\d{4,}$/.test(t)))
+      const firstPax = secondCouponIdx > firstCouponIdx + 1 ? firstTokens[secondCouponIdx - 1] : 'NOT_FOUND'
+      console.log('Group', groupIdx, 'first reservation pax raw token:', firstPax)
+    }
+    groupIdx++
     
     // Step 3: Find reservation lines (have time and aren't header/footer)
     const reservationLine = /^\s*\S+.*\d+:\d+.*$/
