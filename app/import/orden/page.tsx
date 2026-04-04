@@ -68,6 +68,17 @@ const FIELDS: FieldDef[] = [
   { id: 'agency', label: 'Agency Name', hint: 'Tap the agency name', multiWord: true },
 ]
 
+// ─── Parse pax string to parts ───────────────────────────────────────────
+function parsePax(pax: string) {
+  const parts = pax.split('.').map(p => parseInt(p) || 0)
+  return {
+    adults: parts[0] || 0,
+    children: parts[1] || 0,
+    infants: parts[2] || 0,
+    total: parts.reduce((sum, n) => sum + n, 0)
+  }
+}
+
 // ─── Anchor-based mapping analysis ─────────────────────────────────────────────
 interface MappingAnalysis {
   anchorField: FieldId
@@ -300,17 +311,6 @@ export default function OrdenImportPage() {
     }
     loadData()
   }, [])
-
-  // ─── Parse pax string to parts ───────────────────────────────────────────
-  function parsePax(pax: string) {
-    const parts = pax.split('.').map(p => parseInt(p) || 0)
-    return {
-      adults: parts[0] || 0,
-      children: parts[1] || 0,
-      infants: parts[2] || 0,
-      total: parts.reduce((sum, n) => sum + n, 0)
-    }
-  }
 
   // ─── Match staff names ─────────────────────────────────────────────────────
   function matchStaff(tours: ParsedTour[]): ParsedTour[] {
