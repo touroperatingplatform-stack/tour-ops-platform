@@ -64,49 +64,77 @@ function parseOrdenText(text: string): ParsedTour[] {
       if (!reservationLine.test(line)) continue
       if (line.includes('HOTEL') || line.includes('TOTAL') || line.includes('---')) continue
       
-      // Step 4: Extract pax - standalone number between spaces followed by ´
-      // e.g. "2930 2 ´070" - the 2 is pax
-      const paxMatch = line.match(/\s(\d{1,3})\s+´/)
-      const paxStr = paxMatch ? paxMatch[1] : '1'
+      // Line format: HOTEL CLIENT COUPON HAB PAX CONF TOUR_TYPE IN/ES TIME REP AGENCY
+      // Example: RIU LUPITA BEATRICE DURRANI ´055 2930 2 ´070 TCA IN 7:50 SUSANA O NS VACATIONS
       
-      // Extract confirmation - number after second ´
-      const confMatch = line.match(/´(\d+)/)
-      const confirmation = confMatch ? confMatch[1] : ''
+      // Find all tokens - split by whitespace
+      const tokens = line.trim().split(/\s+/)
       
-      // Extract time - H:MM or HH:MM
-      const timeMatch = line.match(/(\d{1,2}:\d{2})/)
-      const pickupTime = timeMatch ? timeMatch[1] : '09:00'
+      // Find indices of key anchors
+      const firstCouponIdx = tokens.findIndex(t => t.startsWith('´') || /^\d{4,}$/.test(t))
+      const secondCouponIdx = tokens.findIndex((t, i) => i > firstCouponIdx && (t.startsWith('´') || /^\d{4,}$/.test(t)))
+      const timeIdx = tokens.findIndex(t => /\d{1,2}:\d{2}/.test(t))
       
-      // Extract agency - ends with VACATIONS or similar
-      const agencyMatch = line.match(/(.+?)\s+(VACACIONES?|NS\s?VACATIONS?|CHARTERS?|[A-Z]{2,}\s?VAC[A-Z]*)\s*$/i)
-      const agency = agencyMatch ? agencyMatch[2].trim() : ''
+      // Extract fields using indices
+      // Hotel + Client = tokens before first coupon
+      const hotelClientTokens = firstCouponIdx > 0 ? tokens.slice(0, firstCouponIdx) : []
       
-      // Hotel + client = everything before the coupon (first ´ word)
-      const firstCouponIdx = line.indexOf('´')
-      let hotelClient = line
-      let coupon = ''
-      if (firstCouponIdx > 0) {
-        hotelClient = line.substring(0, firstCouponIdx).trim()
-        // Get coupon word after ´
-        const couponMatch = line.substring(firstCouponIdx).match(/´(\S+)/)
-        coupon = couponMatch ? couponMatch[1] : ''
-      }
+      // Find first number in hotel+client to split hotel from client
+      const firstNumIdx = hotelClientTokens.findIndex(t => /^\d+$/.test(t))
       
-      // Split hotel from client - client name has capitalized words
-      const hotelMatch = hotelClient.match(/^(.+?)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+){1,3})$/)
-      
-      let hotel = hotelClient
+      let hotel = ''
       let clientName = ''
-      if (hotelMatch) {
-        hotel = hotelMatch[1].trim()
-        clientName = hotelMatch[2].trim()
+      if (firstNumIdx > 0) {
+        // Everything before first number = hotel
+        hotel = hotelClientTokens.slice(0, firstNumIdx).join(' ')
+        // Everything after first number = client name
+        clientName = hotelClientTokens.slice(firstNumIdx).join(' ')
+      } else {
+        hotel = hotelClientTokens.join(' ')
       }
+      
+      // Coupon is first coupon token
+      const coupon = firstCouponIdx > 0 ? tokens[firstCouponIdx].replace('´', '') : ''
+      
+      // HAB (room number) is between first coupon and pax
+      const hab = firstCouponIdx > 0 && firstCouponIdx + 1 < (secondCouponIdx > 0 ? secondCouponIdx : timeIdx) 
+        ? tokens[firstCouponIdx + 1] : ''
+      
+      // Pax is the single digit between HAB and second coupon
+      const paxStr = firstCouponIdx > 0 && secondCouponIdx > firstCouponIdx 
+        ? tokens[secondCouponIdx - 1] : '1'
+      
+      // Confirmation is second coupon token
+      const confirmation = secondCouponIdx > 0 ? tokens[secondCouponIdx].replace('´', '') : ''
+      
+      // Tour type is after second coupon
+      const tourTypeIdx = secondCouponIdx > 0 ? secondCouponIdx + 1 : timeIdx - 3
+      const tourType = tokens[tourTypeIdx] || ''
+      
+      // IN/ES is after tour type
+      const inOutIdx = tourTypeIdx + 1
+      const inOut = tokens[inOutIdx] || ''
+      
+      // Time
+      const pickupTime = timeIdx > 0 ? tokens[timeIdx] : '09:00'
+      
+      // Rep is between time and agency (1-2 words)
+      const repTokens: string[] = []
+      for (let i = timeIdx + 1; i < tokens.length; i++) {
+        if (tokens[i].match(/^(NS\s)?VACACIONES?|CHARTERS?|VAC[A-Z]*$/i)) break
+        repTokens.push(tokens[i])
+      }
+      const rep = repTokens.join(' ')
+      
+      // Agency is the last words
+      const agencyTokens = tokens.slice(timeIdx + 1 + repTokens.length)
+      const agency = agencyTokens.join(' ')
       
       const paxData = parsePax(paxStr)
       tour.reservations.push({
         hotel,
         clientName,
-        coupon: '´' + coupon,
+        coupon: coupon.startsWith('´') ? coupon : '´' + coupon,
         pax: paxStr,
         adults: paxData.adults,
         children: paxData.children,
