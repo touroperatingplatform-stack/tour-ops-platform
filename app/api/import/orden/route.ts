@@ -100,9 +100,16 @@ function parseOrdenText(text: string): ParsedTour[] {
       const hab = firstCouponIdx > 0 && firstCouponIdx + 1 < (secondCouponIdx > 0 ? secondCouponIdx : timeIdx) 
         ? tokens[firstCouponIdx + 1] : ''
       
-      // Pax is the single digit between HAB and second coupon
-      const paxStr = firstCouponIdx > 0 && secondCouponIdx > firstCouponIdx 
-        ? tokens[secondCouponIdx - 1] : '1'
+      // Pax is a standalone 1-2 digit number between HAB (3-4 digits) and confirmation (´ prefixed)
+      // Find pax by looking for a small number between HAB and second coupon
+      let paxStr = '1'
+      if (secondCouponIdx > firstCouponIdx + 1) {
+        const potentialPax = tokens[secondCouponIdx - 1]
+        // Pax is 1-2 digits, HAB is 3-4 digits
+        if (/^\d{1,2}$/.test(potentialPax) && potentialPax.length <= 2) {
+          paxStr = potentialPax
+        }
+      }
       
       // Confirmation is second coupon token
       const confirmation = secondCouponIdx > 0 ? tokens[secondCouponIdx].replace('´', '') : ''
