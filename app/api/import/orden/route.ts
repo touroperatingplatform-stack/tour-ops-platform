@@ -36,9 +36,6 @@ function parsePax(raw: string) {
   }
 }
 
-// Temporary debug log for PAX
-let paxLogCount = 0
-
 // ─── Parse ORDEN text ──────────────────────────────────────────────────────
 function parseOrdenText(text: string): ParsedTour[] {
   const tours: ParsedTour[] = []
@@ -66,6 +63,9 @@ function parseOrdenText(text: string): ParsedTour[] {
       totalPax: 0
     }
     
+    // Step 3: Find reservation lines (have time and aren't header/footer)
+    const reservationLine = /^\s*\S+.*\d+:\d+.*$/
+    
     // DEBUG: log raw pax token for first reservation of each group
     const firstResLine = lines.slice(1).find(l => reservationLine.test(l) && !l.includes('HOTEL') && !l.includes('TOTAL') && !l.includes('---'))
     if (firstResLine) {
@@ -76,9 +76,6 @@ function parseOrdenText(text: string): ParsedTour[] {
       console.log('Group', groupIdx, 'first reservation pax raw token:', firstPax)
     }
     groupIdx++
-    
-    // Step 3: Find reservation lines (have time and aren't header/footer)
-    const reservationLine = /^\s*\S+.*\d+:\d+.*$/
     
     for (const line of lines.slice(1)) {
       if (!reservationLine.test(line)) continue
