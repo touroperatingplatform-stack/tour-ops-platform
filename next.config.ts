@@ -6,13 +6,10 @@ const nextConfig: NextConfig = {
   images: {
     unoptimized: true,
   },
-  webpack: (config) => {
-    // Mock canvas module for pdfjs-dist (text extraction doesn't need rendering)
-    config.resolve.alias = {
-      ...config.resolve.alias,
+  turbopack: {
+    resolveAlias: {
       canvas: false,
-    };
-    return config;
+    },
   },
 };
 
