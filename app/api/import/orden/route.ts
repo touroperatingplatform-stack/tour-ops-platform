@@ -92,22 +92,11 @@ function parseOrdenText(text: string): ParsedTour[] {
       const timeIdx = tokens.findIndex(t => /\d{1,2}:\d{2}/.test(t))
       
       // Extract fields using indices
-      // Hotel + Client = tokens before first coupon
+      // Hotel + Client = tokens before first coupon (don't auto-split, let column mapping handle)
       const hotelClientTokens = firstCouponIdx > 0 ? tokens.slice(0, firstCouponIdx) : []
       
-      // Find first number in hotel+client to split hotel from client
-      const firstNumIdx = hotelClientTokens.findIndex(t => /^\d+$/.test(t))
-      
-      let hotel = ''
-      let clientName = ''
-      if (firstNumIdx > 0) {
-        // Everything before first number = hotel
-        hotel = hotelClientTokens.slice(0, firstNumIdx).join(' ')
-        // Everything after first number = client name
-        clientName = hotelClientTokens.slice(firstNumIdx).join(' ')
-      } else {
-        hotel = hotelClientTokens.join(' ')
-      }
+      // Pass through as-is; column mapping step assigns hotel vs client
+      const hotelClient = hotelClientTokens.join(' ')
       
       // Coupon is first coupon token
       const coupon = firstCouponIdx > 0 ? tokens[firstCouponIdx].replace('´', '') : ''
@@ -145,8 +134,8 @@ function parseOrdenText(text: string): ParsedTour[] {
       
       const paxData = parsePax(paxStr)
       tour.reservations.push({
-        hotel,
-        clientName,
+        hotel: hotelClient,
+        clientName: hotelClient,
         coupon: coupon.startsWith('´') ? coupon : '´' + coupon,
         pax: paxStr,
         adults: paxData.adults,

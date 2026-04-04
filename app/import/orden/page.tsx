@@ -175,43 +175,48 @@ export default function OrdenImportPage() {
   }
 
   // ─── Apply token mapping to all reservations ───────────────────────────────
-  function applyMapping(tours: ParsedTour[], tokenMapping: Record<FieldId, number[]>): ParsedTour[] {
+  function applyMapping(tours: ParsedTour[], tokenMapping: Record<FieldId, number[]>, sampleTokens: string[]): ParsedTour[] {
     const fieldNames: FieldId[] = ['hotel', 'clientName', 'coupon', 'pax', 'confirmation', 'pickupTime', 'agency']
     
     return tours.map(tour => {
-      const newReservations = tour.reservations.map(res => {
-        // Get all field values from the original reservation in order
-        const values: Record<string, string> = {
-          hotel: res.hotel,
-          clientName: res.clientName,
-          coupon: res.coupon,
-          pax: res.pax,
-          confirmation: res.confirmation,
-          pickupTime: res.pickupTime,
-          agency: res.agency
-        }
+      const newReservations = tour.reservations.map((res, resIdx) => {
+        // Build tokens from first reservation to match the sample line structure
+        // For subsequent reservations, use API's original parsed values as fallback
+        const tokens = resIdx === 0 ? sampleTokens : [
+          ...(res.hotel || '').split(/\s+/),
+          ...(res.clientName || '').split(/\s+/),
+          res.coupon,
+          res.pax,
+          res.confirmation,
+          res.pickupTime,
+          ...(res.agency || '').split(/\s+/)
+        ].filter(Boolean)
         
-        // Build new reservation using token mapping
         // Handle pax separately since it can be "2" or "2.1.0"
         const paxIndices = tokenMapping['pax']
-        const paxStr = paxIndices?.length 
-          ? paxIndices.map(i => values[fieldNames[i]] || '').join(' ')
-          : values.pax
+        let paxStr = res.pax
+        if (paxIndices?.length > 0 && tokens[paxIndices[0]]) {
+          paxStr = paxIndices.map(i => tokens[i] || '').join(' ')
+        }
         const paxData = parsePax(paxStr)
         
+        // Build new reservation - use mapping if set, otherwise use original parsed value
         const newRes: Record<string, string | number> = {
           adults: paxData.adults,
           children: paxData.children,
           infants: paxData.infants,
+          pax: paxStr,
         }
         
         for (const field of fieldNames) {
-          if (field === 'pax') continue // handled above
+          if (field === 'pax') continue
           const indices = tokenMapping[field]
-          if (indices && indices.length > 0) {
-            newRes[field] = indices.map(i => values[fieldNames[i]] || '').join(' ')
+          if (indices && indices.length > 0 && tokens[indices[0]]) {
+            // User mapped this field - apply the mapped tokens
+            newRes[field] = indices.map(i => tokens[i] || '').join(' ')
           } else {
-            newRes[field] = values[field] || ''
+            // No mapping or first reservation - use original parsed value
+            newRes[field] = (res as any)[field] || ''
           }
         }
         
@@ -347,7 +352,7 @@ export default function OrdenImportPage() {
     } else {
       // All fields assigned - apply mapping and go to staff step
       setTokenMapping(newMapping)
-      const remappedTours = applyMapping(parsedTours, newMapping)
+      const remappedTours = applyMapping(parsedTours, newMapping, sampleTokens)
       setParsedTours(remappedTours)
       setStep(3)
     }
