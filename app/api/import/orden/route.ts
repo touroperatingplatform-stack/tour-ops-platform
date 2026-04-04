@@ -69,10 +69,8 @@ function parseOrdenText(text: string): ParsedTour[] {
     // DEBUG: log raw pax token for first reservation of each group
     const firstResLine = lines.slice(1).find(l => reservationLine.test(l) && !l.includes('HOTEL') && !l.includes('TOTAL') && !l.includes('---'))
     if (firstResLine) {
-      const firstTokens = firstResLine.trim().split(/\s+/)
-      const firstCouponIdx = firstTokens.findIndex(t => t.startsWith('´') || /^\d{4,}$/.test(t))
-      const secondCouponIdx = firstTokens.findIndex((t, i) => i > firstCouponIdx && (t.startsWith('´') || /^\d{4,}$/.test(t)))
-      const firstPax = secondCouponIdx > firstCouponIdx + 1 ? firstTokens[secondCouponIdx - 1] : 'NOT_FOUND'
+      const paxMatch = firstResLine.match(/\b\d{3,4}\s+(\d{1,2}(?:\.\d+)*)\s+[`´']/)
+      const firstPax = paxMatch ? paxMatch[1] : 'NOT_FOUND'
       console.log('Group', groupIdx, 'first reservation pax raw token:', firstPax)
     }
     groupIdx++
@@ -117,16 +115,9 @@ function parseOrdenText(text: string): ParsedTour[] {
       const hab = firstCouponIdx > 0 && firstCouponIdx + 1 < (secondCouponIdx > 0 ? secondCouponIdx : timeIdx) 
         ? tokens[firstCouponIdx + 1] : ''
       
-      // Pax is a standalone 1-2 digit number between HAB (3-4 digits) and confirmation (´ prefixed)
-      // Find pax by looking for a small number between HAB and second coupon
-      let paxStr = '1'
-      if (secondCouponIdx > firstCouponIdx + 1) {
-        const potentialPax = tokens[secondCouponIdx - 1]
-        // Pax is 1-2 digits, HAB is 3-4 digits
-        if (/^\d{1,2}$/.test(potentialPax) && potentialPax.length <= 2) {
-          paxStr = potentialPax
-        }
-      }
+      // Pax: find 3-4 digit HAB, then 1-2 digit pax, then ´ confirmation
+      const paxMatch = line.match(/\b\d{3,4}\s+(\d{1,2}(?:\.\d+)*)\s+[`´']/)
+      const paxStr = paxMatch ? paxMatch[1] : '1'
       
       // Confirmation is second coupon token
       const confirmation = secondCouponIdx > 0 ? tokens[secondCouponIdx].replace('´', '') : ''
