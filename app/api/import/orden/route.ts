@@ -134,17 +134,13 @@ function parseOrdenText(text: string): ParsedTour[] {
       // Time
       const pickupTime = timeIdx > 0 ? tokens[timeIdx] : '09:00'
       
-      // Rep is between time and agency (1-2 words)
-      const repTokens: string[] = []
-      for (let i = timeIdx + 1; i < tokens.length; i++) {
-        if (tokens[i].match(/^(NS\s)?VACACIONES?|CHARTERS?|VAC[A-Z]*$/i)) break
-        repTokens.push(tokens[i])
-      }
-      const rep = repTokens.join(' ')
+      // Agency: last word(s) ending in VACATIONS, CHARTERS, or TOURS
+      const agencyMatch = line.match(/(\b\w+\s+)?(VACATIONS|CHARTERS|TOURS)\s*$/i)
+      const agency = agencyMatch ? agencyMatch[0].trim() : ''
       
-      // Agency is the last words
-      const agencyTokens = tokens.slice(timeIdx + 1 + repTokens.length)
-      const agency = agencyTokens.join(' ')
+      // Rep: everything between time and agency
+      const timeAndAfter = line.match(/\d+:\d+\s+(.+)$/)?.[1] || ''
+      const rep = timeAndAfter.replace(agency, '').trim()
       
       const paxData = parsePax(paxStr)
       tour.reservations.push({
