@@ -590,6 +590,7 @@ export default function OrdenImportPage() {
     const created: CreatedTour[] = []
 
     console.log('handleConfirm started, tours:', parsedTours.length)
+    parsedTours.forEach((t, i) => console.log(`tour ${i} (${t.operador}):`, t.reservations.map(r => r.clientName)))
     try {
       for (const tour of parsedTours) {
         const { data: newTour, error: tourErr } = await supabase
