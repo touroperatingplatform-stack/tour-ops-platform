@@ -55,7 +55,7 @@ function parseOrdenText(text: string): ParsedTour[] {
     if (lines.length === 0) continue
     
     // Step 2: Parse tour header (first line)
-    const headerMatch = lines[0].match(/^(.+?)\s+OPERADOR:\s*(\S+)\s+GUIA:\s*(\S+)/i)
+    const headerMatch = lines[0].match(/^(.+?)\s+OPERADOR:\s*(.+?)\s+GUIA:\s*(.+)$/i)
     if (!headerMatch) continue
     
     const tour: ParsedTour = {
