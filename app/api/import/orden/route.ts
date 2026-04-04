@@ -62,28 +62,119 @@ function parseOrdenText(text: string): ParsedTour[] {
       continue
     }
 
-    // Data line
-    const parts = line.split(/\s+/)
-    if (parts.length >= 6 && currentTour.service) {
-      const paxData = parsePax(parts[3] || '1')
-      
-      const reservation: ParsedReservation = {
-        hotel: parts[0],
-        clientName: parts[1] + (parts[2] ? ' ' + parts[2] : ''),
-        coupon: parts[2] || '',
-        pax: parts[3] || '1',
-        adults: paxData.adults,
-        children: paxData.children,
-        infants: paxData.infants,
-        confirmation: parts[4] || '',
-        pickupTime: parts[5] || '09:00',
-        agency: parts[parts.length - 1] || ''
-      }
+    // Skip if no current tour
+    if (!currentTour.service) continue
 
-      currentTour.reservations = currentTour.reservations || []
-      currentTour.reservations.push(reservation)
-      currentTour.totalPax = (currentTour.totalPax || 0) + paxData.adults + paxData.children + paxData.infants
+    // Parse reservation line RIGHT-TO-LEFT using anchor values
+    const words = line.split(/\s+/)
+    
+    // Find time (H:MM or HH:MM) - scan for time pattern anywhere in line
+    const timeMatch = line.match(/\b(\d{1,2}:\d{2})\b/)
+    const pickupTime = timeMatch ? timeMatch[1] : '09:00'
+    
+    // Agency - last 1-2 words (could be multi-word like "CANCUN DISCOUNT")
+    // We need to find where rep ends and agency begins
+    // Rep is typically 1 word, agency might be 1-2 words
+    // Working right-to-left: time → pax → rep → agency → coupon → confirmation → hotel+client
+    
+    // Find pax (single digit number) - it's right before time
+    // But time might be at end, so pax is before that
+    let paxStr = '1'
+    let paxIdx = -1
+    const timeIdx = words.findIndex(w => /\d{1,2}:\d{2}/.test(w))
+    if (timeIdx > 0) {
+      // Pax should be immediately before time
+      const maybePax = words[timeIdx - 1]
+      if (/^\d{1,2}$/.test(maybePax)) {
+        paxStr = maybePax
+        paxIdx = timeIdx - 1
+      }
     }
+    
+    // Coupon starts with special char like ´ or similar
+    let couponIdx = -1
+    for (let i = 0; i < words.length; i++) {
+      if (words[i].startsWith('´') || words[i].startsWith("'") || /´/.test(words[i])) {
+        couponIdx = i
+        break
+      }
+    }
+    
+    // If no special char, try to find a word before confirmation that's not a number
+    // Confirmation is typically a 5-6 digit number
+    let confirmation = ''
+    let confIdx = -1
+    for (let i = Math.max(paxIdx, 0); i < words.length; i++) {
+      if (/^\d{5,}$/.test(words[i])) {
+        confirmation = words[i]
+        confIdx = i
+        break
+      }
+    }
+    
+    // Hotel + client = everything before coupon (or before conf if no coupon)
+    let hotel = ''
+    let clientName = ''
+    let coupon = ''
+    
+    const splitIdx = couponIdx > 0 ? couponIdx : (confIdx > 0 ? confIdx : words.length)
+    
+    // Handle the prefix part (hotel + client)
+    const prefix = words.slice(0, splitIdx).join(' ')
+    
+    // Known hotel patterns (all caps, or specific resort names)
+    // Try to split hotel from client at the first capitalized name
+    const hotelPatterns = [
+      /^(.+?)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)$/,
+      /^(.+?)\s+([A-Z][a-z]+)$/
+    ]
+    
+    for (const pattern of hotelPatterns) {
+      const match = prefix.match(pattern)
+      if (match) {
+        hotel = match[1].trim()
+        clientName = match[2].trim()
+        break
+      }
+    }
+    
+    if (!hotel) {
+      hotel = prefix
+      clientName = ''
+    }
+    
+    // Rep is typically 1-2 words before time
+    let rep = ''
+    if (timeIdx > paxIdx + 1) {
+      rep = words.slice(paxIdx + 1, timeIdx).join(' ')
+    }
+    
+    // Agency is the remaining words after rep and before coupon/conf
+    let agency = ''
+    if (confIdx > timeIdx + 1) {
+      agency = words.slice(timeIdx + 1, confIdx).join(' ')
+    } else if (couponIdx > timeIdx + 1) {
+      agency = words.slice(timeIdx + 1, couponIdx).join(' ')
+    }
+    
+    // Build reservation
+    const paxData = parsePax(paxStr)
+    const reservation: ParsedReservation = {
+      hotel,
+      clientName,
+      coupon: couponIdx >= 0 ? words[couponIdx] : '',
+      pax: paxStr,
+      adults: paxData.adults,
+      children: paxData.children,
+      infants: paxData.infants,
+      confirmation,
+      pickupTime,
+      agency
+    }
+
+    currentTour.reservations = currentTour.reservations || []
+    currentTour.reservations.push(reservation)
+    currentTour.totalPax = (currentTour.totalPax || 0) + paxData.adults + paxData.children + paxData.infants
   }
 
   if (currentTour.service) {
@@ -123,6 +214,7 @@ export async function POST(request: NextRequest) {
     // Parse ORDEN format
     console.log('RAW TEXT:', text.substring(0, 500))
     const tours = parseOrdenText(text)
+    console.log('PARSED TOURS:', JSON.stringify(tours.map(t => ({ service: t.service, operador: t.operador, guia: t.guia, totalPax: t.totalPax, sampleReservation: t.reservations[0] })), null, 2))
 
     if (tours.length === 0) {
       return NextResponse.json({ 
