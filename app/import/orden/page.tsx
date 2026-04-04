@@ -68,6 +68,165 @@ const FIELDS: FieldDef[] = [
   { id: 'agency', label: 'Agency Name', hint: 'Tap the agency name', multiWord: true },
 ]
 
+// ─── Anchor-based mapping analysis ─────────────────────────────────────────────
+interface MappingAnalysis {
+  anchorField: FieldId
+  offsets: Record<FieldId, number>  // offset from anchor position (positive = after anchor, negative = before)
+}
+
+function analyzeAnchorMapping(
+  tours: ParsedTour[],
+  mapping: Record<FieldId, number[]>,
+  sampleTokens: string[]
+): MappingAnalysis | null {
+  const fieldIds: FieldId[] = ['hotel', 'clientName', 'coupon', 'pax', 'confirmation', 'pickupTime', 'rep', 'agency']
+  
+  // Collect position data for each mapped field across all rows
+  const fieldPositions: Record<FieldId, number[]> = {
+    hotel: [], clientName: [], coupon: [], pax: [],
+    confirmation: [], pickupTime: [], rep: [], agency: []
+  }
+  
+  for (const tour of tours) {
+    for (const res of tour.reservations) {
+      const tokens = res.tokens || sampleTokens
+      
+      for (const field of fieldIds) {
+        const indices = mapping[field]
+        if ((indices?.length ?? 0) === 0) continue
+        
+        // Get the value from this field's mapped position in this row
+        const firstIdx = indices[0]
+        if (firstIdx >= 0 && firstIdx < tokens.length) {
+          fieldPositions[field].push(firstIdx)
+        }
+      }
+    }
+  }
+  
+  // Calculate variance (standard deviation) for each field
+  const fieldVariance: Record<FieldId, number> = {} as any
+  for (const field of fieldIds) {
+    const positions = fieldPositions[field]
+    if (positions.length === 0) {
+      fieldVariance[field] = Infinity
+      continue
+    }
+    const mean = positions.reduce((a, b) => a + b, 0) / positions.length
+    const variance = positions.reduce((sum, pos) => sum + Math.pow(pos - mean, 2), 0) / positions.length
+    fieldVariance[field] = variance
+  }
+  
+  // Prefer pickupTime first if it was mapped and has reasonable variance
+  if ((mapping['pickupTime']?.length ?? 0) > 0 && fieldVariance['pickupTime'] < Infinity) {
+    const anchorField: FieldId = 'pickupTime'
+    const offsets: Record<FieldId, number> = {} as any
+    
+    // Get anchor's average position
+    const anchorPositions = fieldPositions[anchorField]
+    const anchorMean = anchorPositions.reduce((a, b) => a + b, 0) / anchorPositions.length
+    
+    // Calculate offsets for all other fields
+    for (const field of fieldIds) {
+      if (field === anchorField) continue
+      const positions = fieldPositions[field]
+      if (positions.length === 0) {
+        offsets[field] = 0
+        continue
+      }
+      const fieldMean = positions.reduce((a, b) => a + b, 0) / positions.length
+      offsets[field] = Math.round(fieldMean - anchorMean)
+    }
+    
+    return { anchorField, offsets }
+  }
+  
+  // Fall back to field with lowest variance
+  let bestField: FieldId | null = null
+  let bestVariance = Infinity
+  for (const field of fieldIds) {
+    if ((mapping[field]?.length ?? 0) === 0) continue
+    if (fieldVariance[field] < bestVariance) {
+      bestVariance = fieldVariance[field]
+      bestField = field
+    }
+  }
+  
+  if (!bestField) return null
+  
+  const anchorPositions = fieldPositions[bestField]
+  const anchorMean = anchorPositions.reduce((a, b) => a + b, 0) / anchorPositions.length
+  
+  const offsets: Record<FieldId, number> = {} as any
+  for (const field of fieldIds) {
+    if (field === bestField) continue
+    const positions = fieldPositions[field]
+    if (positions.length === 0) {
+      offsets[field] = 0
+      continue
+    }
+    const fieldMean = positions.reduce((a, b) => a + b, 0) / positions.length
+    offsets[field] = Math.round(fieldMean - anchorMean)
+  }
+  
+  return { anchorField: bestField, offsets }
+}
+
+// ─── Apply offset-based mapping ───────────────────────────────────────────────
+function applyOffsetMapping(
+  tours: ParsedTour[],
+  analysis: MappingAnalysis,
+  sampleTokens: string[]
+): ParsedTour[] {
+  const fieldIds: FieldId[] = ['hotel', 'clientName', 'coupon', 'pax', 'confirmation', 'pickupTime', 'rep', 'agency']
+  
+  return tours.map(tour => {
+    const newReservations = tour.reservations.map(res => {
+      const tokens = res.tokens || sampleTokens
+      const newRes: Record<string, string | number> = {}
+      
+      // Find anchor position in this row
+      const anchorIndices = analysis.anchorField === 'pickupTime'
+        ? (res.tokens || sampleTokens).map((t, i) => /^\d{1,2}:\d{2}$/.test(t) ? i : -1).filter(i => i >= 0)
+        : []
+      const anchorPos = anchorIndices.length > 0 ? anchorIndices[0] : -1
+      
+      if (anchorPos < 0) {
+        // Anchor not found — leave all fields blank
+        for (const field of fieldIds) {
+          newRes[field] = ''
+        }
+        newRes['adults'] = 0
+        newRes['children'] = 0
+        newRes['infants'] = 0
+        newRes['pax'] = ''
+        return { ...res, ...newRes } as ParsedReservation
+      }
+      
+      // Resolve each field using offsets from anchor
+      for (const field of fieldIds) {
+        const offset = analysis.offsets[field] ?? 0
+        const resolvedIdx = anchorPos + offset
+        
+        if (field === 'pax') {
+          const paxStr = resolvedIdx >= 0 && resolvedIdx < tokens.length ? tokens[resolvedIdx] : ''
+          newRes['pax'] = paxStr
+          const paxData = parsePax(paxStr || '1')
+          newRes['adults'] = paxData.adults
+          newRes['children'] = paxData.children
+          newRes['infants'] = paxData.infants
+        } else {
+          newRes[field] = resolvedIdx >= 0 && resolvedIdx < tokens.length ? tokens[resolvedIdx] : ''
+        }
+      }
+      
+      return { ...res, ...newRes } as ParsedReservation
+    })
+    
+    return { ...tour, reservations: newReservations, totalPax: tour.totalPax }
+  })
+}
+
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function OrdenImportPage() {
   const router = useRouter()
@@ -103,6 +262,7 @@ export default function OrdenImportPage() {
   })
   const [currentSelection, setCurrentSelection] = useState<number[]>([])
   const [showMappingSummary, setShowMappingSummary] = useState(false)
+  const [mappingAnalysis, setMappingAnalysis] = useState<MappingAnalysis | null>(null)
   
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -363,65 +523,22 @@ export default function OrdenImportPage() {
   }
 
   const confirmMapping = () => {
-    // Apply the complete mapping to all reservation rows
-    const remappedTours = applyMapping(parsedTours, tokenMapping, sampleTokens)
+    // Analyze anchor positions across all rows
+    const analysis = analyzeAnchorMapping(parsedTours, tokenMapping, sampleTokens)
+    console.log('anchor analysis:', analysis)
+    
+    if (!analysis) {
+      setError('Could not determine anchor field. Please remap columns.')
+      return
+    }
+    
+    setMappingAnalysis(analysis)
+    
+    // Apply offset-based mapping to all reservation rows
+    const remappedTours = applyOffsetMapping(parsedTours, analysis, sampleTokens)
     setParsedTours(remappedTours)
     setShowMappingSummary(false)
     setStep(3)
-  }
-
-  // ─── Apply token mapping to all reservations ───────────────────────────────
-// Pure index-based lookup — no pattern matching, no fallbacks
-  function applyMapping(tours: ParsedTour[], mapping: Record<FieldId, number[]>, tokens: string[]): ParsedTour[] {
-    const fieldIds: FieldId[] = ['hotel', 'clientName', 'coupon', 'pax', 'confirmation', 'pickupTime', 'rep', 'agency']
-    
-    return tours.map((tour, tourIdx) => {
-      const newReservations = tour.reservations.map((res, resIdx) => {
-        // Each reservation has its own token array from its row in rawText
-        const resTokens = res.tokens || tokens
-        
-        // DEBUG: log pickupTime mapping for first reservation of first tour
-        if (tourIdx === 0 && resIdx === 0) {
-          console.log('pickupTime mapping indices:', mapping['pickupTime'])
-          console.log('resTokens:', resTokens)
-          console.log('resolved pickupTime:', mapping['pickupTime']?.map(i => resTokens[i]))
-        }
-        
-        // Pure index lookup — if position doesn't exist, leave blank
-        const getTokenAt = (idx: number): string => {
-          return idx < resTokens.length ? resTokens[idx] : ''
-        }
-        
-        // Build new reservation from saved token indices
-        const newRes: Record<string, string | number> = {}
-        
-        // Pax: indices map to a pax string like "2" or "2.1.1"
-        const paxIndices = mapping['pax']
-        const paxStr = (paxIndices?.length ?? 0) > 0
-          ? paxIndices.map(i => getTokenAt(i)).join('').trim()
-          : ''
-        const paxData = parsePax(paxStr || '1')
-        newRes['pax'] = paxStr || '1'
-        newRes['adults'] = paxData.adults
-        newRes['children'] = paxData.children
-        newRes['infants'] = paxData.infants
-        
-        // All other fields: pure index lookup
-        for (const field of fieldIds) {
-          if (field === 'pax') continue
-          const indices = mapping[field]
-          if ((indices?.length ?? 0) > 0) {
-            newRes[field] = indices.map(i => getTokenAt(i)).join(' ').trim()
-          } else {
-            newRes[field] = ''
-          }
-        }
-        
-        return { ...res, ...newRes } as ParsedReservation
-      })
-      
-      return { ...tour, reservations: newReservations, totalPax: tour.totalPax }
-    })
   }
 
   // ─── Update staff assignment ───────────────────────────────────────────────
