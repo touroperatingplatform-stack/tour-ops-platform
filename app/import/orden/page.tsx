@@ -661,7 +661,21 @@ export default function OrdenImportPage() {
                 </div>
 
                 <div className="space-y-4">
-                  {parsedTours.map((tour, tourIdx) => (
+                  {parsedTours.map((tour, tourIdx) => {
+                      const usedDriverIds = parsedTours
+                        .map((t, i) => i !== tourIdx ? t.operadorId : null)
+                        .filter(Boolean)
+                      const availableDrivers = drivers.filter(d =>
+                        !usedDriverIds.includes(d.id) || d.id === tour.operadorId
+                      )
+                      const usedGuideIds = parsedTours
+                        .map((t, i) => i !== tourIdx ? t.guiaId : null)
+                        .filter(Boolean)
+                      const availableGuides = guides.filter(g =>
+                        !usedGuideIds.includes(g.id) || g.id === tour.guiaId
+                      )
+                      
+                      return (
                     <div key={tourIdx} className="border border-gray-200 rounded-xl p-4">
                       <h3 className="font-semibold text-gray-900 mb-3">{tour.service}</h3>
                       <div className="grid grid-cols-2 gap-4">
@@ -673,7 +687,7 @@ export default function OrdenImportPage() {
                             className="border border-gray-300 rounded-lg px-3 py-2 w-full"
                           >
                             <option value="">Select driver...</option>
-                            {drivers.map(d => (
+                            {availableDrivers.map(d => (
                               <option key={d.id} value={d.id}>{d.full_name}</option>
                             ))}
                           </select>
@@ -689,7 +703,7 @@ export default function OrdenImportPage() {
                             className="border border-gray-300 rounded-lg px-3 py-2 w-full"
                           >
                             <option value="">Select guide...</option>
-                            {guides.map(g => (
+                            {availableGuides.map(g => (
                               <option key={g.id} value={g.id}>{g.full_name}</option>
                             ))}
                           </select>
@@ -702,7 +716,8 @@ export default function OrdenImportPage() {
                         {tour.reservations.length} reservations • {tour.totalPax} guests
                       </div>
                     </div>
-                  ))}
+                      )
+                    })}
                 </div>
 
                 <div className="mt-6 flex gap-3">
