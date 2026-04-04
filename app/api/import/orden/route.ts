@@ -55,7 +55,7 @@ function parseOrdenText(text: string): ParsedTour[] {
   if (groups.length > 6) {
     const reservationLine = /^\s*\S+.*\d+:\d+.*$/
     const g6lines = groups[6].split('\n').filter(l => reservationLine.test(l))
-    g6lines.forEach((l, i) => console.log(`Group 6 res ${i} pax:`, l.match(/(?:\d{3,4}|´\S+)\s+(\d{1,2}(?:\.\d+)*)\s+/)?.[1] || 'NOT_FOUND'))
+    g6lines.forEach((l, i) => console.log(`Group 6 res ${i} pax:`, l.match(/(?:\d{3,4}|[A-Z0-9]{4}|´\S+)\s+(\d{1,2}(?:\.\d+)*)\s+/)?.[1] || 'NOT_FOUND'))
   }
   
   let groupIdx = 0
@@ -82,7 +82,7 @@ function parseOrdenText(text: string): ParsedTour[] {
     // DEBUG: log raw pax token for first reservation of each group
     const firstResLine = lines.slice(1).find(l => reservationLine.test(l) && !l.includes('HOTEL') && !l.includes('TOTAL') && !l.includes('---'))
     if (firstResLine) {
-      const paxMatch = firstResLine.match(/\b(?:\d{3,4}|´\S+)\s+(\d{1,2}(?:\.\d+)*)\s+(?:[`´']\S+|\d+[A-Z]+|\d+\+\d+)/)
+      const paxMatch = firstResLine.match(/(?:\d{3,4}|[A-Z0-9]{4}|´\S+)\s+(\d{1,2}(?:\.\d+)*)\s+(?:´\S+|\d+\s*(?:INC|E\s*INC|\+))/)
       const firstPax = paxMatch ? paxMatch[1] : 'NOT_FOUND'
       console.log('Group', groupIdx, 'first reservation pax raw token:', firstPax)
       if (groupIdx === 1) {
@@ -93,7 +93,7 @@ function parseOrdenText(text: string): ParsedTour[] {
         // Also log all reservations pax for group 6
         const allResLines = lines.slice(1).filter(l => reservationLine.test(l) && !l.includes('HOTEL') && !l.includes('TOTAL') && !l.includes('---'))
         allResLines.forEach((l, i) => {
-          const pMatch = l.match(/\b(?:\d{3,4}|´\S+)\s+(\d{1,2}(?:\.\d+)*)\s+(?:[`´']\S+|\d+[A-Z]+|\d+\+\d+)/)
+          const pMatch = l.match(/(?:\d{3,4}|[A-Z0-9]{4}|´\S+)\s+(\d{1,2}(?:\.\d+)*)\s+/)
           console.log(`Group 6 res ${i} pax: ${pMatch ? pMatch[1] : 'NOT_FOUND'} line: ${l}`)
         })
       }
@@ -129,10 +129,9 @@ function parseOrdenText(text: string): ParsedTour[] {
       const hab = firstCouponIdx > 0 && firstCouponIdx + 1 < (secondCouponIdx > 0 ? secondCouponIdx : timeIdx) 
         ? tokens[firstCouponIdx + 1] : ''
       
-      // Pax: find 3-4 digit HAB OR ´-prefixed HAB, then pax, then confirmation
-      // HAB can be: 2930 (numeric) or ´036 (´-prefixed)
-      // Confirmation can be: ´-prefixed (´070), lettered (2OO), or numeric-only (188+1200)
-      const paxMatch = line.match(/\b(?:\d{3,4}|´\S+)\s+(\d{1,2}(?:\.\d+)*)\s+(?:[`´']\S+|\d+[A-Z]+|\d+\+\d+)/)
+      // Pax: find HAB (numeric 3-4 digits, 4-char alphanumeric like 2OOO, or ´-prefixed), then pax, then confirmation
+      // Confirmation formats: ´070, 2OO, 515 INC, 210, 100, +600, 188+1200, 2OO INC, etc.
+      const paxMatch = line.match(/(?:\d{3,4}|[A-Z0-9]{4}|´\S+)\s+(\d{1,2}(?:\.\d+)*)\s+(?:´\S+|\d+\s*(?:INC|E\s*INC|\+))/)
       const paxStr = paxMatch ? paxMatch[1] : '1'
       
       // Confirmation is second coupon token
@@ -157,19 +156,25 @@ function parseOrdenText(text: string): ParsedTour[] {
       const timeAndAfter = line.match(/\d+:\d+\s+(.+)$/)?.[1] || ''
       const rep = timeAndAfter.replace(agency, '').trim()
       
-      // Balance due: parse from confirmation
-      // 188+1200 = 1200 balance, INC = 0 balance, plain number = 0 balance
+      // Balance due: parse from confirmation token and what follows
+      // Patterns: 188+1200 (second number is balance), +600 (afterConf starts with +), INC (paid = 0), plain number (paid = 0)
       let balanceDue = 0
       const confToken = tokens[secondCouponIdx] || ''
       const afterConf = tokens[secondCouponIdx + 1] || ''
-      if (afterConf.toUpperCase() === 'INC') {
+      const confAndAfter = (confToken + ' ' + afterConf).toUpperCase()
+      
+      // If INC appears anywhere after pax, balance is 0
+      if (confAndAfter.includes('INC')) {
         balanceDue = 0
       } else if (confToken.includes('+')) {
+        // 188+1200 → 1200
         const parts = confToken.split('+')
         balanceDue = parseInt(parts[1]) || 0
       } else if (afterConf.startsWith('+')) {
+        // +600 → 600
         balanceDue = parseInt(afterConf.replace('+', '')) || 0
       }
+      // Plain numbers (515, 210, 100, 2OO, etc.) = paid, balanceDue stays 0
       
       const paxData = parsePax(paxStr)
       tour.reservations.push({
