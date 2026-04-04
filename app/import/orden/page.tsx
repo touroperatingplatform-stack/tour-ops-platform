@@ -5,6 +5,10 @@ import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase/client'
 import RoleGuard from '@/lib/auth/RoleGuard'
 import Link from 'next/link'
+import * as pdfjsLib from 'pdfjs-dist'
+
+// Configure PDF.js worker
+pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 interface ParsedReservation {
@@ -91,6 +95,84 @@ function parsePax(paxStr: string): { adults: number; children: number; infants: 
   return { adults, children, infants }
 }
 
+// ─── Extract text from PDF ─────────────────────────────────────────────────────
+async function extractTextFromPDF(file: File): Promise<string> {
+  const arrayBuffer = await file.arrayBuffer()
+  const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise
+  
+  let fullText = ''
+  
+  for (let i = 1; i <= pdf.numPages; i++) {
+    const page = await pdf.getPage(i)
+    const textContent = await page.getTextContent()
+    const pageText = textContent.items
+      .map((item: any) => item.str)
+      .join(' ')
+    fullText += pageText + '\n'
+  }
+  
+  return fullText
+}
+
+// ─── Parse ORDEN text ──────────────────────────────────────────────────────
+function parseOrdenText(text: string): ParsedTour[] {
+  const lines = text.split('\n').map(l => l.trim()).filter(Boolean)
+  const tours: ParsedTour[] = []
+  let currentTour: Partial<ParsedTour> = {}
+
+  for (const line of lines) {
+    // Skip headers
+    if (line.startsWith('PLAYA DEL CARMEN') || line.startsWith('TENOCH') ||
+        line.startsWith('HOTEL CLIENTE') || line.startsWith('TOTAL') ||
+        line.startsWith('---') || line.startsWith('*')) continue
+
+    // Tour header: SERVICIO: TULUM CENOTE AKUMAL OPERADOR: FEDERICO GUIA: JUAN
+    const tourMatch = line.match(/SERVICIO:\s*(.+?)\s+OPERADOR:\s*(\S+)\s+GUIA:\s*(\S+)/i)
+    if (tourMatch) {
+      if (currentTour.service) {
+        tours.push(currentTour as ParsedTour)
+      }
+      currentTour = {
+        service: tourMatch[1].trim(),
+        operador: tourMatch[2].trim(),
+        guia: tourMatch[3].trim(),
+        reservations: [],
+        totalPax: 0
+      }
+      continue
+    }
+
+    // Data line: HOTEL CLIENTE CUPONHAB PAX #CONF. TOUR_ID HORA REP AGENCIA
+    const parts = line.split(/\s+/)
+    if (parts.length >= 6 && currentTour.service) {
+      const paxData = parsePax(parts[3] || '1')
+      
+      const reservation: ParsedReservation = {
+        hotel: parts[0],
+        clientName: parts[1] + (parts[2] ? ' ' + parts[2] : ''),
+        coupon: parts[2] || '',
+        pax: parts[3] || '1',
+        adults: paxData.adults,
+        children: paxData.children,
+        infants: paxData.infants,
+        confirmation: parts[4] || '',
+        pickupTime: parts[5] || '09:00',
+        agency: parts[parts.length - 1] || ''
+      }
+
+      currentTour.reservations = currentTour.reservations || []
+      currentTour.reservations.push(reservation)
+      currentTour.totalPax = (currentTour.totalPax || 0) + paxData.adults + paxData.children + paxData.infants
+    }
+  }
+
+  if (currentTour.service) {
+    tours.push(currentTour as ParsedTour)
+  }
+
+  return tours
+}
+
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function OrdenImportPage() {
   const router = useRouter()
@@ -105,6 +187,7 @@ export default function OrdenImportPage() {
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0])
   const [creating, setCreating] = useState(false)
   const [createdTours, setCreatedTours] = useState<CreatedTour[]>([])
+  const [parsing, setParsing] = useState(false)
   
   // Staff
   const [drivers, setDrivers] = useState<StaffMember[]>([])
@@ -155,75 +238,14 @@ export default function OrdenImportPage() {
     loadData()
   }, [])
 
-  // ─── Parse ORDEN text ──────────────────────────────────────────────────────
-  function parseOrdenText(text: string): ParsedTour[] {
-    const lines = text.split('\n').map(l => l.trim()).filter(Boolean)
-    const tours: ParsedTour[] = []
-    let currentTour: Partial<ParsedTour> = {}
-
-    for (const line of lines) {
-      // Skip headers
-      if (line.startsWith('PLAYA DEL CARMEN') || line.startsWith('TENOCH') ||
-          line.startsWith('HOTEL CLIENTE') || line.startsWith('TOTAL') ||
-          line.startsWith('---') || line.startsWith('*')) continue
-
-      // Tour header: SERVICIO: TULUM CENOTE AKUMAL OPERADOR: FEDERICO GUIA: JUAN
-      const tourMatch = line.match(/SERVICIO:\s*(.+?)\s+OPERADOR:\s*(\S+)\s+GUIA:\s*(\S+)/i)
-      if (tourMatch) {
-        if (currentTour.service) {
-          tours.push(currentTour as ParsedTour)
-        }
-        currentTour = {
-          service: tourMatch[1].trim(),
-          operador: tourMatch[2].trim(),
-          guia: tourMatch[3].trim(),
-          reservations: [],
-          totalPax: 0
-        }
-        continue
-      }
-
-      // Data line: HOTEL CLIENTE CUPONHAB PAX #CONF. TOUR_ID HORA REP AGENCIA
-      const parts = line.split(/\s+/)
-      if (parts.length >= 6 && currentTour.service) {
-        const paxData = parsePax(parts[3] || '1')
-        
-        const reservation: ParsedReservation = {
-          hotel: parts[0],
-          clientName: parts[1] + (parts[2] ? ' ' + parts[2] : ''),
-          coupon: parts[2] || '',
-          pax: parts[3] || '1',
-          adults: paxData.adults,
-          children: paxData.children,
-          infants: paxData.infants,
-          confirmation: parts[4] || '',
-          pickupTime: parts[5] || '09:00',
-          agency: parts[parts.length - 1] || ''
-        }
-
-        currentTour.reservations = currentTour.reservations || []
-        currentTour.reservations.push(reservation)
-        currentTour.totalPax = (currentTour.totalPax || 0) + paxData.adults + paxData.children + paxData.infants
-      }
-    }
-
-    if (currentTour.service) {
-      tours.push(currentTour as ParsedTour)
-    }
-
-    return tours
-  }
-
   // ─── Match staff names ─────────────────────────────────────────────────────
   function matchStaff(tours: ParsedTour[]): ParsedTour[] {
     return tours.map(tour => {
-      // Match driver
       const driverMatch = drivers.find(d => 
         d.full_name.toLowerCase().includes(tour.operador.toLowerCase()) ||
         tour.operador.toLowerCase().includes(d.full_name.toLowerCase().split(' ')[0])
       )
       
-      // Match guide
       const guideMatch = guides.find(g =>
         g.full_name.toLowerCase().includes(tour.guia.toLowerCase()) ||
         tour.guia.toLowerCase().includes(g.full_name.toLowerCase().split(' ')[0])
@@ -243,30 +265,41 @@ export default function OrdenImportPage() {
     if (!f) return
     setFile(f)
     setError('')
-
-    try {
-      const text = await f.text()
-      setFileText(text)
-    } catch (err: any) {
-      setError('Failed to read file. Please export as .txt from Excel.')
-    }
   }
 
-  const handleParse = () => {
+  const handleParse = async () => {
     if (!file && !isTrial) {
       setError('Please select a file')
       return
     }
 
+    setParsing(true)
+    setError('')
+
     try {
+      let text = ''
+
+      if (isTrial) {
+        text = '' // Demo mode doesn't need text
+      } else if (file) {
+        // Extract text based on file type
+        if (file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')) {
+          text = await extractTextFromPDF(file)
+        } else {
+          // Plain text file
+          text = await file.text()
+        }
+      }
+
       let tours: ParsedTour[] = []
 
       if (isTrial) {
         tours = getDemoOrdenData()
       } else {
-        tours = parseOrdenText(fileText)
+        tours = parseOrdenText(text)
         if (tours.length === 0) {
           setError('No tours found. Make sure the file has SERVICIO/OPERADOR/GUIA headers.')
+          setParsing(false)
           return
         }
       }
@@ -274,10 +307,13 @@ export default function OrdenImportPage() {
       // Match staff names to IDs
       tours = matchStaff(tours)
 
+      setFileText(text)
       setParsedTours(tours)
       setStep(2)
     } catch (err: any) {
-      setError(err.message || 'Failed to parse file')
+      setError('Failed to parse file: ' + (err.message || 'Unknown error'))
+    } finally {
+      setParsing(false)
     }
   }
 
@@ -306,7 +342,7 @@ export default function OrdenImportPage() {
 
     try {
       for (const tour of parsedTours) {
-        // Create tour (matching DATABASE.md schema)
+        // Create tour
         const { data: newTour, error: tourErr } = await supabase
           .from('tours')
           .insert({
@@ -328,30 +364,26 @@ export default function OrdenImportPage() {
           continue
         }
 
-        // Create reservation_manifest records (per DATABASE.md schema)
+        // Create reservation_manifest records
         let stopOrder = 1
         for (const res of tour.reservations) {
           // Create reservation_manifest entry
-          const { data: manifestEntry } = await supabase
-            .from('reservation_manifest')
-            .insert({
-              tour_id: newTour.id,
-              brand_id: brandId,
-              booking_reference: res.confirmation,
-              adult_pax: res.adults,
-              child_pax: res.children,
-              infant_pax: res.infants,
-              total_pax: res.adults + res.children + res.infants,
-              hotel_name: res.hotel,
-              room_number: res.coupon,
-              pickup_time: res.pickupTime,
-              agency_name: res.agency,
-              primary_contact_name: res.clientName
-            })
-            .select('id')
-            .maybeSingle()
+          await supabase.from('reservation_manifest').insert({
+            tour_id: newTour.id,
+            brand_id: brandId,
+            booking_reference: res.confirmation,
+            adult_pax: res.adults,
+            child_pax: res.children,
+            infant_pax: res.infants,
+            total_pax: res.adults + res.children + res.infants,
+            hotel_name: res.hotel,
+            room_number: res.coupon,
+            pickup_time: res.pickupTime,
+            agency_name: res.agency,
+            primary_contact_name: res.clientName
+          })
 
-          // Create pickup_stop (per DATABASE.md schema)
+          // Create pickup_stop
           await supabase.from('pickup_stops').insert({
             tour_id: newTour.id,
             brand_id: brandId,
@@ -367,7 +399,7 @@ export default function OrdenImportPage() {
         try {
           await supabase.rpc('update_tour_guest_count', { tour_id: newTour.id })
         } catch {
-          // RPC may not exist, that's ok
+          // RPC may not exist
         }
 
         created.push({
@@ -391,8 +423,6 @@ export default function OrdenImportPage() {
 
   // ─── Send notifications ────────────────────────────────────────────────────
   const handleNotify = async () => {
-    // TODO: Implement push notification via /api/notifications/push
-    // For now, just show success
     alert('Notifications sent to guides and drivers!')
     router.push('/admin')
   }
@@ -462,7 +492,7 @@ export default function OrdenImportPage() {
                     <div className="border-8 border-transparent mb-6">
                       <h2 className="text-lg font-semibold mb-2">Upload ORDEN File</h2>
                       <p className="text-sm text-gray-500 mb-4">
-                        Export your ORDEN from Excel as <strong>.txt</strong> format.
+                        Supported formats: <strong>PDF</strong>, <strong>Excel</strong> (export as .txt), or <strong>Text</strong> files
                       </p>
                     </div>
 
@@ -473,13 +503,16 @@ export default function OrdenImportPage() {
                       <input
                         ref={fileInputRef}
                         type="file"
-                        accept=".txt,.text,.csv"
+                        accept=".pdf,.txt,.text,.csv"
                         onChange={handleFileChange}
                         className="hidden"
                       />
                       <div className="text-4xl mb-2">📄</div>
                       <p className="font-medium text-gray-700">
                         {file ? file.name : 'Click to select file'}
+                      </p>
+                      <p className="text-xs text-gray-400 mt-1">
+                        {file ? `${(file.size / 1024).toFixed(1)} KB` : 'PDF, TXT, CSV'}
                       </p>
                     </div>
                   </>
@@ -493,10 +526,10 @@ export default function OrdenImportPage() {
 
                 <button
                   onClick={handleParse}
-                  disabled={!file && !isTrial}
+                  disabled={(!file && !isTrial) || parsing}
                   className="mt-6 w-full px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 font-medium"
                 >
-                  {isTrial ? 'Use Demo ORDEN →' : 'Parse File →'}
+                  {parsing ? '⏳ Parsing...' : isTrial ? 'Use Demo ORDEN →' : 'Parse File →'}
                 </button>
               </div>
             )}
