@@ -175,19 +175,17 @@ export default function OrdenImportPage() {
         return
       }
 
-      // Log for debugging
-      console.log('raw pax values:', data.tours.flatMap(t => t.reservations.map(r => r.pax)))
-      console.log('parsed operators:', data.tours.map(t => t.operador))
-      console.log('parsed guides:', data.tours.map(t => t.guia))
-      console.log('available drivers:', drivers.map(d => d.full_name))
-      console.log('available guides:', guides.map(g => g.full_name))
-
       // Match staff names to IDs and recalculate totalPax from parsed pax strings
       const toursWithStaff = matchStaff(data.tours).map(tour => ({
         ...tour,
         totalPax: tour.reservations.reduce((sum, r) => sum + (parseInt(r.pax) || 0), 0)
       }))
-      console.log('matched tours:', toursWithStaff.map(t => ({ service: t.service, operadorId: t.operadorId, guiaId: t.guiaId, totalPax: t.totalPax })))
+      // Debug logging
+      console.log('raw pax values:', toursWithStaff.flatMap(t => t.reservations.map(r => r.pax)))
+      console.log('parsed operators:', toursWithStaff.map(t => t.operador))
+      console.log('parsed guides:', toursWithStaff.map(t => t.guia))
+      console.log('available drivers:', drivers.map(d => d.full_name))
+      console.log('available guides:', guides.map(g => g.full_name))
       setParsedTours(toursWithStaff)
       setStep(2)
     } catch (err: any) {
