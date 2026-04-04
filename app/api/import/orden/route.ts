@@ -1,8 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import * as pdfjsLib from 'pdfjs-dist/legacy/build/pdf'
-
-// Disable worker - we're in Node.js
-pdfjsLib.GlobalWorkerOptions.workerSrc = ''
+import { extractText } from 'unpdf'
 
 // ─── Types ─────────────────────────────────────────────────────────────────---
 interface ParsedReservation {
@@ -96,28 +93,6 @@ function parseOrdenText(text: string): ParsedTour[] {
   return tours
 }
 
-// ─── Extract text from PDF using pdfjs-dist ─────────────────────────────────
-async function extractTextFromPDF(buffer: ArrayBuffer): Promise<string> {
-  const uint8Array = new Uint8Array(buffer)
-  const loadingTask = pdfjsLib.getDocument({ data: uint8Array })
-  const pdf = await loadingTask.promise
-  
-  let fullText = ''
-  
-  for (let i = 1; i <= pdf.numPages; i++) {
-    const page = await pdf.getPage(i)
-    const textContent = await page.getTextContent()
-    // Preserve line breaks using hasEOL flag
-    const pageText = textContent.items.map((item: any) => {
-      const str = item.str
-      return item.hasEOL ? str + '\n' : str
-    }).join(' ')
-    fullText += pageText + '\n'
-  }
-  
-  return fullText
-}
-
 // POST /api/import/orden
 export async function POST(request: NextRequest) {
   try {
@@ -132,9 +107,10 @@ export async function POST(request: NextRequest) {
     let text: string
 
     if (file.name.toLowerCase().endsWith('.pdf')) {
-      // Parse PDF server-side
+      // Parse PDF server-side with unpdf
       const buffer = await file.arrayBuffer()
-      text = await extractTextFromPDF(buffer)
+      const { text: extractedText } = await extractText(new Uint8Array(buffer))
+      text = extractedText
 
       if (!text || text.length < 50) {
         return NextResponse.json({ error: 'Could not extract text from PDF' }, { status: 400 })
