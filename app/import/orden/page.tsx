@@ -18,7 +18,9 @@ interface ParsedReservation {
   confirmation: string
   balanceDue: number
   pickupTime: string
+  rep: string
   agency: string
+  tokens: string[]  // Original token order for this reservation
 }
 
 interface ParsedTour {
@@ -52,16 +54,16 @@ interface FieldDef {
   id: FieldId
   label: string
   hint: string
-  example?: string
 }
 
 const FIELDS: FieldDef[] = [
-  { id: 'hotel', label: 'HOTEL', hint: 'Tap the hotel name', example: 'RIU PALACE' },
-  { id: 'clientName', label: 'CLIENT', hint: 'Tap the client name', example: 'John Smith' },
-  { id: 'coupon', label: 'COUPON', hint: 'Tap the coupon code', example: '´055' },
-  { id: 'pax', label: 'PAX', hint: 'Tap the guest count', example: '2' },
-  { id: 'pickupTime', label: 'TIME', hint: 'Tap the pickup time', example: '9:30' },
-  { id: 'agency', label: 'AGENCY', hint: 'Tap the agency name', example: 'NS VACATIONS' },
+  { id: 'hotel', label: 'HOTEL', hint: 'Tap the hotel name' },
+  { id: 'clientName', label: 'CLIENT', hint: 'Tap the client name' },
+  { id: 'coupon', label: 'COUPON', hint: 'Tap the coupon code' },
+  { id: 'pax', label: 'PAX', hint: 'Tap the guest count' },
+  { id: 'confirmation', label: 'CONFIRMATION', hint: 'Tap the confirmation number' },
+  { id: 'pickupTime', label: 'TIME', hint: 'Tap the pickup time' },
+  { id: 'agency', label: 'AGENCY', hint: 'Tap the agency name' },
 ]
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
@@ -85,7 +87,7 @@ export default function OrdenImportPage() {
   
   // Column mapping
   const [sampleTokens, setSampleTokens] = useState<string[]>([])
-  const [sampleReservation, setSampleReservation] = useState<ParsedReservation | null>(null)
+  const [assignedTokenIndices, setAssignedTokenIndices] = useState<Set<number>>(new Set())
   const [mappingStep, setMappingStep] = useState(0)
   const [tokenMapping, setTokenMapping] = useState<Record<FieldId, number[]>>({
     hotel: [],
@@ -177,62 +179,6 @@ export default function OrdenImportPage() {
     })
   }
 
-  // ─── Apply token mapping to all reservations ───────────────────────────────
-  function applyMapping(tours: ParsedTour[], tokenMapping: Record<FieldId, number[]>, sampleTokens: string[]): ParsedTour[] {
-    const fieldNames: FieldId[] = ['hotel', 'clientName', 'coupon', 'pax', 'confirmation', 'pickupTime', 'agency']
-    
-    return tours.map(tour => {
-      const newReservations = tour.reservations.map((res, resIdx) => {
-        // Build tokens from first reservation to match the sample line structure
-        // For subsequent reservations, use API's original parsed values as fallback
-        const tokens = resIdx === 0 ? sampleTokens : [
-          ...(res.hotel || '').split(/\s+/),
-          ...(res.clientName || '').split(/\s+/),
-          res.coupon,
-          res.pax,
-          res.confirmation,
-          res.pickupTime,
-          ...(res.agency || '').split(/\s+/)
-        ].filter(Boolean)
-        
-        // Handle pax separately since it can be "2" or "2.1.0"
-        const paxIndices = tokenMapping['pax']
-        let paxStr = res.pax
-        if (paxIndices?.length > 0 && tokens[paxIndices[0]]) {
-          paxStr = paxIndices.map(i => tokens[i] || '').join(' ')
-        }
-        const paxData = parsePax(paxStr)
-        
-        // Build new reservation - use mapping if set, otherwise use original parsed value
-        const newRes: Record<string, string | number> = {
-          adults: paxData.adults,
-          children: paxData.children,
-          infants: paxData.infants,
-          pax: paxStr,
-        }
-        
-        for (const field of fieldNames) {
-          if (field === 'pax') continue
-          const indices = tokenMapping[field]
-          if (indices && indices.length > 0 && tokens[indices[0]]) {
-            // User mapped this field - apply the mapped tokens
-            newRes[field] = indices.map(i => tokens[i] || '').join(' ')
-          } else {
-            // No mapping or first reservation - use original parsed value
-            newRes[field] = (res as any)[field] || ''
-          }
-        }
-        
-        return {
-          ...res,
-          ...newRes
-        } as ParsedReservation
-      })
-      
-      return { ...tour, reservations: newReservations, totalPax: tour.totalPax }
-    })
-  }
-
   // ─── Step 1: Handle file upload & parse ────────────────────────────────────
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0]
@@ -275,39 +221,85 @@ export default function OrdenImportPage() {
 
       setRawText(data.rawText || '')
       
-      // Get sample from first tour's first reservation
+      // Build sample tokens from first tour's first reservation
+      // Extract actual word tokens from the raw PDF text
       const firstRes = data.tours[0]?.reservations[0]
-      if (firstRes) {
-        setSampleReservation(firstRes)
+      if (firstRes && data.rawText) {
+        const rawLines = data.rawText.split('\n')
         
-        // Build tokens from the raw reservation fields
-        // Combine all fields into a displayable token array
-        const tokens: string[] = []
+        // Find the line that contains key identifying info from first reservation
+        // Look for lines with the pickup time (e.g., "7:50") that aren't headers
+        const resLine = rawLines.find(line => {
+          const hasTime = line.includes(firstRes.pickupTime)
+          const isHeader = line.includes('SERVICIO') || line.includes('OPERADOR') || line.includes('GUIA')
+          return hasTime && !isHeader
+        })
         
-        // Add hotel words
-        if (firstRes.hotel) tokens.push(...firstRes.hotel.split(/\s+/))
-        // Add client words
-        if (firstRes.clientName) tokens.push(...firstRes.clientName.split(/\s+/))
-        // Add coupon
-        if (firstRes.coupon) tokens.push(firstRes.coupon)
-        // Add HAB (room) - we'll include it in the flow
-        // Add pax
-        if (firstRes.pax) tokens.push(firstRes.pax)
-        // Add confirmation
-        if (firstRes.confirmation) tokens.push(firstRes.confirmation)
-        // Add time
-        if (firstRes.pickupTime) tokens.push(firstRes.pickupTime)
-        // Add agency
-        if (firstRes.agency) tokens.push(...firstRes.agency.split(/\s+/))
-        
-        setSampleTokens(tokens.length > 0 ? tokens : ['No', 'data', 'found'])
+        if (resLine) {
+          // Split by whitespace to get word tokens
+          const tokens = resLine.trim().split(/\s+/).filter(t => t.length > 0)
+          setSampleTokens(tokens)
+        } else {
+          // Fallback: combine parsed fields into a display string
+          const displayParts = [
+            firstRes.hotel,
+            firstRes.clientName, 
+            firstRes.coupon,
+            firstRes.pax,
+            firstRes.confirmation,
+            firstRes.pickupTime,
+            firstRes.agency
+          ].filter(Boolean)
+          setSampleTokens(displayParts.length > 0 ? displayParts : ['No', 'data', 'found'])
+        }
       }
 
-      const toursWithStaff = matchStaff(data.tours)
+      // Attach tokens to each reservation for mapping
+      const toursWithTokens = data.tours.map((tour: ParsedTour) => ({
+        ...tour,
+        // Attach tokens to each reservation by finding its line in rawText
+      const rawLines = data.rawText.split('\n')
+      
+      const toursWithTokens = data.tours.map((tour: ParsedTour) => ({
+        ...tour,
+        reservations: tour.reservations.map((res: ParsedReservation) => {
+          // Find the line in rawText that contains this reservation's pickup time
+          const resLine = rawLines.find(line => 
+            line.includes(res.pickupTime) && 
+            !line.includes('SERVICIO') && 
+            !line.includes('OPERADOR')
+          )
+          
+          let resTokens: string[] = []
+          if (resLine) {
+            resTokens = resLine.trim().split(/\s+/).filter(t => t.length > 0)
+          } else {
+            // Fallback: use parsed fields in standard order
+            resTokens = [
+              res.hotel,
+              res.clientName,
+              res.coupon,
+              res.pax,
+              res.confirmation,
+              res.pickupTime,
+              res.agency
+            ].filter(Boolean)
+          }
+          
+          return {
+            ...res,
+            tokens: resTokens
+          }
+        })
+      }))
+      }))
+
+      const toursWithStaff = matchStaff(toursWithTokens)
       setParsedTours(toursWithStaff)
       setStep(2)
       setMappingStep(0)
       setCurrentSelection([])
+      setAssignedTokenIndices(new Set())
       setTokenMapping({
         hotel: [],
         clientName: [],
@@ -335,12 +327,19 @@ export default function OrdenImportPage() {
 
   const confirmField = () => {
     const field = FIELDS[mappingStep]
+    
+    // Save the mapping for this field
     const newMapping = {
       ...tokenMapping,
-      [field.id]: currentSelection
+      [field.id]: [...currentSelection].sort((a, b) => a - b)
     }
     
-    // Move to next step
+    // Mark these tokens as assigned
+    const newAssigned = new Set(assignedTokenIndices)
+    currentSelection.forEach(i => newAssigned.add(i))
+    setAssignedTokenIndices(newAssigned)
+    
+    // Move to next field or finish
     if (mappingStep < FIELDS.length - 1) {
       setTokenMapping(newMapping)
       setMappingStep(mappingStep + 1)
@@ -366,6 +365,55 @@ export default function OrdenImportPage() {
     } else {
       setStep(3)
     }
+  }
+
+  // ─── Apply token mapping to all reservations ───────────────────────────────
+  function applyMapping(tours: ParsedTour[], mapping: Record<FieldId, number[]>, tokens: string[]): ParsedTour[] {
+    const fieldNames: FieldId[] = ['hotel', 'clientName', 'coupon', 'pax', 'confirmation', 'pickupTime', 'agency']
+    
+    return tours.map(tour => {
+      const newReservations = tour.reservations.map(res => {
+        // Use the reservation's own token array
+        const resTokens = res.tokens || tokens
+        
+        // Handle pax separately since it can be "2" or "2.1.0"
+        const paxIndices = mapping['pax']
+        let paxStr = ''
+        if (paxIndices?.length > 0) {
+          paxStr = paxIndices.map(i => resTokens[i] || '').join(' ').trim()
+        }
+        if (!paxStr) paxStr = res.pax || '1'
+        
+        const paxData = parsePax(paxStr)
+        
+        // Build new reservation using stored token indices
+        const newRes: Record<string, string | number> = {
+          adults: paxData.adults,
+          children: paxData.children,
+          infants: paxData.infants,
+          pax: paxStr,
+        }
+        
+        for (const field of fieldNames) {
+          if (field === 'pax') continue
+          const indices = mapping[field]
+          if (indices && indices.length > 0) {
+            // Get value from reservation's tokens at mapped indices
+            newRes[field] = indices.map(i => resTokens[i] || '').join(' ').trim()
+          } else {
+            // No mapping - leave blank
+            newRes[field] = ''
+          }
+        }
+        
+        return {
+          ...res,
+          ...newRes
+        } as ParsedReservation
+      })
+      
+      return { ...tour, reservations: newReservations, totalPax: tour.totalPax }
+    })
   }
 
   // ─── Update staff assignment ───────────────────────────────────────────────
@@ -420,7 +468,6 @@ export default function OrdenImportPage() {
           console.log('pickupTime raw:', res.pickupTime)
           const validTime = /^\d{1,2}:\d{2}$/.test(res.pickupTime) ? res.pickupTime + ':00' : null
           console.log('validTime result:', validTime)
-          
           console.log('brandId:', brandId)
           
           const { error: manifestError } = await supabase.from('reservation_manifest').insert({
@@ -448,7 +495,7 @@ export default function OrdenImportPage() {
             stop_type: 'pickup'
           })
           if (stopsError) console.error('pickup_stops error:', stopsError)
-          
+
           // Create payment record for balance due
           if (res.balanceDue > 0) {
             const { error: paymentError } = await supabase.from('payments').insert({
@@ -498,6 +545,9 @@ export default function OrdenImportPage() {
     alert('Notifications sent to guides and drivers!')
     router.push('/admin')
   }
+
+  // ─── Get available tokens (not yet assigned) ───────────────────────────────
+  const availableTokens = sampleTokens.filter((_, idx) => !assignedTokenIndices.has(idx))
 
   // ─── Render ────────────────────────────────────────────────────────────────
   return (
@@ -590,7 +640,7 @@ export default function OrdenImportPage() {
             )}
 
             {/* ── Step 2: Token Mapping ── */}
-            {step === 2 && sampleReservation && (
+            {step === 2 && sampleTokens.length > 0 && (
               <div className="border-8 border-transparent bg-white rounded-xl border border-gray-200 p-6 max-w-2xl mx-auto">
                 <div className="text-center mb-6">
                   <div className="text-sm text-gray-500 mb-1">
@@ -604,23 +654,33 @@ export default function OrdenImportPage() {
                   </p>
                 </div>
 
-                {/* Sample tokens as tappable chips */}
+                {/* Available tokens as tappable chips */}
                 <div className="border-8 border-transparent bg-gray-50 rounded-xl p-4 mb-6">
-                  <p className="text-xs text-gray-500 mb-3 text-center">TAP TOKENS TO ASSIGN:</p>
+                  <p className="text-xs text-gray-500 mb-3 text-center">
+                    TAP TOKENS TO ASSIGN ({availableTokens.length} remaining):
+                  </p>
                   <div className="flex flex-wrap gap-2 justify-center">
-                    {sampleTokens.map((token, idx) => (
-                      <button
-                        key={idx}
-                        onClick={() => toggleToken(idx)}
-                        className={`px-4 py-3 rounded-xl text-lg font-medium transition-all touch-manipulation
-                          ${currentSelection.includes(idx)
-                            ? 'bg-purple-600 text-white shadow-lg scale-105'
-                            : 'bg-white border-2 border-gray-200 text-gray-700 hover:border-purple-400'
-                          }`}
-                      >
-                        {token}
-                      </button>
-                    ))}
+                    {sampleTokens.map((token, idx) => {
+                      const isAssigned = assignedTokenIndices.has(idx)
+                      const isSelected = currentSelection.includes(idx)
+                      
+                      return (
+                        <button
+                          key={idx}
+                          onClick={() => !isAssigned && toggleToken(idx)}
+                          disabled={isAssigned}
+                          className={`px-4 py-3 rounded-xl text-lg font-medium transition-all touch-manipulation
+                            ${isAssigned 
+                              ? 'bg-gray-200 text-gray-400 cursor-not-allowed line-through'
+                              : isSelected
+                                ? 'bg-purple-600 text-white shadow-lg scale-105'
+                                : 'bg-white border-2 border-gray-200 text-gray-700 hover:border-purple-400'
+                            }`}
+                        >
+                          {token}
+                        </button>
+                      )
+                    })}
                   </div>
                 </div>
 
