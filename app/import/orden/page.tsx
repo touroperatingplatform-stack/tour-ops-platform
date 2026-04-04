@@ -44,101 +44,11 @@ interface CreatedTour {
   guestCount: number
 }
 
-// ─── Extract text from PDF (client-side only) ─────────────────────────────────
-async function extractTextFromPDF(file: File): Promise<string> {
-  const pdfjsLib = await import('pdfjs-dist')
-  
-  const arrayBuffer = await file.arrayBuffer()
-  const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise
-  
-  let fullText = ''
-  
-  for (let i = 1; i <= pdf.numPages; i++) {
-    const page = await pdf.getPage(i)
-    const textContent = await page.getTextContent()
-    const pageText = textContent.items
-      .map((item: any) => item.str)
-      .join(' ')
-    fullText += pageText + '\n'
-  }
-  
-  return fullText
-}
-
-// ─── Parse PAX format (adults.children.infants) ───────────────────────────────
-function parsePax(paxStr: string): { adults: number; children: number; infants: number } {
-  const parts = paxStr.split('.')
-  const adults = parseInt(parts[0]) || 1
-  const children = parseInt(parts[1]) || 0
-  const infants = parseInt(parts[2]) || 0
-  return { adults, children, infants }
-}
-
-// ─── Parse ORDEN text ──────────────────────────────────────────────────────
-function parseOrdenText(text: string): ParsedTour[] {
-  const lines = text.split('\n').map(l => l.trim()).filter(Boolean)
-  const tours: ParsedTour[] = []
-  let currentTour: Partial<ParsedTour> = {}
-
-  for (const line of lines) {
-    // Skip headers
-    if (line.startsWith('PLAYA DEL CARMEN') || line.startsWith('TENOCH') ||
-        line.startsWith('HOTEL CLIENTE') || line.startsWith('TOTAL') ||
-        line.startsWith('---') || line.startsWith('*')) continue
-
-    // Tour header: SERVICIO: TULUM CENOTE AKUMAL OPERADOR: FEDERICO GUIA: JUAN
-    const tourMatch = line.match(/SERVICIO:\s*(.+?)\s+OPERADOR:\s*(\S+)\s+GUIA:\s*(\S+)/i)
-    if (tourMatch) {
-      if (currentTour.service) {
-        tours.push(currentTour as ParsedTour)
-      }
-      currentTour = {
-        service: tourMatch[1].trim(),
-        operador: tourMatch[2].trim(),
-        guia: tourMatch[3].trim(),
-        reservations: [],
-        totalPax: 0
-      }
-      continue
-    }
-
-    // Data line: HOTEL CLIENTE CUPONHAB PAX #CONF. TOUR_ID HORA REP AGENCIA
-    const parts = line.split(/\s+/)
-    if (parts.length >= 6 && currentTour.service) {
-      const paxData = parsePax(parts[3] || '1')
-      
-      const reservation: ParsedReservation = {
-        hotel: parts[0],
-        clientName: parts[1] + (parts[2] ? ' ' + parts[2] : ''),
-        coupon: parts[2] || '',
-        pax: parts[3] || '1',
-        adults: paxData.adults,
-        children: paxData.children,
-        infants: paxData.infants,
-        confirmation: parts[4] || '',
-        pickupTime: parts[5] || '09:00',
-        agency: parts[parts.length - 1] || ''
-      }
-
-      currentTour.reservations = currentTour.reservations || []
-      currentTour.reservations.push(reservation)
-      currentTour.totalPax = (currentTour.totalPax || 0) + paxData.adults + paxData.children + paxData.infants
-    }
-  }
-
-  if (currentTour.service) {
-    tours.push(currentTour as ParsedTour)
-  }
-
-  return tours
-}
-
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function OrdenImportPage() {
   const router = useRouter()
   const [step, setStep] = useState<1 | 2 | 3 | 4 | 5>(1)
   const [file, setFile] = useState<File | null>(null)
-  const [fileText, setFileText] = useState('')
   const [parsedTours, setParsedTours] = useState<ParsedTour[]>([])
   const [companyId, setCompanyId] = useState<string | null>(null)
   const [brandId, setBrandId] = useState<string | null>(null)
@@ -211,7 +121,7 @@ export default function OrdenImportPage() {
   }
 
   // ─── Step 1: Handle file upload & parse ────────────────────────────────────
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0]
     if (!f) return
     setFile(f)
@@ -228,27 +138,31 @@ export default function OrdenImportPage() {
     setError('')
 
     try {
-      let text = ''
+      // Send to API for server-side parsing
+      const formData = new FormData()
+      formData.append('file', file)
 
-      // Extract text based on file type
-      if (file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')) {
-        text = await extractTextFromPDF(file)
-      } else {
-        // Plain text file
-        text = await file.text()
+      const response = await fetch('/api/import/orden', {
+        method: 'POST',
+        body: formData
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        setError(data.error || 'Failed to parse file')
+        setParsing(false)
+        return
       }
 
-      const tours = parseOrdenText(text)
-      if (tours.length === 0) {
+      if (!data.tours || data.tours.length === 0) {
         setError('No tours found. Make sure the file has SERVICIO/OPERADOR/GUIA headers.')
         setParsing(false)
         return
       }
 
       // Match staff names to IDs
-      const toursWithStaff = matchStaff(tours)
-
-      setFileText(text)
+      const toursWithStaff = matchStaff(data.tours)
       setParsedTours(toursWithStaff)
       setStep(2)
     } catch (err: any) {
