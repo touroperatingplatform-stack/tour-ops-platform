@@ -6,7 +6,7 @@ import { supabase } from '@/lib/supabase/client'
 import RoleGuard from '@/lib/auth/RoleGuard'
 import Link from 'next/link'
 
-// ─── Types ───────────────────────────────────────────────────────────────────
+// ─── Types ─────────────────────────────────────────────────────────────────---
 interface ParsedReservation {
   hotel: string
   clientName: string
@@ -44,12 +44,26 @@ interface CreatedTour {
   guestCount: number
 }
 
+type FieldName = 'hotel' | 'clientName' | 'coupon' | 'pax' | 'confirmation' | 'pickupTime' | 'agency'
+
+// Default column order from the parser
+const DEFAULT_MAPPING: Record<FieldName, number> = {
+  hotel: 0,
+  clientName: 1,
+  coupon: 2,
+  pax: 3,
+  confirmation: 4,
+  pickupTime: 5,
+  agency: 6
+}
+
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function OrdenImportPage() {
   const router = useRouter()
-  const [step, setStep] = useState<1 | 2 | 3 | 4 | 5>(1)
+  const [step, setStep] = useState<1 | 2 | 3 | 4 | 5 | 6>(1)
   const [file, setFile] = useState<File | null>(null)
   const [parsedTours, setParsedTours] = useState<ParsedTour[]>([])
+  const [rawText, setRawText] = useState<string>('')
   const [companyId, setCompanyId] = useState<string | null>(null)
   const [brandId, setBrandId] = useState<string | null>(null)
   const [error, setError] = useState('')
@@ -61,6 +75,10 @@ export default function OrdenImportPage() {
   // Staff
   const [drivers, setDrivers] = useState<StaffMember[]>([])
   const [guides, setGuides] = useState<StaffMember[]>([])
+  
+  // Column mapping
+  const [sampleRow, setSampleRow] = useState<string[]>([])
+  const [columnMapping, setColumnMapping] = useState<Record<FieldName, number>>(DEFAULT_MAPPING)
   
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -106,7 +124,6 @@ export default function OrdenImportPage() {
       const operadorLower = tour.operador.toLowerCase()
       const driverMatch = drivers.find(d => {
         const fullLower = d.full_name.toLowerCase()
-        // Check first name match
         const firstName = fullLower.split(' ')[0]
         return operadorLower === firstName ||
                operadorLower === fullLower ||
@@ -118,7 +135,6 @@ export default function OrdenImportPage() {
       const guiaLower = tour.guia.toLowerCase()
       const guideMatch = guides.find(g => {
         const fullLower = g.full_name.toLowerCase()
-        // Check first name match
         const firstName = fullLower.split(' ')[0]
         return guiaLower === firstName ||
                guiaLower === fullLower ||
@@ -130,6 +146,30 @@ export default function OrdenImportPage() {
         ...tour,
         operadorId: driverMatch?.id,
         guiaId: guideMatch?.id
+      }
+    })
+  }
+
+  // ─── Apply column mapping to all reservations ──────────────────────────────
+  function applyMapping(tours: ParsedTour[], mapping: Record<FieldName, number>): ParsedTour[] {
+    return tours.map(tour => {
+      const newReservations = tour.reservations.map(res => {
+        const parts = res.pax.split(/\s+/)
+        return {
+          ...res,
+          hotel: parts[mapping.hotel] || '',
+          clientName: parts[mapping.clientName] || '',
+          coupon: parts[mapping.coupon] || '',
+          pax: parts[mapping.pax] || '1',
+          confirmation: parts[mapping.confirmation] || '',
+          pickupTime: parts[mapping.pickupTime] || '09:00',
+          agency: parts[mapping.agency] || ''
+        }
+      })
+      return {
+        ...tour,
+        reservations: newReservations,
+        totalPax: newReservations.reduce((sum, r) => sum + (parseInt(r.pax) || 0), 0)
       }
     })
   }
@@ -152,7 +192,6 @@ export default function OrdenImportPage() {
     setError('')
 
     try {
-      // Send to API for server-side parsing
       const formData = new FormData()
       formData.append('file', file)
 
@@ -175,17 +214,28 @@ export default function OrdenImportPage() {
         return
       }
 
-      // Match staff names to IDs and recalculate totalPax from parsed pax strings
+      setRawText(data.rawText || '')
+      
+      // Get sample row from first tour's first reservation
+      const firstRes = data.tours[0]?.reservations[0]
+      if (firstRes) {
+        // The reservation object fields - create a sample array for display
+        setSampleRow([
+          firstRes.hotel || '',
+          firstRes.clientName || '',
+          firstRes.coupon || '',
+          firstRes.pax || '1',
+          firstRes.confirmation || '',
+          firstRes.pickupTime || '09:00',
+          firstRes.agency || ''
+        ])
+      }
+
+      // Store parsed tours for now
       const toursWithStaff = matchStaff(data.tours).map(tour => ({
         ...tour,
         totalPax: tour.reservations.reduce((sum, r) => sum + (parseInt(r.pax) || 0), 0)
       }))
-      // Debug logging
-      console.log('raw pax values:', toursWithStaff.flatMap(t => t.reservations.map(r => r.pax)))
-      console.log('parsed operators:', toursWithStaff.map(t => t.operador))
-      console.log('parsed guides:', toursWithStaff.map(t => t.guia))
-      console.log('available drivers:', drivers.map(d => d.full_name))
-      console.log('available guides:', guides.map(g => g.full_name))
       setParsedTours(toursWithStaff)
       setStep(2)
     } catch (err: any) {
@@ -193,6 +243,19 @@ export default function OrdenImportPage() {
     } finally {
       setParsing(false)
     }
+  }
+
+  // ─── Update column mapping ─────────────────────────────────────────────────
+  const updateMapping = (field: FieldName, newIndex: number) => {
+    setColumnMapping(prev => ({ ...prev, [field]: newIndex }))
+  }
+
+  // ─── Confirm mapping and continue to Staff Assignment ──────────────────────
+  const handleMappingConfirm = () => {
+    // Apply mapping to all tours
+    const remappedTours = applyMapping(parsedTours, columnMapping)
+    setParsedTours(remappedTours)
+    setStep(3)
   }
 
   // ─── Update staff assignment ───────────────────────────────────────────────
@@ -220,7 +283,6 @@ export default function OrdenImportPage() {
 
     try {
       for (const tour of parsedTours) {
-        // Create tour
         const { data: newTour, error: tourErr } = await supabase
           .from('tours')
           .insert({
@@ -242,10 +304,8 @@ export default function OrdenImportPage() {
           continue
         }
 
-        // Create reservation_manifest records
         let stopOrder = 1
         for (const res of tour.reservations) {
-          // Create reservation_manifest entry
           await supabase.from('reservation_manifest').insert({
             tour_id: newTour.id,
             brand_id: brandId,
@@ -261,7 +321,6 @@ export default function OrdenImportPage() {
             primary_contact_name: res.clientName
           })
 
-          // Create pickup_stop
           await supabase.from('pickup_stops').insert({
             tour_id: newTour.id,
             brand_id: brandId,
@@ -273,7 +332,6 @@ export default function OrdenImportPage() {
           })
         }
 
-        // Update tour guest count
         try {
           await supabase.rpc('update_tour_guest_count', { tour_id: newTour.id })
         } catch {
@@ -291,7 +349,7 @@ export default function OrdenImportPage() {
       }
 
       setCreatedTours(created)
-      setStep(5)
+      setStep(6)
     } catch (err: any) {
       setError(err.message || 'Failed to create tours')
     } finally {
@@ -329,10 +387,11 @@ export default function OrdenImportPage() {
             <div className="flex items-center gap-2 text-sm flex-wrap">
               {[
                 { num: 1, label: 'Upload' },
-                { num: 2, label: 'Staff' },
-                { num: 3, label: 'Date' },
-                { num: 4, label: 'Confirm' },
-                { num: 5, label: 'Done' }
+                { num: 2, label: 'Columns' },
+                { num: 3, label: 'Staff' },
+                { num: 4, label: 'Date' },
+                { num: 5, label: 'Confirm' },
+                { num: 6, label: 'Done' }
               ].map((s, i) => (
                 <div key={s.num} className="flex items-center gap-2">
                   <span className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold
@@ -341,7 +400,7 @@ export default function OrdenImportPage() {
                     {step > s.num ? '✓' : s.num}
                   </span>
                   <span className={step === s.num ? 'text-purple-600 font-medium' : 'text-gray-400'}>{s.label}</span>
-                  {i < 4 && <span className="text-gray-300 mx-1">→</span>}
+                  {i < 5 && <span className="text-gray-300 mx-1">→</span>}
                 </div>
               ))}
             </div>
@@ -396,8 +455,76 @@ export default function OrdenImportPage() {
               </div>
             )}
 
-            {/* ── Step 2: Staff Assignment ── */}
-            {step === 2 && (
+            {/* ── Step 2: Column Mapping ── */}
+            {step === 2 && sampleRow.length > 0 && (
+              <div className="border-8 border-transparent bg-white rounded-xl border border-gray-200 p-6 max-w-4xl">
+                <div className="border-8 border-transparent mb-4">
+                  <h2 className="text-lg font-semibold">Verify Column Mapping</h2>
+                  <p className="text-sm text-gray-500">Sample row from first reservation. Adjust if columns are wrong.</p>
+                </div>
+
+                {/* Sample row display */}
+                <div className="border-8 border-transparent bg-gray-50 rounded-lg p-4 mb-6 overflow-x-auto">
+                  <div className="flex gap-2 min-w-max">
+                    {sampleRow.map((val, idx) => (
+                      <div key={idx} className="px-3 py-2 bg-white border border-gray-200 rounded text-sm min-w-[100px]">
+                        <div className="text-xs text-gray-400 mb-1">Col {idx}</div>
+                        <div className="font-medium truncate" title={val}>{val || '(empty)'}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Column mapping dropdowns */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                  {(Object.keys(columnMapping) as FieldName[]).map(field => (
+                    <div key={field} className="border border-gray-200 rounded-lg p-3">
+                      <label className="text-xs font-medium text-gray-700 mb-2 block">{field}</label>
+                      <select
+                        value={columnMapping[field]}
+                        onChange={(e) => updateMapping(field, parseInt(e.target.value))}
+                        className="border border-gray-300 rounded px-2 py-1 w-full text-sm"
+                      >
+                        {sampleRow.map((_, idx) => (
+                          <option key={idx} value={idx}>Column {idx}</option>
+                        ))}
+                      </select>
+                      <div className="text-xs text-gray-500 mt-1 truncate">
+                        Current: {sampleRow[columnMapping[field]] || '(empty)'}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Raw text preview */}
+                {rawText && (
+                  <div className="border-8 border-transparent mb-6">
+                    <p className="text-xs font-medium text-gray-500 mb-2">RAW TEXT SAMPLE:</p>
+                    <pre className="text-xs bg-gray-100 p-2 rounded overflow-x-auto whitespace-pre-wrap">
+                      {rawText.substring(0, 500)}
+                    </pre>
+                  </div>
+                )}
+
+                <div className="border-8 border-transparent flex gap-3">
+                  <button
+                    onClick={() => setStep(1)}
+                    className="px-6 py-3 border border-gray-300 text-gray-600 rounded-lg hover:bg-gray-50 font-medium"
+                  >
+                    ← Back
+                  </button>
+                  <button
+                    onClick={handleMappingConfirm}
+                    className="flex-1 px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 font-medium"
+                  >
+                    Confirm Mapping →
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* ── Step 3: Staff Assignment ── */}
+            {step === 3 && (
               <div className="border-8 border-transparent bg-white rounded-xl border border-gray-200 p-6">
                 <div className="border-8 border-transparent mb-4">
                   <h2 className="text-lg font-semibold">Assign Staff</h2>
@@ -451,36 +578,6 @@ export default function OrdenImportPage() {
 
                 <div className="border-8 border-transparent mt-6 flex gap-3">
                   <button
-                    onClick={() => setStep(1)}
-                    className="px-6 py-3 border border-gray-300 text-gray-600 rounded-lg hover:bg-gray-50 font-medium"
-                  >
-                    ← Back
-                  </button>
-                  <button
-                    onClick={() => setStep(3)}
-                    className="flex-1 px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 font-medium"
-                  >
-                    Continue →
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* ── Step 3: Select Date ── */}
-            {step === 3 && (
-              <div className="border-8 border-transparent bg-white rounded-xl border border-gray-200 p-6 max-w-md">
-                <h2 className="text-lg font-semibold mb-4">Select Tour Date</h2>
-                <p className="text-sm text-gray-500 mb-4">All tours will be created for this date</p>
-                
-                <input
-                  type="date"
-                  value={selectedDate}
-                  onChange={(e) => setSelectedDate(e.target.value)}
-                  className="border border-gray-300 rounded-lg px-4 py-3 w-full text-lg"
-                />
-
-                <div className="border-8 border-transparent mt-6 flex gap-3">
-                  <button
                     onClick={() => setStep(2)}
                     className="px-6 py-3 border border-gray-300 text-gray-600 rounded-lg hover:bg-gray-50 font-medium"
                   >
@@ -496,8 +593,38 @@ export default function OrdenImportPage() {
               </div>
             )}
 
-            {/* ── Step 4: Final Confirm ── */}
+            {/* ── Step 4: Select Date ── */}
             {step === 4 && (
+              <div className="border-8 border-transparent bg-white rounded-xl border border-gray-200 p-6 max-w-md">
+                <h2 className="text-lg font-semibold mb-4">Select Tour Date</h2>
+                <p className="text-sm text-gray-500 mb-4">All tours will be created for this date</p>
+                
+                <input
+                  type="date"
+                  value={selectedDate}
+                  onChange={(e) => setSelectedDate(e.target.value)}
+                  className="border border-gray-300 rounded-lg px-4 py-3 w-full text-lg"
+                />
+
+                <div className="border-8 border-transparent mt-6 flex gap-3">
+                  <button
+                    onClick={() => setStep(3)}
+                    className="px-6 py-3 border border-gray-300 text-gray-600 rounded-lg hover:bg-gray-50 font-medium"
+                  >
+                    ← Back
+                  </button>
+                  <button
+                    onClick={() => setStep(5)}
+                    className="flex-1 px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 font-medium"
+                  >
+                    Continue →
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* ── Step 5: Final Confirm ── */}
+            {step === 5 && (
               <div className="border-8 border-transparent bg-white rounded-xl border border-gray-200 p-6 max-w-2xl">
                 <h2 className="text-lg font-semibold mb-4">Confirm Import</h2>
                 
@@ -519,7 +646,7 @@ export default function OrdenImportPage() {
 
                 <div className="border-8 border-transparent flex gap-3">
                   <button
-                    onClick={() => setStep(3)}
+                    onClick={() => setStep(4)}
                     className="px-6 py-3 border border-gray-300 text-gray-600 rounded-lg hover:bg-gray-50 font-medium"
                   >
                     ← Back
@@ -535,8 +662,8 @@ export default function OrdenImportPage() {
               </div>
             )}
 
-            {/* ── Step 5: Done ── */}
-            {step === 5 && (
+            {/* ── Step 6: Done ── */}
+            {step === 6 && (
               <div className="border-8 border-transparent bg-white rounded-xl border border-gray-200 p-6 max-w-2xl">
                 <div className="text-center py-6">
                   <div className="text-5xl mb-4">🎉</div>
