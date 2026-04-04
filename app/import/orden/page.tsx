@@ -83,6 +83,7 @@ function parsePax(pax: string) {
 interface MappingAnalysis {
   anchorField: FieldId
   offsets: Record<FieldId, number>  // offset from anchor position (positive = after anchor, negative = before)
+  counts: Record<FieldId, number>    // number of tokens for this field (1 for single-word, N for multi-word)
 }
 
 function analyzeAnchorMapping(
@@ -149,7 +150,13 @@ function analyzeAnchorMapping(
       offsets[field] = Math.round(fieldMean - anchorMean)
     }
     
-    return { anchorField, offsets }
+    // Build counts from the user's mapping
+    const counts: Record<FieldId, number> = {} as any
+    for (const field of fieldIds) {
+      counts[field] = (mapping[field]?.length ?? 0) > 0 ? mapping[field].length : 1
+    }
+    
+    return { anchorField, offsets, counts }
   }
   
   // Fall back to field with lowest variance
@@ -180,7 +187,13 @@ function analyzeAnchorMapping(
     offsets[field] = Math.round(fieldMean - anchorMean)
   }
   
-  return { anchorField: bestField, offsets }
+  // Build counts from the user's mapping
+  const counts: Record<FieldId, number> = {} as any
+  for (const field of fieldIds) {
+    counts[field] = (mapping[field]?.length ?? 0) > 0 ? mapping[field].length : 1
+  }
+  
+  return { anchorField: bestField, offsets, counts }
 }
 
 // ─── Apply offset-based mapping ───────────────────────────────────────────────
@@ -218,6 +231,7 @@ function applyOffsetMapping(
       for (const field of fieldIds) {
         const offset = analysis.offsets[field] ?? 0
         const resolvedIdx = anchorPos + offset
+        const count = analysis.counts[field] ?? 1
         
         if (field === 'pax') {
           const paxStr = resolvedIdx >= 0 && resolvedIdx < tokens.length ? tokens[resolvedIdx] : ''
@@ -226,7 +240,18 @@ function applyOffsetMapping(
           newRes['adults'] = paxData.adults
           newRes['children'] = paxData.children
           newRes['infants'] = paxData.infants
+        } else if (count > 1) {
+          // Multi-word field: resolve a range of tokens
+          const resolvedTokens: string[] = []
+          for (let i = 0; i < count; i++) {
+            const tokIdx = resolvedIdx + i
+            if (tokIdx >= 0 && tokIdx < tokens.length) {
+              resolvedTokens.push(tokens[tokIdx])
+            }
+          }
+          newRes[field] = resolvedTokens.join(' ')
         } else {
+          // Single-word field: resolve one token
           newRes[field] = resolvedIdx >= 0 && resolvedIdx < tokens.length ? tokens[resolvedIdx] : ''
         }
       }
@@ -525,7 +550,7 @@ export default function OrdenImportPage() {
   const confirmMapping = () => {
     // Analyze anchor positions across all rows
     const analysis = analyzeAnchorMapping(parsedTours, tokenMapping, sampleTokens)
-    console.log('anchor analysis:', analysis)
+    console.log('anchor analysis full:', JSON.stringify(analysis))
     
     if (!analysis) {
       setError('Could not determine anchor field. Please remap columns.')
