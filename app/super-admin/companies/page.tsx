@@ -220,6 +220,20 @@ export default function CompaniesPage() {
         .update({ trial_id: trialRecord.id })
         .eq('id', companyId)
 
+      // 3b. Create default brand for trial
+      const { data: brand, error: brandError } = await supabase
+        .from('brands')
+        .insert({
+          company_id: companyId,
+          name: trialForm.companyName,
+          slug: trialForm.companyName.toLowerCase().replace(/\s+/g, '-') + '-brand',
+          is_active: true
+        })
+        .select('id')
+        .single()
+      if (brandError) throw brandError
+      const brandId = brand.id
+
       // 4. Link existing demo_ users (Group 1) - reset names to defaults
       const guideNames = ['Trial Guide 1', 'Trial Guide 2', 'Trial Guide 3', 'Trial Guide 4', 'Trial Guide 5']
       const driverNames = ['Trial Driver 1', 'Trial Driver 2', 'Trial Driver 3', 'Trial Driver 4', 'Trial Driver 5']
@@ -244,6 +258,7 @@ export default function CompaniesPage() {
           .from('profiles')
           .update({
             company_id: companyId,
+            brand_id: brandId,
             full_name: user.name,
             onboarding_completed: false
           })

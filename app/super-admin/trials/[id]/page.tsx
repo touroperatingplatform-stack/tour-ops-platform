@@ -162,36 +162,82 @@ export default function TrialManagePage() {
 
   async function handleDelete() {
     if (!trial) return
-    const msg = `Delete trial "${trial.company_name}"?\n\nThis will:\n1. Unlink all demo users (set company_id to null)\n2. Delete all company_configs\n3. Delete all vehicles\n4. Delete the company and trial record\n\nThis cannot be undone.`
+    const msg = `Delete trial "${trial.company_name}"?\n\nThis will permanently delete all related data and cannot be undone.`
     if (!confirm(msg)) return
     setDeleting(true)
     try {
-      // 1. Unlink demo users
-      const { data: linkedUsers } = await supabase
-        .from('profiles')
+      // Get all tours for this company first
+      const { data: tours } = await supabase
+        .from('tours')
         .select('id')
         .eq('company_id', trial.company_id)
+      const tourIds = tours?.map(t => t.id) || []
 
-      if (linkedUsers && linkedUsers.length > 0) {
+      // 1. Delete payments where tour_id IN tours
+      if (tourIds.length > 0) {
         await supabase
-          .from('profiles')
-          .update({ company_id: null, onboarding_completed: false })
-          .eq('company_id', trial.company_id)
+          .from('payments')
+          .delete()
+          .in('tour_id', tourIds)
       }
 
-      // 2. Delete company configs
+      // 2. Delete reservation_manifest where tour_id IN tours
+      if (tourIds.length > 0) {
+        await supabase
+          .from('reservation_manifest')
+          .delete()
+          .in('tour_id', tourIds)
+      }
+
+      // 3. Delete pickup_stops where tour_id IN tours
+      if (tourIds.length > 0) {
+        await supabase
+          .from('pickup_stops')
+          .delete()
+          .in('tour_id', tourIds)
+      }
+
+      // 4. Delete guide_checkins where tour_id IN tours
+      if (tourIds.length > 0) {
+        await supabase
+          .from('guide_checkins')
+          .delete()
+          .in('tour_id', tourIds)
+      }
+
+      // 5. Delete driver_checkins where tour_id IN tours
+      if (tourIds.length > 0) {
+        await supabase
+          .from('driver_checkins')
+          .delete()
+          .in('tour_id', tourIds)
+      }
+
+      // 6. Delete tours where company_id = ?
       await supabase
-        .from('company_configs')
+        .from('tours')
         .delete()
         .eq('company_id', trial.company_id)
 
-      // 3. Delete vehicles
+      // 7. Delete vehicles where company_id = ?
       await supabase
         .from('vehicles')
         .delete()
         .eq('company_id', trial.company_id)
 
-      // 4. Delete trial record
+      // 8. Delete brands where company_id = ?
+      await supabase
+        .from('brands')
+        .delete()
+        .eq('company_id', trial.company_id)
+
+      // 9. Reset all demo_ profiles (set company_id and brand_id to null, onboarding_completed to false)
+      await supabase
+        .from('profiles')
+        .update({ company_id: null, brand_id: null, onboarding_completed: false })
+        .eq('company_id', trial.company_id)
+
+      // 10. Delete trial record
       if (trial.trial_id) {
         await supabase
           .from('trials')
@@ -199,7 +245,7 @@ export default function TrialManagePage() {
           .eq('id', trial.trial_id)
       }
 
-      // 5. Delete company
+      // 11. Delete company
       const { error } = await supabase
         .from('companies')
         .delete()
