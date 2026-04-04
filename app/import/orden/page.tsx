@@ -365,19 +365,27 @@ export default function OrdenImportPage() {
 
   // ─── Apply token mapping to all reservations ───────────────────────────────
   function applyMapping(tours: ParsedTour[], mapping: Record<FieldId, number[]>, tokens: string[]): ParsedTour[] {
-    const fieldNames: FieldId[] = ['hotel', 'clientName', 'coupon', 'pax', 'confirmation', 'pickupTime', 'agency']
+    const fieldNames: FieldId[] = ['hotel', 'clientName', 'coupon', 'pax', 'confirmation']
     
     return tours.map(tour => {
       const newReservations = tour.reservations.map(res => {
         // Use the reservation's own token array
         const resTokens = res.tokens || tokens
         
-        // Helper: get token at index, or closest available if out of bounds
+        // Helper: get token at absolute index position, or closest available if out of bounds
         const getTokenAt = (idx: number): string => {
           if (idx < resTokens.length) return resTokens[idx]
-          // Out of bounds - use closest available (last token)
           return resTokens.length > 0 ? resTokens[resTokens.length - 1] : ''
         }
+        
+        // Pattern match pickupTime - always find the time token (e.g., "7:50")
+        const timePattern = /^\d{1,2}:\d{2}$/
+        const pickupTimeToken = resTokens.find(t => timePattern.test(t)) || ''
+        
+        // Pattern match agency - tokens ending with VACATIONS, CHARTERS, or TOURS
+        const agencyPattern = /(VACATIONS|CHARTERS|TOURS)$/i
+        const agencyTokens = resTokens.filter(t => agencyPattern.test(t))
+        const agencyValue = agencyTokens.join(' ')
         
         // Handle pax separately since it can be "2" or "2.1.0"
         const paxIndices = mapping['pax']
@@ -389,22 +397,21 @@ export default function OrdenImportPage() {
         
         const paxData = parsePax(paxStr)
         
-        // Build new reservation using stored token indices
+        // Build new reservation using stored token indices for hotel, client, coupon, pax, confirmation
         const newRes: Record<string, string | number> = {
           adults: paxData.adults,
           children: paxData.children,
           infants: paxData.infants,
           pax: paxStr,
+          pickupTime: pickupTimeToken,
+          agency: agencyValue,
         }
         
         for (const field of fieldNames) {
-          if (field === 'pax') continue
           const indices = mapping[field]
           if (indices && indices.length > 0) {
-            // Get value from reservation's tokens at mapped indices (or closest available)
             newRes[field] = indices.map(i => getTokenAt(i)).join(' ').trim()
           } else {
-            // No mapping - leave blank
             newRes[field] = ''
           }
         }
