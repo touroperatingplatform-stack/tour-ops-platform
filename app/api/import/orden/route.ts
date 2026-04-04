@@ -46,6 +46,17 @@ function parseOrdenText(text: string): ParsedTour[] {
   console.log('Groups found:', groups.length)
   groups.forEach((g, i) => console.log('Group', i, 'first line:', g.split('\n')[0]))
   
+  // Debug: log specific groups
+  if (groups.length > 1) {
+    const reservationLine = /^\s*\S+.*\d+:\d+.*$/
+    console.log('Group 1 raw line:', groups[1].split('\n').filter(l => reservationLine.test(l))[0])
+  }
+  if (groups.length > 6) {
+    const reservationLine = /^\s*\S+.*\d+:\d+.*$/
+    const g6lines = groups[6].split('\n').filter(l => reservationLine.test(l))
+    g6lines.forEach((l, i) => console.log(`Group 6 res ${i} pax:`, l.match(/(?:\d{3,4}|´\S+)\s+(\d{1,2}(?:\.\d+)*)\s+/)?.[1] || 'NOT_FOUND'))
+  }
+  
   let groupIdx = 0
   
   for (const group of groups) {

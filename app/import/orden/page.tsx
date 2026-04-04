@@ -156,8 +156,8 @@ export default function OrdenImportPage() {
                operadorLower.includes(firstName)
       })
       
-      const guiaLower = tour.guia.toLowerCase()
-      const guideMatch = guides.find(g => {
+      const guiaLower = tour.guia?.toLowerCase() || ''
+      const guideMatch = guiaLower ? guides.find(g => {
         const fullLower = g.full_name.toLowerCase()
         const firstName = fullLower.split(' ')[0]
         return guiaLower === firstName ||
