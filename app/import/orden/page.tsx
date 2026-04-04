@@ -425,7 +425,7 @@ export default function OrdenImportPage() {
             infant_pax: res.infants,
             total_pax: res.adults + res.children + res.infants,
             hotel_name: res.hotel,
-            room_number: res.coupon,
+            room_number: null,
             pickup_time: res.pickupTime,
             agency_name: res.agency,
             primary_contact_name: res.clientName
@@ -436,7 +436,7 @@ export default function OrdenImportPage() {
             brand_id: brandId,
             sort_order: stopOrder++,
             location_name: res.hotel,
-            scheduled_time: res.pickupTime,
+            scheduled_time: res.pickupTime + ':00',
             guest_count: res.adults + res.children + res.infants,
             stop_type: 'pickup'
           })
