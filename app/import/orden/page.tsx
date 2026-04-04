@@ -461,9 +461,12 @@ export default function OrdenImportPage() {
         }
 
         try {
-          await supabase.rpc('update_tour_guest_count', { p_tour_id: newTour.id })
+          await supabase
+            .from('tours')
+            .update({ guest_count: tour.totalPax })
+            .eq('id', newTour.id)
         } catch (e) {
-          console.error('RPC error:', e)
+          console.error('guest_count update error:', e)
         }
 
         created.push({
