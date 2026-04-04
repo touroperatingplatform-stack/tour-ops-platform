@@ -8,7 +8,7 @@ const nextConfig: NextConfig = {
   },
   turbopack: {
     resolveAlias: {
-      canvas: false,
+      canvas: './empty-module.js',
     },
   },
 };
