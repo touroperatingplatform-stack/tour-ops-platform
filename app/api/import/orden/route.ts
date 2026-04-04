@@ -40,6 +40,8 @@ function parseOrdenText(text: string): ParsedTour[] {
   
   // Step 1: Split by SERVICIO: into groups
   const groups = text.split(/SERVICIO:/g).slice(1)
+  console.log('Groups found:', groups.length)
+  groups.forEach((g, i) => console.log('Group', i, 'first line:', g.split('\n')[0]))
   
   for (const group of groups) {
     const lines = group.split('\n').map(l => l.trim()).filter(Boolean)
@@ -186,6 +188,7 @@ export async function POST(request: NextRequest) {
     }
 
     console.log('RAW TEXT:', text.substring(0, 1000))
+    console.log('SERVICIO count:', (text.match(/SERVICIO:/gi) || []).length)
     const tours = parseOrdenText(text)
     console.log('NUMBER OF GROUPS FOUND:', tours.length)
     console.log('PARSED TOURS:', JSON.stringify(tours.map(t => ({ 
