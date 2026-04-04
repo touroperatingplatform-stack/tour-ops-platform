@@ -44,18 +44,24 @@ interface CreatedTour {
   guestCount: number
 }
 
-type FieldName = 'hotel' | 'clientName' | 'coupon' | 'pax' | 'confirmation' | 'pickupTime' | 'agency'
+// ─── Column mapping step types ────────────────────────────────────────────────
+type FieldId = 'hotel' | 'clientName' | 'coupon' | 'pax' | 'confirmation' | 'pickupTime' | 'agency'
 
-// Default column order from the parser
-const DEFAULT_MAPPING: Record<FieldName, number> = {
-  hotel: 0,
-  clientName: 1,
-  coupon: 2,
-  pax: 3,
-  confirmation: 4,
-  pickupTime: 5,
-  agency: 6
+interface FieldDef {
+  id: FieldId
+  label: string
+  hint: string
+  example?: string
 }
+
+const FIELDS: FieldDef[] = [
+  { id: 'hotel', label: 'HOTEL', hint: 'Tap the hotel name', example: 'RIU PALACE' },
+  { id: 'clientName', label: 'CLIENT', hint: 'Tap the client name', example: 'John Smith' },
+  { id: 'coupon', label: 'COUPON', hint: 'Tap the coupon code', example: '´055' },
+  { id: 'pax', label: 'PAX', hint: 'Tap the guest count', example: '2' },
+  { id: 'pickupTime', label: 'TIME', hint: 'Tap the pickup time', example: '9:30' },
+  { id: 'agency', label: 'AGENCY', hint: 'Tap the agency name', example: 'NS VACATIONS' },
+]
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function OrdenImportPage() {
@@ -77,8 +83,19 @@ export default function OrdenImportPage() {
   const [guides, setGuides] = useState<StaffMember[]>([])
   
   // Column mapping
-  const [sampleRow, setSampleRow] = useState<string[]>([])
-  const [columnMapping, setColumnMapping] = useState<Record<FieldName, number>>(DEFAULT_MAPPING)
+  const [sampleTokens, setSampleTokens] = useState<string[]>([])
+  const [sampleReservation, setSampleReservation] = useState<ParsedReservation | null>(null)
+  const [mappingStep, setMappingStep] = useState(0)
+  const [tokenMapping, setTokenMapping] = useState<Record<FieldId, number[]>>({
+    hotel: [],
+    clientName: [],
+    coupon: [],
+    pax: [],
+    confirmation: [],
+    pickupTime: [],
+    agency: [],
+  })
+  const [currentSelection, setCurrentSelection] = useState<number[]>([])
   
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -98,7 +115,6 @@ export default function OrdenImportPage() {
       setCompanyId(profile.company_id)
       setBrandId(profile.brand_id)
 
-      // Load drivers
       const { data: driverData } = await supabase
         .from('profiles')
         .select('id, full_name')
@@ -106,7 +122,6 @@ export default function OrdenImportPage() {
         .eq('role', 'driver')
       if (driverData) setDrivers(driverData)
 
-      // Load guides
       const { data: guideData } = await supabase
         .from('profiles')
         .select('id, full_name')
@@ -117,10 +132,14 @@ export default function OrdenImportPage() {
     loadData()
   }, [])
 
+  // ─── Parse pax string to number ───────────────────────────────────────────
+  function parsePax(pax: string): number {
+    return parseInt(pax) || 1
+  }
+
   // ─── Match staff names ─────────────────────────────────────────────────────
   function matchStaff(tours: ParsedTour[]): ParsedTour[] {
     return tours.map(tour => {
-      // Driver matching - more flexible
       const operadorLower = tour.operador.toLowerCase()
       const driverMatch = drivers.find(d => {
         const fullLower = d.full_name.toLowerCase()
@@ -131,7 +150,6 @@ export default function OrdenImportPage() {
                operadorLower.includes(firstName)
       })
       
-      // Guide matching - more flexible
       const guiaLower = tour.guia.toLowerCase()
       const guideMatch = guides.find(g => {
         const fullLower = g.full_name.toLowerCase()
@@ -150,53 +168,43 @@ export default function OrdenImportPage() {
     })
   }
 
-  // ─── Parse pax string to number ───────────────────────────────────────────
-  function parsePax(pax: string): number {
-    return parseInt(pax) || 1
-  }
-
-  // ─── Apply column mapping to all reservations ──────────────────────────────
-  // Mapping lets user swap which parsed field goes to which database column
-  function applyMapping(tours: ParsedTour[], mapping: Record<FieldName, number>): ParsedTour[] {
-    const fieldNames: FieldName[] = ['hotel', 'clientName', 'coupon', 'pax', 'confirmation', 'pickupTime', 'agency']
+  // ─── Apply token mapping to all reservations ───────────────────────────────
+  function applyMapping(tours: ParsedTour[], tokenMapping: Record<FieldId, number[]>): ParsedTour[] {
+    const fieldNames: FieldId[] = ['hotel', 'clientName', 'coupon', 'pax', 'confirmation', 'pickupTime', 'agency']
     
     return tours.map(tour => {
       const newReservations = tour.reservations.map(res => {
-        // Get current values in field order
-        const values = [
-          res.hotel,
-          res.clientName,
-          res.coupon,
-          res.pax,
-          res.confirmation,
-          res.pickupTime,
-          res.agency
-        ]
-        
-        // Build new reservation by mapping values to their new field positions
-        const newRes: Record<string, string> = {}
-        for (const field of fieldNames) {
-          const valueIndex = mapping[field]
-          newRes[field] = values[valueIndex] || ''
+        // Get all field values from the original reservation in order
+        const values: Record<string, string> = {
+          hotel: res.hotel,
+          clientName: res.clientName,
+          coupon: res.coupon,
+          pax: res.pax,
+          confirmation: res.confirmation,
+          pickupTime: res.pickupTime,
+          agency: res.agency
         }
         
-        // Rebuild reservation with corrected fields
-        const paxStr = newRes.pax || '1'
-        const adults = parsePax(paxStr)
+        // Build new reservation using token mapping
+        const newRes: Record<string, string | number> = {
+          adults: parseInt(values.pax) || 1,
+          children: 0,
+          infants: 0,
+        }
+        
+        for (const field of fieldNames) {
+          const indices = tokenMapping[field]
+          if (indices && indices.length > 0) {
+            newRes[field] = indices.map(i => values[fieldNames[i]] || '').join(' ')
+          } else {
+            newRes[field] = ''
+          }
+        }
         
         return {
           ...res,
-          hotel: newRes.hotel || '',
-          clientName: newRes.clientName || '',
-          coupon: newRes.coupon || '',
-          pax: paxStr,
-          adults,
-          children: 0,
-          infants: 0,
-          confirmation: newRes.confirmation || '',
-          pickupTime: newRes.pickupTime || '09:00',
-          agency: newRes.agency || ''
-        }
+          ...newRes
+        } as ParsedReservation
       })
       
       const totalPax = newReservations.reduce((sum, r) => sum + parsePax(r.pax), 0)
@@ -246,28 +254,51 @@ export default function OrdenImportPage() {
 
       setRawText(data.rawText || '')
       
-      // Get sample row from first tour's first reservation
+      // Get sample from first tour's first reservation
       const firstRes = data.tours[0]?.reservations[0]
       if (firstRes) {
-        // The reservation object fields - create a sample array for display
-        setSampleRow([
-          firstRes.hotel || '',
-          firstRes.clientName || '',
-          firstRes.coupon || '',
-          firstRes.pax || '1',
-          firstRes.confirmation || '',
-          firstRes.pickupTime || '09:00',
-          firstRes.agency || ''
-        ])
+        setSampleReservation(firstRes)
+        
+        // Build tokens from the raw reservation fields
+        // Combine all fields into a displayable token array
+        const tokens: string[] = []
+        
+        // Add hotel words
+        if (firstRes.hotel) tokens.push(...firstRes.hotel.split(/\s+/))
+        // Add client words
+        if (firstRes.clientName) tokens.push(...firstRes.clientName.split(/\s+/))
+        // Add coupon
+        if (firstRes.coupon) tokens.push(firstRes.coupon)
+        // Add HAB (room) - we'll include it in the flow
+        // Add pax
+        if (firstRes.pax) tokens.push(firstRes.pax)
+        // Add confirmation
+        if (firstRes.confirmation) tokens.push(firstRes.confirmation)
+        // Add time
+        if (firstRes.pickupTime) tokens.push(firstRes.pickupTime)
+        // Add agency
+        if (firstRes.agency) tokens.push(...firstRes.agency.split(/\s+/))
+        
+        setSampleTokens(tokens.length > 0 ? tokens : ['No', 'data', 'found'])
       }
 
-      // Store parsed tours for now
       const toursWithStaff = matchStaff(data.tours).map(tour => ({
         ...tour,
-        totalPax: tour.reservations.reduce((sum, r) => sum + (parseInt(r.pax) || 0), 0)
+        totalPax: tour.reservations.reduce((sum, r) => sum + parsePax(r.pax), 0)
       }))
       setParsedTours(toursWithStaff)
       setStep(2)
+      setMappingStep(0)
+      setCurrentSelection([])
+      setTokenMapping({
+        hotel: [],
+        clientName: [],
+        coupon: [],
+        pax: [],
+        confirmation: [],
+        pickupTime: [],
+        agency: [],
+      })
     } catch (err: any) {
       setError('Failed to parse file: ' + (err.message || 'Unknown error'))
     } finally {
@@ -275,17 +306,48 @@ export default function OrdenImportPage() {
     }
   }
 
-  // ─── Update column mapping ─────────────────────────────────────────────────
-  const updateMapping = (field: FieldName, newIndex: number) => {
-    setColumnMapping(prev => ({ ...prev, [field]: newIndex }))
+  // ─── Token selection handlers ──────────────────────────────────────────────
+  const toggleToken = (index: number) => {
+    if (currentSelection.includes(index)) {
+      setCurrentSelection(currentSelection.filter(i => i !== index))
+    } else {
+      setCurrentSelection([...currentSelection, index])
+    }
   }
 
-  // ─── Confirm mapping and continue to Staff Assignment ──────────────────────
-  const handleMappingConfirm = () => {
-    // Apply mapping to all tours
-    const remappedTours = applyMapping(parsedTours, columnMapping)
-    setParsedTours(remappedTours)
-    setStep(3)
+  const confirmField = () => {
+    const field = FIELDS[mappingStep]
+    
+    // Save current selection to mapping
+    setTokenMapping(prev => ({
+      ...prev,
+      [field.id]: currentSelection
+    }))
+    
+    // Move to next step
+    if (mappingStep < FIELDS.length - 1) {
+      setMappingStep(mappingStep + 1)
+      setCurrentSelection([])
+    } else {
+      // All fields assigned - apply mapping and go to staff step
+      const remappedTours = applyMapping(parsedTours, tokenMapping)
+      setParsedTours(remappedTours)
+      setStep(3)
+    }
+  }
+
+  const skipField = () => {
+    setTokenMapping(prev => ({
+      ...prev,
+      [FIELDS[mappingStep].id]: []
+    }))
+    
+    if (mappingStep < FIELDS.length - 1) {
+      setMappingStep(mappingStep + 1)
+      setCurrentSelection([])
+    } else {
+      setStep(3)
+    }
   }
 
   // ─── Update staff assignment ───────────────────────────────────────────────
@@ -364,9 +426,7 @@ export default function OrdenImportPage() {
 
         try {
           await supabase.rpc('update_tour_guest_count', { tour_id: newTour.id })
-        } catch {
-          // RPC may not exist
-        }
+        } catch {}
 
         created.push({
           id: newTour.id,
@@ -403,11 +463,11 @@ export default function OrdenImportPage() {
           <div className="border-8 border-transparent bg-white rounded-xl flex-shrink-0 mb-4">
             <div className="border-8 border-transparent p-4 flex justify-between items-center">
               <div className="border-8 border-transparent">
-                <h1 className="text-2xl font-bold text-gray-900">📋 ORDEN Import Wizard</h1>
+                <h1 className="text-2xl font-bold text-gray-900">📋 ORDEN Import</h1>
                 <p className="text-sm text-gray-500 mt-1">Import your daily operation plan</p>
               </div>
               <Link href="/admin" className="text-sm text-gray-500 hover:text-gray-700">
-                ← Back to Dashboard
+                ← Back
               </Link>
             </div>
           </div>
@@ -417,7 +477,7 @@ export default function OrdenImportPage() {
             <div className="flex items-center gap-2 text-sm flex-wrap">
               {[
                 { num: 1, label: 'Upload' },
-                { num: 2, label: 'Columns' },
+                { num: 2, label: 'Map' },
                 { num: 3, label: 'Staff' },
                 { num: 4, label: 'Date' },
                 { num: 5, label: 'Confirm' },
@@ -442,15 +502,13 @@ export default function OrdenImportPage() {
             {/* ── Step 1: Upload ── */}
             {step === 1 && (
               <div className="border-8 border-transparent bg-white rounded-xl border border-gray-200 p-6 max-w-2xl">
-                <div className="border-8 border-transparent mb-6">
-                  <h2 className="text-lg font-semibold mb-2">Upload ORDEN File</h2>
-                  <p className="text-sm text-gray-500 mb-4">
-                    Supported formats: <strong>PDF</strong>, <strong>Excel</strong> (export as .txt), or <strong>Text</strong> files
-                  </p>
-                </div>
+                <h2 className="text-lg font-semibold mb-2">Upload ORDEN File</h2>
+                <p className="text-sm text-gray-500 mb-4">
+                  Supported: PDF, Excel (.txt), or Text files
+                </p>
 
                 <div
-                  className="border-8 border-transparent border-2 border-dashed border-gray-300 rounded-lg p-8 text-center cursor-pointer hover:border-purple-400 transition-colors"
+                  className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center cursor-pointer hover:border-purple-400 transition-colors"
                   onClick={() => fileInputRef.current?.click()}
                 >
                   <input
@@ -460,9 +518,9 @@ export default function OrdenImportPage() {
                     onChange={handleFileChange}
                     className="hidden"
                   />
-                  <div className="text-4xl mb-2">📄</div>
+                  <div className="text-5xl mb-3">📄</div>
                   <p className="font-medium text-gray-700">
-                    {file ? file.name : 'Click to select file'}
+                    {file ? file.name : 'Tap to select file'}
                   </p>
                   <p className="text-xs text-gray-400 mt-1">
                     {file ? `${(file.size / 1024).toFixed(1)} KB` : 'PDF, TXT, CSV'}
@@ -478,77 +536,86 @@ export default function OrdenImportPage() {
                 <button
                   onClick={handleParse}
                   disabled={!file || parsing}
-                  className="mt-6 w-full px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 font-medium"
+                  className="mt-6 w-full px-6 py-4 bg-purple-600 text-white rounded-xl hover:bg-purple-700 disabled:opacity-50 font-medium text-lg"
                 >
                   {parsing ? '⏳ Parsing...' : 'Parse File →'}
                 </button>
               </div>
             )}
 
-            {/* ── Step 2: Column Mapping ── */}
-            {step === 2 && sampleRow.length > 0 && (
-              <div className="border-8 border-transparent bg-white rounded-xl border border-gray-200 p-6 max-w-4xl">
-                <div className="border-8 border-transparent mb-4">
-                  <h2 className="text-lg font-semibold">Verify Column Mapping</h2>
-                  <p className="text-sm text-gray-500">Sample row from first reservation. Adjust if columns are wrong.</p>
+            {/* ── Step 2: Token Mapping ── */}
+            {step === 2 && sampleReservation && (
+              <div className="border-8 border-transparent bg-white rounded-xl border border-gray-200 p-6 max-w-2xl mx-auto">
+                <div className="text-center mb-6">
+                  <div className="text-sm text-gray-500 mb-1">
+                    Step {mappingStep + 1} of {FIELDS.length}
+                  </div>
+                  <h2 className="text-2xl font-bold text-purple-600 mb-2">
+                    {FIELDS[mappingStep].label}
+                  </h2>
+                  <p className="text-gray-500">
+                    {FIELDS[mappingStep].hint}
+                  </p>
                 </div>
 
-                {/* Sample row display */}
-                <div className="border-8 border-transparent bg-gray-50 rounded-lg p-4 mb-6 overflow-x-auto">
-                  <div className="flex gap-2 min-w-max">
-                    {sampleRow.map((val, idx) => (
-                      <div key={idx} className="px-3 py-2 bg-white border border-gray-200 rounded text-sm min-w-[100px]">
-                        <div className="text-xs text-gray-400 mb-1">Col {idx}</div>
-                        <div className="font-medium truncate" title={val}>{val || '(empty)'}</div>
-                      </div>
+                {/* Sample tokens as tappable chips */}
+                <div className="border-8 border-transparent bg-gray-50 rounded-xl p-4 mb-6">
+                  <p className="text-xs text-gray-500 mb-3 text-center">TAP TOKENS TO ASSIGN:</p>
+                  <div className="flex flex-wrap gap-2 justify-center">
+                    {sampleTokens.map((token, idx) => (
+                      <button
+                        key={idx}
+                        onClick={() => toggleToken(idx)}
+                        className={`px-4 py-3 rounded-xl text-lg font-medium transition-all touch-manipulation
+                          ${currentSelection.includes(idx)
+                            ? 'bg-purple-600 text-white shadow-lg scale-105'
+                            : 'bg-white border-2 border-gray-200 text-gray-700 hover:border-purple-400'
+                          }`}
+                      >
+                        {token}
+                      </button>
                     ))}
                   </div>
                 </div>
 
-                {/* Column mapping dropdowns */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                  {(Object.keys(columnMapping) as FieldName[]).map(field => (
-                    <div key={field} className="border border-gray-200 rounded-lg p-3">
-                      <label className="text-xs font-medium text-gray-700 mb-2 block">{field}</label>
-                      <select
-                        value={columnMapping[field]}
-                        onChange={(e) => updateMapping(field, parseInt(e.target.value))}
-                        className="border border-gray-300 rounded px-2 py-1 w-full text-sm"
-                      >
-                        {sampleRow.map((_, idx) => (
-                          <option key={idx} value={idx}>Column {idx}</option>
-                        ))}
-                      </select>
-                      <div className="text-xs text-gray-500 mt-1 truncate">
-                        Current: {sampleRow[columnMapping[field]] || '(empty)'}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Raw text preview */}
-                {rawText && (
-                  <div className="border-8 border-transparent mb-6">
-                    <p className="text-xs font-medium text-gray-500 mb-2">RAW TEXT SAMPLE:</p>
-                    <pre className="text-xs bg-gray-100 p-2 rounded overflow-x-auto whitespace-pre-wrap">
-                      {rawText.substring(0, 500)}
-                    </pre>
+                {/* Selected value preview */}
+                {currentSelection.length > 0 && (
+                  <div className="border-8 border-transparent bg-green-50 rounded-xl p-4 mb-6">
+                    <p className="text-xs text-green-600 mb-1">SELECTED:</p>
+                    <p className="text-xl font-bold text-green-700">
+                      {currentSelection.map(i => sampleTokens[i]).join(' ')}
+                    </p>
                   </div>
                 )}
 
+                {/* Action buttons */}
                 <div className="border-8 border-transparent flex gap-3">
                   <button
-                    onClick={() => setStep(1)}
-                    className="px-6 py-3 border border-gray-300 text-gray-600 rounded-lg hover:bg-gray-50 font-medium"
+                    onClick={skipField}
+                    className="px-6 py-4 border-2 border-gray-300 text-gray-600 rounded-xl hover:bg-gray-50 font-medium text-lg"
                   >
-                    ← Back
+                    Skip
                   </button>
                   <button
-                    onClick={handleMappingConfirm}
-                    className="flex-1 px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 font-medium"
+                    onClick={confirmField}
+                    disabled={selectedIndices.length === 0}
+                    className="flex-1 px-6 py-4 bg-purple-600 text-white rounded-xl hover:bg-purple-700 disabled:opacity-50 font-bold text-lg"
                   >
-                    Confirm Mapping →
+                    {mappingStep < FIELDS.length - 1 ? 'Next →' : 'Done ✓'}
                   </button>
+                </div>
+
+                {/* Progress dots */}
+                <div className="flex justify-center gap-2 mt-6">
+                  {FIELDS.map((_, idx) => (
+                    <div
+                      key={idx}
+                      className={`w-3 h-3 rounded-full ${
+                        idx === mappingStep ? 'bg-purple-600' :
+                        idx < mappingStep ? 'bg-green-500' : 'bg-gray-200'
+                      }`}
+                    />
+                  ))}
                 </div>
               </div>
             )}
@@ -556,14 +623,14 @@ export default function OrdenImportPage() {
             {/* ── Step 3: Staff Assignment ── */}
             {step === 3 && (
               <div className="border-8 border-transparent bg-white rounded-xl border border-gray-200 p-6">
-                <div className="border-8 border-transparent mb-4">
+                <div className="mb-4">
                   <h2 className="text-lg font-semibold">Assign Staff</h2>
-                  <p className="text-sm text-gray-500">Review and adjust driver/guide assignments</p>
+                  <p className="text-sm text-gray-500">Driver & guide for each tour</p>
                 </div>
 
                 <div className="space-y-4">
                   {parsedTours.map((tour, tourIdx) => (
-                    <div key={tourIdx} className="border border-gray-200 rounded-lg p-4">
+                    <div key={tourIdx} className="border border-gray-200 rounded-xl p-4">
                       <h3 className="font-semibold text-gray-900 mb-3">{tour.service}</h3>
                       <div className="grid grid-cols-2 gap-4">
                         <div>
@@ -579,7 +646,7 @@ export default function OrdenImportPage() {
                             ))}
                           </select>
                           {tour.operadorId && (
-                            <p className="text-xs text-green-600 mt-1">✅ Matched: {tour.operador}</p>
+                            <p className="text-xs text-green-600 mt-1">✅ {tour.operador}</p>
                           )}
                         </div>
                         <div>
@@ -595,7 +662,7 @@ export default function OrdenImportPage() {
                             ))}
                           </select>
                           {tour.guiaId && (
-                            <p className="text-xs text-green-600 mt-1">✅ Matched: {tour.guia}</p>
+                            <p className="text-xs text-green-600 mt-1">✅ {tour.guia}</p>
                           )}
                         </div>
                       </div>
@@ -606,7 +673,7 @@ export default function OrdenImportPage() {
                   ))}
                 </div>
 
-                <div className="border-8 border-transparent mt-6 flex gap-3">
+                <div className="mt-6 flex gap-3">
                   <button
                     onClick={() => setStep(2)}
                     className="px-6 py-3 border border-gray-300 text-gray-600 rounded-lg hover:bg-gray-50 font-medium"
@@ -625,9 +692,9 @@ export default function OrdenImportPage() {
 
             {/* ── Step 4: Select Date ── */}
             {step === 4 && (
-              <div className="border-8 border-transparent bg-white rounded-xl border border-gray-200 p-6 max-w-md">
+              <div className="border-8 border-transparent bg-white rounded-xl border border-gray-200 p-6 max-w-md mx-auto">
                 <h2 className="text-lg font-semibold mb-4">Select Tour Date</h2>
-                <p className="text-sm text-gray-500 mb-4">All tours will be created for this date</p>
+                <p className="text-sm text-gray-500 mb-4">All tours for this date</p>
                 
                 <input
                   type="date"
@@ -636,7 +703,7 @@ export default function OrdenImportPage() {
                   className="border border-gray-300 rounded-lg px-4 py-3 w-full text-lg"
                 />
 
-                <div className="border-8 border-transparent mt-6 flex gap-3">
+                <div className="mt-6 flex gap-3">
                   <button
                     onClick={() => setStep(3)}
                     className="px-6 py-3 border border-gray-300 text-gray-600 rounded-lg hover:bg-gray-50 font-medium"
@@ -655,10 +722,10 @@ export default function OrdenImportPage() {
 
             {/* ── Step 5: Final Confirm ── */}
             {step === 5 && (
-              <div className="border-8 border-transparent bg-white rounded-xl border border-gray-200 p-6 max-w-2xl">
+              <div className="border-8 border-transparent bg-white rounded-xl border border-gray-200 p-6 max-w-2xl mx-auto">
                 <h2 className="text-lg font-semibold mb-4">Confirm Import</h2>
                 
-                <div className="border-8 border-transparent bg-gray-50 rounded-lg p-4 mb-6">
+                <div className="bg-gray-50 rounded-xl p-4 mb-6">
                   <p className="text-sm text-gray-600 mb-2"><strong>Summary:</strong></p>
                   <ul className="text-sm text-gray-600 space-y-1">
                     <li>• {parsedTours.length} tours</li>
@@ -674,7 +741,7 @@ export default function OrdenImportPage() {
                   </div>
                 )}
 
-                <div className="border-8 border-transparent flex gap-3">
+                <div className="flex gap-3">
                   <button
                     onClick={() => setStep(4)}
                     className="px-6 py-3 border border-gray-300 text-gray-600 rounded-lg hover:bg-gray-50 font-medium"
@@ -694,7 +761,7 @@ export default function OrdenImportPage() {
 
             {/* ── Step 6: Done ── */}
             {step === 6 && (
-              <div className="border-8 border-transparent bg-white rounded-xl border border-gray-200 p-6 max-w-2xl">
+              <div className="border-8 border-transparent bg-white rounded-xl border border-gray-200 p-6 max-w-2xl mx-auto">
                 <div className="text-center py-6">
                   <div className="text-5xl mb-4">🎉</div>
                   <h2 className="text-xl font-bold text-gray-900 mb-2">Tours Created!</h2>
@@ -715,11 +782,8 @@ export default function OrdenImportPage() {
                   ))}
                 </div>
 
-                <div className="border-8 border-transparent p-4 bg-blue-50 rounded-lg mb-6">
+                <div className="p-4 bg-blue-50 rounded-xl mb-6">
                   <p className="text-sm text-blue-800 font-medium mb-2">📬 Send Notifications?</p>
-                  <p className="text-xs text-blue-600 mb-4">
-                    Notify guides and drivers about their assignments
-                  </p>
                   <button
                     onClick={handleNotify}
                     className="w-full px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium"
