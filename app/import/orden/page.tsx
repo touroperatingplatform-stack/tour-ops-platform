@@ -132,9 +132,15 @@ export default function OrdenImportPage() {
     loadData()
   }, [])
 
-  // ─── Parse pax string to number ───────────────────────────────────────────
-  function parsePax(pax: string): number {
-    return parseInt(pax) || 1
+  // ─── Parse pax string to parts ───────────────────────────────────────────
+  function parsePax(pax: string) {
+    const parts = pax.split('.').map(p => parseInt(p) || 0)
+    return {
+      adults: parts[0] || 0,
+      children: parts[1] || 0,
+      infants: parts[2] || 0,
+      total: parts.reduce((sum, n) => sum + n, 0)
+    }
   }
 
   // ─── Match staff names ─────────────────────────────────────────────────────
@@ -186,18 +192,26 @@ export default function OrdenImportPage() {
         }
         
         // Build new reservation using token mapping
+        // Handle pax separately since it can be "2" or "2.1.0"
+        const paxIndices = tokenMapping['pax']
+        const paxStr = paxIndices?.length 
+          ? paxIndices.map(i => values[fieldNames[i]] || '').join(' ')
+          : values.pax
+        const paxData = parsePax(paxStr)
+        
         const newRes: Record<string, string | number> = {
-          adults: parseInt(values.pax) || 1,
-          children: 0,
-          infants: 0,
+          adults: paxData.adults,
+          children: paxData.children,
+          infants: paxData.infants,
         }
         
         for (const field of fieldNames) {
+          if (field === 'pax') continue // handled above
           const indices = tokenMapping[field]
           if (indices && indices.length > 0) {
             newRes[field] = indices.map(i => values[fieldNames[i]] || '').join(' ')
           } else {
-            newRes[field] = ''
+            newRes[field] = values[field] || ''
           }
         }
         
@@ -207,7 +221,10 @@ export default function OrdenImportPage() {
         } as ParsedReservation
       })
       
-      const totalPax = newReservations.reduce((sum, r) => sum + parsePax(r.pax), 0)
+      const totalPax = newReservations.reduce((sum, r) => {
+        const p = parsePax(r.pax)
+        return sum + p.total
+      }, 0)
       return { ...tour, reservations: newReservations, totalPax }
     })
   }
@@ -284,7 +301,7 @@ export default function OrdenImportPage() {
 
       const toursWithStaff = matchStaff(data.tours).map(tour => ({
         ...tour,
-        totalPax: tour.reservations.reduce((sum, r) => sum + parsePax(r.pax), 0)
+        totalPax: tour.reservations.reduce((sum, r) => sum + parsePax(r.pax).total, 0)
       }))
       setParsedTours(toursWithStaff)
       setStep(2)
