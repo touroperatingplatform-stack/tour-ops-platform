@@ -12,6 +12,7 @@ interface ParsedReservation {
   infants: number
   confirmation: string
   pickupTime: string
+  rep: string
   agency: string
 }
 
@@ -153,6 +154,7 @@ function parseOrdenText(text: string): ParsedTour[] {
         infants: paxData.infants,
         confirmation,
         pickupTime,
+        rep,
         agency
       })
       tour.totalPax += paxData.adults + paxData.children + paxData.infants
