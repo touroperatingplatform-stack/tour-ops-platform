@@ -61,6 +61,7 @@ interface Reservation {
   special_requests: string | null
   checked_in: boolean
   no_show: boolean
+  pickup_location: string | null
 }
 
 // Pre-departure checklist items (always shown)
@@ -135,7 +136,7 @@ export default function GuideTourPage() {
   async function loadReservations() {
     const { data } = await supabase
       .from('reservation_manifest')
-      .select('id, booking_reference, booking_platform, adult_pax, child_pax, infant_pax, total_pax, primary_contact_name, dietary_restrictions, accessibility_needs, special_requests, checked_in, no_show')
+      .select('id, booking_reference, booking_platform, adult_pax, child_pax, infant_pax, total_pax, primary_contact_name, dietary_restrictions, accessibility_needs, special_requests, checked_in, no_show, pickup_location')
       .eq('tour_id', params.id)
       .order('booking_reference')
     
@@ -270,11 +271,21 @@ export default function GuideTourPage() {
     }
   }
 
-  // Check if all pickups are done
+  // Check if all pickups are done (all reservations at pickup stops are complete)
   const pickupStops = stops.filter(s => s.stop_type === 'pickup')
-  const allPickupsDone = pickupStops.every(stop => 
-    checkins.some(c => c.pickup_stop_id === stop.id && c.checkin_type === 'pickup')
-  )
+  const completedReservations = reservations.filter(r => r.checked_in || r.no_show)
+  const allPickupsDone = reservations.length > 0 && completedReservations.length === reservations.length
+  
+  // Check if all reservations at a specific stop are done
+  const isStopComplete = (stopId: string) => {
+    const stopReservations = reservations.filter(r => {
+      // Match by pickup_location name since we don't have pickup_stop_id on reservation
+      const stop = stops.find(s => s.id === stopId)
+      return stop && r.pickup_location === stop.location_name
+    })
+    if (stopReservations.length === 0) return false
+    return stopReservations.every(r => r.checked_in || r.no_show)
+  }
 
   return (
     <div className="space-y-6 p-4 pb-24">
@@ -501,8 +512,8 @@ export default function GuideTourPage() {
             <h2 className="font-semibold text-gray-900 mb-4">Tour Progress</h2>
             <div className="grid grid-cols-3 gap-4 text-center">
               <div>
-                <div className={`text-2xl font-bold ${pickupStops.every(s => checkins.some(c => c.pickup_stop_id === s.id && c.checkin_type === 'pickup')) ? 'text-green-600' : 'text-gray-400'}`}>
-                  {pickupStops.filter(s => checkins.some(c => c.pickup_stop_id === s.id && c.checkin_type === 'pickup')).length}/{pickupStops.length}
+                <div className={`text-2xl font-bold ${allPickupsDone ? 'text-green-600' : 'text-gray-400'}`}>
+                  {completedReservations.length}/{reservations.length}
                 </div>
                 <div className="text-sm text-gray-500">Pickups</div>
               </div>
@@ -528,8 +539,7 @@ export default function GuideTourPage() {
             <h2 className="font-semibold text-gray-900 mb-4">Tour Stops</h2>
             <div className="space-y-3">
               {stops.map((stop) => {
-                const checkin = checkins.find(c => c.pickup_stop_id === stop.id)
-                const isCheckedIn = !!checkin
+                const isCheckedIn = isStopComplete(stop.id)
                 const icon = stop.stop_type === 'pickup' ? '📍' : stop.stop_type === 'activity' ? '🎯' : '🏁'
                 
                 return (
