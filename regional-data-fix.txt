@@ -81,6 +81,7 @@ export default function RegionalDataPage() {
 
   async function handlePromoteLocation(loc: any) {
     if (!confirm(`Promote "${loc.name}" to master list?`)) return
+    // Insert into pickup_locations_platform
     const { data: newMaster, error: masterError } = await supabase
       .from('pickup_locations_platform')
       .insert({
@@ -99,6 +100,7 @@ export default function RegionalDataPage() {
       return
     }
     
+    // Update company_pickup_locations to set platform_location_id and clear flagged
     await supabase
       .from('company_pickup_locations')
       .update({
@@ -225,114 +227,78 @@ export default function RegionalDataPage() {
             </div>
           </div>
 
-          {/* Regions Tab Content */}
+          {/* Regions Tab */}
           {activeTab === 'regions' && (
-            <div className="border-8 border-transparent bg-white rounded-xl flex-1 overflow-hidden">
-              <div className="border-8 border-transparent p-4 h-full flex flex-col">
-                <div className="border-8 border-transparent flex justify-between items-center mb-4">
-                  <h1 className="text-2xl font-bold text-gray-900">
-                    {t('regionalData.title') || 'Regional Data'}
-                  </h1>
-                  <button onClick={() => setShowAddRegion(true)} className="border-8 border-transparent bg-purple-50 text-purple-600 rounded-lg hover:bg-purple-100">
-                    <span className="border-8 border-transparent px-4 py-2">+ {t('regionalData.addRegion') || 'Add Region'}</span>
-                  </button>
-                </div>
-                
-                <h2 className="text-lg font-semibold text-gray-900 mb-4">
+          <div className="border-8 border-transparent bg-white rounded-xl flex-shrink-0 mb-4">
+            <div className="border-8 border-transparent p-4 flex justify-between items-center">
+              <div className="border-8 border-transparent">
+                <h1 className="text-2xl font-bold text-gray-900">
+                  {t('regionalData.title') || 'Regional Data'}
+                </h1>
+              </div>
+              <div className="border-8 border-transparent">
+                <button onClick={() => setShowAddRegion(true)} className="border-8 border-transparent bg-purple-50 text-purple-600 rounded-lg hover:bg-purple-100">
+                  <span className="border-8 border-transparent px-4 py-2">+ {t('regionalData.addRegion') || 'Add Region'}</span>
+                </button>
+              </div>
+            </div>
+          </div>
+          )}
+
+          {/* Regions List */}
+          {activeTab === 'regions' && (
+          <div className="border-8 border-transparent bg-white rounded-xl flex-1 overflow-hidden">
+            <div className="border-8 border-transparent p-4 h-full flex flex-col">
+              <div className="border-8 border-transparent">
+                <h2 className="text-lg font-semibold text-gray-900">
                   {t('regionalData.regions') || 'Regions'}
                 </h2>
-                
-                <div className="border-8 border-transparent flex-1 overflow-y-auto">
-                  {loading ? (
+              </div>
+              
+              <div className="border-8 border-transparent flex-1 overflow-y-auto mt-4">
+                {loading ? (
+                  <div className="border-8 border-transparent">
                     <p className="text-gray-500">Loading...</p>
-                  ) : regions.length === 0 ? (
-                    <div className="border-8 border-transparent border border-dashed border-gray-200 rounded-xl p-8 text-center">
+                  </div>
+                ) : regions.length === 0 ? (
+                  <div className="border-8 border-transparent border border-dashed border-gray-200 rounded-xl">
+                    <div className="border-8 border-transparent p-8 text-center">
                       <p className="text-gray-500">No regions yet. Add your first region to get started.</p>
                     </div>
-                  ) : (
-                    <div className="border-8 border-transparent space-y-4">
-                      {regions.map(region => (
-                        <div key={region.id} className="border-8 border-transparent border border-gray-200 rounded-xl">
-                          <div className="border-8 border-transparent p-4 flex justify-between items-start">
-                            <div>
+                  </div>
+                ) : (
+                  <div className="border-8 border-transparent space-y-4">
+                    {regions.map(region => (
+                      <div key={region.id} className="border-8 border-transparent border border-gray-200 rounded-xl">
+                        <div className="border-8 border-transparent p-4 flex justify-between items-start">
+                          <div className="border-8 border-transparent">
+                            <div className="border-8 border-transparent">
                               <h3 className="font-semibold text-gray-900">{region.name}</h3>
-                              <p className="text-sm text-gray-500 mt-2">{region.hotel_count || 0} hotels</p>
                             </div>
-                            <div className="border-8 border-transparent flex gap-2">
+                            <div className="border-8 border-transparent mt-2">
+                              <p className="text-sm text-gray-500">{region.hotel_count || 0} hotels</p>
+                            </div>
+                          </div>
+                          <div className="border-8 border-transparent flex gap-2">
+                            <div className="border-8 border-transparent">
                               <button onClick={() => { setSelectedRegion(region); setShowImport(true); loadHotels(region.id) }} className="border-8 border-transparent border border-blue-600 text-blue-600 rounded-lg text-sm hover:bg-blue-50">
                                 <span className="border-8 border-transparent px-3 py-1">{t('regionalData.importHotels') || 'Import Hotels'}</span>
                               </button>
+                            </div>
+                            <div className="border-8 border-transparent">
                               <button onClick={() => handleDeleteRegion(region.id)} className="border-8 border-transparent border border-red-600 text-red-600 rounded-lg text-sm hover:bg-red-50">
                                 <span className="border-8 border-transparent px-3 py-1">{t('regionalData.delete') || 'Delete'}</span>
                               </button>
                             </div>
                           </div>
                         </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Pending Review Tab Content */}
-          {activeTab === 'pending' && (
-            <div className="border-8 border-transparent bg-white rounded-xl flex-1 overflow-hidden">
-              <div className="border-8 border-transparent p-4 h-full flex flex-col">
-                <h2 className="text-lg font-semibold text-gray-900 mb-4">Pending Review</h2>
-                
-                {loadingPending ? (
-                  <p className="text-gray-500">Loading...</p>
-                ) : pendingLocations.length === 0 ? (
-                  <div className="border-8 border-transparent border border-dashed border-gray-200 rounded-xl flex-1 flex items-center justify-center">
-                    <p className="text-gray-500">No pending reviews.</p>
-                  </div>
-                ) : (
-                  <div className="border-8 border-transparent flex-1 overflow-y-auto">
-                    <table className="border-8 border-transparent w-full text-sm">
-                      <thead className="border-8 border-transparent bg-gray-50 sticky top-0">
-                        <tr>
-                          <th className="border-8 border-transparent text-left">Company</th>
-                          <th className="border-8 border-transparent text-left">Hotel Name</th>
-                          <th className="border-8 border-transparent text-left">Address</th>
-                          <th className="border-8 border-transparent text-right">Coordinates</th>
-                          <th className="border-8 border-transparent text-left">Zone</th>
-                          <th className="border-8 border-transparent text-center">Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody className="border-8 border-transparent divide-y divide-gray-100">
-                        {pendingLocations.map(loc => (
-                          <tr key={loc.id} className="border-8 border-transparent hover:bg-gray-50">
-                            <td className="border-8 border-transparent">{loc.companies?.name || 'Unknown'}</td>
-                            <td className="border-8 border-transparent font-medium">{loc.name}</td>
-                            <td className="border-8 border-transparent text-gray-500 text-xs">{loc.address}</td>
-                            <td className="border-8 border-transparent text-right text-xs">{loc.latitude}, {loc.longitude}</td>
-                            <td className="border-8 border-transparent">{loc.zone}</td>
-                            <td className="border-8 border-transparent text-center">
-                              <button
-                                onClick={() => handlePromoteLocation(loc)}
-                                className="border-8 border-transparent text-green-600 hover:text-green-800 text-sm font-medium mr-2"
-                              >
-                                Promote to Master
-                              </button>
-                              <button
-                                onClick={() => handleDismissLocation(loc.id)}
-                                className="border-8 border-transparent text-gray-500 hover:text-gray-700 text-sm"
-                              >
-                                Dismiss
-                              </button>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                      </div>
+                    ))}
                   </div>
                 )}
               </div>
             </div>
-          )}
-
+          </div>
         </div>
       </div>
 
@@ -341,23 +307,33 @@ export default function RegionalDataPage() {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="border-8 border-transparent bg-white rounded-xl w-full max-w-md shadow-xl">
             <div className="border-8 border-transparent p-4 border-b border-gray-100">
-              <h2 className="text-lg font-bold text-gray-900">{t('regionalData.addNewRegion') || 'Add New Region'}</h2>
+              <div className="border-8 border-transparent">
+                <h2 className="text-lg font-bold text-gray-900">{t('regionalData.addNewRegion') || 'Add New Region'}</h2>
+              </div>
             </div>
             
             <div className="border-8 border-transparent p-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Region Name</label>
-                <input type="text" value={regionName} onChange={e => setRegionName(e.target.value)} placeholder="e.g., Riviera Maya" className="border-8 border-transparent w-full mt-2 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-purple-500" />
+              <div className="border-8 border-transparent">
+                <div className="border-8 border-transparent">
+                  <label className="block text-sm font-medium text-gray-700">Region Name</label>
+                </div>
+                <div className="border-8 border-transparent mt-2">
+                  <input type="text" value={regionName} onChange={e => setRegionName(e.target.value)} placeholder="e.g., Riviera Maya" className="border-8 border-transparent w-full bg-transparent focus:outline-none" />
+                </div>
               </div>
             </div>
             
             <div className="border-8 border-transparent p-4 border-t border-gray-100 flex justify-end gap-2">
-              <button onClick={() => setShowAddRegion(false)} className="border-8 border-transparent bg-gray-50 text-gray-700 rounded-lg hover:bg-gray-100">
-                <span className="border-8 border-transparent px-4 py-2">Cancel</span>
-              </button>
-              <button onClick={handleAddRegion} disabled={!regionName.trim()} className="border-8 border-transparent bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50">
-                <span className="border-8 border-transparent px-4 py-2">Add Region</span>
-              </button>
+              <div className="border-8 border-transparent">
+                <button onClick={() => setShowAddRegion(false)} className="border-8 border-transparent bg-gray-50 text-gray-700 rounded-lg hover:bg-gray-100">
+                  <span className="border-8 border-transparent px-4 py-2">Cancel</span>
+                </button>
+              </div>
+              <div className="border-8 border-transparent">
+                <button onClick={handleAddRegion} disabled={!regionName.trim()} className="border-8 border-transparent bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50">
+                  <span className="border-8 border-transparent px-4 py-2">Add Region</span>
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -367,11 +343,18 @@ export default function RegionalDataPage() {
       {showImport && selectedRegion && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="border-8 border-transparent bg-white rounded-xl w-full max-w-2xl max-h-[90vh] overflow-hidden shadow-xl flex flex-col">
-            <div className="border-8 border-transparent p-4 border-b border-gray-100 flex justify-between items-center">
-              <h2 className="text-lg font-bold text-gray-900">Import Hotels - {selectedRegion.name}</h2>
-              <button onClick={downloadTemplate} className="border-8 border-transparent text-purple-600 hover:text-purple-800 text-sm underline">
-                Download CSV Template
-              </button>
+            <div className="border-8 border-transparent p-4 border-b border-gray-100">
+              <div className="border-8 border-transparent">
+                <h2 className="text-lg font-bold text-gray-900">Import Hotels - {selectedRegion.name}</h2>
+              </div>
+            </div>
+            
+            <div className="border-8 border-transparent p-4 border-b border-gray-100">
+              <div className="border-8 border-transparent">
+                <button onClick={downloadTemplate} className="border-8 border-transparent text-purple-600 hover:text-purple-800 text-sm underline">
+                  Download CSV Template
+                </button>
+              </div>
             </div>
             
             <div className="border-8 border-transparent p-4 flex-1 overflow-y-auto">
@@ -413,7 +396,7 @@ export default function RegionalDataPage() {
                   {selectedHotel && (
                     <div className="border-8 border-transparent flex gap-2 items-end">
                       <div className="border-8 border-transparent flex-1">
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Zone</label>
+                        <label className="border-8 border-transparent block text-sm font-medium text-gray-700 mb-1">Zone</label>
                         <input
                           type="text"
                           value={selectedZone}
@@ -436,40 +419,58 @@ export default function RegionalDataPage() {
               
               {/* CSV Import */}
               <div className="border-8 border-transparent mb-4">
-                <div className="border-8 border-transparent border-2 border-dashed border-gray-200 rounded-xl p-4">
-                  <input type="file" accept=".csv,.xlsx" onChange={e => setImportFile(e.target.files?.[0] || null)} className="border-8 border-transparent block w-full text-sm text-gray-500" />
-                  <p className="text-xs text-gray-500 mt-2">CSV or Excel file with columns: name, address, latitude, longitude, zone</p>
+                <div className="border-8 border-transparent border-2 border-dashed border-gray-200 rounded-xl">
+                  <div className="border-8 border-transparent p-4">
+                    <input type="file" accept=".csv,.xlsx" onChange={e => setImportFile(e.target.files?.[0] || null)} className="border-8 border-transparent block w-full text-sm text-gray-500" />
+                    <div className="border-8 border-transparent mt-2">
+                      <p className="text-xs text-gray-500">CSV or Excel file with columns: name, address, latitude, longitude, zone</p>
+                    </div>
+                  </div>
                 </div>
               </div>
               
               <div className="border-8 border-transparent flex justify-end mb-4">
-                <button onClick={handleImportHotels} disabled={!importFile || importing} className="border-8 border-transparent bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50">
-                  <span className="border-8 border-transparent px-4 py-2">{importing ? 'Importing...' : 'Import Hotels'}</span>
-                </button>
+                <div className="border-8 border-transparent">
+                  <button onClick={handleImportHotels} disabled={!importFile || importing} className="border-8 border-transparent bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50">
+                    <span className="border-8 border-transparent px-4 py-2">{importing ? 'Importing...' : 'Import Hotels'}</span>
+                  </button>
+                </div>
               </div>
               
               {importResult && (
-                <div className={`border-8 border-transparent rounded-xl border p-4 mb-4 ${importResult.errors.length > 0 ? 'bg-yellow-50 border-yellow-200' : 'bg-green-50 border-green-200'}`}>
-                  <p className="font-semibold text-gray-900">Imported: {importResult.success} hotels</p>
-                  {importResult.errors.length > 0 && (
-                    <div className="mt-2">
-                      <p className="font-semibold text-red-600">Errors:</p>
-                      <ul className="text-sm text-red-600 max-h-40 overflow-y-auto">
-                        {importResult.errors.slice(0, 10).map((err, i) => (
-                          <li key={i} className="py-1">{err}</li>
-                        ))}
-                        {importResult.errors.length > 10 && (<li className="py-1">...and {importResult.errors.length - 10} more</li>)}
-                      </ul>
+                <div className="border-8 border-transparent mb-4">
+                  <div className={`border-8 border-transparent rounded-xl border ${importResult.errors.length > 0 ? 'bg-yellow-50 border-yellow-200' : 'bg-green-50 border-green-200'}`}>
+                    <div className="border-8 border-transparent p-4">
+                      <div className="border-8 border-transparent">
+                        <p className="font-semibold text-gray-900">Imported: {importResult.success} hotels</p>
+                      </div>
+                      {importResult.errors.length > 0 && (
+                        <div className="border-8 border-transparent mt-2">
+                          <div className="border-8 border-transparent">
+                            <p className="font-semibold text-red-600">Errors:</p>
+                          </div>
+                          <div className="border-8 border-transparent">
+                            <ul className="text-sm text-red-600 max-h-40 overflow-y-auto">
+                              {importResult.errors.slice(0, 10).map((err, i) => (
+                                <li key={i} className="border-8 border-transparent py-1">{err}</li>
+                              ))}
+                              {importResult.errors.length > 10 && (<li className="border-8 border-transparent py-1">...and {importResult.errors.length - 10} more</li>)}
+                            </ul>
+                          </div>
+                        </div>
+                      )}
                     </div>
-                  )}
+                  </div>
                 </div>
               )}
               
               {hotels.length > 0 && (
                 <div className="border-8 border-transparent">
                   <div className="border-8 border-transparent border border-gray-200 rounded-xl overflow-hidden">
-                    <div className="border-8 border-transparent bg-gray-50 p-3 border-b border-gray-200">
-                      <h3 className="font-semibold text-gray-900">Hotels in {selectedRegion.name} ({hotels.length})</h3>
+                    <div className="border-8 border-transparent bg-gray-50 border-b border-gray-200">
+                      <div className="border-8 border-transparent p-3">
+                        <h3 className="font-semibold text-gray-900">Hotels in {selectedRegion.name} ({hotels.length})</h3>
+                      </div>
                     </div>
                     <div className="border-8 border-transparent max-h-60 overflow-y-auto">
                       <table className="border-8 border-transparent w-full text-sm">
@@ -503,14 +504,76 @@ export default function RegionalDataPage() {
             </div>
             
             <div className="border-8 border-transparent p-4 border-t border-gray-100 flex justify-end">
-              <button onClick={() => { setShowImport(false); setSelectedRegion(null); setImportFile(null); setImportResult(null); setSearchQuery(''); setSearchResults([]); setSelectedHotel(null); setSelectedZone('') }} className="border-8 border-transparent border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50">
-                <span className="border-8 border-transparent px-4 py-2">Close</span>
-              </button>
+              <div className="border-8 border-transparent">
+                <button onClick={() => { setShowImport(false); setSelectedRegion(null); setImportFile(null); setImportResult(null); setSearchQuery(''); setSearchResults([]); setSelectedHotel(null); setSelectedZone('') }} className="border-8 border-transparent border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50">
+                  <span className="border-8 border-transparent px-4 py-2">Close</span>
+                </button>
+              </div>
             </div>
           </div>
         </div>
       )}
-
+              
+              {/* Pending Review Tab */}
+              {activeTab === 'pending' && (
+                <div className="border-8 border-transparent bg-white rounded-xl flex-1 overflow-hidden">
+                  <div className="border-8 border-transparent p-4 h-full flex flex-col">
+                    <h2 className="text-lg font-semibold text-gray-900 mb-4">Pending Review</h2>
+                    
+                    {loadingPending ? (
+                      <p className="text-gray-500">Loading...</p>
+                    ) : pendingLocations.length === 0 ? (
+                      <div className="border-8 border-transparent border border-dashed border-gray-200 rounded-xl flex-1 flex items-center justify-center">
+                        <p className="text-gray-500">No pending reviews.</p>
+                      </div>
+                    ) : (
+                      <div className="border-8 border-transparent flex-1 overflow-y-auto">
+                        <table className="border-8 border-transparent w-full text-sm">
+                          <thead className="border-8 border-transparent bg-gray-50 sticky top-0">
+                            <tr>
+                              <th className="border-8 border-transparent text-left">Company</th>
+                              <th className="border-8 border-transparent text-left">Hotel Name</th>
+                              <th className="border-8 border-transparent text-left">Address</th>
+                              <th className="border-8 border-transparent text-right">Coordinates</th>
+                              <th className="border-8 border-transparent text-left">Zone</th>
+                              <th className="border-8 border-transparent text-center">Actions</th>
+                            </tr>
+                          </thead>
+                          <tbody className="border-8 border-transparent divide-y divide-gray-100">
+                            {pendingLocations.map(loc => (
+                              <tr key={loc.id} className="border-8 border-transparent hover:bg-gray-50">
+                                <td className="border-8 border-transparent">{loc.companies?.name || 'Unknown'}</td>
+                                <td className="border-8 border-transparent font-medium">{loc.name}</td>
+                                <td className="border-8 border-transparent text-gray-500 text-xs">{loc.address}</td>
+                                <td className="border-8 border-transparent text-right text-xs">{loc.latitude}, {loc.longitude}</td>
+                                <td className="border-8 border-transparent">{loc.zone}</td>
+                                <td className="border-8 border-transparent text-center">
+                                  <button
+                                    onClick={() => handlePromoteLocation(loc)}
+                                    className="border-8 border-transparent text-green-600 hover:text-green-800 text-sm font-medium mr-2"
+                                  >
+                                    Promote to Master
+                                  </button>
+                                  <button
+                                    onClick={() => handleDismissLocation(loc.id)}
+                                    className="border-8 border-transparent text-gray-500 hover:text-gray-700 text-sm"
+                                  >
+                                    Dismiss
+                                  </button>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </RoleGuard>
   )
 }
