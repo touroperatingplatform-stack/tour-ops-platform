@@ -516,6 +516,8 @@ export default function OrdenImportPage() {
       if (rows) {
         setSampleRows(rows)
         setSampleTokens(rows.rowA.tokens)
+        console.log('Row A tokens:', rows.rowA.tokens)
+        console.log('Row B tokens:', rows.rowB.tokens)
       }
       
       setParsedTours(toursWithStaff)
