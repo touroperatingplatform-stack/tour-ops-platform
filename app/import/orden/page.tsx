@@ -1035,6 +1035,8 @@ export default function OrdenImportPage() {
                   
                   // Apply zone mapping to Row B
                   const mapped = applyZoneMapping(rowB.tokens, zm, paxIdx, timeIdx)
+                  // Add pax since applyZoneMapping skips it (found by pattern instead)
+                  ;(mapped as any)['pax'] = rowB.tokens[paxIdx] || ''
                   
                   return (
                     <div className="space-y-3 mb-6">
