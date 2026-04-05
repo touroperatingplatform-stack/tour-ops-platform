@@ -328,6 +328,35 @@ function applyZoneBasedMapping(
   })
 }
 
+// ─── Auto-detect hotel from pickup_locations_platform ─────────────────────────
+async function detectHotelFromDB(tokens: string[], companyId: string | null): Promise<{ hotelName: string; startIdx: number; endIdx: number } | null> {
+  if (!companyId || tokens.length === 0) return null
+  
+  const { data: locations } = await supabase
+    .from('pickup_locations_platform')
+    .select('location_name')
+    .eq('company_id', companyId)
+    .limit(500)
+  
+  if (!locations || locations.length === 0) return null
+  
+  // Try each token as the start of hotel name, going up to 4 words
+  for (let startIdx = 0; startIdx < Math.min(tokens.length, 4); startIdx++) {
+    for (let numWords = 1; numWords <= 4; numWords++) {
+      if (startIdx + numWords > tokens.length) break
+      const candidate = tokens.slice(startIdx, startIdx + numWords).join(' ')
+      const match = locations.find(loc => 
+        loc.location_name.toUpperCase().replace(/\s+/g, ' ').trim() === candidate.toUpperCase()
+      )
+      if (match) {
+        return { hotelName: candidate, startIdx, endIdx: startIdx + numWords - 1 }
+      }
+    }
+  }
+  
+  return null
+}
+
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function OrdenImportPage() {
   const router = useRouter()
@@ -367,6 +396,7 @@ export default function OrdenImportPage() {
   const [zoneMapping, setZoneMapping] = useState<ZoneMapping | null>(null)
   const [showRowBVerification, setShowRowBVerification] = useState(false)
   const [verifiedMapping, setVerifiedMapping] = useState<ZoneMapping | null>(null)
+  const [autoDetectedHotel, setAutoDetectedHotel] = useState<{ hotelName: string; startIdx: number; endIdx: number } | null>(null)
   
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -569,6 +599,21 @@ export default function OrdenImportPage() {
         setSampleTokens(rows.rowA.tokens)
         console.log('Row A tokens:', rows.rowA.tokens)
         console.log('Row B tokens:', rows.rowB.tokens)
+        
+        // Auto-detect hotel from pickup_locations_platform
+        const detected = await detectHotelFromDB(rows.rowA.tokens, companyId)
+        setAutoDetectedHotel(detected)
+        console.log('auto-detected hotel:', detected)
+        
+        // Pre-fill hotel indices if auto-detected
+        if (detected) {
+          const hotelIndices = Array.from(
+            { length: detected.endIdx - detected.startIdx + 1 },
+            (_, i) => detected.startIdx + i
+          )
+          setTokenMapping(prev => ({ ...prev, hotel: hotelIndices }))
+          setAssignedTokenIndices(prev => new Set([...prev, ...hotelIndices]))
+        }
       }
       
       setParsedTours(toursWithStaff)
@@ -609,15 +654,24 @@ export default function OrdenImportPage() {
   const confirmField = () => {
     const field = FIELDS[mappingStep]
     
+    // For hotel step, use auto-detected indices if current selection is empty
+    let indicesToSave = currentSelection
+    if (field.id === 'hotel' && autoDetectedHotel && currentSelection.length === 0) {
+      indicesToSave = Array.from(
+        { length: autoDetectedHotel.endIdx - autoDetectedHotel.startIdx + 1 },
+        (_, i) => autoDetectedHotel.startIdx + i
+      )
+    }
+    
     // Save the mapping for this field
     const newMapping = {
       ...tokenMapping,
-      [field.id]: [...currentSelection].sort((a, b) => a - b)
+      [field.id]: [...indicesToSave].sort((a, b) => a - b)
     }
     
     // Mark these tokens as assigned
     const newAssigned = new Set(assignedTokenIndices)
-    currentSelection.forEach(i => newAssigned.add(i))
+    indicesToSave.forEach(i => newAssigned.add(i))
     setAssignedTokenIndices(newAssigned)
     
     // Move to next field or show summary
@@ -929,6 +983,11 @@ export default function OrdenImportPage() {
                   </div>
                   <h2 className="text-3xl font-bold text-purple-600 mb-3">
                     {FIELDS[mappingStep].label}
+                    {mappingStep === 0 && autoDetectedHotel && (
+                      <span className="ml-3 text-sm font-normal text-green-600 bg-green-50 px-3 py-1 rounded-full align-middle">
+                        ✓ Auto-detected: {autoDetectedHotel.hotelName}
+                      </span>
+                    )}
                   </h2>
                   <p className="text-gray-500 text-base leading-relaxed">
                     {FIELDS[mappingStep].hint}
@@ -999,7 +1058,10 @@ export default function OrdenImportPage() {
                   </button>
                   <button
                     onClick={mappingStep < FIELDS.length - 1 ? confirmField : confirmMapping}
-                    disabled={currentSelection.length === 0}
+                    disabled={
+                      (mappingStep === 0 && (!autoDetectedHotel && currentSelection.length === 0)) ||
+                      (mappingStep > 0 && currentSelection.length === 0)
+                    }
                     className="flex-1 px-6 py-4 bg-purple-600 text-white rounded-xl hover:bg-purple-700 disabled:opacity-40 font-bold text-lg transition-all"
                   >
                     {mappingStep < FIELDS.length - 1 ? 'Next →' : 'Review Mapping ✓'}
