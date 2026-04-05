@@ -94,8 +94,12 @@ interface ZoneMapping {
 }
 
 // ─── Select two sample rows ─────────────────────────────────────────────────
-function selectSampleRows(tours: ParsedTour[]): { rowA: SampleRow; rowB: SampleRow } | null {
-  // Collect all rows with their token counts
+function selectSampleRows(tours: ParsedTour[], rawText: string): { rowA: SampleRow; rowB: SampleRow } | null {
+  if (!rawText) return null
+  
+  const rawLines = rawText.split('\n')
+  
+  // Collect all rows where we can find and split a raw line into 6+ individual tokens
   interface RowInfo {
     tourIdx: number
     resIdx: number
@@ -108,8 +112,35 @@ function selectSampleRows(tours: ParsedTour[]): { rowA: SampleRow; rowB: SampleR
     const tour = tours[ti]
     for (let ri = 0; ri < tour.reservations.length; ri++) {
       const res = tour.reservations[ri]
-      const tokens = res.tokens || []
-      if (tokens.length > 0) {
+      
+      // Find raw line from rawText using confirmation number
+      let resLine: string | undefined
+      if (res.confirmation) {
+        resLine = rawLines.find((line: string) =>
+          line.includes(res.confirmation) &&
+          !line.includes('SERVICIO') &&
+          !line.includes('OPERADOR') &&
+          !line.includes('HOTEL')
+        )
+      }
+      
+      // Fall back to pickup time + first hotel word
+      if (!resLine && res.pickupTime && res.hotel) {
+        resLine = rawLines.find((line: string) =>
+          line.includes(res.pickupTime) &&
+          line.includes(res.hotel.split(' ')[0]) &&
+          !line.includes('SERVICIO') &&
+          !line.includes('OPERADOR')
+        )
+      }
+      
+      if (!resLine) continue
+      
+      // Split on whitespace into individual word tokens
+      const tokens = resLine.trim().split(/\s+/).filter((t: string) => t.length > 0)
+      
+      // Only accept rows with 6+ individual word tokens
+      if (tokens.length >= 6) {
         allRows.push({ tourIdx: ti, resIdx: ri, tokens, tokenCount: tokens.length })
       }
     }
@@ -511,8 +542,8 @@ export default function OrdenImportPage() {
 
       const toursWithStaff = matchStaff(toursWithTokens)
       
-      // Select two sample rows for mapping
-      const rows = selectSampleRows(toursWithStaff)
+      // Select two sample rows for mapping (always re-extracts from rawText)
+      const rows = selectSampleRows(toursWithStaff, data.rawText)
       if (rows) {
         setSampleRows(rows)
         setSampleTokens(rows.rowA.tokens)
