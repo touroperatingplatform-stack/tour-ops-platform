@@ -340,17 +340,15 @@ async function detectHotelFromDB(tokens: string[], companyId: string | null): Pr
   
   if (!hotels || hotels.length === 0) return null
   
-  // Try each token as the start of hotel name, going up to 4 words
-  for (let startIdx = 0; startIdx < Math.min(tokens.length, 4); startIdx++) {
-    for (let numWords = 1; numWords <= 4; numWords++) {
-      if (startIdx + numWords > tokens.length) break
-      const candidate = tokens.slice(startIdx, startIdx + numWords).join(' ')
-      const match = hotels.find(loc => 
-        loc.name.toUpperCase().replace(/\s+/g, ' ').trim() === candidate.toUpperCase()
-      )
-      if (match) {
-        return { hotelName: candidate, startIdx, endIdx: startIdx + numWords - 1 }
-      }
+  // Try 1, 2, 3, 4 word combinations from the start of the row
+  for (let numWords = 1; numWords <= 4; numWords++) {
+    if (numWords > tokens.length) break
+    const candidate = tokens.slice(0, numWords).join(' ').toUpperCase().trim()
+    const match = hotels.find(loc => 
+      loc.name.toUpperCase().replace(/\s+/g, ' ').trim() === candidate
+    )
+    if (match) {
+      return { hotelName: tokens.slice(0, numWords).join(' '), startIdx: 0, endIdx: numWords - 1 }
     }
   }
   
