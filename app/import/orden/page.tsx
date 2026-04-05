@@ -1011,6 +1011,12 @@ export default function OrdenImportPage() {
                   console.log('zone mapping:', JSON.stringify(zoneMapping))
                   console.log('Row B tokens:', rowB.tokens)
                   console.log('Row B pax position:', paxIdx, 'time position:', timeIdx)
+                  if (zoneMapping?.zone1) {
+                    console.log('zone1 hotel offsets:', zoneMapping.zone1.hotel, 'resolves to:', paxIdx - (zoneMapping.zone1.hotel?.[0] || 0), paxIdx - (zoneMapping.zone1.hotel?.[1] || 0))
+                    console.log('zone1 coupon offsets:', zoneMapping.zone1.coupon, 'resolves to:', paxIdx - (zoneMapping.zone1.coupon?.[0] || 0))
+                    console.log('zone1 clientName offsets:', zoneMapping.zone1.clientName, 'resolves to:', paxIdx - (zoneMapping.zone1.clientName?.[0] || 0))
+                    console.log('zone2 agency offsets:', zoneMapping.zone2?.agency, 'resolves to:', paxIdx + (zoneMapping.zone2?.agency?.[0] || 0))
+                  }
                   
                   // Use zone mapping from Row A, or rebuild from Row A if not set
                   const zm = zoneMapping || buildZoneMapping(
