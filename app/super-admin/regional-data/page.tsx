@@ -244,6 +244,7 @@ export default function RegionalDataPage() {
             </div>
           </div>
           )}
+          </div>
 
           {/* Regions List */}
           {activeTab === 'regions' && (
