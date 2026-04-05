@@ -236,8 +236,9 @@ function applyZoneMapping(
 ): Record<string, string | number> {
   const result: Record<string, string | number> = {}
   
-  // Apply zone 1 fields (before pax — absolute indices)
+  // Apply zone 1 fields (before pax — absolute indices, skip pax itself)
   for (const [field, [startIdx, endIdx]] of Object.entries(mapping.zone1)) {
+    if (field === 'pax') continue // pax is found by pattern, not zone
     const resolvedTokens: string[] = []
     for (let i = startIdx; i <= endIdx && i < tokens.length; i++) {
       if (i >= 0) resolvedTokens.push(tokens[i])
@@ -298,8 +299,8 @@ function applyZoneBasedMapping(
       // Apply zone mapping
       const mapped = applyZoneMapping(tokens, zoneMapping, paxIdx, timeIdx)
       
-      // Parse pax
-      const paxStr = mapped['pax'] as string || '1'
+      // Parse pax — found by pattern, not zone mapping
+      const paxStr = tokens[paxIdx] || '1'
       const paxData = parsePax(paxStr)
       
       return {
@@ -654,6 +655,7 @@ export default function OrdenImportPage() {
     }
     
     const zm = buildZoneMapping(rowATokens, tokenMapping, paxIdx, timeIdx)
+    console.log('tokenMapping agency:', JSON.stringify(tokenMapping.agency))
     console.log('zone mapping:', JSON.stringify(zm))
     
     setZoneMapping(zm)
