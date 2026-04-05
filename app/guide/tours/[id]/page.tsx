@@ -251,7 +251,7 @@ export default function GuideTourPage() {
     if (error) {
       alert('Failed to start tour')
     } else {
-      setTour(prev => prev ? { ...prev, status: 'in_progress' } : null)
+      router.push('/guide')
     }
   }
 

@@ -790,20 +790,66 @@ export default function OrdenImportPage() {
 
         console.log('tour created:', newTour?.id, 'error:', tourErr)
 
-        let stopOrder = 1
+        // Group reservations by unique pickup location + time to create stops
+        const pickupGroups: Record<string, { hotel: string, time: string, reservations: typeof tour.reservations }> = {}
+        
         for (const res of tour.reservations) {
-          // Skip reservations with no pickupTime or clientName
           if (!res.pickupTime || !res.clientName) {
             console.log('skipping reservation: missing pickupTime or clientName', res.pickupTime, res.clientName)
             continue
           }
-          console.log('processing reservation:', res.clientName, 'pickupTime:', res.pickupTime)
-          // Validate pickupTime is a proper time format
+          
           const validTime = /^\d{1,2}:\d{2}$/.test(res.pickupTime) ? res.pickupTime + ':00' : null
+          const key = `${res.hotel}::${validTime}`
+          
+          if (!pickupGroups[key]) {
+            pickupGroups[key] = { hotel: res.hotel, time: validTime!, reservations: [] }
+          }
+          pickupGroups[key].reservations.push(res)
+        }
+        
+        // Create pickup_stops first
+        const stopMap: Record<string, string> = {} // key -> stop_id
+        let stopOrder = 1
+        
+        for (const [key, group] of Object.entries(pickupGroups)) {
+          const totalGuests = group.reservations.reduce((sum, r) => sum + r.adults + r.children + r.infants, 0)
+          
+          const { data: stopData, error: stopsError } = await supabase
+            .from('pickup_stops')
+            .insert({
+              tour_id: newTour.id,
+              brand_id: brandId,
+              sort_order: stopOrder++,
+              location_name: group.hotel,
+              scheduled_time: group.time,
+              guest_count: totalGuests,
+              stop_type: 'pickup'
+            })
+            .select('id')
+            .single()
+          
+          if (stopsError) {
+            console.error('pickup_stops error:', stopsError)
+            continue
+          }
+          
+          stopMap[key] = stopData.id
+          console.log('Created stop:', stopData.id, 'for', group.hotel, group.time)
+        }
+        
+        // Create reservation_manifest with pickup_stop_id linked
+        for (const res of tour.reservations) {
+          if (!res.pickupTime || !res.clientName) continue
+          
+          const validTime = /^\d{1,2}:\d{2}$/.test(res.pickupTime) ? res.pickupTime + ':00' : null
+          const key = `${res.hotel}::${validTime}`
+          const pickupStopId = stopMap[key]
           
           const { error: manifestError } = await supabase.from('reservation_manifest').insert({
             tour_id: newTour.id,
             brand_id: brandId,
+            pickup_stop_id: pickupStopId,
             booking_reference: res.confirmation,
             adult_pax: res.adults,
             child_pax: res.children,
@@ -815,19 +861,6 @@ export default function OrdenImportPage() {
             primary_contact_name: res.clientName
           })
           if (manifestError) console.error('reservation_manifest error:', manifestError)
-
-          console.log('inserting pickup_stop, pickupTime:', res.pickupTime, 'validTime:', validTime)
-          
-          const { error: stopsError } = await supabase.from('pickup_stops').insert({
-            tour_id: newTour.id,
-            brand_id: brandId,
-            sort_order: stopOrder++,
-            location_name: res.hotel,
-            scheduled_time: validTime,
-            guest_count: res.adults + res.children + res.infants,
-            stop_type: 'pickup'
-          })
-          if (stopsError) console.error('pickup_stops error:', stopsError)
 
           // Create payment record for balance due
           if (res.balanceDue > 0) {
