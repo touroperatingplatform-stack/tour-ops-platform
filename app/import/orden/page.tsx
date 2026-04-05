@@ -89,6 +89,8 @@ interface SampleRow {
 interface ZoneMapping {
   // Zone 1: fields before pax, offsets relative to pax (negative = before pax)
   zone1: Record<string, [number, number]>
+  // Zone 2: fields between pax and time, offsets relative to pax (positive = after pax)
+  zone2: Record<string, [number, number]>
   // Zone 3: fields after time, offsets relative to time (positive = after time)
   zone3: Record<string, [number, number]>
 }
@@ -193,6 +195,7 @@ function buildZoneMapping(
   timeIdx: number
 ): ZoneMapping {
   const zone1: Record<string, [number, number]> = {}
+  const zone2: Record<string, [number, number]> = {}
   const zone3: Record<string, [number, number]> = {}
   
   const fieldIds: FieldId[] = ['hotel', 'clientName', 'coupon', 'pax', 'confirmation', 'pickupTime', 'rep', 'agency']
@@ -201,26 +204,29 @@ function buildZoneMapping(
     const indices = mapping[field] || []
     if (indices.length === 0) continue
     
-    // Calculate offset range relative to pax or time
     if (field === 'pax') {
-      zone1[field] = [0, 0] // pax is the anchor itself
+      zone1[field] = [0, 0]
     } else if (field === 'pickupTime') {
-      zone3[field] = [0, 0] // time is the anchor itself
+      zone3[field] = [0, 0]
     } else if (indices[0] < paxIdx) {
-      // Zone 1: before pax — offset from pax (negative)
+      // Zone 1: before pax — offset from pax (negative = before)
+      const startOffset = paxIdx - indices[indices.length - 1]
+      const endOffset = paxIdx - indices[0]
+      zone1[field] = [startOffset, endOffset]
+    } else if (indices[0] >= paxIdx && indices[0] <= timeIdx) {
+      // Zone 2: between pax and time — offset from pax (positive = after pax)
       const startOffset = indices[0] - paxIdx
       const endOffset = indices[indices.length - 1] - paxIdx
-      zone1[field] = [startOffset, endOffset]
+      zone2[field] = [startOffset, endOffset]
     } else if (indices[0] > timeIdx) {
-      // Zone 3: after time — offset from time (positive)
+      // Zone 3: after time — offset from time (positive = after time)
       const startOffset = indices[0] - timeIdx
       const endOffset = indices[indices.length - 1] - timeIdx
       zone3[field] = [startOffset, endOffset]
     }
-    // Fields between pax and time are not handled in this simplified approach
   }
   
-  return { zone1, zone3 }
+  return { zone1, zone2, zone3 }
 }
 
 // ─── Apply zone mapping to a row ────────────────────────────────────────────
@@ -234,10 +240,21 @@ function applyZoneMapping(
   
   // Apply zone 1 fields (before pax)
   for (const [field, [startOff, endOff]] of Object.entries(mapping.zone1)) {
+    const startIdx = paxIdx - startOff
+    const endIdx = paxIdx - endOff
+    const resolvedTokens: string[] = []
+    for (let i = startIdx; i <= endIdx && i < tokens.length; i++) {
+      if (i >= 0) resolvedTokens.push(tokens[i])
+    }
+    result[field] = resolvedTokens.join(' ')
+  }
+  
+  // Apply zone 2 fields (between pax and time)
+  for (const [field, [startOff, endOff]] of Object.entries(mapping.zone2 || {})) {
     const startIdx = paxIdx + startOff
     const endIdx = paxIdx + endOff
     const resolvedTokens: string[] = []
-    for (let i = startIdx; i <= endOff && i < tokens.length; i++) {
+    for (let i = startIdx; i <= endIdx && i < tokens.length; i++) {
       if (i >= 0) resolvedTokens.push(tokens[i])
     }
     result[field] = resolvedTokens.join(' ')
