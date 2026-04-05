@@ -330,23 +330,23 @@ function applyZoneBasedMapping(
 
 // ─── Auto-detect hotel from pickup_locations_platform ─────────────────────────
 async function detectHotelFromDB(tokens: string[], companyId: string | null): Promise<{ hotelName: string; startIdx: number; endIdx: number } | null> {
-  if (!companyId || tokens.length === 0) return null
+  if (tokens.length === 0) return null
   
-  const { data: locations } = await supabase
+  const { data: hotels } = await supabase
     .from('pickup_locations_platform')
-    .select('location_name')
-    .eq('company_id', companyId)
+    .select('name')
+    .eq('status', 'active')
     .limit(500)
   
-  if (!locations || locations.length === 0) return null
+  if (!hotels || hotels.length === 0) return null
   
   // Try each token as the start of hotel name, going up to 4 words
   for (let startIdx = 0; startIdx < Math.min(tokens.length, 4); startIdx++) {
     for (let numWords = 1; numWords <= 4; numWords++) {
       if (startIdx + numWords > tokens.length) break
       const candidate = tokens.slice(startIdx, startIdx + numWords).join(' ')
-      const match = locations.find(loc => 
-        loc.location_name.toUpperCase().replace(/\s+/g, ' ').trim() === candidate.toUpperCase()
+      const match = hotels.find(loc => 
+        loc.name.toUpperCase().replace(/\s+/g, ' ').trim() === candidate.toUpperCase()
       )
       if (match) {
         return { hotelName: candidate, startIdx, endIdx: startIdx + numWords - 1 }
