@@ -209,10 +209,8 @@ function buildZoneMapping(
     } else if (field === 'pickupTime') {
       zone3[field] = [0, 0]
     } else if (indices[0] < paxIdx) {
-      // Zone 1: before pax — offset from pax (negative = before)
-      const startOffset = paxIdx - indices[indices.length - 1]
-      const endOffset = paxIdx - indices[0]
-      zone1[field] = [startOffset, endOffset]
+      // Zone 1: before pax — store absolute token indices (Zone 1 always starts at index 0)
+      zone1[field] = [indices[0], indices[indices.length - 1]]
     } else if (indices[0] >= paxIdx && indices[0] <= timeIdx) {
       // Zone 2: between pax and time — offset from pax (positive = after pax)
       const startOffset = indices[0] - paxIdx
@@ -238,10 +236,8 @@ function applyZoneMapping(
 ): Record<string, string | number> {
   const result: Record<string, string | number> = {}
   
-  // Apply zone 1 fields (before pax)
-  for (const [field, [startOff, endOff]] of Object.entries(mapping.zone1)) {
-    const startIdx = paxIdx - startOff
-    const endIdx = paxIdx - endOff
+  // Apply zone 1 fields (before pax — absolute indices)
+  for (const [field, [startIdx, endIdx]] of Object.entries(mapping.zone1)) {
     const resolvedTokens: string[] = []
     for (let i = startIdx; i <= endIdx && i < tokens.length; i++) {
       if (i >= 0) resolvedTokens.push(tokens[i])
