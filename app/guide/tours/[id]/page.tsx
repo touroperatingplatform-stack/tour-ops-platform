@@ -278,20 +278,23 @@ export default function GuideTourPage() {
   
   // Check if a stop has any incomplete reservations
   const getPendingCountForStop = (stop: Stop) => {
-    // Match reservations to stop by pickup_location (case-insensitive, trimmed)
+    // Match reservations to stop by pickup_location OR hotel_name (case-insensitive)
     const stopReservations = reservations.filter(r => {
-      if (!r.pickup_location) {
-        console.log('Reservation has no pickup_location:', r.id, r.primary_contact_name)
-        return false
-      }
-      const match = r.pickup_location.toLowerCase().trim() === stop.location_name.toLowerCase().trim()
-      if (match) {
-        console.log('Matched:', r.pickup_location, 'to', stop.location_name, 'checked_in:', r.checked_in, 'no_show:', r.no_show)
-      }
-      return match
+      const pickupLoc = (r.pickup_location || '').toLowerCase().trim()
+      const hotelName = ((r as any).hotel_name || '').toLowerCase().trim()
+      const stopName = stop.location_name.toLowerCase().trim()
+      
+      // Exact match
+      const matchPickup = pickupLoc && pickupLoc === stopName
+      const matchHotel = hotelName && hotelName === stopName
+      
+      // Partial match (one contains the other)
+      const partialMatch = (pickupLoc && (pickupLoc.includes(stopName) || stopName.includes(pickupLoc))) ||
+                          (hotelName && (hotelName.includes(stopName) || stopName.includes(hotelName)))
+      
+      return matchPickup || matchHotel || partialMatch
     })
     const pending = stopReservations.filter(r => !r.checked_in && !r.no_show)
-    console.log('Stop', stop.location_name, 'total:', stopReservations.length, 'pending:', pending.length)
     return { total: stopReservations.length, pending: pending.length }
   }
 

@@ -117,7 +117,7 @@ export default function PickupCheckinPage() {
     // Load reservations - filter pending (not checked_in AND not no_show)
     const { data: resData } = await supabase
       .from('reservation_manifest')
-      .select('id, primary_contact_name, adult_pax, child_pax, infant_pax, hotel_name, pickup_time, checked_in, no_show, pickup_stop_id')
+      .select('id, primary_contact_name, adult_pax, child_pax, infant_pax, hotel_name, pickup_location, pickup_time, checked_in, no_show, pickup_stop_id')
       .eq('tour_id', tourId)
     
     if (resData) {
