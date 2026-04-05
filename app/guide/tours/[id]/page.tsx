@@ -136,7 +136,7 @@ export default function GuideTourPage() {
   async function loadReservations() {
     const { data } = await supabase
       .from('reservation_manifest')
-      .select('id, booking_reference, booking_platform, adult_pax, child_pax, infant_pax, total_pax, primary_contact_name, dietary_restrictions, accessibility_needs, special_requests, checked_in, no_show, pickup_location')
+      .select('id, booking_reference, booking_platform, adult_pax, child_pax, infant_pax, total_pax, primary_contact_name, dietary_restrictions, accessibility_needs, special_requests, checked_in, no_show, pickup_location, hotel_name')
       .eq('tour_id', params.id)
       .order('booking_reference')
     
@@ -568,7 +568,8 @@ export default function GuideTourPage() {
                           <div className="font-medium text-gray-900">{stop.location_name}</div>
                           <div className="text-sm text-gray-500">
                             {stop.scheduled_time?.slice(0, 5)} • {stop.guest_count} guests
-                            {showDetail && ` • ${total - pending}/${total} done`}
+                            {showDetail && total > 0 && ` • ${total - pending}/${total} done`}
+                            {showDetail && total === 0 && ` • (no match)`}
                           </div>
                         </div>
                       </div>
