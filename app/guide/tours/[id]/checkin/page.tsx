@@ -261,9 +261,9 @@ export default function PickupCheckinPage() {
       // Back to dashboard
       router.push('/guide')
       
-    } catch (error) {
+    } catch (error: any) {
       console.error('Submit error:', error)
-      alert('Failed to save check-in')
+      alert('Failed to save check-in: ' + (error.message || 'Unknown error'))
     } finally {
       setSubmitting(false)
     }

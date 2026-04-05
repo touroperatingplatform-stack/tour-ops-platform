@@ -280,10 +280,18 @@ export default function GuideTourPage() {
   const getPendingCountForStop = (stop: Stop) => {
     // Match reservations to stop by pickup_location (case-insensitive, trimmed)
     const stopReservations = reservations.filter(r => {
-      if (!r.pickup_location) return false
-      return r.pickup_location.toLowerCase().trim() === stop.location_name.toLowerCase().trim()
+      if (!r.pickup_location) {
+        console.log('Reservation has no pickup_location:', r.id, r.primary_contact_name)
+        return false
+      }
+      const match = r.pickup_location.toLowerCase().trim() === stop.location_name.toLowerCase().trim()
+      if (match) {
+        console.log('Matched:', r.pickup_location, 'to', stop.location_name, 'checked_in:', r.checked_in, 'no_show:', r.no_show)
+      }
+      return match
     })
     const pending = stopReservations.filter(r => !r.checked_in && !r.no_show)
+    console.log('Stop', stop.location_name, 'total:', stopReservations.length, 'pending:', pending.length)
     return { total: stopReservations.length, pending: pending.length }
   }
 
