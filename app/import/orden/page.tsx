@@ -978,14 +978,24 @@ export default function OrdenImportPage() {
                 {/* Row B preview */}
                 {(() => {
                   const rowB = sampleRows.rowB
+                  const rowA = sampleRows.rowA
                   const timePattern = /^\d{1,2}:\d{2}$/
                   const paxIdx = rowB.tokens.findIndex(t => /^\d+(\.\d+)*$/.test(t))
                   const timeIdx = rowB.tokens.findIndex(t => timePattern.test(t))
                   
-                  // Build zone mapping from current tokenMapping
-                  const zm = zoneMapping || buildZoneMapping(rowB.tokens, tokenMapping, paxIdx, timeIdx)
+                  console.log('zone mapping:', JSON.stringify(zoneMapping))
+                  console.log('Row B tokens:', rowB.tokens)
+                  console.log('Row B pax position:', paxIdx, 'time position:', timeIdx)
                   
-                  // Apply to get field values
+                  // Use zone mapping from Row A, or rebuild from Row A if not set
+                  const zm = zoneMapping || buildZoneMapping(
+                    rowA.tokens,
+                    tokenMapping,
+                    rowA.tokens.findIndex(t => /^\d+(\.\d+)*$/.test(t)),
+                    rowA.tokens.findIndex(t => timePattern.test(t))
+                  )
+                  
+                  // Apply zone mapping to Row B
                   const mapped = applyZoneMapping(rowB.tokens, zm, paxIdx, timeIdx)
                   
                   return (
