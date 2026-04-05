@@ -209,8 +209,13 @@ function buildZoneMapping(
     } else if (field === 'pickupTime') {
       zone3[field] = [0, 0]
     } else if (indices[0] < paxIdx) {
-      // Zone 1: before pax — store absolute token indices (Zone 1 always starts at index 0)
-      zone1[field] = [indices[0], indices[indices.length - 1]]
+      // Zone 1: before pax — store absolute token indices
+      let endIdx = indices[indices.length - 1]
+      // Cap clientName end at coupon start - 1 to avoid picking up coupon tokens
+      if (field === 'clientName' && mapping['coupon']?.length > 0) {
+        endIdx = Math.min(endIdx, mapping['coupon'][0] - 1)
+      }
+      zone1[field] = [indices[0], endIdx]
     } else if (indices[0] >= paxIdx && indices[0] <= timeIdx) {
       // Zone 2: between pax and time — offset from pax (positive = after pax)
       const startOffset = indices[0] - paxIdx
@@ -735,6 +740,11 @@ export default function OrdenImportPage() {
 
         let stopOrder = 1
         for (const res of tour.reservations) {
+          // Skip reservations with no pickupTime or clientName
+          if (!res.pickupTime || !res.clientName) {
+            console.log('skipping reservation: missing pickupTime or clientName', res.pickupTime, res.clientName)
+            continue
+          }
           console.log('processing reservation:', res.clientName, 'pickupTime:', res.pickupTime)
           // Validate pickupTime is a proper time format
           const validTime = /^\d{1,2}:\d{2}$/.test(res.pickupTime) ? res.pickupTime + ':00' : null
