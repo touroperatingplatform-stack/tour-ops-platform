@@ -276,26 +276,32 @@ export default function GuideTourPage() {
   const completedReservations = reservations.filter(r => r.checked_in || r.no_show)
   const allPickupsDone = reservations.length > 0 && completedReservations.length === reservations.length
   
-  // Check if a stop has any incomplete reservations
+  // Check if a stop has any incomplete check-ins
   const getPendingCountForStop = (stop: Stop) => {
-    // Match reservations to stop by pickup_location OR hotel_name (case-insensitive)
-    const stopReservations = reservations.filter(r => {
-      const pickupLoc = (r.pickup_location || '').toLowerCase().trim()
-      const hotelName = ((r as any).hotel_name || '').toLowerCase().trim()
-      const stopName = stop.location_name.toLowerCase().trim()
-      
-      // Exact match
-      const matchPickup = pickupLoc && pickupLoc === stopName
-      const matchHotel = hotelName && hotelName === stopName
-      
-      // Partial match (one contains the other)
-      const partialMatch = (pickupLoc && (pickupLoc.includes(stopName) || stopName.includes(pickupLoc))) ||
-                          (hotelName && (hotelName.includes(stopName) || stopName.includes(hotelName)))
-      
-      return matchPickup || matchHotel || partialMatch
-    })
-    const pending = stopReservations.filter(r => !r.checked_in && !r.no_show)
-    return { total: stopReservations.length, pending: pending.length }
+    // For pickups: Match reservations to stop by pickup_location OR hotel_name
+    if (stop.stop_type === 'pickup') {
+      const stopReservations = reservations.filter(r => {
+        const pickupLoc = (r.pickup_location || '').toLowerCase().trim()
+        const hotelName = ((r as any).hotel_name || '').toLowerCase().trim()
+        const stopName = stop.location_name.toLowerCase().trim()
+        
+        // Exact match
+        const matchPickup = pickupLoc && pickupLoc === stopName
+        const matchHotel = hotelName && hotelName === stopName
+        
+        // Partial match (one contains the other)
+        const partialMatch = (pickupLoc && (pickupLoc.includes(stopName) || stopName.includes(pickupLoc))) ||
+                            (hotelName && (hotelName.includes(stopName) || stopName.includes(hotelName)))
+        
+        return matchPickup || matchHotel || partialMatch
+      })
+      const pending = stopReservations.filter(r => !r.checked_in && !r.no_show)
+      return { total: stopReservations.length, pending: pending.length }
+    }
+    
+    // For activities and dropoffs: Check if there's a guide_checkin for this stop
+    const hasCheckin = checkins.some(c => c.pickup_stop_id === stop.id && c.checkin_type === stop.stop_type)
+    return { total: 1, pending: hasCheckin ? 0 : 1 }
   }
 
   return (
@@ -554,8 +560,11 @@ export default function GuideTourPage() {
                 const isComplete = pending === 0 && total > 0
                 const icon = stop.stop_type === 'pickup' ? '📍' : stop.stop_type === 'activity' ? '🎯' : '🏁'
                 
-                // Only show detailed status for pickup stops
-                const showDetail = stop.stop_type === 'pickup' && total > 0
+                // Show detail for all stop types
+                const showDetail = total > 0
+                const detailText = stop.stop_type === 'pickup' 
+                  ? `${total - pending}/${total} done`
+                  : isComplete ? 'Done' : 'Pending'
                 
                 return (
                   <div key={stop.id} className={`p-4 rounded-xl border-2 ${
@@ -568,8 +577,8 @@ export default function GuideTourPage() {
                           <div className="font-medium text-gray-900">{stop.location_name}</div>
                           <div className="text-sm text-gray-500">
                             {stop.scheduled_time?.slice(0, 5)} • {stop.guest_count} guests
-                            {showDetail && total > 0 && ` • ${total - pending}/${total} done`}
-                            {showDetail && total === 0 && ` • (no match)`}
+                            {showDetail && ` • ${detailText}`}
+                            {stop.stop_type === 'pickup' && total === 0 && ` • (no match)`}
                           </div>
                         </div>
                       </div>
@@ -582,7 +591,9 @@ export default function GuideTourPage() {
                           href={`/guide/tours/${tour.id}/checkin?type=${stop.stop_type}`}
                           className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700"
                         >
-                          {showDetail && pending > 0 ? `${pending} pending` : 'Check In'}
+                          {stop.stop_type === 'pickup' && pending > 0 ? `${pending} pending` : 
+                           stop.stop_type === 'activity' ? 'Check In Activity' :
+                           stop.stop_type === 'dropoff' ? 'Check In Dropoff' : 'Check In'}
                         </Link>
                       )}
                     </div>
