@@ -121,14 +121,19 @@ export default function PickupCheckinPage() {
       .eq('tour_id', tourId)
     
     if (resData) {
-      // Filter pending (both checked_in and no_show must be explicitly false)
-      const pending = resData.filter(r => r.checked_in !== true && r.no_show !== true)
-      console.log('Loaded reservations:', resData.length, 'Pending:', pending.length)
+      // Log ALL reservations for debugging
+      console.log('=== ALL RESERVATIONS ===')
       resData.forEach(r => {
-        if (r.checked_in === true || r.no_show === true) {
-          console.log('  Completed:', r.hotel_name, '-', r.primary_contact_name, 'checked_in:', r.checked_in, 'no_show:', r.no_show)
-        }
+        console.log(`  ${r.id}: ${r.primary_contact_name} at ${r.hotel_name} | checked_in: ${r.checked_in} (${typeof r.checked_in}) | no_show: ${r.no_show} (${typeof r.no_show})`)
       })
+      
+      // Filter pending (both checked_in and no_show must be explicitly false/null)
+      const pending = resData.filter(r => r.checked_in !== true && r.no_show !== true)
+      console.log('=== PENDING RESERVATIONS ===', pending.length)
+      pending.forEach(r => {
+        console.log(`  ${r.id}: ${r.primary_contact_name} at ${r.hotel_name}`)
+      })
+      
       setReservations(pending)
       setPendingCount(pending.length)
     }
