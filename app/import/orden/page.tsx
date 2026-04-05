@@ -965,7 +965,7 @@ export default function OrdenImportPage() {
                     ← Back
                   </button>
                   <button
-                    onClick={confirmField}
+                    onClick={mappingStep < FIELDS.length - 1 ? confirmField : confirmMapping}
                     disabled={currentSelection.length === 0}
                     className="flex-1 px-6 py-4 bg-purple-600 text-white rounded-xl hover:bg-purple-700 disabled:opacity-40 font-bold text-lg transition-all"
                   >
