@@ -7,6 +7,7 @@ import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase/client'
 import { uploadToCloudinary } from '@/lib/cloudinary/upload'
+import { compressImage } from '@/lib/image-compression'
 
 interface Reservation {
   id: string
@@ -61,7 +62,17 @@ export default function PickupCheckinPage() {
 
   useEffect(() => {
     loadData()
-  }, [])
+    
+    // Refresh data when window regains focus (guide returns from check-in flow)
+    const handleFocus = () => {
+      if (step === 'select') {
+        loadData()
+      }
+    }
+    
+    window.addEventListener('focus', handleFocus)
+    return () => window.removeEventListener('focus', handleFocus)
+  }, [step])
 
   async function loadData() {
     setLoading(true)
@@ -143,10 +154,24 @@ export default function PickupCheckinPage() {
   async function handlePhotoUpload(file: File) {
     setUploading(true)
     try {
-      const url = await uploadToCloudinary(file, 'tour-ops/checkins')
+      // Compress image before upload (max 1200px, 80% quality, max 2MB)
+      const compressedFile = await compressImage(file, {
+        maxWidth: 1200,
+        maxHeight: 1200,
+        quality: 0.8,
+        maxFileSizeMB: 2
+      })
+      
+      console.log('Photo compressed:', {
+        originalSize: `${(file.size / 1024 / 1024).toFixed(2)}MB`,
+        compressedSize: `${(compressedFile.size / 1024 / 1024).toFixed(2)}MB`
+      })
+      
+      const url = await uploadToCloudinary(compressedFile, 'tour-ops/checkins')
       if (url) setPhotoUrl(url as string)
     } catch (error) {
-      alert('Failed to upload photo')
+      console.error('Photo upload error:', error)
+      alert('Failed to upload photo. Please try again.')
     } finally {
       setUploading(false)
     }
