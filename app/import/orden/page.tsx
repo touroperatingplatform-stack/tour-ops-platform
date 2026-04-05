@@ -626,12 +626,16 @@ export default function OrdenImportPage() {
   }
 
   const confirmMapping = () => {
+    console.log('confirmMapping called')
     // Build zone mapping from user's tap positions on Row A
     const rowATokens = sampleRows?.rowA.tokens || sampleTokens
+    console.log('rowATokens:', rowATokens)
     const paxIdx = rowATokens.findIndex(t => /^\d+(\.\d+)*$/.test(t))
     const timeIdx = rowATokens.findIndex(t => /^\d{1,2}:\d{2}$/.test(t))
+    console.log('paxIdx:', paxIdx, 'timeIdx:', timeIdx)
     
     if (paxIdx < 0 || timeIdx < 0) {
+      console.log('confirmMapping error: pax or time not found')
       setError('Could not find pax or time anchors in Row A. Please re-map.')
       return
     }
@@ -642,6 +646,7 @@ export default function OrdenImportPage() {
     setZoneMapping(zm)
     setShowMappingSummary(false)
     setShowRowBVerification(true)
+    console.log('confirmMapping complete, showRowBVerification will be true')
     // Next: verify on Row B
   }
 
