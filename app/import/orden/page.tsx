@@ -654,8 +654,14 @@ export default function OrdenImportPage() {
       return
     }
     
-    const zm = buildZoneMapping(rowATokens, tokenMapping, paxIdx, timeIdx)
-    console.log('tokenMapping agency:', JSON.stringify(tokenMapping.agency))
+    // Include current selection (last field) in the mapping passed to buildZoneMapping
+    const lastFieldId = FIELDS[mappingStep]?.id
+    const mappingWithCurrent = lastFieldId && currentSelection.length > 0
+      ? { ...tokenMapping, [lastFieldId]: currentSelection }
+      : tokenMapping
+    
+    const zm = buildZoneMapping(rowATokens, mappingWithCurrent, paxIdx, timeIdx)
+    console.log('mappingWithCurrent agency:', JSON.stringify(mappingWithCurrent.agency))
     console.log('zone2:', JSON.stringify(zm.zone2))
     console.log('zone3:', JSON.stringify(zm.zone3))
     console.log('zone mapping:', JSON.stringify(zm))
