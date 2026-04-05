@@ -233,27 +233,31 @@ export default function PickupCheckinPage() {
 
       if (updateError) {
         console.error('Reservation update error:', updateError)
-        throw new Error('Failed to update reservation')
+        throw new Error('Failed to update reservation: ' + (updateError.message || JSON.stringify(updateError)))
       }
 
       // Create guide checkin record
-      const { error: checkinError } = await supabase.from('guide_checkins').insert({
+      // Note: 'no_show' is not a valid checkin_type, use 'pickup' with NO_SHOW prefix in notes
+      const checkinData = {
         tour_id: tourId,
         brand_id: tourData?.brand_id,
         guide_id: user.id,
         pickup_stop_id: selectedReservation.pickup_stop_id,
-        checkin_type: actionType === 'checkin' ? 'pickup' : 'no_show',
+        checkin_type: 'pickup', // Always 'pickup' - no_show indicated in notes
         checked_in_at: new Date().toISOString(),
         latitude: location.lat,
         longitude: location.lng,
         location_accuracy: location.accuracy,
         selfie_url: photoUrl,
-        notes: notes
-      })
+        notes: actionType === 'noshow' ? `[NO_SHOW] ${notes || 'Guest did not show'}` : notes
+      }
+      console.log('Inserting checkin with data:', checkinData)
+      
+      const { error: checkinError } = await supabase.from('guide_checkins').insert(checkinData)
 
       if (checkinError) {
         console.error('Checkin insert error:', checkinError)
-        throw new Error('Failed to save checkin')
+        throw new Error('Failed to save checkin: ' + (checkinError.message || JSON.stringify(checkinError)))
       }
 
       console.log('Check-in saved successfully')
