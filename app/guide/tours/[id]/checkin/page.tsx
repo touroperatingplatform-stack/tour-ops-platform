@@ -121,8 +121,14 @@ export default function PickupCheckinPage() {
       .eq('tour_id', tourId)
     
     if (resData) {
-      // Filter pending (both checked_in and no_show are false/null)
-      const pending = resData.filter(r => !r.checked_in && !r.no_show)
+      // Filter pending (both checked_in and no_show must be explicitly false)
+      const pending = resData.filter(r => r.checked_in !== true && r.no_show !== true)
+      console.log('Loaded reservations:', resData.length, 'Pending:', pending.length)
+      resData.forEach(r => {
+        if (r.checked_in === true || r.no_show === true) {
+          console.log('  Completed:', r.hotel_name, '-', r.primary_contact_name, 'checked_in:', r.checked_in, 'no_show:', r.no_show)
+        }
+      })
       setReservations(pending)
       setPendingCount(pending.length)
     }
@@ -154,12 +160,12 @@ export default function PickupCheckinPage() {
   async function handlePhotoUpload(file: File) {
     setUploading(true)
     try {
-      // Compress image before upload (max 1200px, 80% quality, max 2MB)
+      // Compress image before upload (max 1024px, 70% quality, max 1MB)
       const compressedFile = await compressImage(file, {
-        maxWidth: 1200,
-        maxHeight: 1200,
-        quality: 0.8,
-        maxFileSizeMB: 2
+        maxWidth: 1024,
+        maxHeight: 1024,
+        quality: 0.7,
+        maxFileSizeMB: 1
       })
       
       console.log('Photo compressed:', {
