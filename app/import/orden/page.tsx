@@ -656,6 +656,8 @@ export default function OrdenImportPage() {
     
     const zm = buildZoneMapping(rowATokens, tokenMapping, paxIdx, timeIdx)
     console.log('tokenMapping agency:', JSON.stringify(tokenMapping.agency))
+    console.log('zone2:', JSON.stringify(zm.zone2))
+    console.log('zone3:', JSON.stringify(zm.zone3))
     console.log('zone mapping:', JSON.stringify(zm))
     
     setZoneMapping(zm)
