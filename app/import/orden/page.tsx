@@ -346,7 +346,8 @@ export default function OrdenImportPage() {
   const [currentSelection, setCurrentSelection] = useState<number[]>([])
   const [showMappingSummary, setShowMappingSummary] = useState(false)
   const [zoneMapping, setZoneMapping] = useState<ZoneMapping | null>(null)
-  const [verifiedMapping, setVerifiedMapping] = useState<ZoneMapping | null>(null) // Row B verified
+  const [showRowBVerification, setShowRowBVerification] = useState(false)
+  const [verifiedMapping, setVerifiedMapping] = useState<ZoneMapping | null>(null)
   
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -567,6 +568,7 @@ export default function OrdenImportPage() {
         agency: [],
       })
       setShowMappingSummary(false)
+      setShowRowBVerification(false)
       setZoneMapping(null)
       setVerifiedMapping(null)
     } catch (err: any) {
@@ -639,6 +641,7 @@ export default function OrdenImportPage() {
     
     setZoneMapping(zm)
     setShowMappingSummary(false)
+    setShowRowBVerification(true)
     // Next: verify on Row B
   }
 
@@ -968,7 +971,7 @@ export default function OrdenImportPage() {
             )}
 
             {/* ── Step 2b: Row B Verification ── */}
-            {step === 2 && showMappingSummary && sampleRows && (
+            {step === 2 && showRowBVerification && sampleRows && (
               <div className="border-8 border-transparent bg-white rounded-xl border border-gray-200 p-6 max-w-2xl mx-auto">
                 <div className="text-center mb-6">
                   <h2 className="text-2xl font-bold text-gray-900 mb-2">Verify on Different Row</h2>
@@ -1033,7 +1036,7 @@ export default function OrdenImportPage() {
                 <div className="flex gap-3">
                   <button
                     onClick={() => {
-                      setShowMappingSummary(false)
+                      setShowRowBVerification(false)
                       setMappingStep(FIELDS.length - 1)
                     }}
                     className="px-6 py-4 border-2 border-gray-300 text-gray-600 rounded-xl hover:bg-gray-50 font-medium text-lg"
