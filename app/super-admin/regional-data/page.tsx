@@ -29,8 +29,12 @@ export default function RegionalDataPage() {
   const [selectedHotel, setSelectedHotel] = useState<any | null>(null)
   const [selectedZone, setSelectedZone] = useState('')
   const [saving, setSaving] = useState(false)
+  const [activeTab, setActiveTab] = useState<'regions' | 'pending'>('regions')
+  const [pendingLocations, setPendingLocations] = useState<any[]>([])
+  const [loadingPending, setLoadingPending] = useState(false)
 
   useEffect(() => { loadRegions() }, [])
+  useEffect(() => { if (activeTab === 'pending') loadPendingLocations() }, [activeTab])
 
   async function loadRegions() {
     setLoading(true)
@@ -62,6 +66,56 @@ export default function RegionalDataPage() {
     if (!confirm('Delete this region and all its hotels?')) return
     await supabase.from('regions').delete().eq('id', id)
     loadRegions()
+  }
+
+  async function loadPendingLocations() {
+    setLoadingPending(true)
+    const { data } = await supabase
+      .from('company_pickup_locations')
+      .select('*, companies(name)')
+      .eq('flagged_for_review', true)
+      .order('created_at', { ascending: false })
+    if (data) setPendingLocations(data)
+    setLoadingPending(false)
+  }
+
+  async function handlePromoteLocation(loc: any) {
+    if (!confirm(`Promote "${loc.name}" to master list?`)) return
+    // Insert into pickup_locations_platform
+    const { data: newMaster, error: masterError } = await supabase
+      .from('pickup_locations_platform')
+      .insert({
+        name: loc.name,
+        address: loc.address,
+        latitude: loc.latitude,
+        longitude: loc.longitude,
+        zone: loc.zone,
+        status: 'active'
+      })
+      .select()
+      .single()
+    
+    if (masterError || !newMaster) {
+      alert('Failed to promote: ' + (masterError?.message || 'Unknown error'))
+      return
+    }
+    
+    // Update company_pickup_locations to set platform_location_id and clear flagged
+    await supabase
+      .from('company_pickup_locations')
+      .update({
+        flagged_for_review: false,
+        platform_location_id: newMaster.id
+      })
+      .eq('id', loc.id)
+    
+    loadPendingLocations()
+  }
+
+  async function handleDismissLocation(id: string) {
+    if (!confirm('Dismiss this review request?')) return
+    await supabase.from('company_pickup_locations').update({ flagged_for_review: false }).eq('id', id)
+    loadPendingLocations()
   }
 
   async function handleImportHotels() {
@@ -151,7 +205,30 @@ export default function RegionalDataPage() {
       <div className="h-full border-8 border-transparent p-4">
         <div className="h-full flex flex-col border-8 border-transparent">
           
-          {/* Page Header */}
+          {/* Tabs */}
+          <div className="border-8 border-transparent bg-white rounded-xl flex-shrink-0 mb-4">
+            <div className="border-8 border-transparent p-4 flex gap-4">
+              <button
+                onClick={() => setActiveTab('regions')}
+                className={`border-8 border-transparent px-4 py-2 rounded-lg font-medium ${
+                  activeTab === 'regions' ? 'bg-purple-600 text-white' : 'text-gray-600 hover:bg-gray-50'
+                }`}
+              >
+                Regions
+              </button>
+              <button
+                onClick={() => setActiveTab('pending')}
+                className={`border-8 border-transparent px-4 py-2 rounded-lg font-medium ${
+                  activeTab === 'pending' ? 'bg-purple-600 text-white' : 'text-gray-600 hover:bg-gray-50'
+                }`}
+              >
+                Pending Review ({pendingLocations.length})
+              </button>
+            </div>
+          </div>
+
+          {/* Regions Tab */}
+          {activeTab === 'regions' && (
           <div className="border-8 border-transparent bg-white rounded-xl flex-shrink-0 mb-4">
             <div className="border-8 border-transparent p-4 flex justify-between items-center">
               <div className="border-8 border-transparent">
@@ -166,8 +243,10 @@ export default function RegionalDataPage() {
               </div>
             </div>
           </div>
+          )}
 
           {/* Regions List */}
+          {activeTab === 'regions' && (
           <div className="border-8 border-transparent bg-white rounded-xl flex-1 overflow-hidden">
             <div className="border-8 border-transparent p-4 h-full flex flex-col">
               <div className="border-8 border-transparent">
@@ -430,6 +509,67 @@ export default function RegionalDataPage() {
                   <span className="border-8 border-transparent px-4 py-2">Close</span>
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+              
+              {/* Pending Review Tab */}
+              {activeTab === 'pending' && (
+                <div className="border-8 border-transparent bg-white rounded-xl flex-1 overflow-hidden">
+                  <div className="border-8 border-transparent p-4 h-full flex flex-col">
+                    <h2 className="text-lg font-semibold text-gray-900 mb-4">Pending Review</h2>
+                    
+                    {loadingPending ? (
+                      <p className="text-gray-500">Loading...</p>
+                    ) : pendingLocations.length === 0 ? (
+                      <div className="border-8 border-transparent border border-dashed border-gray-200 rounded-xl flex-1 flex items-center justify-center">
+                        <p className="text-gray-500">No pending reviews.</p>
+                      </div>
+                    ) : (
+                      <div className="border-8 border-transparent flex-1 overflow-y-auto">
+                        <table className="border-8 border-transparent w-full text-sm">
+                          <thead className="border-8 border-transparent bg-gray-50 sticky top-0">
+                            <tr>
+                              <th className="border-8 border-transparent text-left">Company</th>
+                              <th className="border-8 border-transparent text-left">Hotel Name</th>
+                              <th className="border-8 border-transparent text-left">Address</th>
+                              <th className="border-8 border-transparent text-right">Coordinates</th>
+                              <th className="border-8 border-transparent text-left">Zone</th>
+                              <th className="border-8 border-transparent text-center">Actions</th>
+                            </tr>
+                          </thead>
+                          <tbody className="border-8 border-transparent divide-y divide-gray-100">
+                            {pendingLocations.map(loc => (
+                              <tr key={loc.id} className="border-8 border-transparent hover:bg-gray-50">
+                                <td className="border-8 border-transparent">{loc.companies?.name || 'Unknown'}</td>
+                                <td className="border-8 border-transparent font-medium">{loc.name}</td>
+                                <td className="border-8 border-transparent text-gray-500 text-xs">{loc.address}</td>
+                                <td className="border-8 border-transparent text-right text-xs">{loc.latitude}, {loc.longitude}</td>
+                                <td className="border-8 border-transparent">{loc.zone}</td>
+                                <td className="border-8 border-transparent text-center">
+                                  <button
+                                    onClick={() => handlePromoteLocation(loc)}
+                                    className="border-8 border-transparent text-green-600 hover:text-green-800 text-sm font-medium mr-2"
+                                  >
+                                    Promote to Master
+                                  </button>
+                                  <button
+                                    onClick={() => handleDismissLocation(loc.id)}
+                                    className="border-8 border-transparent text-gray-500 hover:text-gray-700 text-sm"
+                                  >
+                                    Dismiss
+                                  </button>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
