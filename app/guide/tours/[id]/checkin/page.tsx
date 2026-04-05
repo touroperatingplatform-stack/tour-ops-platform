@@ -3,21 +3,21 @@
 export const dynamic = 'force-dynamic'
 
 import { useState, useEffect } from 'react'
-import { useRouter, useParams, useSearchParams } from 'next/navigation'
+import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase/client'
 import { uploadToCloudinary } from '@/lib/cloudinary/upload'
 
-type StopType = 'pickup' | 'activity' | 'dropoff'
-
-interface PickupStop {
+interface Reservation {
   id: string
-  location_name: string
-  address: string
-  scheduled_time: string
-  guest_count: number
-  stop_type: StopType
-  sort_order: number
+  primary_contact_name: string
+  adult_pax: number
+  child_pax: number
+  infant_pax: number
+  hotel_name: string
+  pickup_time: string
+  checked_in: boolean
+  no_show: boolean
 }
 
 interface Tour {
@@ -27,90 +27,80 @@ interface Tour {
   acknowledged_at: string | null
 }
 
-interface Reservation {
-  id: string
-  primary_contact_name: string
-  adult_pax: number
-  child_pax: number
-  infant_pax: number
-  checked_in: boolean
-  no_show: boolean
-}
-
 export default function PickupCheckinPage() {
   const params = useParams()
-  const searchParams = useSearchParams()
   const router = useRouter()
   const tourId = params.id as string
-  const stopType = (searchParams.get('type') as StopType) || 'pickup'
 
-  const [loading, setLoading] = useState(false)
-  const [uploading, setUploading] = useState(false)
+  // Step management
+  const [step, setStep] = useState<'select' | 'checkin'>('select')
+  const [selectedReservation, setSelectedReservation] = useState<Reservation | null>(null)
+
+  // Data
+  const [tour, setTour] = useState<Tour | null>(null)
+  const [reservations, setReservations] = useState<Reservation[]>([])
+  const [loading, setLoading] = useState(true)
+
+  // Check-in flow state
   const [photoUrl, setPhotoUrl] = useState<string | null>(null)
   const [location, setLocation] = useState<{lat: number, lng: number, accuracy?: number} | null>(null)
   const [locationError, setLocationError] = useState<string | null>(null)
-  const [tour, setTour] = useState<Tour | null>(null)
-  const [stops, setStops] = useState<PickupStop[]>([])
-  const [selectedStopId, setSelectedStopId] = useState<string>('')
-  const [reservations, setReservations] = useState<Reservation[]>([])
   const [notes, setNotes] = useState('')
-  const [checkedGuests, setCheckedGuests] = useState<Set<string>>(new Set())
+  const [submitting, setSubmitting] = useState(false)
+  const [actionType, setActionType] = useState<'checkin' | 'noshow' | null>(null)
+  const [uploading, setUploading] = useState(false)
 
   useEffect(() => {
-    loadTourData()
-    getLocation()
+    loadData()
   }, [])
 
-  async function loadTourData() {
+  async function loadData() {
+    setLoading(true)
+    
+    // Get tour
     const { data: tourData } = await supabase
       .from('tours')
       .select('id, name, status, acknowledged_at')
       .eq('id', tourId)
       .single()
     
-    if (tourData) {
-      setTour(tourData)
-      
-      if (!tourData.acknowledged_at) {
-        router.push(`/guide/tours/${tourId}/acknowledge`)
-        return
-      }
-      
-      if (tourData.status === 'scheduled') {
-        router.push(`/guide/tours/${tourId}`)
-        return
-      }
-
-      const { data: stopsData } = await supabase
-        .from('pickup_stops')
-        .select('id, location_name, address, scheduled_time, guest_count, stop_type, sort_order')
-        .eq('tour_id', tourId)
-        .eq('stop_type', stopType)
-        .order('sort_order', { ascending: true })
-
-      if (stopsData && stopsData.length > 0) {
-        setStops(stopsData)
-        setSelectedStopId(stopsData[0].id)
-      }
-
-      // Load reservations for this tour
-      const { data: resData } = await supabase
-        .from('reservation_manifest')
-        .select('id, primary_contact_name, adult_pax, child_pax, infant_pax, checked_in, no_show')
-        .eq('tour_id', tourId)
-      
-      if (resData) {
-        setReservations(resData)
-        // Pre-check already checked in guests
-        const checked = new Set(resData.filter(r => r.checked_in).map(r => r.id))
-        setCheckedGuests(checked)
-      }
+    if (!tourData) {
+      setLoading(false)
+      return
     }
+    
+    setTour(tourData)
+
+    // Redirect guards
+    if (!tourData.acknowledged_at) {
+      router.push(`/guide/tours/${tourId}/acknowledge`)
+      return
+    }
+    
+    if (tourData.status === 'scheduled') {
+      router.push(`/guide/tours/${tourId}`)
+      return
+    }
+
+    // Load pending reservations (not checked_in, not no_show)
+    const { data: resData } = await supabase
+      .from('reservation_manifest')
+      .select('id, primary_contact_name, adult_pax, child_pax, infant_pax, hotel_name, pickup_time, checked_in, no_show')
+      .eq('tour_id', tourId)
+      .eq('checked_in', false)
+      .eq('no_show', false)
+      .order('pickup_time', { ascending: true })
+    
+    if (resData) {
+      setReservations(resData)
+    }
+    
+    setLoading(false)
   }
 
   function getLocation() {
     if (!navigator.geolocation) {
-      setLocationError('GPS not supported')
+      setLocationError('GPS not supported on this device')
       return
     }
 
@@ -123,7 +113,7 @@ export default function PickupCheckinPage() {
         })
       },
       (error) => {
-        setLocationError('Could not get GPS')
+        setLocationError('Could not get GPS location. Please enable location services.')
       },
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
     )
@@ -141,53 +131,30 @@ export default function PickupCheckinPage() {
     }
   }
 
-  function calculateMinutesEarly(scheduledTime: string) {
-    const now = new Date()
-    const [hours, minutes] = scheduledTime.split(':').map(Number)
-    const scheduled = new Date()
-    scheduled.setHours(hours, minutes, 0, 0)
-    
-    if (scheduled < now && (now.getTime() - scheduled.getTime()) > 12 * 60 * 60 * 1000) {
-      scheduled.setDate(scheduled.getDate() + 1)
-    }
-    
-    return Math.floor((scheduled.getTime() - now.getTime()) / 60000)
+  function selectReservation(res: Reservation) {
+    setSelectedReservation(res)
+    setStep('checkin')
+    getLocation() // Capture GPS when arriving at pickup
   }
 
-  function toggleGuest(guestId: string) {
-    const newChecked = new Set(checkedGuests)
-    if (newChecked.has(guestId)) {
-      newChecked.delete(guestId)
-    } else {
-      newChecked.add(guestId)
-    }
-    setCheckedGuests(newChecked)
-  }
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
-    
+  async function handleSubmit() {
+    if (!selectedReservation) return
     if (!photoUrl) {
       alert('Please take a photo first')
       return
     }
-
     if (!location) {
       alert('Waiting for GPS. Please enable location services.')
       return
     }
-
-    if (!selectedStopId) {
-      alert('Please select a stop')
+    if (!actionType) {
+      alert('Please select Check In or No Show')
       return
     }
 
-    setLoading(true)
+    setSubmitting(true)
 
     try {
-      const selectedStop = stops.find(s => s.id === selectedStopId)
-      const minutesEarly = selectedStop ? calculateMinutesEarly(selectedStop.scheduled_time) : 0
-
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('Not authenticated')
 
@@ -197,275 +164,250 @@ export default function PickupCheckinPage() {
         .eq('id', tourId)
         .single()
 
-      // Insert checkin
-      const { error } = await supabase
-        .from('guide_checkins')
-        .insert({
-          tour_id: tourId,
-          brand_id: tourData?.brand_id,
-          guide_id: user.id,
-          pickup_stop_id: selectedStopId,
-          checkin_type: stopType,
-          checked_in_at: new Date().toISOString(),
-          latitude: location.lat,
-          longitude: location.lng,
-          location_accuracy: location.accuracy,
-          selfie_url: photoUrl,
-          scheduled_time: selectedStop?.scheduled_time,
-          minutes_early_or_late: minutesEarly,
-          notes: notes || null
+      // Update reservation status
+      await supabase
+        .from('reservation_manifest')
+        .update({
+          checked_in: actionType === 'checkin',
+          no_show: actionType === 'noshow',
+          checked_in_at: new Date().toISOString()
         })
+        .eq('id', selectedReservation.id)
 
-      if (error) throw error
+      // Create guide checkin record
+      await supabase.from('guide_checkins').insert({
+        tour_id: tourId,
+        brand_id: tourData?.brand_id,
+        guide_id: user.id,
+        checkin_type: actionType === 'checkin' ? 'pickup' : 'no_show',
+        checked_in_at: new Date().toISOString(),
+        latitude: location.lat,
+        longitude: location.lng,
+        location_accuracy: location.accuracy,
+        selfie_url: photoUrl,
+        notes: notes
+      })
 
-      // Update reservation check-ins for pickup type
-      if (stopType === 'pickup') {
-        for (const guestId of checkedGuests) {
-          await supabase
-            .from('reservation_manifest')
-            .update({ checked_in: true, checked_in_at: new Date().toISOString() })
-            .eq('id', guestId)
-        }
-      }
-
-      // Check if there are remaining stops of this type
-      const remainingStops = stops.filter(s => s.id !== selectedStopId)
+      // Back to dashboard
+      router.push('/guide')
       
-      if (remainingStops.length > 0) {
-        // There are more stops of this type - reload checkin for next stop
-        router.refresh()
-      } else {
-        // All stops of this type are done - return to dashboard
-        router.push('/guide')
-      }
-    } catch (err: any) {
-      alert(err.message || 'Failed to check in')
+    } catch (error) {
+      console.error('Submit error:', error)
+      alert('Failed to save check-in')
     } finally {
-      setLoading(false)
+      setSubmitting(false)
     }
   }
 
-  const selectedStop = stops.find(s => s.id === selectedStopId)
-  const minutesEarly = selectedStop ? calculateMinutesEarly(selectedStop.scheduled_time) : 0
-
-  let statusBadge = { label: 'On time', color: 'bg-blue-100 text-blue-700', icon: '⏰' }
-  if (minutesEarly >= 20) statusBadge = { label: `${minutesEarly} min early`, color: 'bg-green-100 text-green-700', icon: '✓' }
-  else if (minutesEarly > 0) statusBadge = { label: `${minutesEarly} min early`, color: 'bg-green-50 text-green-700', icon: '✓' }
-  else if (minutesEarly >= -10) statusBadge = { label: `${Math.abs(minutesEarly)} min late`, color: 'bg-yellow-100 text-yellow-700', icon: '⚠️' }
-  else statusBadge = { label: `${Math.abs(minutesEarly)} min late`, color: 'bg-red-100 text-red-700', icon: '⚠️' }
-
-  const typeLabels: Record<StopType, string> = {
-    pickup: 'Pickup',
-    activity: 'Activity',
-    dropoff: 'Dropoff'
-  }
-
-  const typeColors: Record<StopType, string> = {
-    pickup: 'bg-blue-600',
-    activity: 'bg-orange-600',
-    dropoff: 'bg-green-600'
-  }
-
-  const typeBgColors: Record<StopType, string> = {
-    pickup: 'bg-blue-50 border-blue-200',
-    activity: 'bg-orange-50 border-orange-200',
-    dropoff: 'bg-green-50 border-green-200'
-  }
-
-  const checkedCount = checkedGuests.size
-  const totalCount = reservations.length
-
-  return (
-    <div className="pb-32">
-      {/* Header */}
-      <div className={`${typeColors[stopType]} text-white p-6 rounded-b-3xl`}>
-        <div className="flex items-center justify-between mb-4">
-          <Link href={`/guide/tours/${tourId}`} className="text-white/80 hover:text-white">
-            ← Back
-          </Link>
-          <span className="bg-white/20 px-3 py-1 rounded-full text-sm">
-            {stopType}
-          </span>
-        </div>
-        <h1 className="text-2xl font-bold">
-          {typeLabels[stopType]} Check-in
-        </h1>
-        {tour && <p className="text-white/80 mt-1">{tour.name}</p>}
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="text-gray-500">Loading...</div>
       </div>
+    )
+  }
 
-      <div className="p-4 space-y-6">
-        {/* Selected Stop */}
-        {stops.length > 0 && selectedStop && (
-          <div className={`rounded-2xl border-2 p-6 ${typeBgColors[stopType]}`}>
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-3">
-                <div className={`w-12 h-12 rounded-full ${typeColors[stopType]} flex items-center justify-center text-white text-xl`}>
-                  {stopType === 'pickup' ? '📍' : stopType === 'activity' ? '🎯' : '🏁'}
-                </div>
-                <div>
-                  <div className="font-bold text-lg">{selectedStop.location_name}</div>
-                  <div className="text-sm opacity-70">{selectedStop.guest_count} guests</div>
-                </div>
-              </div>
-              <div className={`px-3 py-1 rounded-full text-sm font-medium ${statusBadge.color}`}>
-                {statusBadge.label}
-              </div>
-            </div>
-
-            {/* Stop selector */}
-            {stops.length > 1 && (
-              <select
-                value={selectedStopId}
-                onChange={(e) => setSelectedStopId(e.target.value)}
-                className="w-full p-3 border border-gray-300 rounded-xl bg-white"
-              >
-                {stops.map((stop) => (
-                  <option key={stop.id} value={stop.id}>
-                    {stop.sort_order}. {stop.location_name} - {stop.scheduled_time?.slice(0, 5)}
-                  </option>
-                ))}
-              </select>
-            )}
+  // Step 1: Select Reservation
+  if (step === 'select') {
+    return (
+      <div className="min-h-screen bg-gray-50 p-4">
+        <div className="max-w-md mx-auto">
+          {/* Header */}
+          <div className="mb-6">
+            <Link href="/guide" className="text-sm text-gray-500 mb-2 block">
+              ← Back
+            </Link>
+            <h1 className="text-xl font-bold text-gray-900">Select Pickup</h1>
+            <p className="text-sm text-gray-500">Choose a reservation to check in</p>
           </div>
-        )}
 
-        {/* GPS Status */}
-        <div className="bg-white rounded-2xl border border-gray-200 p-4">
-          <div className="flex items-center gap-3">
-            <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-              location ? 'bg-green-100 text-green-600' : locationError ? 'bg-red-100 text-red-600' : 'bg-blue-100 text-blue-600'
-            }`}>
-              {location ? '✓' : locationError ? '✗' : '⏳'}
-            </div>
-            <div className="flex-1">
-              <div className="font-medium">GPS Location</div>
-              <div className="text-sm text-gray-500">
-                {location ? `${location.lat.toFixed(6)}, ${location.lng.toFixed(6)} (±${Math.round(location.accuracy || 0)}m)` : locationError || 'Getting location...'}
-              </div>
-            </div>
-            {locationError && (
-              <button onClick={getLocation} className="text-blue-600 text-sm font-medium">
-                Retry
-              </button>
-            )}
-          </div>
-        </div>
-
-        {/* Photo */}
-        <div className="bg-white rounded-2xl border border-gray-200 p-4">
-          <h3 className="font-semibold text-gray-900 mb-4">📷 Photo Proof</h3>
-          {photoUrl ? (
-            <div className="relative rounded-xl overflow-hidden">
-              <img src={photoUrl} alt="Check-in" className="w-full h-48 object-cover" />
-              <button
-                onClick={() => setPhotoUrl(null)}
-                className="absolute top-2 right-2 w-10 h-10 bg-red-500 text-white rounded-full flex items-center justify-center font-bold"
+          {/* Pending Reservations List */}
+          {reservations.length === 0 ? (
+            <div className="bg-white rounded-2xl p-8 text-center border border-gray-200">
+              <span className="text-4xl block mb-3">✓</span>
+              <p className="text-gray-900 font-medium">All pickups complete!</p>
+              <p className="text-sm text-gray-500 mt-1">No pending reservations</p>
+              <Link 
+                href="/guide"
+                className="mt-4 inline-block px-6 py-3 bg-blue-600 text-white rounded-xl font-medium"
               >
-                ⟳
-              </button>
-              <div className="absolute bottom-2 left-2 bg-green-500 text-white px-3 py-1 rounded-full text-sm font-medium">
-                ✓ Captured
-              </div>
+                Back to Dashboard
+              </Link>
             </div>
           ) : (
-            <label className="flex flex-col items-center justify-center w-full h-40 border-2 border-dashed border-gray-300 rounded-xl cursor-pointer hover:border-blue-400 hover:bg-blue-50 transition-colors">
-              <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mb-2">
-                <span className="text-3xl">📷</span>
-              </div>
-              <span className="text-gray-600 font-medium">Tap to capture photo</span>
+            <div className="space-y-3">
+              {reservations.map((res) => (
+                <button
+                  key={res.id}
+                  onClick={() => selectReservation(res)}
+                  className="w-full bg-white rounded-xl p-4 border border-gray-200 text-left hover:border-blue-300 hover:shadow-sm transition-all"
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <p className="font-semibold text-gray-900">{res.hotel_name}</p>
+                      <p className="text-sm text-gray-600 mt-1">{res.primary_contact_name}</p>
+                      <p className="text-xs text-gray-500 mt-1">
+                        {res.adult_pax}A {res.child_pax > 0 ? `${res.child_pax}C` : ''} {res.infant_pax > 0 ? `${res.infant_pax}I` : ''} • {res.pickup_time?.slice(0, 5)}
+                      </p>
+                    </div>
+                    <span className="text-gray-400">→</span>
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    )
+  }
+
+  // Step 2: Check-in Flow
+  if (!selectedReservation) return null
+
+  return (
+    <div className="min-h-screen bg-gray-50 p-4">
+      <div className="max-w-md mx-auto">
+        {/* Header */}
+        <div className="mb-6">
+          <button 
+            onClick={() => setStep('select')} 
+            className="text-sm text-gray-500 mb-2 block"
+          >
+            ← Back to List
+          </button>
+          <h1 className="text-xl font-bold text-gray-900">Pickup Check-in</h1>
+          <p className="text-sm text-gray-500">{selectedReservation.hotel_name}</p>
+        </div>
+
+        {/* Reservation Card */}
+        <div className="bg-white rounded-xl p-4 border border-gray-200 mb-6">
+          <p className="font-semibold text-gray-900">{selectedReservation.primary_contact_name}</p>
+          <p className="text-sm text-gray-600 mt-1">
+            {selectedReservation.adult_pax} adults {selectedReservation.child_pax > 0 ? `• ${selectedReservation.child_pax} children` : ''} {selectedReservation.infant_pax > 0 ? `• ${selectedReservation.infant_pax} infants` : ''}
+          </p>
+          <p className="text-xs text-gray-500 mt-2">Pickup time: {selectedReservation.pickup_time?.slice(0, 5)}</p>
+        </div>
+
+        {/* GPS Status */}
+        <div className="bg-white rounded-xl p-4 border border-gray-200 mb-4">
+          <p className="text-sm font-medium text-gray-700 mb-2">📍 GPS Location</p>
+          {location ? (
+            <p className="text-sm text-green-600">
+              ✓ Captured ({location.accuracy ? `±${Math.round(location.accuracy)}m` : 'OK'})
+            </p>
+          ) : locationError ? (
+            <div>
+              <p className="text-sm text-red-600">{locationError}</p>
+              <button 
+                onClick={getLocation}
+                className="mt-2 text-sm text-blue-600 underline"
+              >
+                Retry GPS
+              </button>
+            </div>
+          ) : (
+            <p className="text-sm text-gray-500">Capturing...</p>
+          )}
+        </div>
+
+        {/* Photo Upload */}
+        <div className="bg-white rounded-xl p-4 border border-gray-200 mb-6">
+          <p className="text-sm font-medium text-gray-700 mb-3">📷 Photo Proof</p>
+          
+          {photoUrl ? (
+            <div className="relative">
+              <img src={photoUrl} alt="Pickup" className="w-full h-48 object-cover rounded-lg" />
+              <button
+                onClick={() => setPhotoUrl(null)}
+                className="absolute top-2 right-2 bg-red-500 text-white p-2 rounded-full text-xs"
+              >
+                Retake
+              </button>
+            </div>
+          ) : (
+            <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
               <input
                 type="file"
                 accept="image/*"
                 capture="environment"
-                className="hidden"
                 onChange={(e) => e.target.files?.[0] && handlePhotoUpload(e.target.files[0])}
-                disabled={uploading}
+                className="hidden"
+                id="photo-input"
               />
-            </label>
+              <label 
+                htmlFor="photo-input"
+                className="cursor-pointer block"
+              >
+                <span className="text-4xl block mb-2">📷</span>
+                <span className="text-sm text-gray-600">
+                  {uploading ? 'Uploading...' : 'Tap to take photo'}
+                </span>
+              </label>
+            </div>
           )}
         </div>
 
-        {/* Guest Check-in (Pickup only) */}
-        {stopType === 'pickup' && reservations.length > 0 && (
-          <div className="bg-white rounded-2xl border border-gray-200 p-4">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="font-semibold text-gray-900">👥 Check-in Guests</h3>
-              <span className="text-sm text-gray-500">{checkedCount}/{totalCount}</span>
-            </div>
-            <div className="space-y-2">
-              {reservations.map((guest) => (
-                <button
-                  key={guest.id}
-                  onClick={() => !guest.no_show && toggleGuest(guest.id)}
-                  disabled={guest.no_show}
-                  className={`w-full flex items-center gap-3 p-3 rounded-xl border-2 transition-all ${
-                    guest.no_show
-                      ? 'bg-red-50 border-red-200 opacity-50'
-                      : checkedGuests.has(guest.id)
-                        ? 'bg-green-50 border-green-200'
-                        : 'bg-white border-gray-200 hover:border-blue-300'
-                  }`}
-                >
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm ${
-                    guest.no_show
-                      ? 'bg-red-200 text-red-700'
-                      : checkedGuests.has(guest.id)
-                        ? 'bg-green-500 text-white'
-                        : 'bg-gray-200 text-gray-600'
-                  }`}>
-                    {guest.no_show ? '✗' : checkedGuests.has(guest.id) ? '✓' : '○'}
-                  </div>
-                  <div className="flex-1 text-left">
-                    <div className={`font-medium ${guest.no_show ? 'line-through text-gray-400' : 'text-gray-900'}`}>
-                      {guest.primary_contact_name || 'Guest'}
-                    </div>
-                    <div className="text-sm text-gray-500">
-                      {guest.adult_pax}A {guest.child_pax > 0 ? `${guest.child_pax}C` : ''} {guest.infant_pax > 0 ? `${guest.infant_pax}I` : ''}
-                    </div>
-                  </div>
-                  {guest.no_show && <span className="text-red-600 text-sm font-medium">No Show</span>}
-                </button>
-              ))}
+        {/* Action Selection */}
+        {photoUrl && location && (
+          <div className="mb-6">
+            <p className="text-sm font-medium text-gray-700 mb-3">Select action:</p>
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                onClick={() => setActionType('checkin')}
+                className={`p-4 rounded-xl border-2 text-center transition-all ${
+                  actionType === 'checkin' 
+                    ? 'border-green-500 bg-green-50' 
+                    : 'border-gray-200 hover:border-green-300'
+                }`}
+              >
+                <span className="text-2xl block mb-2">✓</span>
+                <span className="font-medium text-gray-900">Check In</span>
+                <span className="text-xs text-gray-500 block">Guests present</span>
+              </button>
+              
+              <button
+                onClick={() => setActionType('noshow')}
+                className={`p-4 rounded-xl border-2 text-center transition-all ${
+                  actionType === 'noshow' 
+                    ? 'border-red-500 bg-red-50' 
+                    : 'border-gray-200 hover:border-red-300'
+                }`}
+              >
+                <span className="text-2xl block mb-2">✗</span>
+                <span className="font-medium text-gray-900">No Show</span>
+                <span className="text-xs text-gray-500 block">Guests not found</span>
+              </button>
             </div>
           </div>
         )}
 
         {/* Notes */}
-        <div className="bg-white rounded-2xl border border-gray-200 p-4">
-          <h3 className="font-semibold text-gray-900 mb-3">📝 Notes (optional)</h3>
-          <textarea
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-            placeholder="Any notes about this stop..."
-            rows={2}
-            className="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        </div>
-      </div>
+        {actionType && (
+          <div className="bg-white rounded-xl p-4 border border-gray-200 mb-6">
+            <p className="text-sm font-medium text-gray-700 mb-2">Notes (optional)</p>
+            <textarea
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder={actionType === 'noshow' ? 'Describe attempts to find guests...' : 'Any special notes...'}
+              className="w-full p-3 border border-gray-300 rounded-lg text-sm min-h-[80px]"
+            />
+          </div>
+        )}
 
-      {/* Fixed Submit Button */}
-      <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-gray-200">
-        <button
-          onClick={handleSubmit}
-          disabled={loading || !photoUrl || !location}
-          className={`w-full py-4 rounded-2xl font-bold text-lg transition-colors flex items-center justify-center gap-3 ${
-            !loading && photoUrl && location
-              ? `${typeColors[stopType]} text-white shadow-lg`
-              : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-          }`}
-        >
-          {loading ? (
-            <>
-              <span className="animate-spin">⟳</span>
-              Checking in...
-            </>
-          ) : (
-            <>
-              <span>✓</span>
-              Confirm {typeLabels[stopType]}
-            </>
-          )}
-        </button>
+        {/* Submit Button */}
+        {actionType && (
+          <button
+            onClick={handleSubmit}
+            disabled={submitting}
+            className={`w-full py-4 rounded-xl font-semibold text-white ${
+              actionType === 'checkin' 
+                ? 'bg-green-600 hover:bg-green-700' 
+                : 'bg-red-600 hover:bg-red-700'
+            } disabled:opacity-50`}
+          >
+            {submitting ? 'Saving...' : actionType === 'checkin' ? 'Confirm Check In' : 'Mark No Show'}
+          </button>
+        )}
       </div>
     </div>
   )
