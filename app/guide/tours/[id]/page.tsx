@@ -7,6 +7,7 @@ import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase/client'
 import { uploadToCloudinary } from '@/lib/cloudinary/upload'
+import { compressImage } from '@/lib/image-compression'
 
 interface Tour {
   id: string
@@ -194,7 +195,20 @@ export default function GuideTourPage() {
   async function handlePhotoUpload(type: 'equipment' | 'van', file: File) {
     setUploading(true)
     try {
-      const url = await uploadToCloudinary(file)
+      // Compress image before upload
+      const compressedFile = await compressImage(file, {
+        maxWidth: 1200,
+        maxHeight: 1200,
+        quality: 0.8,
+        maxFileSizeMB: 2
+      })
+      
+      console.log('Tour Start photo compressed:', {
+        originalSize: `${(file.size / 1024 / 1024).toFixed(2)}MB`,
+        compressedSize: `${(compressedFile.size / 1024 / 1024).toFixed(2)}MB`
+      })
+      
+      const url = await uploadToCloudinary(compressedFile)
       if (type === 'equipment') {
         setEquipmentPhoto(url)
       } else {
@@ -205,7 +219,8 @@ export default function GuideTourPage() {
         .update({ [type === 'equipment' ? 'equipment_photo_url' : 'van_photo_url']: url })
         .eq('id', params.id)
     } catch (err) {
-      alert('Failed to upload photo')
+      console.error('Photo upload error:', err)
+      alert('Failed to upload photo. Please try again.')
     } finally {
       setUploading(false)
     }

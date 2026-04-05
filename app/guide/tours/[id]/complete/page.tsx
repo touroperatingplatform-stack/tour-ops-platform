@@ -7,6 +7,7 @@ import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase/client'
 import { uploadToCloudinary } from '@/lib/cloudinary/upload'
+import { compressImage } from '@/lib/image-compression'
 
 const weatherOptions = [
   { value: 'sunny', label: 'Sunny', icon: '☀️' },
@@ -86,10 +87,24 @@ export default function CompleteTourPage() {
   async function handlePhotoUpload(file: File) {
     setUploading(true)
     try {
-      const url = await uploadToCloudinary(file)
+      // Compress image before upload
+      const compressedFile = await compressImage(file, {
+        maxWidth: 1200,
+        maxHeight: 1200,
+        quality: 0.8,
+        maxFileSizeMB: 2
+      })
+
+      console.log('Complete Tour photo compressed:', {
+        originalSize: `${(file.size / 1024 / 1024).toFixed(2)}MB`,
+        compressedSize: `${(compressedFile.size / 1024 / 1024).toFixed(2)}MB`
+      })
+
+      const url = await uploadToCloudinary(compressedFile)
       if (url) setPhotos(prev => [...prev, url as string])
     } catch (err) {
-      alert('Failed to upload photo')
+      console.error('Photo upload error:', err)
+      alert('Failed to upload photo. Please try again.')
     } finally {
       setUploading(false)
     }
