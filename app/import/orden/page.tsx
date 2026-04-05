@@ -284,7 +284,7 @@ function applyZoneBasedMapping(
       const tokens = res.tokens || sampleTokens
       
       // Find pax and time positions by pattern
-      const paxIdx = tokens.findIndex(t => /^\d+(\.\d+)*$/.test(t))
+      const paxIdx = tokens.findIndex(t => /^\d{1,2}(\.\d{1,2})*$/.test(t) && t.replace(/\D/g,'')?.length <= 2)
       const timeIdx = tokens.findIndex(t => timePattern.test(t))
       
       if (paxIdx < 0 || timeIdx < 0) {
@@ -644,7 +644,7 @@ export default function OrdenImportPage() {
     // Build zone mapping from user's tap positions on Row A
     const rowATokens = sampleRows?.rowA.tokens || sampleTokens
     console.log('rowATokens:', rowATokens)
-    const paxIdx = rowATokens.findIndex(t => /^\d+(\.\d+)*$/.test(t))
+    const paxIdx = rowATokens.findIndex(t => /^\d{1,2}(\.\d{1,2})*$/.test(t) && t.replace(/\D/g,'')?.length <= 2)
     const timeIdx = rowATokens.findIndex(t => /^\d{1,2}:\d{2}$/.test(t))
     console.log('paxIdx:', paxIdx, 'timeIdx:', timeIdx)
     
@@ -1011,7 +1011,7 @@ export default function OrdenImportPage() {
                   const rowB = sampleRows.rowB
                   const rowA = sampleRows.rowA
                   const timePattern = /^\d{1,2}:\d{2}$/
-                  const paxIdx = rowB.tokens.findIndex(t => /^\d+(\.\d+)*$/.test(t))
+                  const paxIdx = rowB.tokens.findIndex(t => /^\d{1,2}(\.\d{1,2})*$/.test(t) && t.replace(/\D/g,'')?.length <= 2)
                   const timeIdx = rowB.tokens.findIndex(t => timePattern.test(t))
                   
                   console.log('zone mapping:', JSON.stringify(zoneMapping))
