@@ -271,20 +271,20 @@ export default function GuideTourPage() {
     }
   }
 
-  // Check if all pickups are done (all reservations at pickup stops are complete)
+  // Check if all pickups are done (all reservations complete)
   const pickupStops = stops.filter(s => s.stop_type === 'pickup')
   const completedReservations = reservations.filter(r => r.checked_in || r.no_show)
   const allPickupsDone = reservations.length > 0 && completedReservations.length === reservations.length
   
-  // Check if all reservations at a specific stop are done
-  const isStopComplete = (stopId: string) => {
+  // Check if a stop has any incomplete reservations
+  const getPendingCountForStop = (stop: Stop) => {
+    // Match reservations to stop by pickup_location (case-insensitive, trimmed)
     const stopReservations = reservations.filter(r => {
-      // Match by pickup_location name since we don't have pickup_stop_id on reservation
-      const stop = stops.find(s => s.id === stopId)
-      return stop && r.pickup_location === stop.location_name
+      if (!r.pickup_location) return false
+      return r.pickup_location.toLowerCase().trim() === stop.location_name.toLowerCase().trim()
     })
-    if (stopReservations.length === 0) return false
-    return stopReservations.every(r => r.checked_in || r.no_show)
+    const pending = stopReservations.filter(r => !r.checked_in && !r.no_show)
+    return { total: stopReservations.length, pending: pending.length }
   }
 
   return (
@@ -539,12 +539,16 @@ export default function GuideTourPage() {
             <h2 className="font-semibold text-gray-900 mb-4">Tour Stops</h2>
             <div className="space-y-3">
               {stops.map((stop) => {
-                const isCheckedIn = isStopComplete(stop.id)
+                const { total, pending } = getPendingCountForStop(stop)
+                const isComplete = pending === 0 && total > 0
                 const icon = stop.stop_type === 'pickup' ? '📍' : stop.stop_type === 'activity' ? '🎯' : '🏁'
+                
+                // Only show detailed status for pickup stops
+                const showDetail = stop.stop_type === 'pickup' && total > 0
                 
                 return (
                   <div key={stop.id} className={`p-4 rounded-xl border-2 ${
-                    isCheckedIn ? 'bg-green-50 border-green-200' : 'bg-white border-gray-200'
+                    isComplete ? 'bg-green-50 border-green-200' : 'bg-white border-gray-200'
                   }`}>
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
@@ -553,10 +557,11 @@ export default function GuideTourPage() {
                           <div className="font-medium text-gray-900">{stop.location_name}</div>
                           <div className="text-sm text-gray-500">
                             {stop.scheduled_time?.slice(0, 5)} • {stop.guest_count} guests
+                            {showDetail && ` • ${total - pending}/${total} done`}
                           </div>
                         </div>
                       </div>
-                      {isCheckedIn ? (
+                      {isComplete ? (
                         <div className="bg-green-500 text-white px-3 py-1 rounded-full text-sm font-medium">
                           ✓ Done
                         </div>
@@ -565,7 +570,7 @@ export default function GuideTourPage() {
                           href={`/guide/tours/${tour.id}/checkin?type=${stop.stop_type}`}
                           className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700"
                         >
-                          Check In
+                          {showDetail && pending > 0 ? `${pending} pending` : 'Check In'}
                         </Link>
                       )}
                     </div>
