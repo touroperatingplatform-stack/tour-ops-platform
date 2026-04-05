@@ -1022,6 +1022,7 @@ export default function OrdenImportPage() {
                     console.log('zone1 coupon offsets:', zoneMapping.zone1.coupon, 'resolves to:', paxIdx - (zoneMapping.zone1.coupon?.[0] || 0))
                     console.log('zone1 clientName offsets:', zoneMapping.zone1.clientName, 'resolves to:', paxIdx - (zoneMapping.zone1.clientName?.[0] || 0))
                     console.log('zone2 agency offsets:', zoneMapping.zone2?.agency, 'resolves to:', paxIdx + (zoneMapping.zone2?.agency?.[0] || 0))
+                    console.log('zone3 agency offsets:', zoneMapping.zone3?.agency, 'resolves to:', timeIdx + (zoneMapping.zone3?.agency?.[0] || 0))
                   }
                   
                   // Use zone mapping from Row A, or rebuild from Row A if not set
