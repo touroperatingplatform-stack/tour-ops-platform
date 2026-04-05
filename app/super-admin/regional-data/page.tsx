@@ -23,6 +23,12 @@ export default function RegionalDataPage() {
   const [importFile, setImportFile] = useState<File | null>(null)
   const [importing, setImporting] = useState(false)
   const [importResult, setImportResult] = useState<{success: number, errors: string[]} | null>(null)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [searchResults, setSearchResults] = useState<any[]>([])
+  const [searching, setSearching] = useState(false)
+  const [selectedHotel, setSelectedHotel] = useState<any | null>(null)
+  const [selectedZone, setSelectedZone] = useState('')
+  const [saving, setSaving] = useState(false)
 
   useEffect(() => { loadRegions() }, [])
 
@@ -80,6 +86,56 @@ export default function RegionalDataPage() {
       if (success > 0) { loadHotels(selectedRegion.id); loadRegions() }
     } catch (e: any) { setImportResult({ success: 0, errors: [e.message] }) }
     setImporting(false)
+  }
+
+  async function handleSearchHotels() {
+    if (!searchQuery.trim()) return
+    setSearching(true)
+    setSearchResults([])
+    setSelectedHotel(null)
+    try {
+      const res = await fetch(`/api/nominatim?q=${encodeURIComponent(searchQuery)}`)
+      const data = await res.json()
+      if (Array.isArray(data)) {
+        setSearchResults(data)
+      } else {
+        setSearchResults([])
+      }
+    } catch {
+      setSearchResults([])
+    }
+    setSearching(false)
+  }
+
+  async function handleSaveHotel() {
+    if (!selectedHotel || !selectedRegion || !selectedZone.trim()) return
+    setSaving(true)
+    const { error } = await supabase.from('pickup_locations_platform').insert({
+      region_id: selectedRegion.id,
+      name: selectedHotel.shortName,
+      address: selectedHotel.address || null,
+      latitude: selectedHotel.lat,
+      longitude: selectedHotel.lon,
+      zone: selectedZone.trim(),
+      sort_order: hotels.length + 1,
+      status: 'active'
+    })
+    if (!error) {
+      setSelectedHotel(null)
+      setSelectedZone('')
+      setSearchQuery('')
+      setSearchResults([])
+      loadHotels(selectedRegion.id)
+      loadRegions()
+    }
+    setSaving(false)
+  }
+
+  async function handleDeleteHotel(id: string) {
+    if (!confirm('Delete this hotel?')) return
+    await supabase.from('pickup_locations_platform').delete().eq('id', id)
+    if (selectedRegion) loadHotels(selectedRegion.id)
+    loadRegions()
   }
 
   function downloadTemplate() {
@@ -223,6 +279,66 @@ export default function RegionalDataPage() {
             </div>
             
             <div className="border-8 border-transparent p-4 flex-1 overflow-y-auto">
+              
+              {/* Search & Add Hotel */}
+              <div className="border-8 border-transparent mb-4">
+                <div className="border-8 border-transparent bg-purple-50 rounded-xl p-4">
+                  <h3 className="font-semibold text-gray-900 mb-3">Search & Add Hotel</h3>
+                  <div className="border-8 border-transparent flex gap-2 mb-3">
+                    <input
+                      type="text"
+                      value={searchQuery}
+                      onChange={e => setSearchQuery(e.target.value)}
+                      onKeyDown={e => e.key === 'Enter' && handleSearchHotels()}
+                      placeholder="Hotel name..."
+                      className="border-8 border-transparent flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-purple-500"
+                    />
+                    <button
+                      onClick={handleSearchHotels}
+                      disabled={searching || !searchQuery.trim()}
+                      className="border-8 border-transparent bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 disabled:opacity-50"
+                    >
+                      {searching ? 'Searching...' : 'Search'}
+                    </button>
+                  </div>
+                  
+                  {searchResults.length > 0 && (
+                    <div className="border-8 border-transparent space-y-2 mb-3">
+                      {searchResults.map((result, i) => (
+                        <div key={i} className={`border-8 border-transparent border rounded-lg p-3 cursor-pointer transition-colors ${selectedHotel === result ? 'border-purple-500 bg-purple-100' : 'border-gray-200 hover:border-purple-300'}`} onClick={() => setSelectedHotel(result)}>
+                          <div className="border-8 border-transparent font-medium text-gray-900">{result.shortName}</div>
+                          <div className="border-8 border-transparent text-sm text-gray-500">{result.address}</div>
+                          <div className="border-8 border-transparent text-xs text-gray-400 mt-1">Lat: {result.lat} Lng: {result.lon}</div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  
+                  {selectedHotel && (
+                    <div className="border-8 border-transparent flex gap-2 items-end">
+                      <div className="border-8 border-transparent flex-1">
+                        <label className="border-8 border-transparent block text-sm font-medium text-gray-700 mb-1">Zone</label>
+                        <input
+                          type="text"
+                          value={selectedZone}
+                          onChange={e => setSelectedZone(e.target.value)}
+                          placeholder="e.g., Cancun Hotel Zone"
+                          className="border-8 border-transparent w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-purple-500"
+                        />
+                      </div>
+                      <button
+                        onClick={handleSaveHotel}
+                        disabled={saving || !selectedZone.trim()}
+                        className="border-8 border-transparent bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 disabled:opacity-50"
+                      >
+                        {saving ? 'Saving...' : 'Save Hotel'}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+              
+              {/* CSV Import */}
               <div className="border-8 border-transparent mb-4">
                 <div className="border-8 border-transparent border-2 border-dashed border-gray-200 rounded-xl">
                   <div className="border-8 border-transparent p-4">
@@ -285,6 +401,7 @@ export default function RegionalDataPage() {
                             <th className="border-8 border-transparent text-left">Zone</th>
                             <th className="border-8 border-transparent text-right">Lat</th>
                             <th className="border-8 border-transparent text-right">Lng</th>
+                            <th className="border-8 border-transparent text-center">Action</th>
                           </tr>
                         </thead>
                         <tbody className="border-8 border-transparent divide-y divide-gray-100">
@@ -294,6 +411,9 @@ export default function RegionalDataPage() {
                               <td className="border-8 border-transparent text-gray-500">{hotel.zone}</td>
                               <td className="border-8 border-transparent text-right">{hotel.latitude}</td>
                               <td className="border-8 border-transparent text-right">{hotel.longitude}</td>
+                              <td className="border-8 border-transparent text-center">
+                                <button onClick={() => handleDeleteHotel(hotel.id)} className="border-8 border-transparent text-red-600 hover:text-red-800 text-sm">Delete</button>
+                              </td>
                             </tr>
                           ))}
                         </tbody>
@@ -306,7 +426,7 @@ export default function RegionalDataPage() {
             
             <div className="border-8 border-transparent p-4 border-t border-gray-100 flex justify-end">
               <div className="border-8 border-transparent">
-                <button onClick={() => { setShowImport(false); setSelectedRegion(null); setImportFile(null); setImportResult(null) }} className="border-8 border-transparent border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50">
+                <button onClick={() => { setShowImport(false); setSelectedRegion(null); setImportFile(null); setImportResult(null); setSearchQuery(''); setSearchResults([]); setSelectedHotel(null); setSelectedZone('') }} className="border-8 border-transparent border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50">
                   <span className="border-8 border-transparent px-4 py-2">Close</span>
                 </button>
               </div>
