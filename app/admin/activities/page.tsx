@@ -12,6 +12,7 @@ interface Activity {
   requires_checklist: boolean
   checklist_template_id: string | null
   is_active: boolean
+  company_id: string
   checklist_templates?: { name: string }
 }
 
@@ -40,9 +41,25 @@ export default function ActivitiesPage() {
   }, [])
 
   async function loadActivities() {
+    // Get current user's company
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+    
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('company_id')
+      .eq('id', user.id)
+      .single()
+    
+    if (!profile?.company_id) {
+      setLoading(false)
+      return
+    }
+    
     const { data } = await supabase
       .from('activities')
       .select('*, checklist_templates(name)')
+      .eq('company_id', profile.company_id)
       .eq('is_active', true)
       .order('name')
     
@@ -51,9 +68,22 @@ export default function ActivitiesPage() {
   }
 
   async function loadChecklists() {
+    // Get current user's company
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+    
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('company_id')
+      .eq('id', user.id)
+      .single()
+    
+    if (!profile?.company_id) return
+    
     const { data } = await supabase
       .from('checklist_templates')
       .select('id, name')
+      .eq('company_id', profile.company_id)
       .eq('is_active', true)
       .order('name')
     
@@ -63,18 +93,36 @@ export default function ActivitiesPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     
+    // Get current user's company
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+    
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('company_id')
+      .eq('id', user.id)
+      .single()
+    
+    if (!profile?.company_id) {
+      alert('No company assigned')
+      return
+    }
+    
     const data = {
       name: formData.name,
       description: formData.description,
       duration_minutes: formData.duration_minutes,
       requires_checklist: formData.requires_checklist,
-      checklist_template_id: formData.default_checklist_template_id || null
+      checklist_template_id: formData.default_checklist_template_id || null,
+      company_id: profile.company_id
     }
     
     if (editing) {
+      // Don't update company_id when editing
+      const { company_id, ...updateData } = data
       await supabase
         .from('activities')
-        .update(data)
+        .update(updateData)
         .eq('id', editing.id)
     } else {
       await supabase
