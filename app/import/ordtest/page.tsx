@@ -991,7 +991,7 @@ export default function OrdenImportPage() {
       }
 
       setCreatedTours(created)
-      setStep(6)
+      setStep(7)
     } catch (err: any) {
       setError(err.message || 'Failed to create tours')
     } finally {
@@ -1582,8 +1582,8 @@ export default function OrdenImportPage() {
               </div>
             )}
 
-            {/* ── Step 6: Done ── */}
-            {step === 6 && (
+            {/* ── Step 7: Done ── */}
+            {step === 7 && (
               <div className="border-8 border-transparent bg-white rounded-xl border border-gray-200 p-6 max-w-2xl mx-auto">
                 <div className="text-center py-6">
                   <div className="text-5xl mb-4">🎉</div>
