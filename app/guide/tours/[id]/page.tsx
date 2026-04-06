@@ -88,6 +88,7 @@ export default function GuideTourPage() {
   // Checklist state
   const [preDepartureChecked, setPreDepartureChecked] = useState<Record<string, boolean>>({})
   const [equipmentChecked, setEquipmentChecked] = useState<Record<string, boolean>>({})
+  const [equipmentItems, setEquipmentItems] = useState<any[]>([])
 
   // Guest manifest expanded
   const [showGuestManifest, setShowGuestManifest] = useState(false)
