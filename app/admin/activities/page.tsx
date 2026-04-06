@@ -41,7 +41,7 @@ export default function ActivitiesPage() {
   async function loadActivities() {
     const { data } = await supabase
       .from('activities')
-      .select('*')
+      .select('*, checklist_templates(name)')
       .eq('is_active', true)
       .order('name')
     
