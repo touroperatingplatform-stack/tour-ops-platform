@@ -248,7 +248,7 @@ export default function GuideTourPage() {
   }
 
   const allPreDepartureDone = preDepartureItems.every(item => preDepartureChecked[item.id])
-  const allEquipmentDone = tourEquipment.length === 0 || tourEquipment.every(item => equipmentChecked[item.id])
+  const allEquipmentDone = equipmentItems.length === 0 || equipmentItems.every((item: any) => preDepartureChecked[item.id])
   const allPhotosDone = equipmentPhoto && vanPhoto
   const canStartTour = allPreDepartureDone && allEquipmentDone && allPhotosDone
 
@@ -259,15 +259,14 @@ export default function GuideTourPage() {
     if (!user) return
 
     // Save checklist completion
-    await supabase.from('checklist_completions').insert({
+    await supabase.from('tour_equipment_checklists').upsert({
       tour_id: params.id,
-      brand_id: tour.brand_id,
-      guide_id: user.id,
-      stage: 'pre_departure',
+      items: equipmentItems,
+      completed_items: equipmentItems.filter((item: any) => preDepartureChecked[item.id]),
+      is_completed: true,
       completed_at: new Date().toISOString(),
-      is_confirmed: true,
-      notes: JSON.stringify({ pre_departure: preDepartureChecked, equipment: equipmentChecked })
-    })
+      guide_id: user.id
+    }, { onConflict: 'tour_id' })
 
     // Create pre_departure checkin
     await supabase.from('guide_checkins').insert({
