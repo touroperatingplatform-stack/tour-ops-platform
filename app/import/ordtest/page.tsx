@@ -987,6 +987,11 @@ export default function OrdenImportPage() {
             const nextTime = new Date(2000, 0, 1, hours, minutes + 90)
             activityTime = `${String(nextTime.getHours()).padStart(2, '0')}:${String(nextTime.getMinutes()).padStart(2, '0')}`
           }
+          
+          // Generate combined equipment checklist for this tour
+          await supabase.rpc('generate_tour_equipment_checklist', {
+            p_tour_id: newTour.id
+          })
         }
       }
 

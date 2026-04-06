@@ -143,6 +143,25 @@ export default function GuideTourPage() {
     if (data) setReservations(data)
   }
 
+  async function loadEquipmentChecklist() {
+    const { data } = await supabase
+      .from('tour_equipment_checklists')
+      .select('items, completed_items, is_completed')
+      .eq('tour_id', params.id)
+      .is('activity_id', null)
+      .maybeSingle()
+    
+    if (data?.items) {
+      // Initialize checked state from saved progress
+      const checked: Record<string, boolean> = {}
+      data.completed_items?.forEach((item: any) => {
+        checked[item.id] = true
+      })
+      setPreDepartureChecked(checked)
+      setEquipmentItems(data.items)
+    }
+  }
+
   async function loadStops() {
     const { data: stopsData } = await supabase
       .from('pickup_stops')
