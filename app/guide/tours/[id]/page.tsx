@@ -393,47 +393,56 @@ export default function GuideTourPage() {
             </div>
           </div>
 
-          {/* Tour Equipment */}
-          {tourEquipment.length > 0 && (
+          {/* Tour Equipment Checklist */}
+          {equipmentItems.length > 0 && (
             <div className="bg-white rounded-2xl border border-gray-200 p-6">
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
                   <span className="text-blue-600 font-bold">2</span>
                 </div>
-                <h2 className="font-semibold text-gray-900 text-lg">Tour Equipment</h2>
+                <h2 className="font-semibold text-gray-900 text-lg">Tour Equipment Checklist</h2>
               </div>
+              <p className="text-sm text-gray-500 mb-4">
+                Equipment needed based on tour activities
+              </p>
               <div className="space-y-3">
-                {tourEquipment.map((item) => (
-                  <button
+                {equipmentItems.map((item: any) => (
+                  <div
                     key={item.id}
-                    onClick={() => toggleEquipment(item.id)}
-                    className={`w-full flex items-center gap-4 p-4 rounded-xl border-2 transition-all text-left ${
-                      equipmentChecked[item.id]
+                    className={`flex items-center gap-4 p-4 rounded-xl border-2 transition-all ${
+                      preDepartureChecked[item.id]
                         ? 'bg-green-50 border-green-200'
-                        : 'bg-white border-gray-200 hover:border-gray-300'
+                        : 'bg-white border-gray-200'
                     }`}
                   >
-                    <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center">
-                      <span className="text-xl">🎒</span>
-                    </div>
-                    <div className="flex-1">
-                      <div className="font-medium text-gray-900">{item.name}</div>
-                      {item.description && (
-                        <div className="text-sm text-gray-500">{item.description}</div>
-                      )}
-                    </div>
-                    <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
-                      equipmentChecked[item.id]
-                        ? 'bg-green-500 border-green-500'
-                        : 'border-gray-300'
-                    }`}>
-                      {equipmentChecked[item.id] && (
+                    <button
+                      onClick={() => togglePreDeparture(item.id)}
+                      className={`w-6 h-6 rounded border-2 flex items-center justify-center flex-shrink-0 ${
+                        preDepartureChecked[item.id]
+                          ? 'bg-green-500 border-green-500'
+                          : 'border-gray-300'
+                      }`}
+                    >
+                      {preDepartureChecked[item.id] && (
                         <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                         </svg>
                       )}
+                    </button>
+                    <div className="flex-1">
+                      <div className="font-medium text-gray-900">{item.text}</div>
+                      {item.activity && item.activity !== 'Pre-Departure' && (
+                        <div className="text-xs text-blue-600 font-medium">
+                          📍 {item.activity}
+                        </div>
+                      )}
                     </div>
-                  </button>
+                    {item.photo_required && (
+                      <span className="text-xs bg-orange-100 text-orange-700 px-2 py-1 rounded">
+                        📷 Photo required
+                      </span>
+                    )}
+                  </div>
                 ))}
               </div>
             </div>

@@ -10,8 +10,9 @@ interface Activity {
   description: string | null
   duration_minutes: number
   requires_checklist: boolean
-  default_checklist_template_id: string | null
+  checklist_template_id: string | null
   is_active: boolean
+  checklist_templates?: { name: string }
 }
 
 interface ChecklistTemplate {
@@ -62,15 +63,23 @@ export default function ActivitiesPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     
+    const data = {
+      name: formData.name,
+      description: formData.description,
+      duration_minutes: formData.duration_minutes,
+      requires_checklist: formData.requires_checklist,
+      checklist_template_id: formData.default_checklist_template_id || null
+    }
+    
     if (editing) {
       await supabase
         .from('activities')
-        .update(formData)
+        .update(data)
         .eq('id', editing.id)
     } else {
       await supabase
         .from('activities')
-        .insert([formData])
+        .insert([data])
     }
     
     setShowModal(false)
@@ -86,7 +95,7 @@ export default function ActivitiesPage() {
       description: activity.description || '',
       duration_minutes: activity.duration_minutes,
       requires_checklist: activity.requires_checklist,
-      default_checklist_template_id: activity.default_checklist_template_id || ''
+      default_checklist_template_id: activity.checklist_template_id || ''
     })
     setShowModal(true)
   }
@@ -146,6 +155,7 @@ export default function ActivitiesPage() {
                   <p className="text-sm text-gray-500">
                     {activity.duration_minutes} min • 
                     {activity.requires_checklist ? 'Requires checklist' : 'No checklist'}
+                    {activity.checklist_templates?.name && ` • Linked: ${activity.checklist_templates.name}`}
                   </p>
                   {activity.description && (
                     <p className="text-sm text-gray-400">{activity.description}</p>
