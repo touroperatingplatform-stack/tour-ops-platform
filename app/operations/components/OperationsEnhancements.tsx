@@ -61,12 +61,35 @@ export function IncidentAlerts({ onIncidentUpdate }: { onIncidentUpdate?: () => 
   async function loadIncidents() {
     const now = new Date()
     const yesterday = new Date(now.getTime() - 86400000).toISOString().split('T')[0]
-    
+
+    // Get current user's company
+    const { data: { user } } = await supabase.auth.getUser()
+    let companyId = null
+    if (user) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('company_id')
+        .eq('id', user.id)
+        .single()
+      companyId = profile?.company_id
+    }
+
+    // Get tour IDs for this company
+    let companyTourIds: string[] = []
+    if (companyId) {
+      const { data: toursData } = await supabase
+        .from('tours')
+        .select('id')
+        .eq('company_id', companyId)
+      companyTourIds = toursData?.map((t: any) => t.id) || []
+    }
+
     const { data: incidentsData, error } = await supabase
       .from('incidents')
       .select('id, type, severity, description, status, created_at, acknowledged_at, assigned_to, escalation_level, tour_id, guide_id')
       .gte('created_at', `${yesterday}T00:00:00`)
       .in('status', ['reported', 'acknowledged', 'in_progress'])
+      .in('tour_id', companyTourIds.length > 0 ? companyTourIds : ['00000000-0000-0000-0000-000000000000'])
       .order('created_at', { ascending: false })
 
     if (error) {
