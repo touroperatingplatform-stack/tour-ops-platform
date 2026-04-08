@@ -76,10 +76,25 @@ export default function SupervisorDashboard() {
     const today = getLocalDate()
     const tomorrow = new Date(new Date().getTime() + 86400000).toISOString().split('T')[0]
 
+    // Get current user's company
+    const { data: { user } } = await supabase.auth.getUser()
+    let companyId = null
+    
+    if (user) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('company_id')
+        .eq('id', user.id)
+        .single()
+      companyId = profile?.company_id
+    }
+
+    // Load tours for this company
     const { data: toursData } = await supabase
       .from('tours')
       .select('id, name, start_time, status, guest_count, guide_id')
       .in('tour_date', [today, tomorrow])
+      .eq('company_id', companyId)
       .neq('status', 'cancelled')
       .order('start_time')
 
@@ -103,13 +118,26 @@ export default function SupervisorDashboard() {
       
       setTours(formattedTours)
       
-      // Count actual guests from guests table, not guest_count column (which may be outdated)
-      const { count: actualGuestCount } = await supabase
-        .from('guests')
-        .select('*', { count: 'exact', head: true })
+      // Get actual guest counts from reservation_manifest
+      const { data: manifestData } = await supabase
+        .from('reservation_manifest')
+        .select('tour_id, total_pax')
         .in('tour_id', formattedTours.map(t => t.id))
       
-      const totalGuests = actualGuestCount || 0
+      const guestCountMap = new Map()
+      if (manifestData) {
+        manifestData.forEach((row: any) => {
+          const current = guestCountMap.get(row.tour_id) || 0
+          guestCountMap.set(row.tour_id, current + (row.total_pax || 0))
+        })
+      }
+      
+      // Calculate total guests from manifest
+      let totalGuests = 0
+      guestCountMap.forEach((count) => {
+        totalGuests += count
+      })
+      
       const inProgress = formattedTours.filter(t => t.status === 'in_progress').length
       const scheduled = formattedTours.filter(t => t.status === 'scheduled').length
       
@@ -131,48 +159,65 @@ export default function SupervisorDashboard() {
           status: 'active' as const
         }))
       setActiveGuides(activeGuidesList)
+    } else {
+      setTours([])
+      setActiveGuides([])
+      setStats(prev => ({ ...prev, total_tours: 0, total_guests: 0, in_progress: 0, pending_checkins: 0 }))
     }
 
-    const { data: incidentsData } = await supabase
-      .from('incidents')
-      .select('id, type, severity, status, tour_id, reported_by, created_at, description')
-      .order('created_at', { ascending: false })
-      .limit(20)
+    // Load incidents for this company's tours
+    if (tours.length > 0) {
+      const tourIds = tours.map(t => t.id)
+      const { data: incidentsData } = await supabase
+        .from('incidents')
+        .select('id, type, severity, status, tour_id, reported_by, created_at, description')
+        .in('tour_id', tourIds)
+        .order('created_at', { ascending: false })
+        .limit(20)
 
-    if (incidentsData && incidentsData.length > 0) {
-      // Get tour names and reporter names
-      const tourIds = [...new Set(incidentsData.map((i: any) => i.tour_id).filter(Boolean))]
-      const reporterIds = [...new Set(incidentsData.map((i: any) => i.reported_by).filter(Boolean))]
-      
-      const [{ data: toursInfo }, { data: reportersData }] = await Promise.all([
-        supabase.from('tours').select('id, name').in('id', tourIds),
-        supabase.from('profiles').select('id, first_name, last_name').in('id', reporterIds)
-      ])
-      
-      const tourMap = new Map(toursInfo?.map((t: any) => [t.id, t.name]) || [])
-      const reporterMap = new Map(reportersData?.map((g: any) => [g.id, g]) || [])
+      if (incidentsData && incidentsData.length > 0) {
+        // Get tour names and reporter names
+        const tourIds = [...new Set(incidentsData.map((i: any) => i.tour_id).filter(Boolean))]
+        const reporterIds = [...new Set(incidentsData.map((i: any) => i.reported_by).filter(Boolean))]
+        
+        const [{ data: toursInfo }, { data: reportersData }] = await Promise.all([
+          supabase.from('tours').select('id, name').in('id', tourIds),
+          supabase.from('profiles').select('id, first_name, last_name').in('id', reporterIds)
+        ])
+        
+        const tourMap = new Map(toursInfo?.map((t: any) => [t.id, t.name]) || [])
+        const reporterMap = new Map(reportersData?.map((g: any) => [g.id, g]) || [])
 
-      const formattedIncidents = incidentsData.map((i: any) => {
-        const reporter = reporterMap.get(i.reported_by)
-        return {
-          ...i,
-          tour_name: tourMap.get(i.tour_id) || 'Unknown',
-          guide_name: reporter ? `${reporter.first_name} ${reporter.last_name}` : 'Unknown'
-        }
-      }) as IncidentWithDetails[]
-      
-      setIncidents(formattedIncidents)
-      
-      const openCount = formattedIncidents.filter(i => 
-        ['reported', 'acknowledged', 'in_progress'].includes(i.status)
-      ).length
-      
-      setStats(prev => ({ ...prev, open_incidents: openCount }))
+        const formattedIncidents = incidentsData.map((i: any) => {
+          const reporter = reporterMap.get(i.reported_by)
+          return {
+            ...i,
+            tour_name: tourMap.get(i.tour_id) || 'Unknown',
+            guide_name: reporter ? `${reporter.first_name} ${reporter.last_name}` : 'Unknown'
+          }
+        }) as IncidentWithDetails[]
+        
+        setIncidents(formattedIncidents)
+        
+        const openCount = formattedIncidents.filter(i => 
+          ['reported', 'acknowledged', 'in_progress'].includes(i.status)
+        ).length
+        
+        setStats(prev => ({ ...prev, open_incidents: openCount }))
 
-      const newAlerts: string[] = []
-      if (openCount > 0) newAlerts.push(`${openCount} open incidents require attention`)
-      if (stats.pending_checkins > 3) newAlerts.push(`${stats.pending_checkins} tours awaiting guide check-in`)
-      setAlerts(newAlerts)
+        const newAlerts: string[] = []
+        if (openCount > 0) newAlerts.push(`${openCount} open incidents require attention`)
+        if (stats.pending_checkins > 3) newAlerts.push(`${stats.pending_checkins} tours awaiting guide check-in`)
+        setAlerts(newAlerts)
+      } else {
+        setIncidents([])
+        setStats(prev => ({ ...prev, open_incidents: 0 }))
+        setAlerts([])
+      }
+    } else {
+      setIncidents([])
+      setStats(prev => ({ ...prev, open_incidents: 0 }))
+      setAlerts([])
     }
 
     setLoading(false)
