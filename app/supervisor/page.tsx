@@ -64,12 +64,48 @@ export default function SupervisorDashboard() {
     pending_checkins: 0
   })
   const [loading, setLoading] = useState(true)
+  const [dashboardMode, setDashboardMode] = useState<'field' | 'office'>('field')
+  const [modeLoading, setModeLoading] = useState(true)
+
+  // Load user's dashboard mode preference
+  useEffect(() => {
+    loadDashboardMode()
+  }, [])
+
+  async function loadDashboardMode() {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (user) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('dashboard_mode')
+        .eq('id', user.id)
+        .single()
+      
+      if (profile?.dashboard_mode) {
+        setDashboardMode(profile.dashboard_mode as 'field' | 'office')
+      }
+    }
+    setModeLoading(false)
+  }
+
+  async function saveDashboardMode(mode: 'field' | 'office') {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (user) {
+      await supabase
+        .from('profiles')
+        .update({ dashboard_mode: mode })
+        .eq('id', user.id)
+    }
+    setDashboardMode(mode)
+  }
 
   useEffect(() => {
-    loadDashboardData()
-    const interval = setInterval(loadDashboardData, 30000)
-    return () => clearInterval(interval)
-  }, [])
+    if (!modeLoading) {
+      loadDashboardData()
+      const interval = setInterval(loadDashboardData, 30000)
+      return () => clearInterval(interval)
+    }
+  }, [modeLoading, dashboardMode])
 
   async function loadDashboardData() {
     // Use Cancun local date for timezone consistency
@@ -235,8 +271,145 @@ export default function SupervisorDashboard() {
           </p>
         </div>
 
-        {/* Summary Metrics */}
-        <div className="grid grid-cols-4 gap-3">
+        {/* Dashboard Mode Selector */}
+        <div className="bg-white rounded-lg border border-gray-200 p-2 mb-3">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm font-medium text-gray-700">Dashboard Mode</span>
+            <span className="text-xs text-gray-400">Saves automatically</span>
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={() => saveDashboardMode('field')}
+              className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2 ${
+                dashboardMode === 'field'
+                  ? 'bg-green-100 text-green-700 border-2 border-green-200'
+                  : 'bg-gray-50 text-gray-600 border-2 border-transparent hover:bg-gray-100'
+              }`}
+            >
+              <span>🏃</span>
+              <span>Field</span>
+            </button>
+            <button
+              onClick={() => saveDashboardMode('office')}
+              className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2 ${
+                dashboardMode === 'office'
+                  ? 'bg-blue-100 text-blue-700 border-2 border-blue-200'
+                  : 'bg-gray-50 text-gray-600 border-2 border-transparent hover:bg-gray-100'
+              }`}
+            >
+              <span>🏢</span>
+              <span>Office</span>
+            </button>
+          </div>
+          <p className="text-xs text-gray-500 mt-2">
+            {dashboardMode === 'field' 
+              ? 'Quick actions, mobile-friendly, between guests'
+              : 'Full dashboard, detailed view, comprehensive tools'}
+          </p>
+        </div>
+
+        {/* Field Mode View */}
+        {dashboardMode === 'field' && (
+          <div className="flex-1 flex flex-col gap-3 min-h-0 overflow-auto">
+            {/* Alerts Section - Collapsible */}
+            {alerts.length > 0 && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xl">⚠️</span>
+                    <span className="font-semibold text-red-800">{alerts.length} Need Attention</span>
+                  </div>
+                  <button className="text-xs text-red-600">Dismiss</button>
+                </div>
+                <div className="mt-2 space-y-1">
+                  {alerts.slice(0, 3).map((alert, idx) => (
+                    <div key={idx} className="text-sm text-red-700">
+                      • {alert}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Active Tours Cards */}
+            <div className="flex-1 space-y-3">
+              <div className="flex items-center justify-between px-1">
+                <span className="font-semibold text-gray-900">📍 Active Tours ({activeGuides.length})</span>
+                <span className="text-xs text-gray-500">Swipe for more →</span>
+              </div>
+              
+              {tours.filter(t => t.status === 'in_progress').map((tour) => (
+                <div key={tour.id} className="bg-white rounded-xl border border-gray-200 p-4 space-y-3">
+                  {/* Header */}
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-2xl">🚌</span>
+                        <span className="font-bold text-gray-900">{tour.name}</span>
+                      </div>
+                      <div className="flex items-center gap-2 mt-1 text-sm text-gray-600">
+                        <span>👤 {tour.guide.first_name} {tour.guide.last_name}</span>
+                        <button className="text-blue-600">📞</button>
+                      </div>
+                    </div>
+                    <div className={`px-2 py-1 rounded-full text-xs font-medium ${
+                      tour.status === 'in_progress' ? 'bg-blue-100 text-blue-700' : ''
+                    }`}>
+                      {tour.status}
+                    </div>
+                  </div>
+
+                  {/* Phase Status */}
+                  <div className="flex items-center gap-3 text-sm">
+                    <div className="flex-1 bg-gray-100 rounded-full h-2">
+                      <div className="bg-blue-500 h-2 rounded-full" style={{ width: '50%' }} />
+                    </div>
+                    <span className="text-gray-600">📍 Pickups 2/4</span>
+                  </div>
+
+                  {/* Status Message */}
+                  <div className="text-sm text-orange-600 font-medium">
+                    ⏱️ 15m behind schedule
+                  </div>
+
+                  {/* Action Buttons */}
+                  <div className="flex gap-2">
+                    <button className="flex-1 py-2 px-3 bg-blue-50 text-blue-700 rounded-lg text-sm font-medium">
+                      View
+                    </button>
+                    <button className="flex-1 py-2 px-3 bg-gray-50 text-gray-700 rounded-lg text-sm font-medium">
+                      Issue
+                    </button>
+                  </div>
+                </div>
+              ))}
+              
+              {tours.filter(t => t.status === 'in_progress').length === 0 && (
+                <div className="text-center py-8 text-gray-500">
+                  No active tours right now
+                </div>
+              )}
+            </div>
+
+            {/* Quick Actions */}
+            <div className="space-y-2 pt-2">
+              <button className="w-full py-4 bg-red-600 text-white rounded-xl font-semibold text-lg flex items-center justify-center gap-2">
+                <span>🚨</span>
+                <span>Report Incident</span>
+              </button>
+              <button className="w-full py-4 bg-gray-100 text-gray-700 rounded-xl font-semibold flex items-center justify-center gap-2">
+                <span>📋</span>
+                <span>Quick Note</span>
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Office Mode View */}
+        {dashboardMode === 'office' && (
+          <>
+            {/* Summary Metrics */}
+            <div className="grid grid-cols-4 gap-3">
           <div className="bg-white rounded-lg border border-gray-200 p-3 text-center">
             <p className="text-xs text-gray-500 uppercase font-medium">Total Tours</p>
             <p className="text-2xl font-bold text-gray-900">{stats.total_tours}</p>
@@ -419,7 +592,8 @@ export default function SupervisorDashboard() {
             </div>
           </div>
         </div>
-      </div>
+      </>
+    )}
 
       {/* Footer Summary Bar */}
       <div className="bg-white border border-gray-200 rounded-lg p-3 shrink-0">
