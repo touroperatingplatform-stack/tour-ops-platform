@@ -177,7 +177,7 @@ export default function CompleteTourPage() {
     : null
 
   return (
-    <div className="pb-32">
+    <div className="pb-16">
       {/* Header */}
       <div className="bg-green-600 text-white p-6 rounded-b-3xl">
         <div className="flex items-center justify-between mb-4">
@@ -192,7 +192,7 @@ export default function CompleteTourPage() {
         {tour && <p className="text-white/80 mt-1">{tour.name}</p>}
       </div>
 
-      <form onSubmit={handleSubmit} className="p-4 space-y-6">
+      <form onSubmit={handleSubmit} className="p-4 space-y-6 pb-32">
         {/* Weather */}
         <div className="bg-white rounded-2xl border border-gray-200 p-6">
           <h3 className="font-semibold text-gray-900 mb-4">☀️ Weather</h3>
@@ -407,7 +407,7 @@ export default function CompleteTourPage() {
       </form>
 
       {/* Fixed Submit Button */}
-      <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-gray-200">
+      <div className="fixed bottom-16 left-0 right-0 p-4 bg-white border-t border-gray-200">
         <button
           onClick={handleSubmit}
           disabled={submitting || uploading}
