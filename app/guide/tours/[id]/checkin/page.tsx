@@ -262,6 +262,49 @@ export default function PickupCheckinPage() {
 
       console.log('Check-in saved successfully')
 
+      // If checked in (not no-show), create dropoff stop for this guest
+      if (actionType === 'checkin') {
+        // Get tour info for brand_id and to calculate dropoff time
+        const { data: tourInfo } = await supabase
+          .from('tours')
+          .select('brand_id, tour_date')
+          .eq('id', tourId)
+          .single()
+        
+        if (tourInfo) {
+          // Get the highest sort_order to place dropoff after activities
+          const { data: lastStop } = await supabase
+            .from('pickup_stops')
+            .select('sort_order')
+            .eq('tour_id', tourId)
+            .order('sort_order', { ascending: false })
+            .limit(1)
+            .single()
+          
+          const newSortOrder = (lastStop?.sort_order || 0) + 1
+          
+          // Create dropoff stop
+          const { error: dropoffError } = await supabase
+            .from('pickup_stops')
+            .insert({
+              tour_id: tourId,
+              brand_id: tourInfo.brand_id,
+              location_name: selectedReservation.hotel_name || 'Hotel',
+              scheduled_time: '17:00:00', // Default dropoff time - adjust as needed
+              guest_count: selectedReservation.adult_pax + selectedReservation.child_pax + selectedReservation.infant_pax,
+              stop_type: 'dropoff',
+              sort_order: newSortOrder
+            })
+          
+          if (dropoffError) {
+            console.error('Dropoff creation error:', dropoffError)
+            // Don't fail the check-in if dropoff creation fails
+          } else {
+            console.log('Dropoff stop created for guest:', selectedReservation.primary_contact_name)
+          }
+        }
+      }
+
       // Back to dashboard
       router.push('/guide')
       
