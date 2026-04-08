@@ -72,9 +72,24 @@ export default function SupervisorFieldView() {
 
       const guideMap = new Map(guidesData?.map((g: any) => [g.id, g]) || [])
 
+      // Get actual guest counts from reservation_manifest
+      const { data: manifestData } = await supabase
+        .from('reservation_manifest')
+        .select('tour_id, total_pax')
+        .in('tour_id', toursData.map(t => t.id))
+
+      const guestCountMap = new Map()
+      if (manifestData) {
+        manifestData.forEach((row: any) => {
+          const current = guestCountMap.get(row.tour_id) || 0
+          guestCountMap.set(row.tour_id, current + (row.total_pax || 0))
+        })
+      }
+
       setTours(toursData.map((t: any) => ({
         ...t,
-        guide: guideMap.get(t.guide_id) || { first_name: 'Unknown', last_name: '' }
+        guide: guideMap.get(t.guide_id) || { first_name: 'Unknown', last_name: '' },
+        guest_count: guestCountMap.get(t.id) || t.guest_count || 0
       })))
 
       // Load incidents for this company's tours only
