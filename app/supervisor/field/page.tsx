@@ -17,6 +17,8 @@ interface Tour {
     first_name: string
     last_name: string
   }
+  phase: 'pickups' | 'activities' | 'dropoffs' | 'complete'
+  phaseProgress: string
 }
 
 interface Incident {
@@ -86,11 +88,58 @@ export default function SupervisorFieldView() {
         })
       }
 
-      setTours(toursData.map((t: any) => ({
-        ...t,
-        guide: guideMap.get(t.guide_id) || { first_name: 'Unknown', last_name: '' },
-        guest_count: guestCountMap.get(t.id) || t.guest_count || 0
-      })))
+      // Calculate phase for each tour
+      const toursWithPhase = await Promise.all(toursData.map(async (t: any) => {
+        // Get stops for this tour
+        const { data: stopsData } = await supabase
+          .from('pickup_stops')
+          .select('id, stop_type')
+          .eq('tour_id', t.id)
+        
+        // Get checkins for this tour
+        const { data: checkinsData } = await supabase
+          .from('guide_checkins')
+          .select('pickup_stop_id, checkin_type')
+          .eq('tour_id', t.id)
+        
+        const stops = stopsData || []
+        const checkins = checkinsData || []
+        
+        const pickupStops = stops.filter(s => s.stop_type === 'pickup').length
+        const activityStops = stops.filter(s => s.stop_type === 'activity').length
+        const dropoffStops = stops.filter(s => s.stop_type === 'dropoff').length
+        
+        const pickupCheckins = checkins.filter(c => c.checkin_type === 'pickup').length
+        const activityCheckins = checkins.filter(c => c.checkin_type === 'activity').length
+        const dropoffCheckins = checkins.filter(c => c.checkin_type === 'dropoff').length
+        
+        let phase: 'pickups' | 'activities' | 'dropoffs' | 'complete' = 'pickups'
+        let phaseProgress = ''
+        
+        if (pickupStops > 0 && pickupCheckins < pickupStops) {
+          phase = 'pickups'
+          phaseProgress = `${pickupCheckins}/${pickupStops} done`
+        } else if (activityStops > 0 && activityCheckins < activityStops) {
+          phase = 'activities'
+          phaseProgress = `${activityCheckins}/${activityStops} done`
+        } else if (dropoffStops > 0 && dropoffCheckins < dropoffStops) {
+          phase = 'dropoffs'
+          phaseProgress = `${dropoffCheckins}/${dropoffStops} done`
+        } else {
+          phase = 'complete'
+          phaseProgress = 'All done'
+        }
+        
+        return {
+          ...t,
+          guide: guideMap.get(t.guide_id) || { first_name: 'Unknown', last_name: '' },
+          guest_count: guestCountMap.get(t.id) || t.guest_count || 0,
+          phase,
+          phaseProgress
+        }
+      }))
+      
+      setTours(toursWithPhase)
 
       // Load incidents for this company's tours only
       const tourIds = toursData.map(t => t.id)
@@ -205,6 +254,32 @@ export default function SupervisorFieldView() {
                 <span>👥 {tour.guest_count} guests</span>
                 <span>•</span>
                 <span>{tour.start_time?.slice(0, 5)}</span>
+              </div>
+
+              {/* Phase Progress */}
+              <div className="flex items-center gap-2">
+                <div className="flex-1 bg-gray-100 rounded-full h-2">
+                  <div 
+                    className={`h-2 rounded-full ${
+                      tour.phase === 'pickups' ? 'bg-blue-500' :
+                      tour.phase === 'activities' ? 'bg-green-500' :
+                      tour.phase === 'dropoffs' ? 'bg-purple-500' : 'bg-gray-400'
+                    }`} 
+                    style={{ 
+                      width: tour.phase === 'complete' ? '100%' : 
+                             tour.phaseProgress.includes('/') ? 
+                             `${parseInt(tour.phaseProgress.split('/')[0]) / parseInt(tour.phaseProgress.split('/')[1]) * 100}%` : '50%'
+                    }}
+                  />
+                </div>
+                <span className="text-sm font-medium text-gray-600">
+                  {tour.phase === 'pickups' && '📍'}
+                  {tour.phase === 'activities' && '🎯'}
+                  {tour.phase === 'dropoffs' && '🏁'}
+                  {tour.phase === 'complete' && '✅'}
+                  {' '}
+                  {tour.phaseProgress}
+                </span>
               </div>
 
               <div className="flex gap-2 pt-2">
