@@ -345,7 +345,7 @@ export default function GuideTourPage() {
   }
 
   return (
-    <div className="space-y-6 p-4 pb-24">
+    <div className="space-y-6 p-4">
       {/* Header */}
       <div className="bg-white rounded-2xl border border-gray-200 p-6">
         <div className="flex items-start justify-between">

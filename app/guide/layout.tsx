@@ -106,7 +106,7 @@ export default function GuideLayout({ children }: { children: React.ReactNode })
       </header>
 
       {/* Main Content - Scrollable, accounts for top + bottom nav */}
-      <main className="flex-1 overflow-y-auto border-4 border-transparent">
+      <main className="flex-1 overflow-y-auto pb-16">
         <div className="border-4 border-transparent">
           {children}
         </div>
