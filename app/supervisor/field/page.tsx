@@ -41,11 +41,25 @@ export default function SupervisorFieldView() {
     const today = getLocalDate()
     const tomorrow = new Date(new Date().getTime() + 86400000).toISOString().split('T')[0]
 
-    // Load tours
+    // Get current user's company
+    const { data: { user } } = await supabase.auth.getUser()
+    let companyId = null
+    
+    if (user) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('company_id')
+        .eq('id', user.id)
+        .single()
+      companyId = profile?.company_id
+    }
+
+    // Load tours for this company
     const { data: toursData } = await supabase
       .from('tours')
       .select('id, name, start_time, status, guest_count, guide_id')
       .in('tour_date', [today, tomorrow])
+      .eq('company_id', companyId)
       .neq('status', 'cancelled')
       .order('start_time')
 
@@ -62,28 +76,33 @@ export default function SupervisorFieldView() {
         ...t,
         guide: guideMap.get(t.guide_id) || { first_name: 'Unknown', last_name: '' }
       })))
-    }
 
-    // Load open incidents
-    const { data: incidentsData } = await supabase
-      .from('incidents')
-      .select('id, type, severity, tour_id')
-      .in('status', ['reported', 'acknowledged', 'in_progress'])
-      .order('created_at', { ascending: false })
+      // Load incidents for this company's tours only
+      const tourIds = toursData.map(t => t.id)
+      if (tourIds.length > 0) {
+        const { data: incidentsData } = await supabase
+          .from('incidents')
+          .select('id, type, severity, tour_id')
+          .in('status', ['reported', 'acknowledged', 'in_progress'])
+          .in('tour_id', tourIds)
+          .order('created_at', { ascending: false })
 
-    if (incidentsData && incidentsData.length > 0) {
-      const tourIds = [...new Set(incidentsData.map((i: any) => i.tour_id).filter(Boolean))]
-      const { data: toursInfo } = await supabase
-        .from('tours')
-        .select('id, name')
-        .in('id', tourIds)
+        if (incidentsData && incidentsData.length > 0) {
+          const tourMap = new Map(toursData.map((t: any) => [t.id, t.name]))
 
-      const tourMap = new Map(toursInfo?.map((t: any) => [t.id, t.name]) || [])
-
-      setIncidents(incidentsData.map((i: any) => ({
-        ...i,
-        tour_name: tourMap.get(i.tour_id) || 'Unknown'
-      })))
+          setIncidents(incidentsData.map((i: any) => ({
+            ...i,
+            tour_name: tourMap.get(i.tour_id) || 'Unknown'
+          })))
+        } else {
+          setIncidents([])
+        }
+      } else {
+        setIncidents([])
+      }
+    } else {
+      setTours([])
+      setIncidents([])
     }
 
     setLoading(false)
