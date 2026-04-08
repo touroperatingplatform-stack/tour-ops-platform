@@ -290,10 +290,31 @@ export default function GuideTourPage() {
     }
   }
 
-  // Check if all pickups are done (all reservations complete)
+  // Phase management
   const pickupStops = stops.filter(s => s.stop_type === 'pickup')
+  const activityStops = stops.filter(s => s.stop_type === 'activity')
+  const dropoffStops = stops.filter(s => s.stop_type === 'dropoff')
+  
+  // Check if all pickups are done (all reservations complete)
   const completedReservations = reservations.filter(r => r.checked_in || r.no_show)
   const allPickupsDone = reservations.length > 0 && completedReservations.length === reservations.length
+  
+  // Check if all activities are done
+  const completedActivities = activityStops.filter(stop => 
+    checkins.some(c => c.pickup_stop_id === stop.id && c.checkin_type === 'activity')
+  )
+  const allActivitiesDone = activityStops.length > 0 && completedActivities.length === activityStops.length
+  
+  // Check if all dropoffs are done
+  const completedDropoffs = dropoffStops.filter(stop => 
+    checkins.some(c => c.pickup_stop_id === stop.id && c.checkin_type === 'dropoff')
+  )
+  const allDropoffsDone = dropoffStops.length > 0 && completedDropoffs.length === dropoffStops.length
+  
+  // Determine current phase
+  let currentPhase: 'pickups' | 'activities' | 'dropoffs' = 'pickups'
+  if (allPickupsDone && !allActivitiesDone) currentPhase = 'activities'
+  else if (allPickupsDone && allActivitiesDone) currentPhase = 'dropoffs'
   
   // Check if a stop has any incomplete check-ins
   const getPendingCountForStop = (stop: Stop) => {
@@ -552,84 +573,297 @@ export default function GuideTourPage() {
       {/* In Progress - Show Tour Stops */}
       {tour.status === 'in_progress' && (
         <>
-          {/* Progress Summary */}
-          <div className="bg-blue-50 rounded-2xl border border-blue-200 p-6">
+          {/* Phase Indicator */}
+          <div className="bg-white rounded-2xl border border-gray-200 p-6">
             <h2 className="font-semibold text-gray-900 mb-4">Tour Progress</h2>
-            <div className="grid grid-cols-3 gap-4 text-center">
-              <div>
-                <div className={`text-2xl font-bold ${allPickupsDone ? 'text-green-600' : 'text-gray-400'}`}>
-                  {completedReservations.length}/{reservations.length}
+            <div className="flex items-center gap-2">
+              {/* Phase 1: Pickups */}
+              <div className={`flex-1 p-3 rounded-xl border-2 ${
+                currentPhase === 'pickups' ? 'bg-blue-50 border-blue-200' : 
+                allPickupsDone ? 'bg-green-50 border-green-200' : 'bg-gray-50 border-gray-200'
+              }`}>
+                <div className="flex items-center gap-2">
+                  <span className="text-xl">{allPickupsDone ? '✅' : '📍'}</span>
+                  <span className={`font-medium ${currentPhase === 'pickups' ? 'text-blue-900' : 'text-gray-600'}`}>
+                    Pickups
+                  </span>
                 </div>
-                <div className="text-sm text-gray-500">Pickups</div>
+                <div className="text-sm text-gray-500 mt-1">
+                  {completedReservations.length}/{reservations.length} done
+                </div>
               </div>
-              <div>
-                <div className="text-2xl font-bold text-gray-400">
-                  {reservations.filter(r => r.checked_in).length}/{reservations.length}
+              
+              {/* Arrow */}
+              <div className="text-gray-300 text-xl">→</div>
+              
+              {/* Phase 2: Activities */}
+              <div className={`flex-1 p-3 rounded-xl border-2 ${
+                currentPhase === 'activities' ? 'bg-blue-50 border-blue-200' :
+                allActivitiesDone ? 'bg-green-50 border-green-200' : 
+                allPickupsDone ? 'bg-white border-gray-200' : 'bg-gray-50 border-gray-200 opacity-50'
+              }`}>
+                <div className="flex items-center gap-2">
+                  <span className="text-xl">{allActivitiesDone ? '✅' : '🎯'}</span>
+                  <span className={`font-medium ${currentPhase === 'activities' ? 'text-blue-900' : 'text-gray-600'}`}>
+                    Activities
+                  </span>
                 </div>
-                <div className="text-sm text-gray-500">Checked In</div>
+                <div className="text-sm text-gray-500 mt-1">
+                  {completedActivities.length}/{activityStops.length} done
+                </div>
               </div>
-              <div>
-                <div className="text-2xl font-bold text-gray-400">
-                  {stops.filter(s => s.stop_type === 'dropoff').every(s => 
-                    checkins.some(c => c.pickup_stop_id === s.id && c.checkin_type === 'dropoff')
-                  ) ? '✓' : '...'}
+              
+              {/* Arrow */}
+              <div className={`text-xl ${allPickupsDone ? 'text-gray-300' : 'text-gray-200'}`}>→</div>
+              
+              {/* Phase 3: Dropoffs */}
+              <div className={`flex-1 p-3 rounded-xl border-2 ${
+                currentPhase === 'dropoffs' ? 'bg-blue-50 border-blue-200' :
+                allDropoffsDone ? 'bg-green-50 border-green-200' :
+                allPickupsDone && allActivitiesDone ? 'bg-white border-gray-200' : 'bg-gray-50 border-gray-200 opacity-50'
+              }`}>
+                <div className="flex items-center gap-2">
+                  <span className="text-xl">{allDropoffsDone ? '✅' : '🏁'}</span>
+                  <span className={`font-medium ${currentPhase === 'dropoffs' ? 'text-blue-900' : 'text-gray-600'}`}>
+                    Dropoffs
+                  </span>
                 </div>
-                <div className="text-sm text-gray-500">Dropoffs</div>
+                <div className="text-sm text-gray-500 mt-1">
+                  {completedDropoffs.length}/{dropoffStops.length} done
+                </div>
               </div>
             </div>
           </div>
 
-          {/* Tour Stops */}
-          <div className="bg-white rounded-2xl border border-gray-200 p-6">
-            <h2 className="font-semibold text-gray-900 mb-4">Tour Stops</h2>
-            <div className="space-y-3">
-              {stops.map((stop) => {
-                const { total, pending } = getPendingCountForStop(stop)
-                const isComplete = pending === 0 && total > 0
-                const icon = stop.stop_type === 'pickup' ? '📍' : stop.stop_type === 'activity' ? '🎯' : '🏁'
-                
-                // Show detail for all stop types
-                const showDetail = total > 0
-                const detailText = stop.stop_type === 'pickup' 
-                  ? `${total - pending}/${total} done`
-                  : isComplete ? 'Done' : 'Pending'
-                
-                return (
-                  <div key={stop.id} className={`p-4 rounded-xl border-2 ${
-                    isComplete ? 'bg-green-50 border-green-200' : 'bg-white border-gray-200'
-                  }`}>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <span className="text-2xl">{icon}</span>
-                        <div>
-                          <div className="font-medium text-gray-900">{stop.location_name}</div>
-                          <div className="text-sm text-gray-500">
-                            {stop.scheduled_time?.slice(0, 5)} • {stop.guest_count} guests
-                            {showDetail && ` • ${detailText}`}
-                            {stop.stop_type === 'pickup' && total === 0 && ` • (no match)`}
+          {/* Phase 1: Pickups */}
+          {currentPhase === 'pickups' && (
+            <div className="bg-white rounded-2xl border border-gray-200 p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
+                  <span className="text-blue-600 font-bold">1</span>
+                </div>
+                <div>
+                  <h2 className="font-semibold text-gray-900 text-lg">Pickups</h2>
+                  <p className="text-sm text-gray-500">Complete all pickups to unlock activities</p>
+                </div>
+              </div>
+              <div className="space-y-3">
+                {pickupStops.map((stop) => {
+                  const { total, pending } = getPendingCountForStop(stop)
+                  const isComplete = pending === 0 && total > 0
+                  
+                  return (
+                    <div key={stop.id} className={`p-4 rounded-xl border-2 ${
+                      isComplete ? 'bg-green-50 border-green-200' : 'bg-white border-gray-200'
+                    }`}>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <span className="text-2xl">📍</span>
+                          <div>
+                            <div className="font-medium text-gray-900">{stop.location_name}</div>
+                            <div className="text-sm text-gray-500">
+                              {stop.scheduled_time?.slice(0, 5)} • {stop.guest_count} guests
+                              {total > 0 && ` • ${total - pending}/${total} done`}
+                            </div>
                           </div>
                         </div>
+                        {isComplete ? (
+                          <div className="bg-green-500 text-white px-3 py-1 rounded-full text-sm font-medium">
+                            ✓ Done
+                          </div>
+                        ) : (
+                          <Link
+                            href={`/guide/tours/${tour.id}/checkin?type=pickup`}
+                            className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700"
+                          >
+                            {pending > 0 ? `${pending} pending` : 'Check In'}
+                          </Link>
+                        )}
                       </div>
-                      {isComplete ? (
-                        <div className="bg-green-500 text-white px-3 py-1 rounded-full text-sm font-medium">
-                          ✓ Done
+                    </div>
+                  )
+                })}
+                {pickupStops.length === 0 && (
+                  <div className="text-center p-6 text-gray-500">
+                    No pickup stops for this tour
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Phase 2: Activities (locked until pickups done) */}
+          {currentPhase === 'pickups' ? (
+            <div className="bg-gray-50 rounded-2xl border border-gray-200 p-6 opacity-75">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center">
+                  <span className="text-gray-500 font-bold">🔒</span>
+                </div>
+                <div>
+                  <h2 className="font-semibold text-gray-700 text-lg">Activities</h2>
+                  <p className="text-sm text-gray-500">Complete all pickups to unlock</p>
+                </div>
+              </div>
+              <div className="space-y-3">
+                {activityStops.map((stop) => (
+                  <div key={stop.id} className="p-4 rounded-xl border-2 border-gray-200 bg-gray-100">
+                    <div className="flex items-center gap-3">
+                      <span className="text-2xl grayscale">🎯</span>
+                      <div>
+                        <div className="font-medium text-gray-500">{stop.location_name}</div>
+                        <div className="text-sm text-gray-400">
+                          {stop.scheduled_time?.slice(0, 5)} • {stop.guest_count} guests
                         </div>
-                      ) : (
-                        <Link
-                          href={`/guide/tours/${tour.id}/checkin?type=${stop.stop_type}`}
-                          className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700"
-                        >
-                          {stop.stop_type === 'pickup' && pending > 0 ? `${pending} pending` : 
-                           stop.stop_type === 'activity' ? 'Check In Activity' :
-                           stop.stop_type === 'dropoff' ? 'Check In Dropoff' : 'Check In'}
-                        </Link>
-                      )}
+                      </div>
                     </div>
                   </div>
-                )
-              })}
+                ))}
+                {activityStops.length === 0 && (
+                  <div className="text-center p-6 text-gray-400">
+                    No activities for this tour
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
+          ) : (
+            <div className="bg-white rounded-2xl border border-gray-200 p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                  currentPhase === 'activities' ? 'bg-blue-100' : 'bg-green-100'
+                }`}>
+                  <span className={`font-bold ${currentPhase === 'activities' ? 'text-blue-600' : 'text-green-600'}`}>
+                    {currentPhase === 'activities' ? '2' : '✓'}
+                  </span>
+                </div>
+                <div>
+                  <h2 className="font-semibold text-gray-900 text-lg">
+                    {currentPhase === 'activities' ? 'Activities' : 'Activities ✅ Done'}
+                  </h2>
+                  {currentPhase === 'activities' && (
+                    <p className="text-sm text-gray-500">Complete all activities to unlock dropoffs</p>
+                  )}
+                </div>
+              </div>
+              <div className="space-y-3">
+                {activityStops.map((stop) => {
+                  const hasCheckin = checkins.some(c => c.pickup_stop_id === stop.id && c.checkin_type === 'activity')
+                  
+                  return (
+                    <div key={stop.id} className={`p-4 rounded-xl border-2 ${
+                      hasCheckin ? 'bg-green-50 border-green-200' : 'bg-white border-gray-200'
+                    }`}>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <span className="text-2xl">🎯</span>
+                          <div>
+                            <div className="font-medium text-gray-900">{stop.location_name}</div>
+                            <div className="text-sm text-gray-500">
+                              {stop.scheduled_time?.slice(0, 5)} • {stop.guest_count} guests
+                            </div>
+                          </div>
+                        </div>
+                        {hasCheckin ? (
+                          <div className="bg-green-500 text-white px-3 py-1 rounded-full text-sm font-medium">
+                            ✓ Done
+                          </div>
+                        ) : (
+                          <Link
+                            href={`/guide/tours/${tour.id}/checkin?type=activity`}
+                            className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700"
+                          >
+                            Check In
+                          </Link>
+                        )}
+                      </div>
+                    </div>
+                  )
+                })}
+                {activityStops.length === 0 && (
+                  <div className="text-center p-6 text-gray-500">
+                    No activities for this tour
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Phase 3: Dropoffs (locked until activities done) */}
+          {(currentPhase === 'pickups' || currentPhase === 'activities') ? (
+            <div className="bg-gray-50 rounded-2xl border border-gray-200 p-6 opacity-75">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center">
+                  <span className="text-gray-500 font-bold">🔒</span>
+                </div>
+                <div>
+                  <h2 className="font-semibold text-gray-700 text-lg">Dropoffs</h2>
+                  <p className="text-sm text-gray-500">Complete all activities to unlock</p>
+                </div>
+              </div>
+              <div className="text-center p-6 text-gray-400">
+                Dropoffs will appear here after activities are complete
+              </div>
+            </div>
+          ) : (
+            <div className="bg-white rounded-2xl border border-gray-200 p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                  !allDropoffsDone ? 'bg-blue-100' : 'bg-green-100'
+                }`}>
+                  <span className={`font-bold ${!allDropoffsDone ? 'text-blue-600' : 'text-green-600'}`}>
+                    {!allDropoffsDone ? '3' : '✓'}
+                  </span>
+                </div>
+                <div>
+                  <h2 className="font-semibold text-gray-900 text-lg">
+                    {!allDropoffsDone ? 'Dropoffs' : 'Dropoffs ✅ Done'}
+                  </h2>
+                  {!allDropoffsDone && (
+                    <p className="text-sm text-gray-500">Complete all dropoffs to finish tour</p>
+                  )}
+                </div>
+              </div>
+              <div className="space-y-3">
+                {dropoffStops.map((stop) => {
+                  const hasCheckin = checkins.some(c => c.pickup_stop_id === stop.id && c.checkin_type === 'dropoff')
+                  
+                  return (
+                    <div key={stop.id} className={`p-4 rounded-xl border-2 ${
+                      hasCheckin ? 'bg-green-50 border-green-200' : 'bg-white border-gray-200'
+                    }`}>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <span className="text-2xl">🏁</span>
+                          <div>
+                            <div className="font-medium text-gray-900">{stop.location_name}</div>
+                            <div className="text-sm text-gray-500">
+                              {stop.scheduled_time?.slice(0, 5)} • {stop.guest_count} guests
+                            </div>
+                          </div>
+                        </div>
+                        {hasCheckin ? (
+                          <div className="bg-green-500 text-white px-3 py-1 rounded-full text-sm font-medium">
+                            ✓ Done
+                          </div>
+                        ) : (
+                          <Link
+                            href={`/guide/tours/${tour.id}/checkin?type=dropoff`}
+                            className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700"
+                          >
+                            Check In
+                          </Link>
+                        )}
+                      </div>
+                    </div>
+                  )
+                })}
+                {dropoffStops.length === 0 && (
+                  <div className="text-center p-6 text-gray-500">
+                    No dropoffs for this tour
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
 
           {/* Guest Manifest */}
           {reservations.length > 0 && (
@@ -684,13 +918,19 @@ export default function GuideTourPage() {
             </div>
           )}
 
-          {/* Complete Tour Button */}
-          <Link
-            href={`/guide/tours/${tour.id}/complete`}
-            className="block w-full bg-green-600 text-white py-4 rounded-xl font-semibold text-lg text-center hover:bg-green-700"
-          >
-            🚐 Complete Tour
-          </Link>
+          {/* Complete Tour Button - Only show when all phases done */}
+          {allPickupsDone && allActivitiesDone && allDropoffsDone ? (
+            <Link
+              href={`/guide/tours/${tour.id}/complete`}
+              className="block w-full bg-green-600 text-white py-4 rounded-xl font-semibold text-lg text-center hover:bg-green-700"
+            >
+              🚐 Complete Tour
+            </Link>
+          ) : (
+            <div className="block w-full bg-gray-300 text-gray-500 py-4 rounded-xl font-semibold text-lg text-center cursor-not-allowed">
+              Complete all phases to finish tour
+            </div>
+          )}
         </>
       )}
 
