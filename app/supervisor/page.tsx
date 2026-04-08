@@ -427,9 +427,8 @@ export default function SupervisorDashboard() {
             <p className="text-2xl font-bold text-red-600">{stats.open_incidents}</p>
           </div>
         </div>
-      </div>
 
-      {/* Main Content - Fills remaining space */}
+        {/* Main Content - Fills remaining space */}
       <div className="flex-1 flex flex-col gap-4 min-h-0">
         {/* Row 1: Today's Tours + Live Map */}
         <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-4 min-h-0">
