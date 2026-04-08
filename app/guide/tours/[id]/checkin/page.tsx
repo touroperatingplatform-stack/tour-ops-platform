@@ -3,7 +3,7 @@
 export const dynamic = 'force-dynamic'
 
 import { useState, useEffect } from 'react'
-import { useRouter, useParams } from 'next/navigation'
+import { useRouter, useParams, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase/client'
 import { uploadToCloudinary } from '@/lib/cloudinary/upload'
@@ -29,25 +29,30 @@ interface Tour {
   acknowledged_at: string | null
 }
 
-interface PickupStop {
+interface Stop {
   id: string
   location_name: string
   scheduled_time: string
+  stop_type: 'pickup' | 'activity' | 'dropoff'
+  guest_count: number
 }
 
-export default function PickupCheckinPage() {
+export default function CheckinPage() {
   const params = useParams()
   const router = useRouter()
+  const searchParams = useSearchParams()
   const tourId = params.id as string
+  const checkinType = (searchParams.get('type') as 'pickup' | 'activity' | 'dropoff') || 'pickup'
 
   // Step management
   const [step, setStep] = useState<'select' | 'checkin'>('select')
   const [selectedReservation, setSelectedReservation] = useState<Reservation | null>(null)
+  const [selectedStop, setSelectedStop] = useState<Stop | null>(null)
 
   // Data
   const [tour, setTour] = useState<Tour | null>(null)
   const [reservations, setReservations] = useState<Reservation[]>([])
-  const [stops, setStops] = useState<PickupStop[]>([])
+  const [stops, setStops] = useState<Stop[]>([])
   const [loading, setLoading] = useState(true)
   const [pendingCount, setPendingCount] = useState(0)
 
@@ -102,40 +107,46 @@ export default function PickupCheckinPage() {
       return
     }
 
-    // Load pickup stops for this tour
+    // Load stops based on checkin type
+    let stopType: 'pickup' | 'activity' | 'dropoff' = 'pickup'
+    if (checkinType === 'activity') stopType = 'activity'
+    if (checkinType === 'dropoff') stopType = 'dropoff'
+    
     const { data: stopsData } = await supabase
       .from('pickup_stops')
-      .select('id, location_name, scheduled_time')
+      .select('id, location_name, scheduled_time, stop_type, guest_count')
       .eq('tour_id', tourId)
-      .eq('stop_type', 'pickup')
+      .eq('stop_type', stopType)
       .order('sort_order', { ascending: true })
     
     if (stopsData) {
       setStops(stopsData)
     }
 
-    // Load reservations - filter pending (not checked_in AND not no_show)
-    const { data: resData } = await supabase
-      .from('reservation_manifest')
-      .select('id, primary_contact_name, adult_pax, child_pax, infant_pax, hotel_name, pickup_location, pickup_time, checked_in, no_show, pickup_stop_id')
-      .eq('tour_id', tourId)
-    
-    if (resData) {
-      // Log ALL reservations for debugging
-      console.log('=== ALL RESERVATIONS ===')
-      resData.forEach(r => {
-        console.log(`  ${r.id}: ${r.primary_contact_name} at ${r.hotel_name} | checked_in: ${r.checked_in} (${typeof r.checked_in}) | no_show: ${r.no_show} (${typeof r.no_show})`)
-      })
+    // Only load reservations for pickup check-ins
+    if (checkinType === 'pickup') {
+      const { data: resData } = await supabase
+        .from('reservation_manifest')
+        .select('id, primary_contact_name, adult_pax, child_pax, infant_pax, hotel_name, pickup_location, pickup_time, checked_in, no_show, pickup_stop_id')
+        .eq('tour_id', tourId)
       
-      // Filter pending (both checked_in and no_show must be explicitly false/null)
-      const pending = resData.filter(r => r.checked_in !== true && r.no_show !== true)
-      console.log('=== PENDING RESERVATIONS ===', pending.length)
-      pending.forEach(r => {
-        console.log(`  ${r.id}: ${r.primary_contact_name} at ${r.hotel_name}`)
-      })
+      if (resData) {
+        // Filter pending (both checked_in and no_show must be explicitly false/null)
+        const pending = resData.filter(r => r.checked_in !== true && r.no_show !== true)
+        setReservations(pending)
+        setPendingCount(pending.length)
+      }
+    } else {
+      // For activity/dropoff, count stops without check-ins
+      const { data: checkinsData } = await supabase
+        .from('guide_checkins')
+        .select('pickup_stop_id, checkin_type')
+        .eq('tour_id', tourId)
+        .eq('checkin_type', checkinType)
       
-      setReservations(pending)
-      setPendingCount(pending.length)
+      const checkedInStopIds = new Set(checkinsData?.map(c => c.pickup_stop_id) || [])
+      const pendingStops = (stopsData || []).filter(s => !checkedInStopIds.has(s.id))
+      setPendingCount(pendingStops.length)
     }
     
     setLoading(false)
@@ -194,7 +205,77 @@ export default function PickupCheckinPage() {
     getLocation() // Capture GPS when arriving at pickup
   }
 
+  function selectStop(stop: Stop) {
+    setSelectedStop(stop)
+    setStep('checkin')
+    getLocation() // Capture GPS when arriving at stop
+  }
+
+  async function handleActivityCheckin() {
+    if (!selectedStop) return
+    if (!photoUrl) {
+      alert('Please take a photo first')
+      return
+    }
+    if (!location) {
+      alert('Waiting for GPS. Please enable location services.')
+      return
+    }
+
+    setSubmitting(true)
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) throw new Error('Not authenticated')
+
+      const { data: tourData } = await supabase
+        .from('tours')
+        .select('brand_id')
+        .eq('id', tourId)
+        .single()
+
+      // Create guide checkin record for activity/dropoff
+      const checkinData = {
+        tour_id: tourId,
+        brand_id: tourData?.brand_id,
+        guide_id: user.id,
+        pickup_stop_id: selectedStop.id,
+        checkin_type: checkinType, // 'activity' or 'dropoff'
+        checked_in_at: new Date().toISOString(),
+        latitude: location.lat,
+        longitude: location.lng,
+        location_accuracy: location.accuracy,
+        selfie_url: photoUrl,
+        notes: notes || null
+      }
+      
+      const { error: checkinError } = await supabase.from('guide_checkins').insert(checkinData)
+
+      if (checkinError) {
+        console.error('Checkin insert error:', checkinError)
+        throw new Error('Failed to save checkin: ' + (checkinError.message || JSON.stringify(checkinError)))
+      }
+
+      console.log(`${checkinType} check-in saved successfully`)
+
+      // Back to tour page
+      router.push(`/guide/tours/${tourId}`)
+      
+    } catch (error: any) {
+      console.error('Submit error:', error)
+      alert('Failed to save check-in: ' + (error.message || 'Unknown error'))
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
   async function handleSubmit() {
+    // Handle activity/dropoff check-ins separately
+    if (checkinType === 'activity' || checkinType === 'dropoff') {
+      return handleActivityCheckin()
+    }
+    
+    // Original pickup check-in logic
     if (!selectedReservation) return
     if (!photoUrl) {
       alert('Please take a photo first')
@@ -326,8 +407,64 @@ export default function PickupCheckinPage() {
     )
   }
 
-  // Step 1: Select Reservation
+  // Step 1: Select Reservation or Stop
   if (step === 'select') {
+    // For activity/dropoff check-ins
+    if (checkinType === 'activity' || checkinType === 'dropoff') {
+      return (
+        <div className="p-4">
+          {/* Header */}
+          <div className="mb-4">
+            <Link href={`/guide/tours/${tourId}`} className="text-sm text-gray-500 mb-2 block">
+              ← Back to Tour
+            </Link>
+            <h1 className="text-xl font-bold text-gray-900">
+              {checkinType === 'activity' ? 'Activity Check-in' : 'Dropoff Check-in'}
+            </h1>
+            <p className="text-sm text-gray-500">
+              {pendingCount === 0 ? `All ${checkinType}s complete!` : `${pendingCount} pending`}
+            </p>
+          </div>
+
+          {/* Pending Stops List */}
+          {stops.length === 0 || pendingCount === 0 ? (
+            <div className="bg-white rounded-2xl p-8 text-center border border-gray-200">
+              <span className="text-4xl block mb-3">✓</span>
+              <p className="text-gray-900 font-medium text-lg">All {checkinType}s complete!</p>
+              <p className="text-sm text-gray-500 mt-1">Ready for next phase</p>
+              <Link 
+                href={`/guide/tours/${tourId}`}
+                className="mt-4 inline-block px-6 py-3 bg-blue-600 text-white rounded-xl font-medium"
+              >
+                Back to Tour
+              </Link>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {stops.map((stop) => (
+                <button
+                  key={stop.id}
+                  onClick={() => selectStop(stop)}
+                  className="w-full bg-white rounded-xl p-4 border border-gray-200 text-left hover:border-blue-300 hover:shadow-sm transition-all"
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <p className="font-semibold text-gray-900">{stop.location_name}</p>
+                      <p className="text-sm text-gray-600 mt-1">
+                        {stop.scheduled_time?.slice(0, 5)} • {stop.guest_count} guests
+                      </p>
+                    </div>
+                    <span className="text-blue-600 font-medium">→</span>
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      )
+    }
+
+    // Original pickup check-in
     return (
       <div className="p-4">
         {/* Header */}
@@ -385,6 +522,114 @@ export default function PickupCheckinPage() {
   }
 
   // Step 2: Check-in Flow
+  // Handle activity/dropoff check-in UI
+  if ((checkinType === 'activity' || checkinType === 'dropoff') && selectedStop) {
+    return (
+      <div className="p-4 pb-20">
+        {/* Header */}
+        <div className="mb-4">
+          <button 
+            onClick={() => setStep('select')} 
+            className="text-sm text-gray-500 mb-2 block"
+          >
+            ← Back to List
+          </button>
+          <h1 className="text-xl font-bold text-gray-900">
+            {checkinType === 'activity' ? 'Activity Check-in' : 'Dropoff Check-in'}
+          </h1>
+        </div>
+
+        {/* Stop Card */}
+        <div className="bg-white rounded-xl p-4 border border-gray-200 mb-4">
+          <p className="font-semibold text-gray-900">{selectedStop.location_name}</p>
+          <p className="text-sm text-gray-500 mt-2">
+            {selectedStop.scheduled_time?.slice(0, 5)} • {selectedStop.guest_count} guests
+          </p>
+        </div>
+
+        {/* GPS Status */}
+        <div className="bg-white rounded-xl p-4 border border-gray-200 mb-4">
+          <p className="text-sm font-medium text-gray-700 mb-2">📍 GPS Location</p>
+          {location ? (
+            <p className="text-sm text-green-600">
+              ✓ Captured ({location.accuracy ? `±${Math.round(location.accuracy)}m` : 'OK'})
+            </p>
+          ) : locationError ? (
+            <div>
+              <p className="text-sm text-red-600">{locationError}</p>
+              <button 
+                onClick={getLocation}
+                className="mt-2 text-sm text-blue-600 underline"
+              >
+                Retry GPS
+              </button>
+            </div>
+          ) : (
+            <p className="text-sm text-gray-500">Capturing...</p>
+          )}
+        </div>
+
+        {/* Photo Upload - REQUIRED */}
+        <div className="bg-white rounded-xl p-4 border border-gray-200 mb-4">
+          <p className="text-sm font-medium text-gray-700 mb-3">📷 Photo Proof <span className="text-red-500">*</span></p>
+          
+          {photoUrl ? (
+            <div className="relative">
+              <img src={photoUrl} alt="Check-in" className="w-full h-48 object-cover rounded-lg" />
+              <button
+                onClick={() => setPhotoUrl(null)}
+                className="absolute top-2 right-2 bg-red-500 text-white p-2 rounded-full text-xs"
+              >
+                Retake
+              </button>
+            </div>
+          ) : (
+            <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+              <input
+                type="file"
+                accept="image/*"
+                capture="environment"
+                onChange={(e) => e.target.files?.[0] && handlePhotoUpload(e.target.files[0])}
+                className="hidden"
+                id="photo-input"
+              />
+              <label 
+                htmlFor="photo-input"
+                className="cursor-pointer block"
+              >
+                <span className="text-4xl block mb-2">📷</span>
+                <span className="text-sm text-gray-600">
+                  {uploading ? 'Uploading...' : 'Tap to take photo'}
+                </span>
+              </label>
+            </div>
+          )}
+        </div>
+
+        {/* Notes */}
+        <div className="bg-white rounded-xl p-4 border border-gray-200 mb-4">
+          <p className="text-sm font-medium text-gray-700 mb-2">Notes (optional)</p>
+          <textarea
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            placeholder="Any special notes..."
+            className="w-full p-3 border border-gray-300 rounded-lg text-sm min-h-[80px]"
+          />
+        </div>
+
+        {/* Submit Button */}
+        <button
+          onClick={handleActivityCheckin}
+          disabled={!photoUrl || !location || submitting}
+          className="w-full py-4 rounded-xl font-semibold text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50"
+        >
+          {submitting ? 'Saving...' : checkinType === 'activity' ? 'Confirm Activity Check-in' : 'Confirm Dropoff'}
+        </button>
+      </div>
+    )
+  }
+
+  // Original pickup check-in flow
   if (!selectedReservation) return null
 
   const stop = stops.find(s => s.id === selectedReservation.pickup_stop_id)
