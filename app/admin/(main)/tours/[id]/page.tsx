@@ -107,9 +107,9 @@ export default function TourDetailPage() {
     // Load guest count
     const { data: manifestData } = await supabase
       .from('reservation_manifest')
-      .select('id')
+      .select('total_pax')
       .eq('tour_id', tourId)
-    setGuestCount(manifestData?.length || 0)
+    setGuestCount(manifestData?.reduce((sum, r) => sum + (r.total_pax || 0), 0) || 0)
 
     // Load pickup stops count
     const { data: stopsData } = await supabase
