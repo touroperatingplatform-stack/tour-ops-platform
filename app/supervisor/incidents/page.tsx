@@ -45,9 +45,28 @@ export default function IncidentsPage() {
   }, [selectedIncident])
 
   async function loadIncidents() {
+    // Get current user's company
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+      setLoading(false)
+      return
+    }
+    
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('company_id')
+      .eq('id', user.id)
+      .single()
+    
+    if (!profile?.company_id) {
+      setLoading(false)
+      return
+    }
+
     const { data: incidentsData } = await supabase
       .from('incidents')
-      .select('id, type, description, severity, status, tour_id, reported_by, created_at')
+      .select('id, type, description, severity, status, tour_id, reported_by, created_at, company_id')
+      .eq('company_id', profile.company_id)
       .order('created_at', { ascending: false })
       .limit(50)
 
