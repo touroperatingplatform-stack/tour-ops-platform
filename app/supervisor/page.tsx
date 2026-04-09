@@ -110,9 +110,14 @@ export default function SupervisorDashboard() {
 
       const formattedTours = toursData.map((t: any) => {
         const guide = guideMap.get(t.guide_id)
+        const guideName = guide 
+          ? (guide.first_name && guide.last_name 
+              ? `${guide.first_name} ${guide.last_name}` 
+              : guide.full_name || 'Unknown')
+          : 'Unknown'
         return {
           ...t,
-          guide: guide || { first_name: 'Unknown', last_name: '' }
+          guide: { first_name: guideName.split(' ')[0], last_name: guideName.split(' ').slice(1).join(' ') }
         }
       }) as TourWithDetails[]
       
@@ -153,7 +158,7 @@ export default function SupervisorDashboard() {
         .filter(t => ['in_progress', 'scheduled'].includes(t.status))
         .map(t => ({
           id: t.id,
-          name: `${t.guide.first_name} ${t.guide.last_name}`,
+          name: `${t.guide.first_name} ${t.guide.last_name}`.trim() || 'Unknown',
           tour: t.name,
           lastCheckIn: 'hace 5 min',
           status: 'active' as const
@@ -190,10 +195,15 @@ export default function SupervisorDashboard() {
 
         const formattedIncidents = incidentsData.map((i: any) => {
           const reporter = reporterMap.get(i.reported_by)
+          const reporterName = reporter
+            ? (reporter.first_name && reporter.last_name
+                ? `${reporter.first_name} ${reporter.last_name}`
+                : reporter.full_name || 'Unknown')
+            : 'Unknown'
           return {
             ...i,
             tour_name: tourMap.get(i.tour_id) || 'Unknown',
-            guide_name: reporter ? `${reporter.first_name} ${reporter.last_name}` : 'Unknown'
+            guide_name: reporterName
           }
         }) as IncidentWithDetails[]
         
