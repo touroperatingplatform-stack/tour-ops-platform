@@ -313,6 +313,24 @@ export function GuideCheckinStatus() {
   }, [])
 
   async function loadCheckins() {
+    // Get current user's company
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+      setLoading(false)
+      return
+    }
+    
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('company_id')
+      .eq('id', user.id)
+      .single()
+    
+    if (!profile?.company_id) {
+      setLoading(false)
+      return
+    }
+
     // Simple date filter - last 48 hours to catch all recent check-ins
     const now = new Date()
     const twoDaysAgo = new Date(now.getTime() - 172800000).toISOString()
@@ -321,6 +339,7 @@ export function GuideCheckinStatus() {
     const { data: checkinsData } = await supabase
       .from('guide_checkins')
       .select('id, guide_id, tour_id, checkin_type, checked_in_at, minutes_early_or_late, location_accuracy')
+      .eq('company_id', profile.company_id)
       .gte('checked_in_at', twoDaysAgo)
       .order('checked_in_at', { ascending: false })
       .limit(20)
@@ -344,6 +363,7 @@ export function GuideCheckinStatus() {
     const { data: toursData } = await supabase
       .from('tours')
       .select('id, name')
+      .eq('company_id', profile.company_id)
       .in('id', tourIds.length > 0 ? tourIds : ['00000000-0000-0000-0000-000000000000'])
 
     const guideMap = new Map(guidesData?.map((g: any) => [g.id, g.first_name && g.last_name ? `${g.first_name} ${g.last_name}` : g.full_name || 'Unknown']) || [])
