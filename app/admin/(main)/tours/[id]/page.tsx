@@ -91,9 +91,19 @@ export default function TourDetailPage() {
       .eq('role', 'guide')
       .eq('company_id', companyId)
 
-    const availableGuides = (guidesData || []).filter(g => 
+    let availableGuides = (guidesData || []).filter(g => 
       !usedGuideIds.includes(g.id) || g.id === tourData.guide_id
     )
+    
+    // Ensure current guide is in list even if filtered out
+    if (tourData.guide_id && !availableGuides.find(g => g.id === tourData.guide_id)) {
+      const { data: currentGuide } = await supabase
+        .from('profiles')
+        .select('id, first_name, last_name, full_name')
+        .eq('id', tourData.guide_id)
+        .single()
+      if (currentGuide) availableGuides.unshift(currentGuide)
+    }
     setGuides(availableGuides)
 
     // Load drivers - exclude ones already assigned to other tours (unless assigned to this tour)
