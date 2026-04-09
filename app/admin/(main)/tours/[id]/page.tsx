@@ -184,7 +184,7 @@ export default function TourDetailPage() {
                 <option value="">Unassigned</option>
                 {guides.map((g) => (
                   <option key={g.id} value={g.id}>
-                    {g.first_name} {g.last_name}
+                    {g.first_name && g.last_name ? `${g.first_name} ${g.last_name}` : g.full_name || 'Unnamed'}
                   </option>
                 ))}
               </select>
@@ -201,7 +201,7 @@ export default function TourDetailPage() {
                 <option value="">Unassigned</option>
                 {drivers.map((d) => (
                   <option key={d.id} value={d.id}>
-                    {d.first_name} {d.last_name}
+                    {d.first_name && d.last_name ? `${d.first_name} ${d.last_name}` : d.full_name || 'Unnamed'}
                   </option>
                 ))}
               </select>
