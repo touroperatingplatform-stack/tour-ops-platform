@@ -13,6 +13,7 @@ export default function NewVehiclePage() {
   const { t } = useTranslation()
   const [loading, setLoading] = useState(false)
   const [formData, setFormData] = useState({
+    name: '',
     plate_number: '',
     model: '',
     year: new Date().getFullYear(),
@@ -33,6 +34,7 @@ export default function NewVehiclePage() {
       const { error } = await supabase
         .from('vehicles')
         .insert({
+          name: formData.name,
           plate_number: formData.plate_number,
           model: formData.model,
           year: formData.year,
@@ -73,6 +75,19 @@ export default function NewVehiclePage() {
       <main className="flex-1 overflow-hidden bg-white border-8 border-transparent">
         <form onSubmit={handleSubmit} className="h-full overflow-auto px-4 py-4 border-8 border-transparent">
           <div className="max-w-md mx-auto space-y-4">
+            {/* Name */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">{t('vehicles.name')} *</label>
+              <input
+                type="text"
+                required
+                value={formData.name}
+                onChange={(e) => handleChange('name', e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder={t('vehicles.namePlaceholder')}
+              />
+            </div>
+
             {/* Plate & Model */}
             <div className="grid grid-cols-2 gap-4">
               <div>

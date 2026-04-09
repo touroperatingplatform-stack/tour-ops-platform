@@ -16,6 +16,7 @@ export default function VehicleDetailPage() {
   const [saving, setSaving] = useState(false)
   const [vehicle, setVehicle] = useState({
     id: '',
+    name: '',
     plate_number: '',
     model: '',
     year: 2020,
@@ -42,6 +43,7 @@ export default function VehicleDetailPage() {
 
     setVehicle({
       id: data.id,
+      name: data.name || '',
       plate_number: data.plate_number || '',
       model: data.model || '',
       year: data.year || 2020,
@@ -63,6 +65,7 @@ export default function VehicleDetailPage() {
     const { error } = await supabase
       .from('vehicles')
       .update({
+        name: vehicle.name,
         plate_number: vehicle.plate_number,
         model: vehicle.model,
         year: vehicle.year,
@@ -125,6 +128,18 @@ export default function VehicleDetailPage() {
       <main className="flex-1 overflow-hidden bg-white border-8 border-transparent">
         <form onSubmit={handleSave} className="h-full overflow-auto px-4 py-4 border-8 border-transparent">
           <div className="max-w-md mx-auto space-y-4">
+            {/* Name */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">{t('vehicles.name')} *</label>
+              <input
+                type="text"
+                required
+                value={vehicle.name}
+                onChange={(e) => handleChange('name', e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+
             {/* Plate & Model */}
             <div className="grid grid-cols-2 gap-4">
               <div>
