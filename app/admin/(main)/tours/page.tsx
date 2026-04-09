@@ -38,7 +38,7 @@ export default function ToursPage() {
       .from('tours')
       .select(`
         id, name, tour_date, start_time, status, guest_count, capacity,
-        guide:profiles!guide_id(first_name, last_name),
+        guide:profiles!guide_id(first_name, last_name, full_name),
         vehicle:vehicles!vehicle_id(plate_number)
       `)
       .gte('tour_date', today)
