@@ -28,9 +28,28 @@ export default function GuideAvailabilityPage() {
   async function loadGuides() {
     const today = getLocalDate()
     
+    // Get current user's company
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+      setLoading(false)
+      return
+    }
+    
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('company_id')
+      .eq('id', user.id)
+      .single()
+    
+    if (!profile?.company_id) {
+      setLoading(false)
+      return
+    }
+    
     const { data } = await supabase
       .from('profiles')
       .select('id, first_name, last_name, email')
+      .eq('company_id', profile.company_id)
       .eq('role', 'guide')
       .eq('status', 'active')
       .order('first_name')
