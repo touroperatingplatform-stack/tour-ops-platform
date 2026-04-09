@@ -20,6 +20,8 @@ export default function TourDetailPage() {
   const [drivers, setDrivers] = useState<any[]>([])
   const [vehicles, setVehicles] = useState<any[]>([])
   const [saving, setSaving] = useState(false)
+  const [guestCount, setGuestCount] = useState(0)
+  const [pickupCount, setPickupCount] = useState(0)
 
   useEffect(() => {
     loadData()
@@ -90,6 +92,22 @@ export default function TourDetailPage() {
       .eq('company_id', companyId)
 
     setVehicles(vehiclesData || [])
+
+    // Load guest count
+    const { data: manifestData } = await supabase
+      .from('reservation_manifest')
+      .select('id')
+      .eq('tour_id', tourId)
+    setGuestCount(manifestData?.length || 0)
+
+    // Load pickup stops count
+    const { data: stopsData } = await supabase
+      .from('pickup_stops')
+      .select('id')
+      .eq('tour_id', tourId)
+      .eq('stop_type', 'pickup')
+    setPickupCount(stopsData?.length || 0)
+
     setLoading(false)
   }
 
@@ -102,6 +120,8 @@ export default function TourDetailPage() {
     
     setTour({ ...tour, ...updates })
     setSaving(false)
+    // Reload to get updated names
+    loadData()
   }
 
   async function handleDelete() {
@@ -128,166 +148,125 @@ export default function TourDetailPage() {
   }
 
   return (
-    <div className="h-screen flex flex-col bg-gray-50 overflow-hidden">
+    <div className="min-h-screen bg-gray-50 pb-20">
       {/* Header */}
-      <header className="bg-white flex-shrink-0">
-        <div className="px-4 py-3 border-8 border-transparent">
-          <div className="px-4 py-3 flex items-center justify-between">
-            <div>
-              <Link href="/admin/tours" className="text-blue-600 hover:text-blue-800 text-sm">
-                ← {t('tours.backToTours')}
-              </Link>
-              <h1 className="text-xl font-bold mt-2">{tour.name}</h1>
-            </div>
-            <button
-              onClick={() => handleDelete()}
-              className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700"
-            >
-              {t('common.delete')}
-            </button>
+      <header className="bg-white border-b border-gray-200">
+        <div className="px-4 py-4">
+          <Link href="/admin/tours" className="text-blue-600 hover:text-blue-800 text-sm mb-2 inline-block">
+            ← {t('tours.backToTours')}
+          </Link>
+          <h1 className="text-2xl font-bold text-gray-900">{tour.name}</h1>
+          <div className="flex items-center gap-4 mt-2 text-gray-600">
+            <span>📅 {tour.tour_date}</span>
+            <span>•</span>
+            <span>⏰ {tour.start_time?.slice(0, 5)}</span>
+            <span>•</span>
+            <span>👥 {guestCount} guests</span>
           </div>
         </div>
       </header>
 
-      {/* Content */}
-      <main className="flex-1 overflow-hidden bg-white border-8 border-transparent">
-        <div className="h-full overflow-auto px-4 py-4 border-8 border-transparent">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-4xl mx-auto">
-            {/* Tour Info */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">{t('tours.details')}</h2>
-              
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">{t('tours.status')}</label>
-                  <select
-                    value={tour.status}
-                    onChange={(e) => handleUpdate({ status: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-                  >
-                    <option value="scheduled">{t('tours.scheduled')}</option>
-                    <option value="in_progress">{t('tours.inProgress')}</option>
-                    <option value="completed">{t('tours.completed')}</option>
-                    <option value="cancelled">{t('tours.cancelled')}</option>
-                  </select>
-                  {saving && <span className="text-xs text-gray-500 ml-2">{t('tours.saving')}</span>}
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">{t('tours.guide')}</label>
-                  {loading ? (
-                    <div className="px-4 py-2 border border-gray-300 rounded-lg bg-gray-100 text-gray-500">Loading...</div>
-                  ) : (
-                    <select
-                      value={tour.guide_id || ''}
-                      onChange={(e) => handleUpdate({ guide_id: e.target.value || null })}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-                    >
-                      <option value="">{t('tours.unassigned')}</option>
-                      {guides.map((g) => (
-                        <option key={g.id} value={g.id}>
-                          {g.first_name ? `${g.first_name} ${g.last_name || ''}`.trim() : g.full_name || 'Unknown'}
-                        </option>
-                      ))}
-                    </select>
-                  )}
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Driver</label>
-                  {loading ? (
-                    <div className="px-4 py-2 border border-gray-300 rounded-lg bg-gray-100 text-gray-500">Loading...</div>
-                  ) : (
-                    <select
-                      value={tour.driver_id || ''}
-                      onChange={(e) => handleUpdate({ driver_id: e.target.value || null })}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-                    >
-                      <option value="">{t('tours.unassigned')}</option>
-                      {drivers.map((d) => (
-                        <option key={d.id} value={d.id}>
-                          {d.first_name ? `${d.first_name} ${d.last_name || ''}`.trim() : d.full_name || 'Unknown'}
-                        </option>
-                      ))}
-                    </select>
-                  )}
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">{t('tours.vehicle')}</label>
-                  <select
-                    value={tour.vehicle_id || ''}
-                    onChange={(e) => handleUpdate({ vehicle_id: e.target.value || null })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-                  >
-                    <option value="">{t('tours.unassigned')}</option>
-                    {vehicles.map((v) => (
-                      <option key={v.id} value={v.id}>
-                        {v.name} ({v.plate_number})
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
+      <div className="p-4 space-y-4">
+        {/* Staff Assignments */}
+        <div className="bg-white rounded-xl border border-gray-200 p-4">
+          <h2 className="font-semibold text-gray-900 mb-4">Staff Assignments</h2>
+          
+          <div className="space-y-4">
+            {/* Guide */}
+            <div className="flex items-center justify-between">
+              <div className="flex-1">
+                <div className="flex items-center gap-2">
+                  <span className="text-xl">👤</span>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">{t('tours.startTime')}</label>
-                    <input
-                      type="time"
-                      value={tour.start_time}
-                      onChange={(e) => handleUpdate({ start_time: e.target.value })}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-                    />
+                    <p className="font-medium">Guide: {tour.guide_name}</p>
+                    <p className="text-sm text-green-600">✅ Acknowledged</p>
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">{t('tours.endTime')}</label>
-                    <input
-                      type="time"
-                      value={tour.end_time || ''}
-                      onChange={(e) => handleUpdate({ end_time: e.target.value })}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">{t('tours.pickupLocation')}</label>
-                  <input
-                    type="text"
-                    value={tour.pickup_location || ''}
-                    onChange={(e) => handleUpdate({ pickup_location: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-                    placeholder={t('tours.pickupPlaceholder')}
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">{t('tours.dropoffLocation')}</label>
-                  <input
-                    type="text"
-                    value={tour.dropoff_location || ''}
-                    onChange={(e) => handleUpdate({ dropoff_location: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-                    placeholder={t('tours.dropoffPlaceholder')}
-                  />
                 </div>
               </div>
+              <button 
+                onClick={() => {/* Open guide change modal */}}
+                className="px-4 py-2 text-blue-600 text-sm font-medium"
+              >
+                Change
+              </button>
             </div>
 
-            {/* Description */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">{t('tours.description')}</h2>
-              <textarea
-                value={tour.description || ''}
-                onChange={(e) => handleUpdate({ description: e.target.value })}
-                rows={10}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder={t('tours.descriptionPlaceholder')}
-              />
+            {/* Driver */}
+            <div className="flex items-center justify-between">
+              <div className="flex-1">
+                <div className="flex items-center gap-2">
+                  <span className="text-xl">🚐</span>
+                  <div>
+                    <p className="font-medium">Driver: {tour.driver_name}</p>
+                    <p className="text-sm text-yellow-600">⏳ Pending</p>
+                  </div>
+                </div>
+              </div>
+              <button 
+                onClick={() => {/* Open driver change modal */}}
+                className="px-4 py-2 text-blue-600 text-sm font-medium"
+              >
+                Change
+              </button>
+            </div>
+
+            {/* Vehicle */}
+            <div className="flex items-center justify-between">
+              <div className="flex-1">
+                <div className="flex items-center gap-2">
+                  <span className="text-xl">🚌</span>
+                  <div>
+                    <p className="font-medium">Vehicle: {tour.vehicle_display}</p>
+                  </div>
+                </div>
+              </div>
+              <button 
+                onClick={() => {/* Open vehicle change modal */}}
+                className="px-4 py-2 text-blue-600 text-sm font-medium"
+              >
+                Change
+              </button>
             </div>
           </div>
         </div>
-      </main>
+
+        {/* Guest Manifest */}
+        <div className="bg-white rounded-xl border border-gray-200 p-4">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="font-semibold text-gray-900">Guest Manifest ({guestCount})</h2>
+            <Link href={`/admin/tours/${tourId}/guests`} className="text-blue-600 text-sm font-medium">
+              View full list →
+            </Link>
+          </div>
+          
+          <div className="grid grid-cols-2 gap-4">
+            <div className="bg-gray-50 rounded-lg p-3 text-center">
+              <p className="text-2xl font-bold text-gray-900">{pickupCount}</p>
+              <p className="text-sm text-gray-600">Pickup stops</p>
+            </div>
+            <div className="bg-gray-50 rounded-lg p-3 text-center">
+              <p className="text-2xl font-bold text-gray-900">{guestCount}</p>
+              <p className="text-sm text-gray-600">Guests</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Quick Actions */}
+        <div className="flex gap-3">
+          <Link 
+            href={`/admin/tours/${tourId}/edit`}
+            className="flex-1 py-3 bg-gray-100 text-gray-700 rounded-xl font-medium text-center hover:bg-gray-200"
+          >
+            ✏️ Edit Tour
+          </Link>
+          <Link 
+            href={`/admin/tours/${tourId}/checklist`}
+            className="flex-1 py-3 bg-blue-100 text-blue-700 rounded-xl font-medium text-center hover:bg-blue-200"
+          >
+            📋 View Checklist
+          </Link>
+        </div>
+      </div>
     </div>
   )
 }
