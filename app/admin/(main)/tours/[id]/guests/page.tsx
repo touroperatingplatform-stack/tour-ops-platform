@@ -49,32 +49,14 @@ export default function TourGuestsPage() {
 
     if (tour) setTourName(tour.name)
 
-    // Load reservations (ORDEN creates reservations, not reservation_manifest)
+    // Load from reservation_manifest (ordtest creates data here)
     const { data } = await supabase
-      .from('reservations')
-      .select('id, coupon, client_name, adults, children, babies, total_pax, hotel_name, pickup_time, confirmation_number, agency, checked_in, no_show')
+      .from('reservation_manifest')
+      .select('id, booking_reference, adult_pax, child_pax, infant_pax, total_pax, hotel_name, room_number, pickup_time, agency_name, primary_contact_name, checked_in, no_show')
       .eq('tour_id', tourId)
-      .order('coupon')
+      .order('booking_reference')
 
-    const formatted = (data || []).map((r: any) => ({
-      id: r.id,
-      booking_reference: r.coupon || r.confirmation_number,
-      booking_platform: r.agency,
-      adult_pax: r.adults || 0,
-      child_pax: r.children || 0,
-      infant_pax: r.babies || 0,
-      total_pax: r.total_pax || ((r.adults || 0) + (r.children || 0) + (r.babies || 0)),
-      primary_contact_name: r.client_name,
-      dietary_restrictions: [],
-      accessibility_needs: [],
-      special_requests: null,
-      checked_in: r.checked_in || false,
-      no_show: r.no_show || false,
-      pickup_location: r.hotel_name,
-      hotel_name: r.hotel_name
-    }))
-
-    setReservations(formatted)
+    setReservations(data || [])
     setLoading(false)
   }
 
