@@ -33,7 +33,7 @@ export default function TourDetailPage() {
         *,
         guide:profiles!guide_id(first_name, last_name, full_name),
         driver:profiles!driver_id(first_name, last_name, full_name),
-        vehicle:vehicles!vehicle_id(plate_number, make, model)
+        vehicle:vehicles!vehicle_id(id, name, plate_number, make, model)
       `)
       .eq('id', tourId)
       .single()
@@ -48,7 +48,7 @@ export default function TourDetailPage() {
           ? `${tourData.driver.first_name} ${tourData.driver.last_name || ''}`.trim()
           : tourData.driver?.full_name || 'Unassigned',
         vehicle_display: tourData.vehicle 
-          ? `${tourData.vehicle.plate_number} - ${tourData.vehicle.make} ${tourData.vehicle.model}`
+          ? `${tourData.vehicle.name} (${tourData.vehicle.plate_number})`
           : 'Unassigned'
       })
     }
@@ -86,7 +86,7 @@ export default function TourDetailPage() {
     // Load vehicles for this company
     const { data: vehiclesData } = await supabase
       .from('vehicles')
-      .select('id, plate_number, make, model')
+      .select('id, name, plate_number, make, model')
       .eq('company_id', companyId)
 
     setVehicles(vehiclesData || [])
@@ -215,7 +215,7 @@ export default function TourDetailPage() {
                     <option value="">{t('tours.unassigned')}</option>
                     {vehicles.map((v) => (
                       <option key={v.id} value={v.id}>
-                        {v.plate_number} - {v.make} {v.model}
+                        {v.name} ({v.plate_number})
                       </option>
                     ))}
                   </select>
