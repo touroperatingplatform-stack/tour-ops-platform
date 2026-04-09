@@ -130,7 +130,7 @@ export default function VehicleDetailPage() {
           <div className="max-w-md mx-auto space-y-4">
             {/* Name */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">{t('vehicles.name')} *</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Vehicle Name *</label>
               <input
                 type="text"
                 required
