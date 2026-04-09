@@ -220,21 +220,72 @@ export default function ToursPage() {
         {upcomingTours.length > 0 && (
           <div>
             <h2 className="font-semibold mb-2 text-gray-600">{t('common.upcoming')}</h2>
-            <div className="space-y-2">
+            <div className="space-y-3">
               {upcomingTours.map(tour => (
-                <Link
+                <div
                   key={tour.id}
-                  href={`/admin/tours/${tour.id}`}
-                  className="block bg-white rounded-xl shadow p-3 hover:shadow-md transition-shadow"
+                  className="block bg-white rounded-xl border border-gray-200 p-4 hover:shadow-md transition-shadow"
                 >
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h3 className="font-medium">{tour.name}</h3>
-                      <p className="text-gray-500 text-sm">{tour.tour_date} at {tour.start_time?.slice(0, 5)}</p>
+                  {/* Header */}
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-2xl">🚌</span>
+                        <h3 className="font-bold text-lg">{tour.name}</h3>
+                      </div>
+                      <div className="flex items-center gap-2 text-gray-500 text-sm">
+                        <span>📅 {tour.tour_date}</span>
+                        <span>•</span>
+                        <span>⏰ {tour.start_time?.slice(0, 5)}</span>
+                        <span>•</span>
+                        <span>👥 {tour.guest_count}/{tour.capacity || '-'} guests</span>
+                      </div>
                     </div>
                     <span className="text-gray-400">→</span>
                   </div>
-                </Link>
+                  
+                  {/* Assignment Status */}
+                  <div className="grid grid-cols-2 gap-3 mb-3">
+                    <div className={`p-3 rounded-lg ${tour.guide_name === 'Unassigned' ? 'bg-red-50 border border-red-200' : 'bg-green-50 border border-green-200'}`}>
+                      <div className="flex items-center gap-2">
+                        <span className="text-lg">👤</span>
+                        <div className="flex-1">
+                          <p className={`text-sm font-medium ${tour.guide_name === 'Unassigned' ? 'text-red-700' : 'text-green-700'}`}>
+                            {tour.guide_name === 'Unassigned' ? '⚠️ No Guide' : tour.guide_name}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                    <div className={`p-3 rounded-lg ${tour.vehicle_plate === 'No vehicle' ? 'bg-red-50 border border-red-200' : 'bg-green-50 border border-green-200'}`}>
+                      <div className="flex items-center gap-2">
+                        <span className="text-lg">🚐</span>
+                        <div className="flex-1">
+                          <p className={`text-sm font-medium ${tour.vehicle_plate === 'No vehicle' ? 'text-red-700' : 'text-green-700'}`}>
+                            {tour.vehicle_plate === 'No vehicle' ? '⚠️ No Vehicle' : tour.vehicle_plate}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Action Buttons */}
+                  <div className="flex gap-2">
+                    <Link
+                      href={`/admin/tours/${tour.id}`}
+                      className="flex-1 py-2 px-4 bg-blue-50 text-blue-700 rounded-lg text-sm font-medium text-center hover:bg-blue-100"
+                    >
+                      View Details
+                    </Link>
+                    {(tour.guide_name === 'Unassigned' || tour.vehicle_plate === 'No vehicle') && (
+                      <Link
+                        href={`/admin/tours/${tour.id}/edit`}
+                        className="flex-1 py-2 px-4 bg-red-50 text-red-700 rounded-lg text-sm font-medium text-center hover:bg-red-100"
+                      >
+                        Assign Staff
+                      </Link>
+                    )}
+                  </div>
+                </div>
               ))}
             </div>
           </div>
