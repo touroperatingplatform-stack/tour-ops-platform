@@ -19,6 +19,7 @@ export default function TourDetailPage() {
   const [guides, setGuides] = useState<any[]>([])
   const [drivers, setDrivers] = useState<any[]>([])
   const [vehicles, setVehicles] = useState<any[]>([])
+  const [checklists, setChecklists] = useState<any[]>([])
   const [saving, setSaving] = useState(false)
   const [guestCount, setGuestCount] = useState(0)
   const [pickupCount, setPickupCount] = useState(0)
@@ -93,6 +94,15 @@ export default function TourDetailPage() {
       .eq('company_id', companyId)
 
     setVehicles(vehiclesData || [])
+
+    // Load checklists for this company
+    const { data: checklistsData } = await supabase
+      .from('checklists')
+      .select('id, name')
+      .eq('company_id', companyId)
+      .eq('is_active', true)
+
+    setChecklists(checklistsData || [])
 
     // Load guest count
     const { data: manifestData } = await supabase
@@ -223,6 +233,23 @@ export default function TourDetailPage() {
                 ))}
               </select>
             </div>
+
+            {/* Checklist */}
+            <div>
+              <label className="block text-sm text-gray-500 mb-1">📋 Checklist</label>
+              <select
+                value={tour.checklist_id || ''}
+                onChange={(e) => handleUpdate({ checklist_id: e.target.value || null })}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-white"
+              >
+                <option value="">No checklist assigned</option>
+                {checklists.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
         </div>
 
@@ -230,7 +257,7 @@ export default function TourDetailPage() {
         <div className="bg-white rounded-xl border border-gray-200 p-4">
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-semibold text-gray-900">Guest Manifest ({guestCount})</h2>
-            <Link href={`/admin/tours/${tourId}/guests`} className="text-blue-600 text-sm font-medium">
+            <Link href={`/admin/tours/${tourId}`} className="text-blue-600 text-sm font-medium">
               View full list →
             </Link>
           </div>
@@ -250,16 +277,10 @@ export default function TourDetailPage() {
         {/* Quick Actions */}
         <div className="flex gap-3">
           <Link 
-            href={`/admin/tours/${tourId}/edit`}
+            href={`/admin/tours/edit/${tourId}`}
             className="flex-1 py-3 bg-gray-100 text-gray-700 rounded-xl font-medium text-center hover:bg-gray-200"
           >
             ✏️ Edit Tour
-          </Link>
-          <Link 
-            href={`/admin/tours/${tourId}/checklist`}
-            className="flex-1 py-3 bg-blue-100 text-blue-700 rounded-xl font-medium text-center hover:bg-blue-200"
-          >
-            📋 View Checklist
           </Link>
         </div>
       </div>
