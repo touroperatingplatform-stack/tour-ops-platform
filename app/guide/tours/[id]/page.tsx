@@ -20,6 +20,7 @@ interface Tour {
   activity_type: string
   tour_date: string
   vehicle_id: string | null
+  checklist_id: string | null
   vehicles?: { plate_number: string; model: string }
 }
 
@@ -89,6 +90,7 @@ export default function GuideTourPage() {
   const [preDepartureChecked, setPreDepartureChecked] = useState<Record<string, boolean>>({})
   const [equipmentChecked, setEquipmentChecked] = useState<Record<string, boolean>>({})
   const [equipmentItems, setEquipmentItems] = useState<any[]>([])
+  const [assignedChecklist, setAssignedChecklist] = useState<any[]>([])
 
   // Guest manifest expanded
   const [showGuestManifest, setShowGuestManifest] = useState(false)
@@ -128,6 +130,22 @@ export default function GuideTourPage() {
           const checked: Record<string, boolean> = {}
           equipment.forEach(item => { checked[item.id] = false })
           setEquipmentChecked(checked)
+        }
+      }
+      // Load assigned checklist if exists
+      if (tourData.checklist_id) {
+        const { data: checklistData } = await supabase
+          .from('checklists')
+          .select('items')
+          .eq('id', tourData.checklist_id)
+          .single()
+        
+        if (checklistData?.items) {
+          setAssignedChecklist(checklistData.items)
+          // Initialize checked state for assigned checklist items
+          const checked: Record<string, boolean> = {}
+          checklistData.items.forEach((item: any) => { checked[item.id] = false })
+          setPreDepartureChecked(checked)
         }
       }
     }
@@ -382,7 +400,7 @@ export default function GuideTourPage() {
               <h2 className="font-semibold text-gray-900 text-lg">Pre-Departure Checklist</h2>
             </div>
             <div className="space-y-3">
-              {preDepartureItems.map((item) => (
+              {(assignedChecklist.length > 0 ? assignedChecklist : preDepartureItems).map((item: any) => (
                 <button
                   key={item.id}
                   onClick={() => togglePreDeparture(item.id)}
@@ -392,11 +410,16 @@ export default function GuideTourPage() {
                       : 'bg-white border-gray-200 hover:border-gray-300'
                   }`}
                 >
-                  <span className="text-2xl">{item.icon}</span>
+                  <span className="text-2xl">{item.icon || '📋'}</span>
                   <div className="flex-1">
-                    <div className="font-medium text-gray-900">{item.label}</div>
-                    <div className="text-sm text-gray-500">{item.description}</div>
+                    <div className="font-medium text-gray-900">{item.label || item.text}</div>
+                    <div className="text-sm text-gray-500">{item.description || ''}</div>
                   </div>
+                  {item.photo_required && (
+                    <span className="text-xs bg-orange-100 text-orange-700 px-2 py-1 rounded">
+                      📷 Photo
+                    </span>
+                  )}
                   <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
                     preDepartureChecked[item.id]
                       ? 'bg-green-500 border-green-500'
