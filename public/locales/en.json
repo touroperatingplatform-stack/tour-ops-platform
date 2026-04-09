@@ -680,6 +680,11 @@
     "importSuccess": "Imported:",
     "errors": "Errors:",
     "hotelsIn": "Hotels in"
+  },
+  "incidents": {
+    "noActiveIncidents": "No active incidents",
+    "allToursNormal": "All tours operating normally",
+    "activeIncidents": "Active Incidents"
   }
 }
 
