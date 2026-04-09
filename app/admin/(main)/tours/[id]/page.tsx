@@ -169,61 +169,58 @@ export default function TourDetailPage() {
       <div className="p-4 space-y-4">
         {/* Staff Assignments */}
         <div className="bg-white rounded-xl border border-gray-200 p-4">
-          <h2 className="font-semibold text-gray-900 mb-4">Staff Assignments</h2>
+          <h2 className="font-semibold text-gray-900 mb-4">Staff Assignments {saving && <span className="text-blue-500 text-sm">• Saving...</span>}</h2>
           
           <div className="space-y-4">
             {/* Guide */}
-            <div className="flex items-center justify-between">
-              <div className="flex-1">
-                <div className="flex items-center gap-2">
-                  <span className="text-xl">👤</span>
-                  <div>
-                    <p className="font-medium">Guide: {tour.guide_name}</p>
-                  </div>
-                </div>
-              </div>
-              <button 
-                onClick={() => {/* Open guide change modal */}}
-                className="px-4 py-2 text-blue-600 text-sm font-medium"
+            <div>
+              <label className="block text-sm text-gray-500 mb-1">👤 Guide</label>
+              <select
+                value={tour.guide_id || ''}
+                onChange={(e) => handleUpdate({ guide_id: e.target.value || null })}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-white"
               >
-                Change
-              </button>
+                <option value="">Unassigned</option>
+                {guides.map((g) => (
+                  <option key={g.id} value={g.id}>
+                    {g.first_name} {g.last_name}
+                  </option>
+                ))}
+              </select>
             </div>
 
             {/* Driver */}
-            <div className="flex items-center justify-between">
-              <div className="flex-1">
-                <div className="flex items-center gap-2">
-                  <span className="text-xl">🚐</span>
-                  <div>
-                    <p className="font-medium">Driver: {tour.driver_name}</p>
-                  </div>
-                </div>
-              </div>
-              <button 
-                onClick={() => {/* Open driver change modal */}}
-                className="px-4 py-2 text-blue-600 text-sm font-medium"
+            <div>
+              <label className="block text-sm text-gray-500 mb-1">🚐 Driver</label>
+              <select
+                value={tour.driver_id || ''}
+                onChange={(e) => handleUpdate({ driver_id: e.target.value || null })}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-white"
               >
-                Change
-              </button>
+                <option value="">Unassigned</option>
+                {drivers.map((d) => (
+                  <option key={d.id} value={d.id}>
+                    {d.first_name} {d.last_name}
+                  </option>
+                ))}
+              </select>
             </div>
 
             {/* Vehicle */}
-            <div className="flex items-center justify-between">
-              <div className="flex-1">
-                <div className="flex items-center gap-2">
-                  <span className="text-xl">🚌</span>
-                  <div>
-                    <p className="font-medium">Vehicle: {tour.vehicle_display}</p>
-                  </div>
-                </div>
-              </div>
-              <button 
-                onClick={() => {/* Open vehicle change modal */}}
-                className="px-4 py-2 text-blue-600 text-sm font-medium"
+            <div>
+              <label className="block text-sm text-gray-500 mb-1">🚌 Vehicle</label>
+              <select
+                value={tour.vehicle_id || ''}
+                onChange={(e) => handleUpdate({ vehicle_id: e.target.value || null })}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-white"
               >
-                Change
-              </button>
+                <option value="">Unassigned</option>
+                {vehicles.map((v) => (
+                  <option key={v.id} value={v.id}>
+                    {v.plate_number} - {v.make} {v.model}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
         </div>
