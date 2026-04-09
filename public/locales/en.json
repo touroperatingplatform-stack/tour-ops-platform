@@ -231,6 +231,7 @@
   },
   "vehicles": {
     "title": "Vehicle Fleet",
+    "name": "Name",
     "plate": "Plate",
     "status": "Status",
     "capacity": "Capacity",

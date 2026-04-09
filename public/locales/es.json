@@ -43,7 +43,7 @@
     "users": "Usuarios",
     "demoData": "Datos Demo",
     "import": "Importar",
-    "settings": "Configuración"
+    "settings": "Configuraciï¿½n"
   },
   "common": {
     "loading": "Cargando...",
@@ -231,6 +231,7 @@
   },
   "vehicles": {
     "title": "Flotilla de VehÃ­culos",
+    "name": "Nombre",
     "plate": "Placa",
     "status": "Estado",
     "capacity": "Capacidad",
@@ -633,7 +634,7 @@
     "users": "Usuarios",
     "demoData": "Datos Demo",
     "import": "Importar",
-    "settings": "Configuración",
+    "settings": "Configuraciï¿½n",
     "checklists": "Listas",
     "templates": "Plantillas",
     "data": "Datos"
