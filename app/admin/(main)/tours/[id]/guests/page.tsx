@@ -49,14 +49,32 @@ export default function TourGuestsPage() {
 
     if (tour) setTourName(tour.name)
 
-    // Load reservations from manifest (same as guide app)
+    // Load reservations (ORDEN creates reservations, not reservation_manifest)
     const { data } = await supabase
-      .from('reservation_manifest')
-      .select('id, booking_reference, booking_platform, adult_pax, child_pax, infant_pax, total_pax, primary_contact_name, dietary_restrictions, accessibility_needs, special_requests, checked_in, no_show, pickup_location, hotel_name')
+      .from('reservations')
+      .select('id, coupon, client_name, adults, children, babies, total_pax, hotel_name, pickup_time, confirmation_number, agency, checked_in, no_show')
       .eq('tour_id', tourId)
-      .order('booking_reference')
+      .order('coupon')
 
-    setReservations(data || [])
+    const formatted = (data || []).map((r: any) => ({
+      id: r.id,
+      booking_reference: r.coupon || r.confirmation_number,
+      booking_platform: r.agency,
+      adult_pax: r.adults || 0,
+      child_pax: r.children || 0,
+      infant_pax: r.babies || 0,
+      total_pax: r.total_pax || ((r.adults || 0) + (r.children || 0) + (r.babies || 0)),
+      primary_contact_name: r.client_name,
+      dietary_restrictions: [],
+      accessibility_needs: [],
+      special_requests: null,
+      checked_in: r.checked_in || false,
+      no_show: r.no_show || false,
+      pickup_location: r.hotel_name,
+      hotel_name: r.hotel_name
+    }))
+
+    setReservations(formatted)
     setLoading(false)
   }
 

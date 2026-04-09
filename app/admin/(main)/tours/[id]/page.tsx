@@ -104,12 +104,12 @@ export default function TourDetailPage() {
 
     setChecklists(checklistsData || [])
 
-    // Load guest count
-    const { data: manifestData } = await supabase
-      .from('reservation_manifest')
-      .select('id')
+    // Load guest count from reservations table (ORDEN creates reservations)
+    const { data: reservationsData } = await supabase
+      .from('reservations')
+      .select('id, total_pax')
       .eq('tour_id', tourId)
-    setGuestCount(manifestData?.length || 0)
+    setGuestCount(reservationsData?.reduce((sum, r) => sum + (r.total_pax || 0), 0) || 0)
 
     // Load pickup stops count
     const { data: stopsData } = await supabase
