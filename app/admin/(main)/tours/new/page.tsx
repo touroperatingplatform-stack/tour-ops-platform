@@ -16,8 +16,10 @@ export default function CreateTourPage() {
   const [error, setError] = useState('')
   const [brands, setBrands] = useState<any[]>([])
   const [guides, setGuides] = useState<any[]>([])
+  const [drivers, setDrivers] = useState<any[]>([])
   const [vehicles, setVehicles] = useState<any[]>([])
   const [tourTypes, setTourTypes] = useState<any[]>([])
+  const [companyId, setCompanyId] = useState<string>('')
 
   const [formData, setFormData] = useState({
     name: '',
@@ -30,6 +32,7 @@ export default function CreateTourPage() {
     brandId: '',
     tourTypeId: '',
     guideId: '',
+    driverId: '',
     vehicleId: '',
   })
 
@@ -38,13 +41,57 @@ export default function CreateTourPage() {
   }, [])
 
   async function loadDropdownData() {
-    const { data: brandsData } = await supabase.from('brands').select('*').order('name')
-    const { data: guidesData } = await supabase.from('profiles').select('id, full_name').eq('role', 'guide').order('full_name')
-    const { data: vehiclesData } = await supabase.from('vehicles').select('id, plate_number, model').eq('status', 'available').order('plate_number')
-    const { data: tourTypesData } = await supabase.from('tour_types').select('id, name').eq('is_active', true).order('name')
+    // Get current user's company
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+    
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('company_id')
+      .eq('id', user.id)
+      .single()
+    
+    if (!profile?.company_id) return
+    setCompanyId(profile.company_id)
+
+    // Load data filtered by company
+    const { data: brandsData } = await supabase
+      .from('brands')
+      .select('*')
+      .eq('company_id', profile.company_id)
+      .order('name')
+    
+    const { data: guidesData } = await supabase
+      .from('profiles')
+      .select('id, full_name')
+      .eq('role', 'guide')
+      .eq('company_id', profile.company_id)
+      .order('full_name')
+    
+    const { data: driversData } = await supabase
+      .from('profiles')
+      .select('id, full_name')
+      .eq('role', 'driver')
+      .eq('company_id', profile.company_id)
+      .order('full_name')
+    
+    const { data: vehiclesData } = await supabase
+      .from('vehicles')
+      .select('id, name, plate_number, model')
+      .eq('company_id', profile.company_id)
+      .eq('status', 'available')
+      .order('plate_number')
+    
+    const { data: tourTypesData } = await supabase
+      .from('tour_types')
+      .select('id, name')
+      .eq('company_id', profile.company_id)
+      .eq('is_active', true)
+      .order('name')
     
     setBrands(brandsData || [])
     setGuides(guidesData || [])
+    setDrivers(driversData || [])
     setVehicles(vehiclesData || [])
     setTourTypes(tourTypesData || [])
     
@@ -71,7 +118,7 @@ export default function CreateTourPage() {
       const { data: tour, error: tourError } = await supabase
         .from('tours')
         .insert({
-          company_id: '6e046c69-93e2-48c9-a861-46c91fd2ae3b',
+          company_id: companyId,
           brand_id: formData.brandId,
           tour_type_id: formData.tourTypeId || null,
           name: formData.name,
@@ -82,10 +129,9 @@ export default function CreateTourPage() {
           pickup_location: formData.pickupLocation,
           description: formData.description,
           guide_id: formData.guideId || null,
+          driver_id: formData.driverId || null,
           vehicle_id: formData.vehicleId || null,
           status: 'scheduled',
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
         })
         .select('id')
         .single()
@@ -276,7 +322,7 @@ export default function CreateTourPage() {
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-3 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">{t('tours.assignedGuide')}</label>
                 <select
@@ -292,10 +338,34 @@ export default function CreateTourPage() {
                 </select>
               </div>
               <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Assigned Driver</label>
+                <select
+                  name="driverId"
+                  value={formData.driverId}
+                  onChange={handleChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">Select driver...</option>
+                  {drivers.map((driver) => (
+                    <option key={driver.id} value={driver.id}>{driver.full_name}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">{t('tours.assignedVehicle')}</label>
                 <select
                   name="vehicleId"
                   value={formData.vehicleId}
+                  onChange={handleChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">{t('tours.selectVehicle')}</option>
+                  {vehicles.map((v) => (
+                    <option key={v.id} value={v.id}>{v.name}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
                   onChange={handleChange}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
