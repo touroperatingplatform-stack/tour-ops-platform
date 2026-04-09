@@ -25,15 +25,27 @@ export default function TourDetailPage() {
   }, [tourId])
 
   async function loadData() {
-    // Load tour
+    // Load tour with guide and vehicle info
     const { data: tourData } = await supabase
       .from('tours')
-      .select('*')
+      .select(`
+        *,
+        guide:profiles!guide_id(first_name, last_name, full_name),
+        vehicle:vehicles!vehicle_id(plate_number, make, model)
+      `)
       .eq('id', tourId)
       .single()
 
     if (tourData) {
-      setTour(tourData)
+      setTour({
+        ...tourData,
+        guide_name: tourData.guide?.first_name 
+          ? `${tourData.guide.first_name} ${tourData.guide.last_name || ''}`.trim()
+          : tourData.guide?.full_name || 'Unassigned',
+        vehicle_display: tourData.vehicle 
+          ? `${tourData.vehicle.plate_number} - ${tourData.vehicle.make} ${tourData.vehicle.model}`
+          : 'Unassigned'
+      })
     }
 
     // Load guides
@@ -137,34 +149,16 @@ export default function TourDetailPage() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">{t('tours.guide')}</label>
-                  <select
-                    value={tour.guide_id || ''}
-                    onChange={(e) => handleUpdate({ guide_id: e.target.value || null })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-                  >
-                    <option value="">{t('tours.unassigned')}</option>
-                    {guides.map((g) => (
-                      <option key={g.id} value={g.id}>
-                        {g.first_name} {g.last_name}
-                      </option>
-                    ))}
-                  </select>
+                  <div className="px-4 py-2 border border-gray-300 rounded-lg bg-gray-50">
+                    {tour.guide_name || t('tours.unassigned')}
+                  </div>
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">{t('tours.vehicle')}</label>
-                  <select
-                    value={tour.vehicle_id || ''}
-                    onChange={(e) => handleUpdate({ vehicle_id: e.target.value || null })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-                  >
-                    <option value="">{t('tours.unassigned')}</option>
-                    {vehicles.map((v) => (
-                      <option key={v.id} value={v.id}>
-                        {v.plate_number} - {v.make} {v.model}
-                      </option>
-                    ))}
-                  </select>
+                  <div className="px-4 py-2 border border-gray-300 rounded-lg bg-gray-50">
+                    {tour.vehicle_display || t('tours.unassigned')}
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
