@@ -11,19 +11,17 @@ import { useTranslation } from '@/lib/i18n/useTranslation'
 interface Reservation {
   id: string
   booking_reference: string
-  booking_platform: string
   adult_pax: number
   child_pax: number
   infant_pax: number
   total_pax: number
-  primary_contact_name: string
-  dietary_restrictions: string[]
-  accessibility_needs: string[]
-  special_requests: string | null
+  hotel_name: string | null
+  room_number: string | null
+  pickup_time: string | null
+  agency_name: string | null
+  primary_contact_name: string | null
   checked_in: boolean
   no_show: boolean
-  pickup_location: string | null
-  hotel_name: string | null
 }
 
 export default function TourGuestsPage() {
@@ -141,20 +139,11 @@ export default function TourGuestsPage() {
                         {res.child_pax > 0 && ` • ${res.child_pax} children`}
                         {res.infant_pax > 0 && ` • ${res.infant_pax} infants`}
                       </p>
-                      {res.hotel_name && <p>🏨 {res.hotel_name}</p>}
-                      {res.pickup_location && <p>📍 {res.pickup_location}</p>}
+                      {res.hotel_name && <p>🏨 {res.hotel_name} {res.room_number && `#${res.room_number}`}</p>}
+                      {res.pickup_time && <p>🕐 {res.pickup_time}</p>}
+                      {res.agency_name && <p>🏢 {res.agency_name}</p>}
                       {res.booking_reference && <p>🎫 Ref: {res.booking_reference}</p>}
                     </div>
-                    {res.special_requests && (
-                      <p className="text-sm text-orange-600 mt-2 bg-orange-50 p-2 rounded">
-                        📝 {res.special_requests}
-                      </p>
-                    )}
-                    {res.dietary_restrictions?.length > 0 && (
-                      <p className="text-sm text-purple-600 mt-1">
-                        🍽️ {res.dietary_restrictions.join(', ')}
-                      </p>
-                    )}
                   </div>
                   <div>
                     {res.checked_in ? (
