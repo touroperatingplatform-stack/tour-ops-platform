@@ -113,9 +113,19 @@ export default function TourDetailPage() {
       .eq('role', 'driver')
       .eq('company_id', companyId)
 
-    const availableDrivers = (driversData || []).filter(d => 
+    let availableDrivers = (driversData || []).filter(d => 
       !usedDriverIds.includes(d.id) || d.id === tourData.driver_id
     )
+    
+    // Ensure current driver is in list even if filtered out
+    if (tourData.driver_id && !availableDrivers.find(d => d.id === tourData.driver_id)) {
+      const { data: currentDriver } = await supabase
+        .from('profiles')
+        .select('id, first_name, last_name, full_name')
+        .eq('id', tourData.driver_id)
+        .single()
+      if (currentDriver) availableDrivers.unshift(currentDriver)
+    }
     setDrivers(availableDrivers)
 
     // Load vehicles - exclude ones already assigned to other tours (unless assigned to this tour)
@@ -124,9 +134,19 @@ export default function TourDetailPage() {
       .select('id, name, plate_number, make, model')
       .eq('company_id', companyId)
 
-    const availableVehicles = (vehiclesData || []).filter(v => 
+    let availableVehicles = (vehiclesData || []).filter(v => 
       !usedVehicleIds.includes(v.id) || v.id === tourData.vehicle_id
     )
+    
+    // Ensure current vehicle is in list even if filtered out
+    if (tourData.vehicle_id && !availableVehicles.find(v => v.id === tourData.vehicle_id)) {
+      const { data: currentVehicle } = await supabase
+        .from('vehicles')
+        .select('id, name, plate_number, make, model')
+        .eq('id', tourData.vehicle_id)
+        .single()
+      if (currentVehicle) availableVehicles.unshift(currentVehicle)
+    }
     setVehicles(availableVehicles)
 
     // Load checklists for this company + system defaults
