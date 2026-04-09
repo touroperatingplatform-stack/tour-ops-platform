@@ -103,7 +103,7 @@ export default function SupervisorDashboard() {
       const guideIds = [...new Set(toursData.map(t => t.guide_id).filter(Boolean))]
       const { data: guidesData } = await supabase
         .from('profiles')
-        .select('id, first_name, last_name')
+        .select('id, first_name, last_name, full_name')
         .in('id', guideIds.length > 0 ? guideIds : ['00000000-0000-0000-0000-000000000000'])
 
       const guideMap = new Map(guidesData?.map((g: any) => [g.id, g]) || [])
