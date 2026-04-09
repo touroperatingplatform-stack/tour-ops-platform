@@ -25,6 +25,24 @@ export default function ExpensesPage() {
   }, [])
 
   async function loadExpenses() {
+    // Get current user's company
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+      setLoading(false)
+      return
+    }
+    
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('company_id')
+      .eq('id', user.id)
+      .single()
+    
+    if (!profile?.company_id) {
+      setLoading(false)
+      return
+    }
+
     const { data } = await supabase
       .from('tour_expenses')
       .select(`
@@ -32,6 +50,7 @@ export default function ExpensesPage() {
         guide:guide_id (first_name, last_name),
         tour:tour_id (name)
       `)
+      .eq('company_id', profile.company_id)
       .order('created_at', { ascending: false })
 
     if (data) {
