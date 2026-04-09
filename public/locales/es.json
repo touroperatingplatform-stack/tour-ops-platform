@@ -496,7 +496,9 @@
     "thu": "Jue",
     "fri": "Vie",
     "sat": "Sáb",
-    "sun": "Dom"
+    "sun": "Dom",
+    "early": "temprano",
+    "late": "tarde"
   },
   "checklists": {
     "title": "Listas de Verificación",

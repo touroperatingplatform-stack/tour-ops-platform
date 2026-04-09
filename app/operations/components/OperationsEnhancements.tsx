@@ -338,7 +338,7 @@ export function GuideCheckinStatus() {
     // Query specific guides referenced in check-ins (not random 100)
     const { data: guidesData } = await supabase
       .from('profiles')
-      .select('id, first_name, last_name, role')
+      .select('id, first_name, last_name, full_name, role')
       .in('id', guideIds.length > 0 ? guideIds : ['00000000-0000-0000-0000-000000000000'])
 
     const { data: toursData } = await supabase
@@ -346,7 +346,7 @@ export function GuideCheckinStatus() {
       .select('id, name')
       .in('id', tourIds.length > 0 ? tourIds : ['00000000-0000-0000-0000-000000000000'])
 
-    const guideMap = new Map(guidesData?.map((g: any) => [g.id, `${g.first_name} ${g.last_name}`]) || [])
+    const guideMap = new Map(guidesData?.map((g: any) => [g.id, g.first_name && g.last_name ? `${g.first_name} ${g.last_name}` : g.full_name || 'Unknown']) || [])
     const tourMap = new Map(toursData?.map((t: any) => [t.id, t.name]) || [])
 
     const formatted = checkinsData.map((c: any) => ({
