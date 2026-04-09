@@ -26,12 +26,13 @@ export default function TourDetailPage() {
   }, [tourId])
 
   async function loadData() {
-    // Load tour with guide and vehicle info
+    // Load tour with guide, driver and vehicle info
     const { data: tourData } = await supabase
       .from('tours')
       .select(`
         *,
         guide:profiles!guide_id(first_name, last_name, full_name),
+        driver:profiles!driver_id(first_name, last_name, full_name),
         vehicle:vehicles!vehicle_id(plate_number, make, model)
       `)
       .eq('id', tourId)
@@ -43,6 +44,9 @@ export default function TourDetailPage() {
         guide_name: tourData.guide?.first_name 
           ? `${tourData.guide.first_name} ${tourData.guide.last_name || ''}`.trim()
           : tourData.guide?.full_name || 'Unassigned',
+        driver_name: tourData.driver?.first_name
+          ? `${tourData.driver.first_name} ${tourData.driver.last_name || ''}`.trim()
+          : tourData.driver?.full_name || 'Unassigned',
         vehicle_display: tourData.vehicle 
           ? `${tourData.vehicle.plate_number} - ${tourData.vehicle.make} ${tourData.vehicle.model}`
           : 'Unassigned'
@@ -173,7 +177,7 @@ export default function TourDetailPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">{t('tours.driver')}</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Driver</label>
                   <select
                     value={tour.driver_id || ''}
                     onChange={(e) => handleUpdate({ driver_id: e.target.value || null })}
