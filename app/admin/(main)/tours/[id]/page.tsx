@@ -16,8 +16,6 @@ export default function TourDetailPage() {
   
   const [tour, setTour] = useState<any>(null)
   const [loading, setLoading] = useState(true)
-  const [guides, setGuides] = useState<any[]>([])
-  const [drivers, setDrivers] = useState<any[]>([])
   const [vehicles, setVehicles] = useState<any[]>([])
   const [saving, setSaving] = useState(false)
 
@@ -53,23 +51,7 @@ export default function TourDetailPage() {
       })
     }
 
-    // Load guides
-    const { data: guidesData } = await supabase
-      .from('profiles')
-      .select('id, first_name, last_name, full_name')
-      .eq('role', 'guide')
-
-    setGuides(guidesData || [])
-
-    // Load drivers
-    const { data: driversData } = await supabase
-      .from('profiles')
-      .select('id, first_name, last_name, full_name')
-      .eq('role', 'driver')
-
-    setDrivers(driversData || [])
-
-    // Load vehicles
+    // Load vehicles for assignment
     const { data: vehiclesData } = await supabase
       .from('vehicles')
       .select('id, plate_number, make, model')
@@ -160,34 +142,16 @@ export default function TourDetailPage() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">{t('tours.guide')}</label>
-                  <select
-                    value={tour.guide_id || ''}
-                    onChange={(e) => handleUpdate({ guide_id: e.target.value || null })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-                  >
-                    <option value="">{t('tours.unassigned')}</option>
-                    {guides.map((g) => (
-                      <option key={g.id} value={g.id}>
-                        {g.first_name ? `${g.first_name} ${g.last_name || ''}`.trim() : g.full_name || 'Unknown'}
-                      </option>
-                    ))}
-                  </select>
+                  <div className="px-4 py-2 border border-gray-300 rounded-lg bg-gray-50">
+                    {tour.guide_name || t('tours.unassigned')}
+                  </div>
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Driver</label>
-                  <select
-                    value={tour.driver_id || ''}
-                    onChange={(e) => handleUpdate({ driver_id: e.target.value || null })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-                  >
-                    <option value="">{t('tours.unassigned')}</option>
-                    {drivers.map((d) => (
-                      <option key={d.id} value={d.id}>
-                        {d.first_name ? `${d.first_name} ${d.last_name || ''}`.trim() : d.full_name || 'Unknown'}
-                      </option>
-                    ))}
-                  </select>
+                  <div className="px-4 py-2 border border-gray-300 rounded-lg bg-gray-50">
+                    {tour.driver_name || 'Unassigned'}
+                  </div>
                 </div>
 
                 <div>
