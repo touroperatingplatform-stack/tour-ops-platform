@@ -49,7 +49,9 @@ export default function ToursPage() {
     if (toursData) {
       const formatted = toursData.map((t: any) => ({
         ...t,
-        guide_name: t.guide ? `${t.guide.first_name} ${t.guide.last_name}` : 'Unassigned',
+        guide_name: t.guide?.first_name 
+          ? `${t.guide.first_name} ${t.guide.last_name || ''}` 
+          : t.guide?.full_name || 'Unassigned',
         vehicle_plate: t.vehicle?.plate_number || 'No vehicle'
       }))
 
