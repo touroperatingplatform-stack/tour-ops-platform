@@ -16,6 +16,8 @@ export default function TourDetailPage() {
   
   const [tour, setTour] = useState<any>(null)
   const [loading, setLoading] = useState(true)
+  const [guides, setGuides] = useState<any[]>([])
+  const [drivers, setDrivers] = useState<any[]>([])
   const [vehicles, setVehicles] = useState<any[]>([])
   const [saving, setSaving] = useState(false)
 
@@ -51,10 +53,41 @@ export default function TourDetailPage() {
       })
     }
 
-    // Load vehicles for assignment
+    // Get current user's company
+    const { data: { user } } = await supabase.auth.getUser()
+    let companyId = null
+    if (user) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('company_id')
+        .eq('id', user.id)
+        .single()
+      companyId = profile?.company_id
+    }
+
+    // Load guides for this company
+    const { data: guidesData } = await supabase
+      .from('profiles')
+      .select('id, first_name, last_name, full_name')
+      .eq('role', 'guide')
+      .eq('company_id', companyId)
+
+    setGuides(guidesData || [])
+
+    // Load drivers for this company
+    const { data: driversData } = await supabase
+      .from('profiles')
+      .select('id, first_name, last_name, full_name')
+      .eq('role', 'driver')
+      .eq('company_id', companyId)
+
+    setDrivers(driversData || [])
+
+    // Load vehicles for this company
     const { data: vehiclesData } = await supabase
       .from('vehicles')
       .select('id, plate_number, make, model')
+      .eq('company_id', companyId)
 
     setVehicles(vehiclesData || [])
     setLoading(false)
@@ -142,16 +175,34 @@ export default function TourDetailPage() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">{t('tours.guide')}</label>
-                  <div className="px-4 py-2 border border-gray-300 rounded-lg bg-gray-50">
-                    {tour.guide_name || t('tours.unassigned')}
-                  </div>
+                  <select
+                    value={tour.guide_id || ''}
+                    onChange={(e) => handleUpdate({ guide_id: e.target.value || null })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                  >
+                    <option value="">{t('tours.unassigned')}</option>
+                    {guides.map((g) => (
+                      <option key={g.id} value={g.id}>
+                        {g.first_name ? `${g.first_name} ${g.last_name || ''}`.trim() : g.full_name || 'Unknown'}
+                      </option>
+                    ))}
+                  </select>
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Driver</label>
-                  <div className="px-4 py-2 border border-gray-300 rounded-lg bg-gray-50">
-                    {tour.driver_name || 'Unassigned'}
-                  </div>
+                  <select
+                    value={tour.driver_id || ''}
+                    onChange={(e) => handleUpdate({ driver_id: e.target.value || null })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                  >
+                    <option value="">{t('tours.unassigned')}</option>
+                    {drivers.map((d) => (
+                      <option key={d.id} value={d.id}>
+                        {d.first_name ? `${d.first_name} ${d.last_name || ''}`.trim() : d.full_name || 'Unknown'}
+                      </option>
+                    ))}
+                  </select>
                 </div>
 
                 <div>
