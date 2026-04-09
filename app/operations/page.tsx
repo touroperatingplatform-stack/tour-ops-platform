@@ -54,16 +54,35 @@ export default function OperationsDashboard() {
   }, [])
 
   async function loadOperationsData() {
+    // Get current user's company
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+      setLoading(false)
+      return
+    }
+    
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('company_id')
+      .eq('id', user.id)
+      .single()
+    
+    if (!profile?.company_id) {
+      setLoading(false)
+      return
+    }
+
     // Query for both today and tomorrow to handle timezone mismatch
     // Tours created in Cancun (UTC-5) may be stored as next day in UTC
     const now = new Date()
     const today = getLocalDate()
     const tomorrow = new Date(new Date().getTime() + 86400000).toISOString().split('T')[0]
 
-    // Load tours without JOIN (RLS-friendly)
+    // Load tours filtered by company
     const { data: toursData } = await supabase
       .from('tours')
       .select('id, name, start_time, status, guest_count, guide_id, tour_date')
+      .eq('company_id', profile.company_id)
       .in('tour_date', [today, tomorrow])
       .neq('status', 'cancelled')
       .order('start_time')
@@ -75,10 +94,13 @@ export default function OperationsDashboard() {
       // Fetch guide names separately
       const { data: guidesData } = await supabase
         .from('profiles')
-        .select('id, first_name, last_name')
+        .select('id, first_name, last_name, full_name')
         .in('id', guideIds.length > 0 ? guideIds : ['00000000-0000-0000-0000-000000000000'])
       
-      const guideMap = new Map(guidesData?.map((g: any) => [g.id, { first_name: g.first_name, last_name: g.last_name }]) || [])
+      const guideMap = new Map(guidesData?.map((g: any) => [g.id, { 
+        first_name: g.first_name || g.full_name?.split(' ')[0] || 'Unknown', 
+        last_name: g.last_name || g.full_name?.split(' ').slice(1).join(' ') || '' 
+      }]) || [])
       
       const formattedTours = toursData.map((t: any) => ({
         ...t,
@@ -131,10 +153,11 @@ export default function OperationsDashboard() {
       setTimeline(timelineEvents)
     }
 
-    // Load vehicles
+    // Load vehicles filtered by company
     const { data: vehiclesData } = await supabase
       .from('vehicles')
       .select('id, model, plate_number, status, capacity')
+      .eq('company_id', profile.company_id)
 
     if (vehiclesData) {
       const formattedVehicles = vehiclesData.map((v: any) => ({
