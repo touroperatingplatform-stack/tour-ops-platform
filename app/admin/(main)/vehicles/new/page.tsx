@@ -77,7 +77,7 @@ export default function NewVehiclePage() {
           <div className="max-w-md mx-auto space-y-4">
             {/* Name */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Vehicle Name *</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">{t('vehicles.name')} *</label>
               <input
                 type="text"
                 required
