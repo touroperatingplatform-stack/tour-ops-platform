@@ -203,8 +203,8 @@ export default function AdminGuestsPage() {
                 </div>
                 
                 <div className="flex items-center gap-4 text-sm text-gray-600">
-                  <span>🏨 {guest.hotel}</span>
-                  <span>{t('guests.room')} {guest.room_number}</span>
+                  <span>🏨 {guest.hotel.split(' ').slice(0, 4).join(' ')}</span>
+                  {guest.room_number && <span>{t('guests.room')} {guest.room_number}</span>}
                 </div>
                 
                 <div className="mt-2 text-sm text-gray-600">
