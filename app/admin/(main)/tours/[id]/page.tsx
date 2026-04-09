@@ -17,6 +17,7 @@ export default function TourDetailPage() {
   const [tour, setTour] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [guides, setGuides] = useState<any[]>([])
+  const [drivers, setDrivers] = useState<any[]>([])
   const [vehicles, setVehicles] = useState<any[]>([])
   const [saving, setSaving] = useState(false)
 
@@ -51,17 +52,25 @@ export default function TourDetailPage() {
     // Load guides
     const { data: guidesData } = await supabase
       .from('profiles')
-      .select('id, first_name, last_name')
+      .select('id, first_name, last_name, full_name')
       .eq('role', 'guide')
       .eq('is_active', true)
 
     setGuides(guidesData || [])
 
+    // Load drivers
+    const { data: driversData } = await supabase
+      .from('profiles')
+      .select('id, first_name, last_name, full_name')
+      .eq('role', 'driver')
+      .eq('is_active', true)
+
+    setDrivers(driversData || [])
+
     // Load vehicles
     const { data: vehiclesData } = await supabase
       .from('vehicles')
       .select('id, plate_number, make, model')
-      .eq('status', 'available')
 
     setVehicles(vehiclesData || [])
     setLoading(false)
@@ -149,16 +158,50 @@ export default function TourDetailPage() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">{t('tours.guide')}</label>
-                  <div className="px-4 py-2 border border-gray-300 rounded-lg bg-gray-50">
-                    {tour.guide_name || t('tours.unassigned')}
-                  </div>
+                  <select
+                    value={tour.guide_id || ''}
+                    onChange={(e) => handleUpdate({ guide_id: e.target.value || null })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                  >
+                    <option value="">{t('tours.unassigned')}</option>
+                    {guides.map((g) => (
+                      <option key={g.id} value={g.id}>
+                        {g.first_name ? `${g.first_name} ${g.last_name || ''}`.trim() : g.full_name || 'Unknown'}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{t('tours.driver')}</label>
+                  <select
+                    value={tour.driver_id || ''}
+                    onChange={(e) => handleUpdate({ driver_id: e.target.value || null })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                  >
+                    <option value="">{t('tours.unassigned')}</option>
+                    {drivers.map((d) => (
+                      <option key={d.id} value={d.id}>
+                        {d.first_name ? `${d.first_name} ${d.last_name || ''}`.trim() : d.full_name || 'Unknown'}
+                      </option>
+                    ))}
+                  </select>
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">{t('tours.vehicle')}</label>
-                  <div className="px-4 py-2 border border-gray-300 rounded-lg bg-gray-50">
-                    {tour.vehicle_display || t('tours.unassigned')}
-                  </div>
+                  <select
+                    value={tour.vehicle_id || ''}
+                    onChange={(e) => handleUpdate({ vehicle_id: e.target.value || null })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                  >
+                    <option value="">{t('tours.unassigned')}</option>
+                    {vehicles.map((v) => (
+                      <option key={v.id} value={v.id}>
+                        {v.plate_number} - {v.make} {v.model}
+                      </option>
+                    ))}
+                  </select>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
