@@ -43,15 +43,16 @@ export default function TourDetailPage() {
     if (tourData) {
       setTour({
         ...tourData,
+        guide_id: tourData.guide_id,
+        driver_id: tourData.driver_id,
+        vehicle_id: tourData.vehicle_id,
         guide_name: tourData.guide?.first_name 
           ? `${tourData.guide.first_name} ${tourData.guide.last_name || ''}`.trim()
           : tourData.guide?.full_name || 'Unassigned',
         driver_name: tourData.driver?.first_name
           ? `${tourData.driver.first_name} ${tourData.driver.last_name || ''}`.trim()
           : tourData.driver?.full_name || 'Unassigned',
-        vehicle_display: tourData.vehicle 
-          ? `${tourData.vehicle.name} (${tourData.vehicle.plate_number})`
-          : 'Unassigned'
+        vehicle_display: tourData.vehicle?.name || 'Unassigned'
       })
     }
 
@@ -217,7 +218,7 @@ export default function TourDetailPage() {
                 <option value="">Unassigned</option>
                 {vehicles.map((v) => (
                   <option key={v.id} value={v.id}>
-                    {v.plate_number} - {v.make} {v.model}
+                    {v.name}
                   </option>
                 ))}
               </select>
