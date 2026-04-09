@@ -282,6 +282,9 @@ export default function TourDetailPage() {
           >
             ✏️ Edit Tour
           </Link>
+          <div className="flex-1 py-3 bg-blue-100 text-blue-700 rounded-xl font-medium text-center">
+            📋 {tour.checklist_id && checklists.find(c => c.id === tour.checklist_id)?.name || 'No Checklist'}
+          </div>
         </div>
       </div>
     </div>
