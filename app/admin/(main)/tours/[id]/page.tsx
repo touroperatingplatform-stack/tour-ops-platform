@@ -39,9 +39,6 @@ export default function TourDetailPage() {
       .single()
 
     if (tourData) {
-      console.log('Tour data:', tourData)
-      console.log('Guide ID:', tourData.guide_id, 'Guide:', tourData.guide)
-      console.log('Driver ID:', tourData.driver_id, 'Driver:', tourData.driver)
       setTour({
         ...tourData,
         guide_name: tourData.guide?.first_name 
@@ -61,7 +58,6 @@ export default function TourDetailPage() {
       .from('profiles')
       .select('id, first_name, last_name, full_name')
       .eq('role', 'guide')
-      .eq('is_active', true)
 
     setGuides(guidesData || [])
 
@@ -70,7 +66,6 @@ export default function TourDetailPage() {
       .from('profiles')
       .select('id, first_name, last_name, full_name')
       .eq('role', 'driver')
-      .eq('is_active', true)
 
     setDrivers(driversData || [])
 
