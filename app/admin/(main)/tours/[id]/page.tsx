@@ -179,7 +179,6 @@ export default function TourDetailPage() {
                   <span className="text-xl">👤</span>
                   <div>
                     <p className="font-medium">Guide: {tour.guide_name}</p>
-                    <p className="text-sm text-green-600">✅ Acknowledged</p>
                   </div>
                 </div>
               </div>
@@ -198,7 +197,6 @@ export default function TourDetailPage() {
                   <span className="text-xl">🚐</span>
                   <div>
                     <p className="font-medium">Driver: {tour.driver_name}</p>
-                    <p className="text-sm text-yellow-600">⏳ Pending</p>
                   </div>
                 </div>
               </div>
