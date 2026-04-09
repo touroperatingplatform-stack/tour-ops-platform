@@ -85,7 +85,6 @@ export default function CreateTourPage() {
     const { data: tourTypesData } = await supabase
       .from('tour_types')
       .select('id, name')
-      .eq('company_id', profile.company_id)
       .eq('is_active', true)
       .order('name')
     
