@@ -103,9 +103,9 @@ export default function AdminGuestsPage() {
     
     setGuests(allGuests)
     setStats({
-      total: allGuests.length,
-      checkedIn: allGuests.filter(g => g.checked_in).length,
-      noShow: allGuests.filter(g => g.no_show).length
+      total: allGuests.reduce((sum, g) => sum + g.adults + g.children, 0),
+      checkedIn: allGuests.filter(g => g.checked_in).reduce((sum, g) => sum + g.adults + g.children, 0),
+      noShow: allGuests.filter(g => g.no_show).reduce((sum, g) => sum + g.adults + g.children, 0)
     })
     
     setLoading(false)
