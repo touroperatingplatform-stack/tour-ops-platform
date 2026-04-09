@@ -39,6 +39,9 @@ export default function TourDetailPage() {
       .single()
 
     if (tourData) {
+      console.log('Tour data:', tourData)
+      console.log('Guide ID:', tourData.guide_id, 'Guide:', tourData.guide)
+      console.log('Driver ID:', tourData.driver_id, 'Driver:', tourData.driver)
       setTour({
         ...tourData,
         guide_name: tourData.guide?.first_name 
