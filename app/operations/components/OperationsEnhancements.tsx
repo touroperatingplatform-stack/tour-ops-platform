@@ -84,6 +84,8 @@ export function IncidentAlerts({ onIncidentUpdate }: { onIncidentUpdate?: () => 
       companyTourIds = toursData?.map((t: any) => t.id) || []
     }
 
+    console.log('Loading incidents for company:', companyId, 'tour count:', companyTourIds.length)
+
     const { data: incidentsData, error } = await supabase
       .from('incidents')
       .select('id, type, severity, description, status, created_at, acknowledged_at, assigned_to, escalation_level, tour_id, guide_id')
