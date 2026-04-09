@@ -7,6 +7,7 @@ interface Guide {
   id: string
   first_name: string
   last_name: string
+  full_name: string
   email: string
   phone: string
   status: 'active' | 'inactive' | 'on_tour'
@@ -72,20 +73,26 @@ export default function GuidesPage() {
 
     const { data } = await supabase
       .from('profiles')
-      .select('id, first_name, last_name, email, phone, role, status')
+      .select('id, first_name, last_name, full_name, email, phone, role, status')
       .eq('company_id', profile.company_id)
       .eq('role', 'guide')
       .order('last_name')
 
     if (data) {
-      const formattedGuides: Guide[] = data.map((g: any) => ({
-        id: g.id,
-        first_name: g.first_name,
-        last_name: g.last_name,
-        email: g.email || '-',
-        phone: g.phone || '-',
-        status: g.status || 'active'
-      }))
+      const formattedGuides: Guide[] = data.map((g: any) => {
+        const displayName = g.first_name && g.last_name 
+          ? `${g.first_name} ${g.last_name}` 
+          : g.full_name || 'Unknown'
+        return {
+          id: g.id,
+          first_name: g.first_name || displayName.split(' ')[0],
+          last_name: g.last_name || displayName.split(' ').slice(1).join(' '),
+          full_name: displayName,
+          email: g.email || '-',
+          phone: g.phone || '-',
+          status: g.status || 'active'
+        }
+      })
       setGuides(formattedGuides)
     }
     setLoading(false)
