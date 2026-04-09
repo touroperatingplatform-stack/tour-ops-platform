@@ -16,6 +16,7 @@ interface Guest {
   room_number: string
   adults: number
   children: number
+  infants: number
   checked_in: boolean
   no_show: boolean
   tour_name: string
@@ -65,7 +66,7 @@ export default function AdminGuestsPage() {
     const { data: reservationsData } = await supabase
       .from('reservation_manifest')
       .select(`
-        id, primary_contact_name, hotel_name, room_number, adult_pax, child_pax, checked_in, no_show,
+        id, primary_contact_name, hotel_name, room_number, adult_pax, child_pax, infant_pax, checked_in, no_show,
         tour:tours(name, tour_date)
       `)
       .eq('tour.company_id', companyId)
@@ -89,6 +90,7 @@ export default function AdminGuestsPage() {
       room_number: r.room_number || '',
       adults: r.adult_pax || 0,
       children: r.child_pax || 0,
+      infants: r.infant_pax || 0,
       checked_in: r.checked_in || false,
       no_show: r.no_show || false,
       tour_name: r.tour?.name || 'Unknown',
@@ -103,9 +105,9 @@ export default function AdminGuestsPage() {
     
     setGuests(allGuests)
     setStats({
-      total: allGuests.reduce((sum, g) => sum + g.adults + g.children, 0),
-      checkedIn: allGuests.filter(g => g.checked_in).reduce((sum, g) => sum + g.adults + g.children, 0),
-      noShow: allGuests.filter(g => g.no_show).reduce((sum, g) => sum + g.adults + g.children, 0)
+      total: allGuests.reduce((sum, g) => sum + g.adults + g.children + (g.infants || 0), 0),
+      checkedIn: allGuests.filter(g => g.checked_in).reduce((sum, g) => sum + g.adults + g.children + (g.infants || 0), 0),
+      noShow: allGuests.filter(g => g.no_show).reduce((sum, g) => sum + g.adults + g.children + (g.infants || 0), 0)
     })
     
     setLoading(false)
