@@ -123,25 +123,8 @@ export default function SupervisorDashboard() {
       
       setTours(formattedTours)
       
-      // Get actual guest counts from reservation_manifest
-      const { data: manifestData } = await supabase
-        .from('reservation_manifest')
-        .select('tour_id, total_pax')
-        .in('tour_id', formattedTours.map(t => t.id))
-      
-      const guestCountMap = new Map()
-      if (manifestData) {
-        manifestData.forEach((row: any) => {
-          const current = guestCountMap.get(row.tour_id) || 0
-          guestCountMap.set(row.tour_id, current + (row.total_pax || 0))
-        })
-      }
-      
-      // Calculate total guests from manifest
-      let totalGuests = 0
-      guestCountMap.forEach((count) => {
-        totalGuests += count
-      })
+      // Use tours.guest_count directly (matches tours list)
+      const totalGuests = formattedTours.reduce((sum, t) => sum + (t.guest_count || 0), 0)
       
       const inProgress = formattedTours.filter(t => t.status === 'in_progress').length
       const scheduled = formattedTours.filter(t => t.status === 'scheduled').length
