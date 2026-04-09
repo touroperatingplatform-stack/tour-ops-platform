@@ -110,9 +110,18 @@ export default function AdminDashboard() {
       .eq('tour_date', today)
       .neq('status', 'cancelled')
 
+    // Get incidents only for this company's tours
+    const { data: companyTours } = await supabase
+      .from('tours')
+      .select('id')
+      .eq('company_id', cid)
+    
+    const tourIds = companyTours?.map((t: any) => t.id) || []
+    
     const { data: incidents } = await supabase
       .from('incidents')
       .select('id, type, severity, tour_id, created_at, status')
+      .in('tour_id', tourIds.length > 0 ? tourIds : ['00000000-0000-0000-0000-000000000000'])
       .order('created_at', { ascending: false })
 
     const { count: guidesCount } = await supabase
