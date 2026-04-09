@@ -95,11 +95,11 @@ export default function TourDetailPage() {
 
     setVehicles(vehiclesData || [])
 
-    // Load checklists for this company
+    // Load checklists for this company + system defaults
     const { data: checklistsData } = await supabase
       .from('checklists')
-      .select('id, name')
-      .eq('company_id', companyId)
+      .select('id, name, company_id')
+      .or(`company_id.eq.${companyId},company_id.is.null`)
       .eq('is_active', true)
 
     setChecklists(checklistsData || [])
@@ -245,7 +245,7 @@ export default function TourDetailPage() {
                 <option value="">No checklist assigned</option>
                 {checklists.map((c) => (
                   <option key={c.id} value={c.id}>
-                    {c.name}
+                    {c.name} {!c.company_id ? '(System)' : ''}
                   </option>
                 ))}
               </select>
@@ -257,7 +257,7 @@ export default function TourDetailPage() {
         <div className="bg-white rounded-xl border border-gray-200 p-4">
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-semibold text-gray-900">Guest Manifest ({guestCount})</h2>
-            <Link href={`/admin/tours/${tourId}`} className="text-blue-600 text-sm font-medium">
+            <Link href={`/admin/tours/${tourId}/guests`} className="text-blue-600 text-sm font-medium">
               View full list →
             </Link>
           </div>
