@@ -41,21 +41,24 @@ export default function TourDetailPage() {
       .eq('id', tourId)
       .single()
 
-    if (tourData) {
-      setTour({
-        ...tourData,
-        guide_id: tourData.guide_id,
-        driver_id: tourData.driver_id,
-        vehicle_id: tourData.vehicle_id,
-        guide_name: tourData.guide?.first_name 
-          ? `${tourData.guide.first_name} ${tourData.guide.last_name || ''}`.trim()
-          : tourData.guide?.full_name || 'Unassigned',
-        driver_name: tourData.driver?.first_name
-          ? `${tourData.driver.first_name} ${tourData.driver.last_name || ''}`.trim()
-          : tourData.driver?.full_name || 'Unassigned',
-        vehicle_display: tourData.vehicle?.name || 'Unassigned'
-      })
+    if (!tourData) {
+      setLoading(false)
+      return
     }
+
+    setTour({
+      ...tourData,
+      guide_id: tourData.guide_id,
+      driver_id: tourData.driver_id,
+      vehicle_id: tourData.vehicle_id,
+      guide_name: tourData.guide?.first_name 
+        ? `${tourData.guide.first_name} ${tourData.guide.last_name || ''}`.trim()
+        : tourData.guide?.full_name || 'Unassigned',
+      driver_name: tourData.driver?.first_name
+        ? `${tourData.driver.first_name} ${tourData.driver.last_name || ''}`.trim()
+        : tourData.driver?.full_name || 'Unassigned',
+      vehicle_display: tourData.vehicle?.name || 'Unassigned'
+    })
 
     // Get current user's company
     const { data: { user } } = await supabase.auth.getUser()
@@ -69,31 +72,52 @@ export default function TourDetailPage() {
       companyId = profile?.company_id
     }
 
-    // Load guides for this company
+    // Find staff/vehicles already assigned to other tours on the same date
+    const { data: otherTours } = await supabase
+      .from('tours')
+      .select('guide_id, driver_id, vehicle_id')
+      .eq('company_id', companyId)
+      .eq('tour_date', tourData.tour_date)
+      .neq('id', tourId)
+
+    const usedGuideIds = (otherTours || []).map(t => t.guide_id).filter(Boolean)
+    const usedDriverIds = (otherTours || []).map(t => t.driver_id).filter(Boolean)
+    const usedVehicleIds = (otherTours || []).map(t => t.vehicle_id).filter(Boolean)
+
+    // Load guides - exclude ones already assigned to other tours (unless assigned to this tour)
     const { data: guidesData } = await supabase
       .from('profiles')
       .select('id, first_name, last_name, full_name')
       .eq('role', 'guide')
       .eq('company_id', companyId)
 
-    setGuides(guidesData || [])
+    const availableGuides = (guidesData || []).filter(g => 
+      !usedGuideIds.includes(g.id) || g.id === tourData.guide_id
+    )
+    setGuides(availableGuides)
 
-    // Load drivers for this company
+    // Load drivers - exclude ones already assigned to other tours (unless assigned to this tour)
     const { data: driversData } = await supabase
       .from('profiles')
       .select('id, first_name, last_name, full_name')
       .eq('role', 'driver')
       .eq('company_id', companyId)
 
-    setDrivers(driversData || [])
+    const availableDrivers = (driversData || []).filter(d => 
+      !usedDriverIds.includes(d.id) || d.id === tourData.driver_id
+    )
+    setDrivers(availableDrivers)
 
-    // Load vehicles for this company
+    // Load vehicles - exclude ones already assigned to other tours (unless assigned to this tour)
     const { data: vehiclesData } = await supabase
       .from('vehicles')
       .select('id, name, plate_number, make, model')
       .eq('company_id', companyId)
 
-    setVehicles(vehiclesData || [])
+    const availableVehicles = (vehiclesData || []).filter(v => 
+      !usedVehicleIds.includes(v.id) || v.id === tourData.vehicle_id
+    )
+    setVehicles(availableVehicles)
 
     // Load checklists for this company + system defaults
     const { data: checklistsData } = await supabase
