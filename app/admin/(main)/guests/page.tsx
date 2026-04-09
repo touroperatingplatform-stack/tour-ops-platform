@@ -20,6 +20,7 @@ interface Guest {
   no_show: boolean
   tour_name: string
   tour_date: string
+  source: 'guests' | 'reservation'
 }
 
 export default function AdminGuestsPage() {
@@ -38,8 +39,20 @@ export default function AdminGuestsPage() {
     setLoading(true)
     const today = getLocalDate()
     
-    // Build base query
-    let query = supabase
+    // Get user's company
+    const { data: { user } } = await supabase.auth.getUser()
+    let companyId = null
+    if (user) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('company_id')
+        .eq('id', user.id)
+        .single()
+      companyId = profile?.company_id
+    }
+    
+    // Load from guests table
+    const { data: guestsData } = await supabase
       .from('guests')
       .select(`
         id, first_name, last_name, hotel, room_number, adults, children, checked_in, no_show,
@@ -48,29 +61,53 @@ export default function AdminGuestsPage() {
       .order('created_at', { ascending: false })
       .limit(100)
     
-    // Execute query
-    const { data, error } = await query
-
-    if (error) {
-      console.error('Error loading guests:', error)
-      setLoading(false)
-      return
-    }
-
-    if (data) {
-      const formatted = data.map((g: any) => ({
-        ...g,
-        tour_name: g.tour?.name || 'Unknown',
-        tour_date: g.tour?.tour_date
-      }))
-      
-      setGuests(formatted)
-      setStats({
-        total: formatted.length,
-        checkedIn: formatted.filter((g: Guest) => g.checked_in).length,
-        noShow: formatted.filter((g: Guest) => g.no_show).length
-      })
-    }
+    // Load from reservation_manifest (ordtest data)
+    const { data: reservationsData } = await supabase
+      .from('reservation_manifest')
+      .select(`
+        id, primary_contact_name, hotel_name, room_number, adult_pax, child_pax, checked_in, no_show,
+        tour:tours(name, tour_date)
+      `)
+      .eq('tour.company_id', companyId)
+      .order('created_at', { ascending: false })
+      .limit(100)
+    
+    // Format guests
+    const formattedGuests = (guestsData || []).map((g: any) => ({
+      ...g,
+      tour_name: g.tour?.name || 'Unknown',
+      tour_date: g.tour?.tour_date,
+      source: 'guests'
+    }))
+    
+    // Format reservations
+    const formattedReservations = (reservationsData || []).map((r: any) => ({
+      id: r.id,
+      first_name: r.primary_contact_name?.split(' ')[0] || '',
+      last_name: r.primary_contact_name?.split(' ').slice(1).join(' ') || '',
+      hotel: r.hotel_name || '',
+      room_number: r.room_number || '',
+      adults: r.adult_pax || 0,
+      children: r.child_pax || 0,
+      checked_in: r.checked_in || false,
+      no_show: r.no_show || false,
+      tour_name: r.tour?.name || 'Unknown',
+      tour_date: r.tour?.tour_date,
+      source: 'reservation'
+    }))
+    
+    // Combine
+    const allGuests = [...formattedGuests, ...formattedReservations]
+      .sort((a, b) => new Date(b.tour_date || '').getTime() - new Date(a.tour_date || '').getTime())
+      .slice(0, 100)
+    
+    setGuests(allGuests)
+    setStats({
+      total: allGuests.length,
+      checkedIn: allGuests.filter(g => g.checked_in).length,
+      noShow: allGuests.filter(g => g.no_show).length
+    })
+    
     setLoading(false)
   }
 
