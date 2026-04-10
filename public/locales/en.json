@@ -274,7 +274,12 @@
     "driver": "Driver",
     "vehicle": "Vehicle",
     "assign": "Assign",
-    "unassigned": "Unassigned"
+    "unassigned": "Unassigned",
+    "available": "Available",
+    "expires": "Expires",
+    "notProvided": "Not provided",
+    "toursToday": "tours today",
+    "today": "today"
   },
   "vehicles": {
     "title": "Vehicle Fleet",

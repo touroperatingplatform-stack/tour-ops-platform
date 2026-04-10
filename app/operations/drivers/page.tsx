@@ -368,11 +368,11 @@ export default function DriversManagement() {
                             </p>
                             {driver.assigned_tours_count ? (
                               <p className="text-xs text-blue-600 font-medium">
-                                🚌 {driver.assigned_tours_count} tour{(driver.assigned_tours_count || 0) > 1 ? 's' : ''} hoy
+                                🚌 {driver.assigned_tours_count} {t('drivers.toursToday') || 'tours'} {t('drivers.today') || 'today'}
                               </p>
                             ) : (
                               <p className="text-xs text-green-600 font-medium">
-                                ✓ Disponible
+                                ✓ {t('drivers.available') || 'Available'}
                               </p>
                             )}
                           </div>
@@ -394,7 +394,7 @@ export default function DriversManagement() {
                                   ? 'text-red-600'
                                   : 'text-gray-500'
                               }`}>
-                                Expires: {new Date(driver.license_expiry).toLocaleDateString()}
+                                {t('drivers.expires') || 'Expires'}: {new Date(driver.license_expiry).toLocaleDateString()}
                               </p>
                             )}
                           </div>

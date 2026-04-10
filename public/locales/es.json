@@ -169,7 +169,12 @@
     "driver": "Chofer",
     "vehicle": "Vehículo",
     "assign": "Asignar",
-    "unassigned": "No Asignado"
+    "unassigned": "No Asignado",
+    "available": "Disponible",
+    "expires": "Vence",
+    "notProvided": "No proporcionado",
+    "toursToday": "tours hoy",
+    "today": "hoy"
   },
   "tour": {
     "scheduled": "Programado",
