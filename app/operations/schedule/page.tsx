@@ -5,7 +5,6 @@ export const dynamic = 'force-dynamic'
 import { useEffect, useState, useRef } from 'react'
 import { supabase } from '@/lib/supabase/client'
 import RoleGuard from '@/lib/auth/RoleGuard'
-import AdminNav from '@/components/navigation/AdminNav'
 import { useTranslation } from '@/lib/i18n/useTranslation'
 import { getLocalDate } from '@/lib/timezone'
 import TourDetailsModal from '../components/TourDetailsModal'
@@ -327,7 +326,6 @@ export default function OperationsSchedulePage() {
 
   return (
     <RoleGuard requiredRole="operations">
-      <AdminNav />
       <div className="min-h-screen bg-gray-50 flex">
         {/* Sidebar */}
         {sidebarOpen && (
