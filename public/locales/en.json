@@ -170,6 +170,8 @@
     "delayed": "Delayed",
     "timeline": "Timeline",
     "active": "Active",
+    "tour": "Tour",
+    "guide": "Guide",
     "activeIncidents": "Active Incidents",
     "noActiveIncidents": "No active incidents",
     "allToursNormal": "All tours operating normally",
