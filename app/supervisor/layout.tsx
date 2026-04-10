@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase/client'
+import TopNav from '../operations/components/TopNav'
 
 const navItems = [
   { href: '/supervisor', label: 'Dashboard', icon: '📊' },
@@ -60,6 +61,7 @@ export default function SupervisorLayout({ children }: { children: React.ReactNo
   return (
     <div className="h-screen flex flex-col bg-gray-50 overflow-hidden">
       {/* Fixed Top Navigation */}
+      <TopNav />
 
       {/* Scrollable Content */}
       <main className="flex-1 overflow-hidden border-4 border-transparent">
