@@ -139,6 +139,15 @@
     "in_progress": "En Progreso",
     "completed": "Completado"
   },
+  "schedule": {
+    "title": "Horarios",
+    "date": "Fecha",
+    "tour": "Tour",
+    "guide": "Guía",
+    "driver": "Chofer",
+    "vehicle": "Vehículo",
+    "guests": "Huéspedes"
+  },
   "tours": {
     "allGuests": "Todos los Huéspedes",
     "todayGuests": "Huéspedes de Hoy",
