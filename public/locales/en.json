@@ -96,6 +96,7 @@
     "type": "Type",
     "severity": "Severity",
     "description": "Description",
+    "name": "Name",
     "created": "Created",
     "updated": "Updated",
     "assignedTo": "Assigned To",

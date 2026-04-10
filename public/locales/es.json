@@ -65,7 +65,8 @@
     "assignedTo": "Asignado A",
     "unassigned": "No Asignado",
     "created": "Creado",
-    "inactive": "Inactivo"
+    "inactive": "Inactivo",
+    "active": "Activo"
   },
   "dashboard": {
     "title": "Dashboard de Operaciones",
