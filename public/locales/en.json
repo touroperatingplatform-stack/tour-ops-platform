@@ -267,6 +267,8 @@
     "createDriver": "Create Driver",
     "emailNote": "Note: To change email/password, the driver must update via their own account",
     "assignDrivers": "Assign Drivers",
+    "assignments": "Assignments",
+    "noToursToday": "No tours today",
     "tour": "Tour",
     "driver": "Driver",
     "vehicle": "Vehicle",

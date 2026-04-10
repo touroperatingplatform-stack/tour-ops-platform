@@ -162,6 +162,8 @@
     "createDriver": "Crear Chofer",
     "emailNote": "Nota: Para cambiar email/contraseña, el chofer debe actualizarlo desde su propia cuenta",
     "assignDrivers": "Asignar Choferes",
+    "assignments": "Asignaciones",
+    "noToursToday": "No hay tours hoy",
     "driver": "Chofer",
     "vehicle": "Vehículo",
     "assign": "Asignar",
