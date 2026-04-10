@@ -160,7 +160,10 @@
     "resolveIncident": "Resolve Incident",
     "resolutionNotesRequired": "Resolution notes are required",
     "assignedSuccessfully": "Incident assigned successfully",
-    "resolvedSuccessfully": "Incident resolved successfully"
+    "resolvedSuccessfully": "Incident resolved successfully",
+    "myIncidents": "My Incidents",
+    "assignTo": "Assign To",
+    "selectStaff": "Select Staff"
   },
   "dashboard": {
     "title": "Operations Dashboard",
