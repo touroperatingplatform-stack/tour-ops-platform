@@ -153,11 +153,20 @@
     "late": "tarde",
     "timeline": "Línea de Tiempo",
     "active": "Activo",
+    "tour": "Tour",
+    "guide": "Guía"
+  },
+  "tour": {
+    "scheduled": "Programado",
+    "in_progress": "En Progreso",
+    "completed": "Completado"
+  },
+  "timeline": {
     "scheduled": "Programado",
     "departed": "Salió",
     "completed": "Completado"
   },
-  "guests": {
+  "tours": {
     "allGuests": "Todos los Huéspedes",
     "todayGuests": "Huéspedes de Hoy",
     "showAll": "Ver Todos",
@@ -237,6 +246,7 @@
   },
   "vehicles": {
     "title": "Flotilla de Vehículos",
+    "vehicle": "Vehículo",
     "name": "Nombre",
     "plate": "Placa",
     "status": "Estado",
