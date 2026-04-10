@@ -68,6 +68,15 @@
     "inactive": "Inactivo",
     "active": "Activo"
   },
+  "time": {
+    "today": "Hoy",
+    "yesterday": "Ayer",
+    "lastWeek": "Últimos 7 Días",
+    "thisWeek": "Esta Semana",
+    "tomorrow": "Mañana",
+    "thisMonth": "Este Mes",
+    "lastMonth": "Mes Pasado"
+  },
   "dashboard": {
     "title": "Dashboard de Operaciones",
     "activeTours": "Tours Activos",
