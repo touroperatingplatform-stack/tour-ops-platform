@@ -200,7 +200,8 @@
   "tour": {
     "scheduled": "Scheduled",
     "in_progress": "In Progress",
-    "completed": "Completed"
+    "completed": "Completed",
+    "delayed": "Delayed"
   },
   "tours": {
     "noToursToday": "No tours today",

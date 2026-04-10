@@ -89,7 +89,25 @@ export default function OperationsSchedulePage() {
   async function loadData() {
     setLoading(true)
     try {
-      // Load tours
+      // Get current user's company
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) {
+        setLoading(false)
+        return
+      }
+
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('company_id')
+        .eq('id', user.id)
+        .single()
+
+      if (!profile?.company_id) {
+        setLoading(false)
+        return
+      }
+
+      // Load tours filtered by company
       const { data: toursData, error: toursError } = await supabase
         .from('tours')
         .select(`
@@ -126,6 +144,7 @@ export default function OperationsSchedulePage() {
             model
           )
         `)
+        .eq('company_id', profile.company_id)
         .eq('tour_date', selectedDate)
         .neq('status', 'cancelled')
         .order('start_time')
@@ -170,7 +189,7 @@ export default function OperationsSchedulePage() {
       })
       setTours(Array.from(uniqueMap.values()))
 
-      // Load available drivers
+      // Load available drivers for company
       const { data: driversData } = await supabase
         .from('driver_profiles')
         .select(`
@@ -202,10 +221,11 @@ export default function OperationsSchedulePage() {
       })
       setDrivers(Array.from(driverMap.values()))
 
-      // Load vehicles (all, not just available - for assignment sidebar)
+      // Load vehicles for company
       const { data: vehiclesData } = await supabase
         .from('vehicles')
         .select('*')
+        .eq('company_id', profile.company_id)
         .limit(50)
 
       const formattedVehicles: Vehicle[] = (vehiclesData || []).map((v: any) => ({
