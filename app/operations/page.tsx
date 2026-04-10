@@ -363,7 +363,7 @@ export default function OperationsDashboard() {
               <table className="w-full text-sm">
                 <thead className="bg-gray-50 text-left text-xs uppercase text-gray-500 sticky top-0">
                   <tr>
-                    <th className="px-3 py-2 font-medium">{t('vehicles.vehicle')}</th>
+                    <th className="px-3 py-2 font-medium">{t('vehicles.name')}</th>
                     <th className="px-3 py-2 font-medium">{t('vehicles.plate')}</th>
                     <th className="px-3 py-2 font-medium">{t('common.status')}</th>
                     <th className="px-3 py-2 font-medium text-right">{t('vehicles.capacity')}</th>
@@ -372,7 +372,7 @@ export default function OperationsDashboard() {
                 <tbody className="divide-y divide-gray-100">
                   {vehicles.map((vehicle) => (
                     <tr key={vehicle.id} className="hover:bg-gray-50">
-                      <td className="px-3 py-2 font-medium text-gray-900">{vehicle.model}</td>
+                      <td className="px-3 py-2 font-medium text-gray-900">{vehicle.name}</td>
                       <td className="px-3 py-2 text-gray-600">{vehicle.plate_number}</td>
                       <td className="px-3 py-2">{getVehicleStatusBadge(vehicle.status)}</td>
                       <td className="px-3 py-2 text-right text-gray-600">{vehicle.capacity}</td>
