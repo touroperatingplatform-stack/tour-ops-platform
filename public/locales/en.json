@@ -284,6 +284,7 @@
   },
   "vehicles": {
     "title": "Vehicle Fleet",
+    "total": "Total",
     "vehicle": "Vehicle",
     "name": "Name",
     "plate": "Plate",
