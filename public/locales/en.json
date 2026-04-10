@@ -310,7 +310,16 @@
     "saving": "Saving...",
     "saveChanges": "Save Changes",
     "deleteVehicle": "Delete Vehicle",
-    "confirmDelete": "Delete this vehicle? This cannot be undone."
+    "confirmDelete": "Delete this vehicle? This cannot be undone.",
+    "allCapacities": "All Capacities",
+    "external": "External",
+    "markAvailable": "Mark Available",
+    "markMaintenance": "Mark Maintenance",
+    "owner": "Owner",
+    "passengers": "passengers",
+    "searchPlaceholder": "Search plate, make, model...",
+    "selected": "selected",
+    "company": "Company"
   },
   "schedule": {
     "title": "Schedule",

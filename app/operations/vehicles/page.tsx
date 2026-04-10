@@ -52,7 +52,25 @@ export default function OperationsVehiclesPage() {
   async function loadVehicles() {
     setLoading(true)
     try {
-      // Load vehicles with owner info
+      // Get current user's company
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) {
+        setLoading(false)
+        return
+      }
+
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('company_id')
+        .eq('id', user.id)
+        .single()
+
+      if (!profile?.company_id) {
+        setLoading(false)
+        return
+      }
+
+      // Load vehicles filtered by company
       const { data: vehiclesData, error } = await supabase
         .from('vehicles')
         .select(`
@@ -62,6 +80,7 @@ export default function OperationsVehiclesPage() {
             last_name
           )
         `)
+        .eq('company_id', profile.company_id)
         .order('created_at', { ascending: false })
       
       if (error) throw error
