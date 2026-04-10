@@ -4,8 +4,10 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { supabase } from '@/lib/supabase/client'
+import { useTranslation } from '@/lib/i18n/useTranslation'
 
 export default function TopNav() {
+  const { t } = useTranslation()
   const pathname = usePathname()
   const [showMenu, setShowMenu] = useState(false)
 
