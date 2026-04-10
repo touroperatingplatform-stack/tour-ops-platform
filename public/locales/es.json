@@ -276,7 +276,8 @@
     "discrepancies": "Discrepancias",
     "guidePerformanceBy": "Rendimiento por Guía",
     "onTimePercent": "% Puntualidad",
-    "cashPending": "Efectivo Pendiente"
+    "cashPending": "Efectivo Pendiente",
+    "guests": "Huéspedes"
   },
   "incidents": {
     "activeIncidents": "Incidentes Activos",
