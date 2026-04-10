@@ -253,6 +253,7 @@
   },
   "vehicles": {
     "title": "Vehicle Fleet",
+    "vehicle": "Vehicle",
     "name": "Name",
     "plate": "Plate",
     "status": "Status",
