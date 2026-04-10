@@ -64,7 +64,8 @@
     "noResults": "No se encontraron resultados",
     "assignedTo": "Asignado A",
     "unassigned": "No Asignado",
-    "created": "Creado"
+    "created": "Creado",
+    "inactive": "Inactivo"
   },
   "dashboard": {
     "title": "Dashboard de Operaciones",
@@ -164,6 +165,7 @@
     "assignDrivers": "Asignar Choferes",
     "assignments": "Asignaciones",
     "noToursToday": "No hay tours hoy",
+    "availableDrivers": "Choferes Disponibles",
     "driver": "Chofer",
     "vehicle": "Vehículo",
     "assign": "Asignar",
