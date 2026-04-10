@@ -187,6 +187,7 @@
     "gpsAccuracy": "GPS Accuracy",
     "incidentsPending": "incidents pending attention",
     "noCheckinsToday": "No check-ins today",
+    "noActiveTours": "No active tours",
     "early": "early",
     "late": "late"
   },
