@@ -319,7 +319,8 @@
     "passengers": "passengers",
     "searchPlaceholder": "Search plate, make, model...",
     "selected": "selected",
-    "company": "Company"
+    "company": "Company",
+    "onTour": "On Tour"
   },
   "schedule": {
     "title": "Schedule",
