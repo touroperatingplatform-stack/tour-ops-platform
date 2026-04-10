@@ -170,12 +170,6 @@
     "delayed": "Delayed",
     "timeline": "Timeline",
     "active": "Active",
-    "scheduled": "Scheduled",
-    "departed": "Departed",
-    "completed": "Completed",
-    "tour": "Tour",
-    "guide": "Guide",
-    "status": "Status",
     "activeIncidents": "Active Incidents",
     "noActiveIncidents": "No active incidents",
     "allToursNormal": "All tours operating normally",
@@ -190,9 +184,7 @@
     "noActiveTours": "No active tours",
     "early": "early",
     "late": "late",
-    "in_progress": "In Progress",
-    "scheduled": "Scheduled",
-    "departed": "Departed"
+    "in_progress": "In Progress"
   },
   "timeline": {
     "scheduled": "Scheduled",
