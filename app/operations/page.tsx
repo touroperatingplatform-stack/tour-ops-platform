@@ -23,7 +23,7 @@ interface TourWithDetails {
 
 interface Vehicle {
   id: string
-  model: string
+  name: string
   plate_number: string
   status: 'available' | 'in_use' | 'maintenance'
   capacity: number
@@ -156,13 +156,13 @@ export default function OperationsDashboard() {
     // Load vehicles filtered by company
     const { data: vehiclesData } = await supabase
       .from('vehicles')
-      .select('id, model, plate_number, status, capacity')
+      .select('id, name, plate_number, status, capacity')
       .eq('company_id', profile.company_id)
 
     if (vehiclesData) {
       const formattedVehicles = vehiclesData.map((v: any) => ({
         id: v.id,
-        model: v.model,
+        name: v.name,
         plate_number: v.plate_number,
         status: v.status === 'active' ? 'available' : v.status,
         capacity: v.capacity
