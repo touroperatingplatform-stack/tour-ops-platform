@@ -190,7 +190,14 @@
     "noActiveTours": "No active tours",
     "early": "early",
     "late": "late",
-    "in_progress": "In Progress"
+    "in_progress": "In Progress",
+    "scheduled": "Scheduled",
+    "departed": "Departed"
+  },
+  "timeline": {
+    "scheduled": "Scheduled",
+    "departed": "Departed",
+    "completed": "Completed"
   },
   "tour": {
     "scheduled": "Scheduled",
