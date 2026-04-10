@@ -77,6 +77,18 @@
     "thisMonth": "Este Mes",
     "lastMonth": "Mes Pasado"
   },
+  "auth": {
+    "signIn": "Iniciar Sesión",
+    "signOut": "Cerrar Sesión",
+    "email": "Email",
+    "password": "Contraseña",
+    "forgotPassword": "¿Olvidaste tu Contraseña?",
+    "rememberMe": "Recuérdame"
+  },
+  "profile": {
+    "title": "Perfil",
+    "settings": "Configuración"
+  },
   "dashboard": {
     "title": "Dashboard de Operaciones",
     "activeTours": "Tours Activos",
