@@ -5,7 +5,6 @@ export const dynamic = 'force-dynamic'
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase/client'
 import RoleGuard from '@/lib/auth/RoleGuard'
-import AdminNav from '@/components/navigation/AdminNav'
 import { useTranslation } from '@/lib/i18n/useTranslation'
 import { getLocalDate, getConfiguredTimezone, DEFAULT_TIMEZONE } from '@/lib/timezone'
 
@@ -96,10 +95,23 @@ export default function OperationsReportsPage() {
   }
 
   async function loadTourPerformance(dateFilters: { start: string; end: string }) {
-    // Load tours
+    // Get user's company_id
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+    
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('company_id')
+      .eq('id', user.id)
+      .single()
+    
+    if (!profile?.company_id) return
+
+    // Load tours filtered by company
     const { data: tours } = await supabase
       .from('tours')
       .select('*')
+      .eq('company_id', profile.company_id)
       .gte('tour_date', dateFilters.start)
       .lte('tour_date', dateFilters.end)
 
