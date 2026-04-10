@@ -395,7 +395,7 @@ export function GuideCheckinStatus() {
   return (
     <div className="space-y-3">
       <h3 className="font-semibold text-gray-900 flex items-center gap-2">
-        <span className="text-lg">📍</span> Recent Guide Check-ins
+        <span className="text-lg">📍</span> {t('dashboard.guideCheckins')}
       </h3>
 
       <div className="space-y-2 max-h-64 overflow-auto">
@@ -426,7 +426,7 @@ export function GuideCheckinStatus() {
           )
         })}
         {checkins.length === 0 && (
-          <p className="text-sm text-gray-500 text-center py-4">No check-ins today</p>
+          <p className="text-sm text-gray-500 text-center py-4">{t('dashboard.noCheckinsToday')}</p>
         )}
       </div>
     </div>
