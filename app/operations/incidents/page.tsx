@@ -54,9 +54,42 @@ export default function IncidentsPage() {
   }
 
   async function loadIncidents() {
+    // Get user's company_id first
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+      setLoading(false)
+      return
+    }
+
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('company_id')
+      .eq('id', user.id)
+      .single()
+
+    if (!profile?.company_id) {
+      setLoading(false)
+      return
+    }
+
+    // Get tours for this company first
+    const { data: companyTours } = await supabase
+      .from('tours')
+      .select('id')
+      .eq('company_id', profile.company_id)
+
+    const tourIds = companyTours?.map(t => t.id) || []
+    
+    if (tourIds.length === 0) {
+      setIncidents([])
+      setLoading(false)
+      return
+    }
+
     const { data: incidentsData } = await supabase
       .from('incidents')
       .select('id, type, severity, status, description, created_at, guide_id, assigned_to, escalation_level, tour_id')
+      .in('tour_id', tourIds)
       .order('created_at', { ascending: false })
 
     if (!incidentsData) {
