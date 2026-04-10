@@ -212,7 +212,6 @@ export default function OperationsVehiclesPage() {
 
   return (
     <RoleGuard requiredRole="operations">
-      <AdminNav />
       <div className="min-h-screen bg-gray-50 p-4">
         <div className="max-w-7xl mx-auto">
           {/* Stats Cards */}
