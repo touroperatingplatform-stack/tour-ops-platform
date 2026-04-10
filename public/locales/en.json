@@ -189,7 +189,13 @@
     "noCheckinsToday": "No check-ins today",
     "noActiveTours": "No active tours",
     "early": "early",
-    "late": "late"
+    "late": "late",
+    "in_progress": "In Progress"
+  },
+  "tour": {
+    "scheduled": "Scheduled",
+    "in_progress": "In Progress",
+    "completed": "Completed"
   },
   "tours": {
     "noToursToday": "No tours today",
