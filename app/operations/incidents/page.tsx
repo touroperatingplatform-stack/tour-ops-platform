@@ -97,11 +97,12 @@ export default function IncidentsPage() {
       return
     }
 
-    const tourIds = [...new Set(incidentsData.map(i => i.tour_id).filter(Boolean))]
+    // Get unique IDs from incidents data for lookups
+    const incidentTourIds = [...new Set(incidentsData.map(i => i.tour_id).filter(Boolean))]
     const guideIds = [...new Set(incidentsData.map(i => i.guide_id).filter(Boolean))]
     const assigneeIds = [...new Set(incidentsData.map(i => i.assigned_to).filter(Boolean))]
 
-    const { data: tours } = await supabase.from('tours').select('id, name').in('id', tourIds.length > 0 ? tourIds : ['00000000-0000-0000-0000-000000000000'])
+    const { data: tours } = await supabase.from('tours').select('id, name').in('id', incidentTourIds.length > 0 ? incidentTourIds : ['00000000-0000-0000-0000-000000000000'])
     const { data: guides } = await supabase.from('profiles').select('id, first_name, last_name').in('id', guideIds.length > 0 ? guideIds : ['00000000-0000-0000-0000-000000000000'])
     const { data: assignees } = await supabase.from('profiles').select('id, first_name, last_name, role').in('id', assigneeIds.length > 0 ? assigneeIds : ['00000000-0000-0000-0000-000000000000'])
 
