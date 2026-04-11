@@ -175,6 +175,7 @@ export default function ReportsDashboard() {
     const { data: expensesData } = await supabase
       .from('tour_expenses')
       .select('amount')
+      .eq('company_id', companyId)
       .gte('created_at', since)
 
     const totalExpenses = expensesData?.reduce((sum, e) => sum + (e.amount || 0), 0) || 0
