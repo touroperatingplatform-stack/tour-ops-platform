@@ -30,6 +30,7 @@ interface Incident {
 }
 
 export default function SupervisorFieldView() {
+  const { t } = useTranslation()
   const [tours, setTours] = useState<Tour[]>([])
   const [incidents, setIncidents] = useState<Incident[]>([])
   const [loading, setLoading] = useState(true)
@@ -119,16 +120,16 @@ export default function SupervisorFieldView() {
         
         if (pickupStops > 0 && pickupCheckins < pickupStops) {
           phase = 'pickups'
-          phaseProgress = `${pickupCheckins}/${pickupStops} done`
+          phaseProgress = `${pickupCheckins}/${pickupStops} ${t('fieldView.done')}`
         } else if (activityStops > 0 && activityCheckins < activityStops) {
           phase = 'activities'
-          phaseProgress = `${activityCheckins}/${activityStops} done`
+          phaseProgress = `${activityCheckins}/${activityStops} ${t('fieldView.done')}`
         } else if (dropoffStops > 0 && dropoffCheckins < dropoffStops) {
           phase = 'dropoffs'
-          phaseProgress = `${dropoffCheckins}/${dropoffStops} done`
+          phaseProgress = `${dropoffCheckins}/${dropoffStops} ${t('fieldView.done')}`
         } else {
           phase = 'complete'
-          phaseProgress = 'All done'
+          phaseProgress = t('fieldView.allDone')
         }
         
         return {
@@ -194,7 +195,7 @@ export default function SupervisorFieldView() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-xl font-bold text-gray-900">Field View</h1>
+            <h1 className="text-xl font-bold text-gray-900">{t('fieldView.title')}</h1>
             <p className="text-sm text-gray-500">
               {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
             </p>
@@ -203,7 +204,7 @@ export default function SupervisorFieldView() {
             href="/supervisor"
             className="px-3 py-2 bg-gray-100 rounded-lg text-sm font-medium hover:bg-gray-200"
           >
-            Office View →
+            {t('fieldView.officeView')} →
           </Link>
         </div>
 
