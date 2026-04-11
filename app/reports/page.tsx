@@ -73,12 +73,31 @@ export default function ReportsDashboard() {
 
   async function loadAllData() {
     setLoading(true)
+    
+    // Get current user's company_id
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+      setLoading(false)
+      return
+    }
+    
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('company_id')
+      .eq('id', user.id)
+      .single()
+    
+    if (!profile?.company_id) {
+      setLoading(false)
+      return
+    }
+    
     await Promise.all([
-      loadRevenueData(),
-      loadTourPerformance(),
-      loadGuidePerformance(),
-      loadSatisfactionData(),
-      loadOverview()
+      loadRevenueData(profile.company_id),
+      loadTourPerformance(profile.company_id),
+      loadGuidePerformance(profile.company_id),
+      loadSatisfactionData(profile.company_id),
+      loadOverview(profile.company_id)
     ])
     setLoading(false)
   }
@@ -105,17 +124,19 @@ export default function ReportsDashboard() {
     return startDate.toISOString()
   }
 
-  async function loadOverview() {
+  async function loadOverview(companyId: string) {
     const since = getDateRange()
     
     const { count: toursCount } = await supabase
       .from('tours')
       .select('*', { count: 'exact', head: true })
+      .eq('company_id', companyId)
       .gte('created_at', since)
 
     const { count: guestsCount } = await supabase
       .from('guests')
       .select('*', { count: 'exact', head: true })
+      .eq('company_id', companyId)
       .gte('created_at', since)
 
     const { data: feedback } = await supabase
@@ -174,12 +195,13 @@ export default function ReportsDashboard() {
     })
   }
 
-  async function loadTourPerformance() {
+  async function loadTourPerformance(companyId: string) {
     const since = getDateRange()
 
     const { data: tours } = await supabase
       .from('tours')
       .select('name, guest_count, capacity, price')
+      .eq('company_id', companyId)
       .gte('created_at', since)
       .not('name', 'is', null)
 
