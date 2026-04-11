@@ -149,9 +149,7 @@ export default function ExpensesPage() {
                     </div>
                   ) : (
                     <span className="text-gray-400 text-xs">
-                      {expense.status === 'pending' && t('expenses.pending')}
-                      {expense.status === 'approved' && t('expenses.approved')}
-                      {expense.status === 'rejected' && t('expenses.rejected')}
+                      {expense.status === 'approved' ? t('expenses.approved') : t('expenses.rejected')}
                     </span>
                   )}
                 </td>
