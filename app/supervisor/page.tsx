@@ -419,7 +419,7 @@ export default function SupervisorDashboard() {
                   </div>
                 ))}
                 {activeGuides.length === 0 && (
-                  <p className="text-sm text-gray-500 text-center py-2">No guides on tour</p>
+                  <p className="text-sm text-gray-500 text-center py-2">{t('supervisor.noGuidesOnTour') || 'No guides on tour'}</p>
                 )}
               </div>
             </div>
