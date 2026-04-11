@@ -159,13 +159,14 @@ export default function ReportsDashboard() {
     })
   }
 
-  async function loadRevenueData() {
+  async function loadRevenueData(companyId: string) {
     const since = getDateRange()
 
     // Get tour revenue (estimated from guest count * price)
     const { data: tours } = await supabase
       .from('tours')
       .select('guest_count, price')
+      .eq('company_id', companyId)
       .gte('created_at', since)
 
     const totalRevenue = tours?.reduce((sum, t) => sum + ((t.guest_count || 0) * (t.price || 99)), 0) || 0
@@ -333,12 +334,22 @@ export default function ReportsDashboard() {
     setGuidePerformance(result.slice(0, 10)) // Top 10 guides
   }
 
-  async function loadSatisfactionData() {
+  async function loadSatisfactionData(companyId: string) {
     const since = getDateRange()
 
+    // Get tours for this company to filter feedback
+    const { data: tours } = await supabase
+      .from('tours')
+      .select('id')
+      .eq('company_id', companyId)
+      .gte('created_at', since)
+    
+    const tourIds = tours?.map(t => t.id) || []
+    
     const { data: feedback } = await supabase
       .from('guest_feedback')
-      .select('rating, responded')
+      .select('rating, responded, tour_id')
+      .in('tour_id', tourIds.length > 0 ? tourIds : ['00000000-0000-0000-0000-000000000000'])
       .gte('created_at', since)
 
     const totalReviews = feedback?.length || 0
