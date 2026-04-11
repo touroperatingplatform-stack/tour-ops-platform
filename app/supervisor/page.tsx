@@ -310,18 +310,18 @@ export default function SupervisorDashboard() {
         <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-4 min-h-0">
           <div className="bg-white rounded-lg border border-gray-200 overflow-hidden flex flex-col">
             <div className="px-3 py-2 border-b border-gray-200 bg-gray-50 shrink-0">
-              <h2 className="font-semibold text-gray-900 text-sm">Today's Tours</h2>
+              <h2 className="font-semibold text-gray-900 text-sm">{t('supervisor.todaysTours') || "Today's Tours"}</h2>
             </div>
             
             <div className="flex-1 overflow-auto">
               <table className="w-full text-sm">
                 <thead className="bg-gray-50 text-left text-xs uppercase text-gray-500 sticky top-0">
                   <tr>
-                    <th className="px-3 py-2 font-medium">Time</th>
-                    <th className="px-3 py-2 font-medium">Tour Name</th>
-                    <th className="px-3 py-2 font-medium">Guide</th>
-                    <th className="px-3 py-2 font-medium">Status</th>
-                    <th className="px-3 py-2 font-medium text-right">Guests</th>
+                    <th className="px-3 py-2 font-medium">{t('supervisor.time') || 'Time'}</th>
+                    <th className="px-3 py-2 font-medium">{t('supervisor.tourName') || 'Tour Name'}</th>
+                    <th className="px-3 py-2 font-medium">{t('supervisor.guide') || 'Guide'}</th>
+                    <th className="px-3 py-2 font-medium">{t('supervisor.status') || 'Status'}</th>
+                    <th className="px-3 py-2 font-medium text-right">{t('supervisor.guests') || 'Guests'}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
