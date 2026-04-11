@@ -7,9 +7,12 @@ import { supabase } from '@/lib/supabase/client'
 import TopNav from '../operations/components/TopNav'
 
 const navItems = [
-  { href: '/reports', label: 'Reports', icon: '📈' },
+  { href: '/supervisor', label: 'Dashboard', icon: '📊' },
   { href: '/operations', label: 'Operations', icon: '🚀' },
-  { href: '/supervisor', label: 'Supervisor', icon: '👁️' },
+  { href: '/reports', label: 'Reports', icon: '📈' },
+  { href: '/supervisor/guides', label: 'Guides', icon: '👥' },
+  { href: '/supervisor/expenses', label: 'Expenses', icon: '💵' },
+  { href: '/supervisor/incidents', label: 'Incidents', icon: '🚨' },
 ]
 
 export default function ReportsLayout({ children }: { children: React.ReactNode }) {
