@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { supabase } from '@/lib/supabase/client'
 import { useTranslation } from '@/lib/i18n/useTranslation'
 
@@ -17,10 +17,27 @@ interface Expense {
 }
 
 export default function ExpensesPage() {
-  const { t } = useTranslation()
+  const { t, locale } = useTranslation()
   const [expenses, setExpenses] = useState<Expense[]>([])
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('pending')
+
+  // Compute labels reactively when translations change
+  const statusLabels = useMemo(() => ({
+    pending: t('expenses.pending'),
+    approved: t('expenses.approved'),
+    rejected: t('expenses.rejected'),
+    all: t('common.all')
+  }), [t, locale])
+
+  const categoryLabels = useMemo(() => ({
+    fuel: t('expenses.categories.fuel'),
+    maintenance: t('expenses.categories.maintenance'),
+    supplies: t('expenses.categories.supplies'),
+    tolls: t('expenses.categories.tolls'),
+    meals: t('expenses.categories.meals'),
+    other: t('expenses.categories.other')
+  }), [t, locale])
 
   useEffect(() => {
     loadExpenses()
@@ -72,22 +89,6 @@ export default function ExpensesPage() {
   const filteredExpenses = expenses.filter(e => filter === 'all' ? true : e.status === filter)
   const pendingCount = expenses.filter(e => e.status === 'pending').length
 
-  const statusLabels: Record<string, string> = {
-    pending: t('expenses.pending'),
-    approved: t('expenses.approved'),
-    rejected: t('expenses.rejected'),
-    all: t('common.all')
-  }
-
-  const categoryLabels: Record<string, string> = {
-    fuel: t('expenses.categories.fuel'),
-    maintenance: t('expenses.categories.maintenance'),
-    supplies: t('expenses.categories.supplies'),
-    tolls: t('expenses.categories.tolls'),
-    meals: t('expenses.categories.meals'),
-    other: t('expenses.categories.other')
-  }
-
   function formatCurrency(amount: number) {
     return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount)
   }
@@ -98,7 +99,8 @@ export default function ExpensesPage() {
       approved: 'bg-green-100 text-green-700',
       rejected: 'bg-red-100 text-red-700'
     }
-    return <span className={`px-2 py-1 rounded-full text-xs font-medium ${styles[status]}`}>{statusLabels[status]}</span>
+    const label = statusLabels[status as keyof typeof statusLabels] || status
+    return <span className={`px-2 py-1 rounded-full text-xs font-medium ${styles[status]}`}>{label}</span>
   }
 
   if (loading) {
@@ -142,7 +144,7 @@ export default function ExpensesPage() {
               <tr key={expense.id} className="hover:bg-gray-50">
                 <td className="px-4 py-3 font-medium text-gray-900">{expense.guide_name}</td>
                 <td className="px-4 py-3 text-gray-600">{expense.tour_name}</td>
-                <td className="px-4 py-3"><span className="capitalize">{categoryLabels[expense.category] || expense.category}</span></td>
+                <td className="px-4 py-3"><span className="capitalize">{categoryLabels[expense.category as keyof typeof categoryLabels] || expense.category}</span></td>
                 <td className="px-4 py-3 font-medium">{formatCurrency(expense.amount)}</td>
                 <td className="px-4 py-3">{getStatusBadge(expense.status)}</td>
                 <td className="px-4 py-3 text-right">
