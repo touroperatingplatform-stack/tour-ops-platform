@@ -508,7 +508,10 @@
     "occupancyRate": "Occupancy",
     "rating": "Rating",
     "incidents": "Incidents",
-    "reviews": "Reviews"
+    "reviews": "Reviews",
+    "activeTours": "Active Tours",
+    "approved": "Approved",
+    "expenseSummary": "Expense Summary"
   },
   "supervisor": {
     "dashboard": "Supervisor Dashboard",
