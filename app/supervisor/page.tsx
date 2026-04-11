@@ -361,11 +361,11 @@ export default function SupervisorDashboard() {
               <table className="w-full text-sm">
                 <thead className="bg-gray-50 text-left text-xs uppercase text-gray-500 sticky top-0">
                   <tr>
-                    <th className="px-3 py-2 font-medium">Time</th>
-                    <th className="px-3 py-2 font-medium">Tour</th>
-                    <th className="px-3 py-2 font-medium">Severity</th>
-                    <th className="px-3 py-2 font-medium">Issue</th>
-                    <th className="px-3 py-2 font-medium text-right">Action</th>
+                    <th className="px-3 py-2 font-medium">{t('supervisor.time')}</th>
+                    <th className="px-3 py-2 font-medium">{t('supervisor.tour')}</th>
+                    <th className="px-3 py-2 font-medium">{t('supervisor.severity')}</th>
+                    <th className="px-3 py-2 font-medium">{t('supervisor.issue')}</th>
+                    <th className="px-3 py-2 font-medium text-right">{t('supervisor.action')}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
@@ -389,7 +389,7 @@ export default function SupervisorDashboard() {
                   ))}
                   {incidents.length === 0 && (
                     <tr>
-                      <td colSpan={5} className="px-3 py-4 text-center text-gray-500 text-sm">No incidents reported.</td>
+                      <td colSpan={5} className="px-3 py-4 text-center text-gray-500 text-sm">{t('supervisor.noIncidentsReported') || 'No incidents reported.'}</td>
                     </tr>
                   )}
                 </tbody>

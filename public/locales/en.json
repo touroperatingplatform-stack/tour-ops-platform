@@ -443,6 +443,9 @@
     "openIncidents": "Open Incidents",
     "liveMap": "Live Map",
     "activeTours": "Active Tours",
+    "activeGuides": "Active Guides",
+    "todaysTours": "Today's Tours",
+    "incidentReports": "Incident Reports",
     "tour": "Tour",
     "guide": "Guide",
     "status": "Status",
@@ -462,7 +465,10 @@
     "critical": "Critical",
     "open": "Open",
     "attentionRequired": "open incidents require attention",
-    "awaitingCheckin": "tours awaiting guide check-in"
+    "awaitingCheckin": "tours awaiting guide check-in",
+    "issue": "Issue",
+    "action": "Action",
+    "noIncidentsReported": "No incidents reported."
   },
   "auth": {
     "signIn": "Sign In",
