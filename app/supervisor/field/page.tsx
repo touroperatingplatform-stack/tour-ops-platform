@@ -214,7 +214,7 @@ export default function SupervisorFieldView() {
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
                 <span className="text-xl">⚠️</span>
-                <span className="font-bold text-red-800">{incidents.length} Need Attention</span>
+                <span className="font-bold text-red-800">{incidents.length} {t('fieldView.needAttention')}</span>
               </div>
             </div>
             <div className="space-y-1">
@@ -232,7 +232,7 @@ export default function SupervisorFieldView() {
         {/* Active Tours */}
         <div className="flex-1 space-y-3 overflow-auto">
           <div className="font-semibold text-gray-900">
-            📍 Active Tours ({activeTours.length})
+            📍 {t('fieldView.activeTours')} ({activeTours.length})
           </div>
           
           {activeTours.map((tour) => (
@@ -253,7 +253,7 @@ export default function SupervisorFieldView() {
               </div>
               
               <div className="flex items-center gap-2 text-gray-500 text-sm">
-                <span>👥 {tour.guest_count} guests</span>
+                <span>👥 {tour.guest_count} {t('fieldView.guests')}</span>
                 <span>•</span>
                 <span>{tour.start_time?.slice(0, 5)}</span>
               </div>
@@ -286,10 +286,10 @@ export default function SupervisorFieldView() {
 
               <div className="flex gap-2 pt-2">
                 <button className="flex-1 py-3 bg-blue-50 text-blue-700 rounded-lg font-medium">
-                  View Details
+                  {t('fieldView.viewDetails')}
                 </button>
                 <button className="flex-1 py-3 bg-gray-50 text-gray-700 rounded-lg font-medium">
-                  Report Issue
+                  {t('fieldView.reportIssue')}
                 </button>
               </div>
             </div>
@@ -298,7 +298,7 @@ export default function SupervisorFieldView() {
           {activeTours.length === 0 && (
             <div className="text-center py-12 text-gray-500">
               <div className="text-4xl mb-2">✓</div>
-              <p className="font-medium">No active tours</p>
+              <p className="font-medium">{t('fieldView.noActiveTours')}</p>
             </div>
           )}
         </div>
@@ -309,10 +309,10 @@ export default function SupervisorFieldView() {
             href="/supervisor/incidents/new"
             className="block w-full py-4 bg-red-600 text-white rounded-xl font-bold text-center"
           >
-            🚨 Report Incident
+            🚨 {t('fieldView.reportIncident')}
           </Link>
           <button className="block w-full py-4 bg-gray-100 text-gray-700 rounded-xl font-semibold">
-            📋 Quick Note
+            📋 {t('fieldView.quickNote')}
           </button>
         </div>
       </div>
