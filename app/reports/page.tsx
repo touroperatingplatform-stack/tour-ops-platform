@@ -4,21 +4,11 @@ import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase/client'
 import { useTranslation } from '@/lib/i18n/useTranslation'
 
-interface RevenueMetrics {
-  total_revenue: number
-  avg_per_tour: number
-  avg_per_guest: number
-  expenses: number
-  net_profit: number
-  profit_margin: number
-}
-
 interface TourPerformance {
   tour_name: string
   total_tours: number
   total_guests: number
   avg_rating: number
-  revenue: number
   occupancy_rate: number
 }
 
@@ -26,7 +16,6 @@ interface GuidePerformance {
   guide_name: string
   total_tours: number
   total_guests: number
-  avg_rating: number
   on_time_percentage: number
   incidents: number
 }
@@ -38,20 +27,18 @@ interface SatisfactionMetrics {
   response_rate: number
 }
 
+interface ExpenseSummary {
+  total_expenses: number
+  pending_expenses: number
+  approved_expenses: number
+  expense_count: number
+}
+
 export default function ReportsDashboard() {
   const { t } = useTranslation()
-  const [activeTab, setActiveTab] = useState<'overview' | 'revenue' | 'tours' | 'guides' | 'satisfaction'>('overview')
+  const [activeTab, setActiveTab] = useState<'overview' | 'tours' | 'guides' | 'expenses' | 'satisfaction'>('overview')
   const [dateRange, setDateRange] = useState<'today' | 'week' | 'month' | 'all'>('month')
   const [loading, setLoading] = useState(true)
-
-  const [revenue, setRevenue] = useState<RevenueMetrics>({
-    total_revenue: 0,
-    avg_per_tour: 0,
-    avg_per_guest: 0,
-    expenses: 0,
-    net_profit: 0,
-    profit_margin: 0
-  })
 
   const [tourPerformance, setTourPerformance] = useState<TourPerformance[]>([])
   const [guidePerformance, setGuidePerformance] = useState<GuidePerformance[]>([])
@@ -61,11 +48,18 @@ export default function ReportsDashboard() {
     rating_distribution: { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 },
     response_rate: 0
   })
+  const [expenseSummary, setExpenseSummary] = useState<ExpenseSummary>({
+    total_expenses: 0,
+    pending_expenses: 0,
+    approved_expenses: 0,
+    expense_count: 0
+  })
 
   const [overview, setOverview] = useState({
     total_tours: 0,
     total_guests: 0,
-    total_revenue: 0,
+    total_guides: 0,
+    active_tours: 0,
     avg_rating: 0
   })
 
@@ -94,10 +88,10 @@ export default function ReportsDashboard() {
     }
     
     await Promise.all([
-      loadRevenueData(profile.company_id),
       loadTourPerformance(profile.company_id),
       loadGuidePerformance(profile.company_id),
       loadSatisfactionData(profile.company_id),
+      loadExpenseSummary(profile.company_id),
       loadOverview(profile.company_id)
     ])
     setLoading(false)
@@ -140,6 +134,18 @@ export default function ReportsDashboard() {
       .eq('company_id', companyId)
       .gte('created_at', since)
 
+    const { count: guidesCount } = await supabase
+      .from('profiles')
+      .select('*', { count: 'exact', head: true })
+      .eq('company_id', companyId)
+      .eq('role', 'guide')
+
+    const { count: activeTours } = await supabase
+      .from('tours')
+      .select('*', { count: 'exact', head: true })
+      .eq('company_id', companyId)
+      .eq('status', 'in_progress')
+
     const { data: feedback } = await supabase
       .from('guest_feedback')
       .select('rating')
@@ -149,49 +155,12 @@ export default function ReportsDashboard() {
       ? feedback.reduce((sum, f) => sum + (f.rating || 0), 0) / feedback.length 
       : 0
 
-    const estimatedRevenue = (guestsCount || 0) * 99
-
     setOverview({
       total_tours: toursCount || 0,
       total_guests: guestsCount || 0,
-      total_revenue: estimatedRevenue,
+      total_guides: guidesCount || 0,
+      active_tours: activeTours || 0,
       avg_rating: Math.round(avgRating * 10) / 10
-    })
-  }
-
-  async function loadRevenueData(companyId: string) {
-    const since = getDateRange()
-
-    const { data: tours } = await supabase
-      .from('tours')
-      .select('guest_count, price')
-      .eq('company_id', companyId)
-      .gte('created_at', since)
-
-    const totalRevenue = tours?.reduce((sum, t) => sum + ((t.guest_count || 0) * (t.price || 99)), 0) || 0
-
-    const { data: expensesData } = await supabase
-      .from('tour_expenses')
-      .select('amount')
-      .eq('company_id', companyId)
-      .gte('created_at', since)
-
-    const totalExpenses = expensesData?.reduce((sum, e) => sum + (e.amount || 0), 0) || 0
-
-    const netProfit = totalRevenue - totalExpenses
-    const profitMargin = totalRevenue ? (netProfit / totalRevenue) * 100 : 0
-
-    const totalGuests = tours?.reduce((sum, t) => sum + (t.guest_count || 0), 0) || 0
-    const avgPerGuest = totalGuests ? totalRevenue / totalGuests : 0
-    const avgPerTour = tours?.length ? totalRevenue / tours.length : 0
-
-    setRevenue({
-      total_revenue: Math.round(totalRevenue),
-      avg_per_tour: Math.round(avgPerTour),
-      avg_per_guest: Math.round(avgPerGuest),
-      expenses: Math.round(totalExpenses),
-      net_profit: Math.round(netProfit),
-      profit_margin: Math.round(profitMargin)
     })
   }
 
@@ -200,7 +169,7 @@ export default function ReportsDashboard() {
 
     const { data: tours } = await supabase
       .from('tours')
-      .select('name, guest_count, capacity, price')
+      .select('name, guest_count, capacity')
       .eq('company_id', companyId)
       .gte('created_at', since)
       .not('name', 'is', null)
@@ -215,14 +184,12 @@ export default function ReportsDashboard() {
           total_tours: 0,
           total_guests: 0,
           avg_rating: 0,
-          revenue: 0,
           occupancy_rate: 0
         })
       }
       const perf = tourMap.get(name)!
       perf.total_tours += 1
       perf.total_guests += t.guest_count || 0
-      perf.revenue += (t.guest_count || 0) * (t.price || 99)
       
       if (t.capacity && t.capacity > 0) {
         perf.occupancy_rate += (t.guest_count || 0) / t.capacity * 100
@@ -232,7 +199,7 @@ export default function ReportsDashboard() {
     const result = Array.from(tourMap.values()).map(t => ({
       ...t,
       occupancy_rate: t.total_tours ? Math.round(t.occupancy_rate / t.total_tours) : 0
-    })).sort((a, b) => b.revenue - a.revenue)
+    })).sort((a, b) => b.total_guests - a.total_guests)
 
     setTourPerformance(result.slice(0, 10))
   }
@@ -253,7 +220,6 @@ export default function ReportsDashboard() {
         guide_name: `${g.first_name} ${g.last_name}`,
         total_tours: 0,
         total_guests: 0,
-        avg_rating: 0,
         on_time_percentage: 100,
         incidents: 0
       })
@@ -315,6 +281,27 @@ export default function ReportsDashboard() {
       .sort((a, b) => b.total_tours - a.total_tours)
 
     setGuidePerformance(result.slice(0, 10))
+  }
+
+  async function loadExpenseSummary(companyId: string) {
+    const since = getDateRange()
+
+    const { data: expenses } = await supabase
+      .from('tour_expenses')
+      .select('amount, status')
+      .eq('company_id', companyId)
+      .gte('created_at', since)
+
+    const total = expenses?.reduce((sum, e) => sum + (e.amount || 0), 0) || 0
+    const pending = expenses?.filter(e => e.status === 'pending').reduce((sum, e) => sum + (e.amount || 0), 0) || 0
+    const approved = expenses?.filter(e => e.status === 'approved').reduce((sum, e) => sum + (e.amount || 0), 0) || 0
+
+    setExpenseSummary({
+      total_expenses: total,
+      pending_expenses: pending,
+      approved_expenses: approved,
+      expense_count: expenses?.length || 0
+    })
   }
 
   async function loadSatisfactionData(companyId: string) {
@@ -386,7 +373,7 @@ export default function ReportsDashboard() {
         <div className="flex items-center justify-between mb-4">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">{t('reports.title')}</h1>
-            <p className="text-sm text-gray-500 mt-1">{t('reports.businessIntelligence')}</p>
+            <p className="text-sm text-gray-500 mt-1">{t('reports.subtitle')}</p>
           </div>
           
           <div className="flex items-center gap-2">
@@ -409,9 +396,9 @@ export default function ReportsDashboard() {
         <div className="flex gap-2">
           {[
             { id: 'overview', label: `📊 ${t('reports.overview')}`, count: null },
-            { id: 'revenue', label: `💰 ${t('reports.revenue')}`, count: null },
             { id: 'tours', label: `🚌 ${t('reports.tours')}`, count: tourPerformance.length },
             { id: 'guides', label: `👥 ${t('reports.guides')}`, count: guidePerformance.length },
+            { id: 'expenses', label: `💵 ${t('reports.expenses')}`, count: expenseSummary.expense_count },
             { id: 'satisfaction', label: `⭐ ${t('reports.satisfaction')}`, count: satisfaction.total_reviews }
           ].map((tab) => (
             <button
@@ -449,8 +436,8 @@ export default function ReportsDashboard() {
                 <p className="text-3xl font-bold text-blue-600 mt-2">{overview.total_guests}</p>
               </div>
               <div className="bg-white rounded-xl border border-gray-200 p-6">
-                <p className="text-sm text-gray-500 uppercase font-medium">{t('reports.revenueLabel')}</p>
-                <p className="text-3xl font-bold text-green-600 mt-2">{formatCurrency(overview.total_revenue)}</p>
+                <p className="text-sm text-gray-500 uppercase font-medium">{t('reports.activeTours')}</p>
+                <p className="text-3xl font-bold text-green-600 mt-2">{overview.active_tours}</p>
               </div>
               <div className="bg-white rounded-xl border border-gray-200 p-6">
                 <p className="text-sm text-gray-500 uppercase font-medium">{t('reports.avgRating')}</p>
@@ -460,23 +447,19 @@ export default function ReportsDashboard() {
 
             <div className="grid grid-cols-2 gap-4">
               <div className="bg-white rounded-xl border border-gray-200 p-6">
-                <h3 className="font-semibold text-gray-900 mb-4">💰 {t('reports.revenueSummary')}</h3>
+                <h3 className="font-semibold text-gray-900 mb-4">💵 {t('reports.expenses')}</h3>
                 <div className="space-y-3">
                   <div className="flex justify-between">
-                    <span className="text-gray-600">{t('reports.totalRevenue')}</span>
-                    <span className="font-semibold text-green-600">{formatCurrency(revenue.total_revenue)}</span>
+                    <span className="text-gray-600">{t('reports.totalExpenses')}</span>
+                    <span className="font-semibold">{formatCurrency(expenseSummary.total_expenses)}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-600">{t('reports.expenses')}</span>
-                    <span className="font-semibold text-red-600">-{formatCurrency(revenue.expenses)}</span>
-                  </div>
-                  <div className="border-t pt-3 flex justify-between">
-                    <span className="font-medium">{t('reports.netProfit')}</span>
-                    <span className="font-bold text-green-600">{formatCurrency(revenue.net_profit)}</span>
+                    <span className="text-gray-600">{t('reports.pending')}</span>
+                    <span className="font-semibold text-yellow-600">{formatCurrency(expenseSummary.pending_expenses)}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-600">{t('reports.profitMargin')}</span>
-                    <span className="font-semibold">{revenue.profit_margin}%</span>
+                    <span className="text-gray-600">{t('reports.approved')}</span>
+                    <span className="font-semibold text-green-600">{formatCurrency(expenseSummary.approved_expenses)}</span>
                   </div>
                 </div>
               </div>
@@ -495,69 +478,6 @@ export default function ReportsDashboard() {
                   <div className="flex justify-between">
                     <span className="text-gray-600">{t('reports.responseRate')}</span>
                     <span className="font-semibold">{satisfaction.response_rate}%</span>
-                  </div>
-                  <div className="pt-2">
-                    <div className="flex gap-1">
-                      {[5, 4, 3, 2, 1].map((rating) => (
-                        <div key={rating} className="flex-1">
-                          <div className="text-xs text-center text-gray-500 mb-1">{rating}⭐</div>
-                          <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
-                            <div 
-                              className="h-full bg-yellow-400"
-                              style={{ width: `${satisfaction.total_reviews ? (satisfaction.rating_distribution[rating as keyof typeof satisfaction.rating_distribution] / satisfaction.total_reviews) * 100 : 0}%` }}
-                            />
-                          </div>
-                          <div className="text-xs text-center text-gray-500 mt-1">
-                            {satisfaction.rating_distribution[rating as keyof typeof satisfaction.rating_distribution]}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {activeTab === 'revenue' && (
-          <div className="max-w-4xl">
-            <div className="bg-white rounded-xl border border-gray-200 p-6">
-              <h2 className="text-xl font-bold text-gray-900 mb-6">💰 {t('reports.revenueBreakdown')}</h2>
-              
-              <div className="grid grid-cols-3 gap-6 mb-8">
-                <div className="text-center p-4 bg-green-50 rounded-lg">
-                  <p className="text-sm text-green-600 uppercase font-medium">{t('reports.totalRevenue')}</p>
-                  <p className="text-3xl font-bold text-green-700 mt-2">{formatCurrency(revenue.total_revenue)}</p>
-                </div>
-                <div className="text-center p-4 bg-blue-50 rounded-lg">
-                  <p className="text-sm text-blue-600 uppercase font-medium">{t('reports.avgPerTour')}</p>
-                  <p className="text-3xl font-bold text-blue-700 mt-2">{formatCurrency(revenue.avg_per_tour)}</p>
-                </div>
-                <div className="text-center p-4 bg-purple-50 rounded-lg">
-                  <p className="text-sm text-purple-600 uppercase font-medium">{t('reports.avgPerGuest')}</p>
-                  <p className="text-3xl font-bold text-purple-700 mt-2">{formatCurrency(revenue.avg_per_guest)}</p>
-                </div>
-              </div>
-
-              <div className="border-t pt-6">
-                <h3 className="font-semibold text-gray-900 mb-4">{t('reports.profitLoss')}</h3>
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center p-3 bg-green-50 rounded-lg">
-                    <span className="text-green-700">{t('reports.grossRevenue')}</span>
-                    <span className="font-bold text-green-700">{formatCurrency(revenue.total_revenue)}</span>
-                  </div>
-                  <div className="flex justify-between items-center p-3 bg-red-50 rounded-lg">
-                    <span className="text-red-700">{t('reports.totalExpenses')}</span>
-                    <span className="font-bold text-red-700">{formatCurrency(revenue.expenses)}</span>
-                  </div>
-                  <div className="flex justify-between items-center p-4 bg-gray-50 rounded-lg border-2">
-                    <span className="font-bold text-gray-900">{t('reports.netProfit')}</span>
-                    <span className="font-bold text-gray-900">{formatCurrency(revenue.net_profit)}</span>
-                  </div>
-                  <div className="flex justify-between items-center p-3">
-                    <span className="text-gray-600">{t('reports.profitMargin')}</span>
-                    <span className="font-semibold">{revenue.profit_margin}%</span>
                   </div>
                 </div>
               </div>
@@ -579,7 +499,6 @@ export default function ReportsDashboard() {
                     <th className="text-right py-3 px-4 text-sm font-medium text-gray-700">{t('reports.toursCount')}</th>
                     <th className="text-right py-3 px-4 text-sm font-medium text-gray-700">{t('reports.guestsServed')}</th>
                     <th className="text-right py-3 px-4 text-sm font-medium text-gray-700">{t('reports.occupancyRate')}</th>
-                    <th className="text-right py-3 px-4 text-sm font-medium text-gray-700">{t('reports.revenueLabel')}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
@@ -597,14 +516,11 @@ export default function ReportsDashboard() {
                           {tour.occupancy_rate}%
                         </span>
                       </td>
-                      <td className="py-3 px-4 text-right font-semibold text-green-600">
-                        {formatCurrency(tour.revenue)}
-                      </td>
                     </tr>
                   ))}
                   {tourPerformance.length === 0 && (
                     <tr>
-                      <td colSpan={5} className="py-8 text-center text-gray-500">
+                      <td colSpan={4} className="py-8 text-center text-gray-500">
                         {t('reports.noData')}
                       </td>
                     </tr>
@@ -665,6 +581,29 @@ export default function ReportsDashboard() {
                   )}
                 </tbody>
               </table>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'expenses' && (
+          <div className="max-w-4xl">
+            <div className="bg-white rounded-xl border border-gray-200 p-6">
+              <h2 className="text-xl font-bold text-gray-900 mb-6">💵 {t('reports.expenseSummary')}</h2>
+              
+              <div className="grid grid-cols-3 gap-6 mb-8">
+                <div className="text-center p-4 bg-gray-50 rounded-lg">
+                  <p className="text-sm text-gray-600 uppercase font-medium">{t('reports.totalExpenses')}</p>
+                  <p className="text-3xl font-bold text-gray-900 mt-2">{formatCurrency(expenseSummary.total_expenses)}</p>
+                </div>
+                <div className="text-center p-4 bg-yellow-50 rounded-lg">
+                  <p className="text-sm text-yellow-600 uppercase font-medium">{t('reports.pending')}</p>
+                  <p className="text-3xl font-bold text-yellow-700 mt-2">{formatCurrency(expenseSummary.pending_expenses)}</p>
+                </div>
+                <div className="text-center p-4 bg-green-50 rounded-lg">
+                  <p className="text-sm text-green-600 uppercase font-medium">{t('reports.approved')}</p>
+                  <p className="text-3xl font-bold text-green-700 mt-2">{formatCurrency(expenseSummary.approved_expenses)}</p>
+                </div>
+              </div>
             </div>
           </div>
         )}
