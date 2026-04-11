@@ -513,6 +513,20 @@
     "approved": "Approved",
     "expenseSummary": "Expense Summary"
   },
+  "fieldView": {
+    "title": "Field View",
+    "officeView": "Office View",
+    "needAttention": "Need Attention",
+    "activeTours": "Active Tours",
+    "viewDetails": "View Details",
+    "reportIssue": "Report Issue",
+    "noActiveTours": "No active tours",
+    "reportIncident": "Report Incident",
+    "quickNote": "Quick Note",
+    "guests": "guests",
+    "done": "done",
+    "allDone": "All done"
+  },
   "supervisor": {
     "dashboard": "Supervisor Dashboard",
     "fieldView": "Field View",
