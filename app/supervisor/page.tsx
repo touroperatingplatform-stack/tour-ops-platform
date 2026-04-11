@@ -286,19 +286,19 @@ export default function SupervisorDashboard() {
         {/* Summary Metrics */}
         <div className="grid grid-cols-4 gap-3">
           <div className="bg-white rounded-lg border border-gray-200 p-3 text-center">
-            <p className="text-xs text-gray-500 uppercase font-medium">Total Tours</p>
+            <p className="text-xs text-gray-500 uppercase font-medium">{t('supervisor.totalTours') || 'Total Tours'}</p>
             <p className="text-2xl font-bold text-gray-900">{stats.total_tours}</p>
           </div>
           <div className="bg-white rounded-lg border border-gray-200 p-3 text-center">
-            <p className="text-xs text-blue-600 uppercase font-medium">Total Guests</p>
+            <p className="text-xs text-blue-600 uppercase font-medium">{t('supervisor.totalGuests') || 'Total Guests'}</p>
             <p className="text-2xl font-bold text-blue-600">{stats.total_guests}</p>
           </div>
           <div className="bg-white rounded-lg border border-gray-200 p-3 text-center">
-            <p className="text-xs text-green-600 uppercase font-medium">In Progress</p>
+            <p className="text-xs text-green-600 uppercase font-medium">{t('supervisor.inProgress') || 'In Progress'}</p>
             <p className="text-2xl font-bold text-green-600">{stats.in_progress}</p>
           </div>
           <div className="bg-white rounded-lg border border-gray-200 p-3 text-center">
-            <p className="text-xs text-red-600 uppercase font-medium">Open Incidents</p>
+            <p className="text-xs text-red-600 uppercase font-medium">{t('supervisor.openIncidents') || 'Open Incidents'}</p>
             <p className="text-2xl font-bold text-red-600">{stats.open_incidents}</p>
           </div>
         </div>
