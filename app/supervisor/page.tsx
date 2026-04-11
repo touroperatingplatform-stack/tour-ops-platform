@@ -6,6 +6,7 @@ import { supabase } from '@/lib/supabase/client'
 import RoleGuard from '@/lib/auth/RoleGuard'
 import LiveMap from './components/LiveMap'
 import { getLocalDate } from '@/lib/timezone'
+import { useTranslation } from '@/lib/i18n/useTranslation'
 
 interface TourWithDetails {
   id: string
@@ -51,6 +52,7 @@ interface DashboardStats {
 }
 
 export default function SupervisorDashboard() {
+  const { t } = useTranslation()
   const [tours, setTours] = useState<TourWithDetails[]>([])
   const [incidents, setIncidents] = useState<IncidentWithDetails[]>([])
   const [activeGuides, setActiveGuides] = useState<ActiveGuide[]>([])
@@ -268,7 +270,7 @@ export default function SupervisorDashboard() {
         <div className="shrink-0">
         <div className="mb-2 flex items-center justify-between">
           <div>
-            <h1 className="text-xl font-bold text-gray-900">Supervisor Dashboard</h1>
+            <h1 className="text-xl font-bold text-gray-900">{t('supervisor.dashboard') || 'Supervisor Dashboard'}</h1>
             <p className="text-sm text-gray-500">
               {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
             </p>
