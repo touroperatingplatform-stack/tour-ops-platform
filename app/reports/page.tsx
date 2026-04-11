@@ -250,12 +250,13 @@ export default function ReportsDashboard() {
     setTourPerformance(result.slice(0, 10)) // Top 10 tours
   }
 
-  async function loadGuidePerformance() {
+  async function loadGuidePerformance(companyId: string) {
     const since = getDateRange()
 
     const { data: guides } = await supabase
       .from('profiles')
       .select('id, first_name, last_name, role')
+      .eq('company_id', companyId)
       .eq('role', 'guide')
 
     const guideStats = new Map<string, GuidePerformance>()
@@ -275,6 +276,7 @@ export default function ReportsDashboard() {
     const { data: tours } = await supabase
       .from('tours')
       .select('guide_id, guest_count')
+      .eq('company_id', companyId)
       .gte('created_at', since)
       .not('guide_id', 'is', null)
 
