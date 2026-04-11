@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase/client'
+import { useTranslation } from '@/lib/i18n/useTranslation'
 
 interface RevenueMetrics {
   total_revenue: number
@@ -38,6 +39,7 @@ interface SatisfactionMetrics {
 }
 
 export default function ReportsDashboard() {
+  const { t } = useTranslation()
   const [activeTab, setActiveTab] = useState<'overview' | 'revenue' | 'tours' | 'guides' | 'satisfaction'>('overview')
   const [dateRange, setDateRange] = useState<'today' | 'week' | 'month' | 'all'>('month')
   const [loading, setLoading] = useState(true)
@@ -74,7 +76,6 @@ export default function ReportsDashboard() {
   async function loadAllData() {
     setLoading(true)
     
-    // Get current user's company_id
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) {
       setLoading(false)
@@ -148,7 +149,6 @@ export default function ReportsDashboard() {
       ? feedback.reduce((sum, f) => sum + (f.rating || 0), 0) / feedback.length 
       : 0
 
-    // Estimate revenue (guests * avg price of $99)
     const estimatedRevenue = (guestsCount || 0) * 99
 
     setOverview({
@@ -162,7 +162,6 @@ export default function ReportsDashboard() {
   async function loadRevenueData(companyId: string) {
     const since = getDateRange()
 
-    // Get tour revenue (estimated from guest count * price)
     const { data: tours } = await supabase
       .from('tours')
       .select('guest_count, price')
@@ -171,7 +170,6 @@ export default function ReportsDashboard() {
 
     const totalRevenue = tours?.reduce((sum, t) => sum + ((t.guest_count || 0) * (t.price || 99)), 0) || 0
 
-    // Get expenses
     const { data: expensesData } = await supabase
       .from('tour_expenses')
       .select('amount')
@@ -207,7 +205,6 @@ export default function ReportsDashboard() {
       .gte('created_at', since)
       .not('name', 'is', null)
 
-    // Group by tour name
     const tourMap = new Map<string, TourPerformance>()
     
     tours?.forEach((t: any) => {
@@ -232,24 +229,12 @@ export default function ReportsDashboard() {
       }
     })
 
-    // Get ratings per tour
-    const { data: feedback } = await supabase
-      .from('guest_feedback')
-      .select('rating, tour_id')
-      .gte('created_at', since)
-
-    const tourRatings = new Map<string, { sum: number; count: number }>()
-    feedback?.forEach((f: any) => {
-      // Would need tour_id to tour_name mapping
-      // Simplified for now
-    })
-
     const result = Array.from(tourMap.values()).map(t => ({
       ...t,
       occupancy_rate: t.total_tours ? Math.round(t.occupancy_rate / t.total_tours) : 0
     })).sort((a, b) => b.revenue - a.revenue)
 
-    setTourPerformance(result.slice(0, 10)) // Top 10 tours
+    setTourPerformance(result.slice(0, 10))
   }
 
   async function loadGuidePerformance(companyId: string) {
@@ -274,7 +259,6 @@ export default function ReportsDashboard() {
       })
     })
 
-    // Get tours per guide
     const { data: tours } = await supabase
       .from('tours')
       .select('guide_id, guest_count')
@@ -290,7 +274,6 @@ export default function ReportsDashboard() {
       }
     })
 
-    // Get check-ins for on-time percentage
     const { data: checkins } = await supabase
       .from('guide_checkins')
       .select('guide_id, minutes_early_or_late')
@@ -315,7 +298,6 @@ export default function ReportsDashboard() {
       }
     })
 
-    // Get incidents per guide
     const { data: incidents } = await supabase
       .from('incidents')
       .select('guide_id')
@@ -332,13 +314,12 @@ export default function ReportsDashboard() {
       .filter(g => g.total_tours > 0)
       .sort((a, b) => b.total_tours - a.total_tours)
 
-    setGuidePerformance(result.slice(0, 10)) // Top 10 guides
+    setGuidePerformance(result.slice(0, 10))
   }
 
   async function loadSatisfactionData(companyId: string) {
     const since = getDateRange()
 
-    // Get tours for this company to filter feedback
     const { data: tours } = await supabase
       .from('tours')
       .select('id')
@@ -381,12 +362,19 @@ export default function ReportsDashboard() {
     return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount)
   }
 
+  const dateRangeLabels: Record<string, string> = {
+    today: t('reports.today'),
+    week: t('reports.week'),
+    month: t('reports.month'),
+    all: t('reports.all')
+  }
+
   if (loading) {
     return (
       <div className="h-full flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading reports...</p>
+          <p className="text-gray-600">{t('reports.loading')}</p>
         </div>
       </div>
     )
@@ -394,12 +382,11 @@ export default function ReportsDashboard() {
 
   return (
     <div className="h-full flex flex-col w-full overflow-hidden">
-      {/* Header */}
       <div className="shrink-0 border-b border-gray-200 bg-white px-6 py-4">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Reports & Analytics</h1>
-            <p className="text-sm text-gray-500 mt-1">Business intelligence and performance metrics</p>
+            <h1 className="text-2xl font-bold text-gray-900">{t('reports.title')}</h1>
+            <p className="text-sm text-gray-500 mt-1">{t('reports.businessIntelligence')}</p>
           </div>
           
           <div className="flex items-center gap-2">
@@ -413,20 +400,19 @@ export default function ReportsDashboard() {
                     : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                 }`}
               >
-                {range.charAt(0).toUpperCase() + range.slice(1)}
+                {dateRangeLabels[range]}
               </button>
             ))}
           </div>
         </div>
 
-        {/* Tabs */}
         <div className="flex gap-2">
           {[
-            { id: 'overview', label: '📊 Overview', count: null },
-            { id: 'revenue', label: '💰 Revenue', count: null },
-            { id: 'tours', label: '🚌 Tours', count: tourPerformance.length },
-            { id: 'guides', label: '👥 Guides', count: guidePerformance.length },
-            { id: 'satisfaction', label: '⭐ Satisfaction', count: satisfaction.total_reviews }
+            { id: 'overview', label: `📊 ${t('reports.overview')}`, count: null },
+            { id: 'revenue', label: `💰 ${t('reports.revenue')}`, count: null },
+            { id: 'tours', label: `🚌 ${t('reports.tours')}`, count: tourPerformance.length },
+            { id: 'guides', label: `👥 ${t('reports.guides')}`, count: guidePerformance.length },
+            { id: 'satisfaction', label: `⭐ ${t('reports.satisfaction')}`, count: satisfaction.total_reviews }
           ].map((tab) => (
             <button
               key={tab.id}
@@ -450,67 +436,64 @@ export default function ReportsDashboard() {
         </div>
       </div>
 
-      {/* Content */}
       <div className="flex-1 overflow-auto bg-gray-50 p-6">
         {activeTab === 'overview' && (
           <div className="space-y-6">
-            {/* Key Metrics */}
             <div className="grid grid-cols-4 gap-4">
               <div className="bg-white rounded-xl border border-gray-200 p-6">
-                <p className="text-sm text-gray-500 uppercase font-medium">Total Tours</p>
+                <p className="text-sm text-gray-500 uppercase font-medium">{t('reports.totalTours')}</p>
                 <p className="text-3xl font-bold text-gray-900 mt-2">{overview.total_tours}</p>
               </div>
               <div className="bg-white rounded-xl border border-gray-200 p-6">
-                <p className="text-sm text-gray-500 uppercase font-medium">Total Guests</p>
+                <p className="text-sm text-gray-500 uppercase font-medium">{t('reports.totalGuests')}</p>
                 <p className="text-3xl font-bold text-blue-600 mt-2">{overview.total_guests}</p>
               </div>
               <div className="bg-white rounded-xl border border-gray-200 p-6">
-                <p className="text-sm text-gray-500 uppercase font-medium">Revenue</p>
+                <p className="text-sm text-gray-500 uppercase font-medium">{t('reports.revenueLabel')}</p>
                 <p className="text-3xl font-bold text-green-600 mt-2">{formatCurrency(overview.total_revenue)}</p>
               </div>
               <div className="bg-white rounded-xl border border-gray-200 p-6">
-                <p className="text-sm text-gray-500 uppercase font-medium">Avg Rating</p>
+                <p className="text-sm text-gray-500 uppercase font-medium">{t('reports.avgRating')}</p>
                 <p className="text-3xl font-bold text-yellow-600 mt-2">⭐ {overview.avg_rating}</p>
               </div>
             </div>
 
-            {/* Revenue Summary */}
             <div className="grid grid-cols-2 gap-4">
               <div className="bg-white rounded-xl border border-gray-200 p-6">
-                <h3 className="font-semibold text-gray-900 mb-4">💰 Revenue Summary</h3>
+                <h3 className="font-semibold text-gray-900 mb-4">💰 {t('reports.revenueSummary')}</h3>
                 <div className="space-y-3">
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Total Revenue</span>
+                    <span className="text-gray-600">{t('reports.totalRevenue')}</span>
                     <span className="font-semibold text-green-600">{formatCurrency(revenue.total_revenue)}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Expenses</span>
+                    <span className="text-gray-600">{t('reports.expenses')}</span>
                     <span className="font-semibold text-red-600">-{formatCurrency(revenue.expenses)}</span>
                   </div>
                   <div className="border-t pt-3 flex justify-between">
-                    <span className="font-medium">Net Profit</span>
+                    <span className="font-medium">{t('reports.netProfit')}</span>
                     <span className="font-bold text-green-600">{formatCurrency(revenue.net_profit)}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Profit Margin</span>
+                    <span className="text-gray-600">{t('reports.profitMargin')}</span>
                     <span className="font-semibold">{revenue.profit_margin}%</span>
                   </div>
                 </div>
               </div>
 
               <div className="bg-white rounded-xl border border-gray-200 p-6">
-                <h3 className="font-semibold text-gray-900 mb-4">⭐ Customer Satisfaction</h3>
+                <h3 className="font-semibold text-gray-900 mb-4">⭐ {t('reports.customerSatisfaction')}</h3>
                 <div className="space-y-3">
                   <div className="flex justify-between items-center">
-                    <span className="text-gray-600">Average Rating</span>
+                    <span className="text-gray-600">{t('reports.averageRating')}</span>
                     <span className="text-2xl">⭐ {satisfaction.avg_rating}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Total Reviews</span>
+                    <span className="text-gray-600">{t('reports.totalReviews')}</span>
                     <span className="font-semibold">{satisfaction.total_reviews}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Response Rate</span>
+                    <span className="text-gray-600">{t('reports.responseRate')}</span>
                     <span className="font-semibold">{satisfaction.response_rate}%</span>
                   </div>
                   <div className="pt-2">
@@ -540,40 +523,40 @@ export default function ReportsDashboard() {
         {activeTab === 'revenue' && (
           <div className="max-w-4xl">
             <div className="bg-white rounded-xl border border-gray-200 p-6">
-              <h2 className="text-xl font-bold text-gray-900 mb-6">💰 Revenue Breakdown</h2>
+              <h2 className="text-xl font-bold text-gray-900 mb-6">💰 {t('reports.revenueBreakdown')}</h2>
               
               <div className="grid grid-cols-3 gap-6 mb-8">
                 <div className="text-center p-4 bg-green-50 rounded-lg">
-                  <p className="text-sm text-green-600 uppercase font-medium">Total Revenue</p>
+                  <p className="text-sm text-green-600 uppercase font-medium">{t('reports.totalRevenue')}</p>
                   <p className="text-3xl font-bold text-green-700 mt-2">{formatCurrency(revenue.total_revenue)}</p>
                 </div>
                 <div className="text-center p-4 bg-blue-50 rounded-lg">
-                  <p className="text-sm text-blue-600 uppercase font-medium">Avg per Tour</p>
+                  <p className="text-sm text-blue-600 uppercase font-medium">{t('reports.avgPerTour')}</p>
                   <p className="text-3xl font-bold text-blue-700 mt-2">{formatCurrency(revenue.avg_per_tour)}</p>
                 </div>
                 <div className="text-center p-4 bg-purple-50 rounded-lg">
-                  <p className="text-sm text-purple-600 uppercase font-medium">Avg per Guest</p>
+                  <p className="text-sm text-purple-600 uppercase font-medium">{t('reports.avgPerGuest')}</p>
                   <p className="text-3xl font-bold text-purple-700 mt-2">{formatCurrency(revenue.avg_per_guest)}</p>
                 </div>
               </div>
 
               <div className="border-t pt-6">
-                <h3 className="font-semibold text-gray-900 mb-4">Profit & Loss</h3>
+                <h3 className="font-semibold text-gray-900 mb-4">{t('reports.profitLoss')}</h3>
                 <div className="space-y-3">
                   <div className="flex justify-between items-center p-3 bg-green-50 rounded-lg">
-                    <span className="text-green-700">Gross Revenue</span>
+                    <span className="text-green-700">{t('reports.grossRevenue')}</span>
                     <span className="font-bold text-green-700">{formatCurrency(revenue.total_revenue)}</span>
                   </div>
                   <div className="flex justify-between items-center p-3 bg-red-50 rounded-lg">
-                    <span className="text-red-700">Total Expenses</span>
+                    <span className="text-red-700">{t('reports.totalExpenses')}</span>
                     <span className="font-bold text-red-700">{formatCurrency(revenue.expenses)}</span>
                   </div>
                   <div className="flex justify-between items-center p-4 bg-gray-50 rounded-lg border-2">
-                    <span className="font-bold text-gray-900">Net Profit</span>
+                    <span className="font-bold text-gray-900">{t('reports.netProfit')}</span>
                     <span className="font-bold text-gray-900">{formatCurrency(revenue.net_profit)}</span>
                   </div>
                   <div className="flex justify-between items-center p-3">
-                    <span className="text-gray-600">Profit Margin</span>
+                    <span className="text-gray-600">{t('reports.profitMargin')}</span>
                     <span className="font-semibold">{revenue.profit_margin}%</span>
                   </div>
                 </div>
@@ -586,17 +569,17 @@ export default function ReportsDashboard() {
           <div className="max-w-6xl">
             <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
               <div className="px-6 py-4 border-b border-gray-200">
-                <h2 className="text-xl font-bold text-gray-900">🚌 Tour Performance (Top 10)</h2>
+                <h2 className="text-xl font-bold text-gray-900">🚌 {t('reports.tourPerformanceTop')}</h2>
               </div>
               
               <table className="w-full">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="text-left py-3 px-4 text-sm font-medium text-gray-700">Tour Name</th>
-                    <th className="text-right py-3 px-4 text-sm font-medium text-gray-700">Tours</th>
-                    <th className="text-right py-3 px-4 text-sm font-medium text-gray-700">Guests</th>
-                    <th className="text-right py-3 px-4 text-sm font-medium text-gray-700">Occupancy</th>
-                    <th className="text-right py-3 px-4 text-sm font-medium text-gray-700">Revenue</th>
+                    <th className="text-left py-3 px-4 text-sm font-medium text-gray-700">{t('reports.tourName')}</th>
+                    <th className="text-right py-3 px-4 text-sm font-medium text-gray-700">{t('reports.toursCount')}</th>
+                    <th className="text-right py-3 px-4 text-sm font-medium text-gray-700">{t('reports.guestsServed')}</th>
+                    <th className="text-right py-3 px-4 text-sm font-medium text-gray-700">{t('reports.occupancyRate')}</th>
+                    <th className="text-right py-3 px-4 text-sm font-medium text-gray-700">{t('reports.revenueLabel')}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
@@ -622,7 +605,7 @@ export default function ReportsDashboard() {
                   {tourPerformance.length === 0 && (
                     <tr>
                       <td colSpan={5} className="py-8 text-center text-gray-500">
-                        No tour data available for this period
+                        {t('reports.noData')}
                       </td>
                     </tr>
                   )}
@@ -636,17 +619,17 @@ export default function ReportsDashboard() {
           <div className="max-w-6xl">
             <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
               <div className="px-6 py-4 border-b border-gray-200">
-                <h2 className="text-xl font-bold text-gray-900">👥 Guide Performance (Top 10)</h2>
+                <h2 className="text-xl font-bold text-gray-900">👥 {t('reports.guidePerformanceTop')}</h2>
               </div>
               
               <table className="w-full">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="text-left py-3 px-4 text-sm font-medium text-gray-700">Guide</th>
-                    <th className="text-right py-3 px-4 text-sm font-medium text-gray-700">Tours</th>
-                    <th className="text-right py-3 px-4 text-sm font-medium text-gray-700">Guests</th>
-                    <th className="text-right py-3 px-4 text-sm font-medium text-gray-700">On-Time</th>
-                    <th className="text-right py-3 px-4 text-sm font-medium text-gray-700">Incidents</th>
+                    <th className="text-left py-3 px-4 text-sm font-medium text-gray-700">{t('reports.guideName')}</th>
+                    <th className="text-right py-3 px-4 text-sm font-medium text-gray-700">{t('reports.toursCount')}</th>
+                    <th className="text-right py-3 px-4 text-sm font-medium text-gray-700">{t('reports.guestsServed')}</th>
+                    <th className="text-right py-3 px-4 text-sm font-medium text-gray-700">{t('reports.onTimePercentage')}</th>
+                    <th className="text-right py-3 px-4 text-sm font-medium text-gray-700">{t('reports.incidents')}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
@@ -676,7 +659,7 @@ export default function ReportsDashboard() {
                   {guidePerformance.length === 0 && (
                     <tr>
                       <td colSpan={5} className="py-8 text-center text-gray-500">
-                        No guide data available for this period
+                        {t('reports.noData')}
                       </td>
                     </tr>
                   )}
@@ -689,32 +672,32 @@ export default function ReportsDashboard() {
         {activeTab === 'satisfaction' && (
           <div className="max-w-4xl space-y-6">
             <div className="bg-white rounded-xl border border-gray-200 p-6">
-              <h2 className="text-xl font-bold text-gray-900 mb-6">⭐ Customer Satisfaction</h2>
+              <h2 className="text-xl font-bold text-gray-900 mb-6">⭐ {t('reports.customerSatisfaction')}</h2>
               
               <div className="grid grid-cols-3 gap-4 mb-8">
                 <div className="text-center p-4 bg-yellow-50 rounded-lg">
-                  <p className="text-sm text-yellow-600 uppercase font-medium">Average Rating</p>
+                  <p className="text-sm text-yellow-600 uppercase font-medium">{t('reports.averageRating')}</p>
                   <p className="text-4xl font-bold text-yellow-700 mt-2">⭐ {satisfaction.avg_rating}</p>
                 </div>
                 <div className="text-center p-4 bg-blue-50 rounded-lg">
-                  <p className="text-sm text-blue-600 uppercase font-medium">Total Reviews</p>
+                  <p className="text-sm text-blue-600 uppercase font-medium">{t('reports.totalReviews')}</p>
                   <p className="text-4xl font-bold text-blue-700 mt-2">{satisfaction.total_reviews}</p>
                 </div>
                 <div className="text-center p-4 bg-green-50 rounded-lg">
-                  <p className="text-sm text-green-600 uppercase font-medium">Response Rate</p>
+                  <p className="text-sm text-green-600 uppercase font-medium">{t('reports.responseRate')}</p>
                   <p className="text-4xl font-bold text-green-700 mt-2">{satisfaction.response_rate}%</p>
                 </div>
               </div>
 
               <div>
-                <h3 className="font-semibold text-gray-900 mb-4">Rating Distribution</h3>
+                <h3 className="font-semibold text-gray-900 mb-4">{t('reports.ratingDistribution')}</h3>
                 <div className="space-y-3">
                   {[5, 4, 3, 2, 1].map((rating) => {
                     const count = satisfaction.rating_distribution[rating as keyof typeof satisfaction.rating_distribution]
                     const percentage = satisfaction.total_reviews ? (count / satisfaction.total_reviews) * 100 : 0
                     return (
                       <div key={rating} className="flex items-center gap-3">
-                        <span className="w-12 text-sm font-medium text-gray-700">{rating} Stars</span>
+                        <span className="w-12 text-sm font-medium text-gray-700">{rating} ⭐</span>
                         <div className="flex-1 h-4 bg-gray-200 rounded-full overflow-hidden">
                           <div 
                             className="h-full bg-yellow-400"
