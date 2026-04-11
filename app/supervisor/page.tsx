@@ -351,7 +351,7 @@ export default function SupervisorDashboard() {
         <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-4 min-h-0">
           <div className="bg-white rounded-lg border border-gray-200 overflow-hidden flex flex-col">
             <div className="px-3 py-2 border-b border-gray-200 bg-gray-50 flex items-center justify-between shrink-0">
-              <h2 className="font-semibold text-gray-900 text-sm">Incident Reports</h2>
+              <h2 className="font-semibold text-gray-900 text-sm">{t('supervisor.incidentReports') || 'Incident Reports'}</h2>
               {stats.open_incidents > 0 && (
                 <span className="bg-red-100 text-red-700 text-xs px-2 py-0.5 rounded-full">{stats.open_incidents} open</span>
               )}
@@ -402,8 +402,8 @@ export default function SupervisorDashboard() {
             {/* Active Guides Widget */}
             <div className="bg-white rounded-lg border border-gray-200 p-3 flex-1 overflow-hidden">
               <div className="flex items-center justify-between mb-2">
-                <h2 className="font-semibold text-gray-900 text-sm">Active Guides</h2>
-                <span className="bg-green-100 text-green-700 text-xs px-2 py-0.5 rounded-full">{activeGuides.length} on tour</span>
+                <h2 className="font-semibold text-gray-900 text-sm">{t('supervisor.activeGuides') || 'Active Guides'}</h2>
+                <span className="bg-green-100 text-green-700 text-xs px-2 py-0.5 rounded-full">{activeGuides.length} {t('supervisor.onTour') || 'on tour'}</span>
               </div>
               <div className="space-y-2">
                 {activeGuides.map((guide) => (
