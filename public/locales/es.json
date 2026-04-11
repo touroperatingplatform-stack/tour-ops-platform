@@ -358,7 +358,10 @@
     "occupancyRate": "Ocupación",
     "rating": "Calificación",
     "incidents": "Incidentes",
-    "reviews": "Reseñas"
+    "reviews": "Reseñas",
+    "activeTours": "Tours Activos",
+    "approved": "Aprobado",
+    "expenseSummary": "Resumen de Gastos"
   },
   "supervisor": {
     "dashboard": "Panel de Supervisor",
