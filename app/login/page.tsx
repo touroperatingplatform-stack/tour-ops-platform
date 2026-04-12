@@ -5,6 +5,7 @@ export const dynamic = 'force-dynamic'
 import { useState, useEffect, useRef } from 'react'
 import { supabase } from '@/lib/supabase/client'
 import { useTranslation } from '@/lib/i18n/useTranslation'
+import LanguageToggle from '@/components/LanguageToggle'
 
 export default function LoginPage() {
   const { t } = useTranslation()
@@ -143,11 +144,15 @@ export default function LoginPage() {
     <div style={{
       minHeight: '100vh',
       display: 'flex',
+      flexDirection: 'column',
       alignItems: 'center',
       justifyContent: 'center',
       backgroundColor: '#f9fafb',
       padding: '16px',
     }}>
+      <div style={{ position: 'absolute', top: '16px', right: '16px' }}>
+        <LanguageToggle />
+      </div>
       <div style={{ width: '100%', maxWidth: '384px' }}>
         <div style={{ textAlign: 'center', marginBottom: '32px' }}>
           <div style={{
