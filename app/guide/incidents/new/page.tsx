@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase/client'
 import { uploadToCloudinary } from '@/lib/cloudinary/upload'
+import { useTranslation } from '@/lib/i18n/useTranslation'
 
 const incidentTypes = [
   { value: 'medical', label: 'Medical Emergency', icon: '🏥' },
@@ -33,6 +34,7 @@ interface Tour {
 
 export default function NewIncidentPage() {
   const router = useRouter()
+  const { t } = useTranslation()
   const [loading, setLoading] = useState(false)
   const [uploading, setUploading] = useState(false)
   const [photos, setPhotos] = useState<string[]>([])
@@ -135,10 +137,10 @@ export default function NewIncidentPage() {
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
           </svg>
-          Back to Dashboard
+          {t('guideNewIncident.backToDashboard')}
         </Link>
-        <h1 className="text-2xl font-bold text-gray-900">Report Incident</h1>
-        <p className="text-gray-500 mt-1">Document any issues or emergencies</p>
+        <h1 className="text-2xl font-bold text-gray-900">{t('guideNewIncident.reportIncident')}</h1>
+        <p className="text-gray-500 mt-1">{t('guideNewIncident.documentIssues')}</p>
       </div>
 
       {/* Form */}

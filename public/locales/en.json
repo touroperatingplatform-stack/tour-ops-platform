@@ -925,5 +925,32 @@
     "noIncidents": "No incidents reported",
     "tapNewReport": "Tap + New Report to create your first incident.",
     "tour": "Tour"
+  },
+  "guideNewIncident": {
+    "backToDashboard": "Back to Dashboard",
+    "reportIncident": "Report Incident",
+    "documentIssues": "Document any issues or emergencies",
+    "incidentType": "Incident Type",
+    "severity": "Severity",
+    "relatedTour": "Related Tour",
+    "loadingTours": "Loading your tours...",
+    "noUpcomingTours": "No upcoming tours assigned to you",
+    "selectTourOptional": "Select the tour this incident relates to (optional)",
+    "photosOptional": "Photos (Optional)",
+    "addPhoto": "Add",
+    "photosAdded": "photos added",
+    "descriptionPlaceholder": "Describe what happened, who was involved, and any actions taken...",
+    "submitReport": "Submit Report",
+    "submitting": "Submitting...",
+    "medicalEmergency": "Medical Emergency",
+    "accident": "Accident",
+    "vehicleIssue": "Vehicle Issue",
+    "guestComplaint": "Guest Complaint",
+    "weather": "Weather",
+    "other": "Other",
+    "low": "Low",
+    "medium": "Medium",
+    "high": "High",
+    "critical": "Critical"
   }
 }

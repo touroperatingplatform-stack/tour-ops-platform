@@ -618,5 +618,32 @@
     "noIncidents": "No hay incidentes reportados",
     "tapNewReport": "Toca + Nuevo Reporte para crear tu primer incidente.",
     "tour": "Tour"
+  },
+  "guideNewIncident": {
+    "backToDashboard": "Volver al Panel",
+    "reportIncident": "Reportar Incidente",
+    "documentIssues": "Documenta cualquier problema o emergencia",
+    "incidentType": "Tipo de Incidente",
+    "severity": "Severidad",
+    "relatedTour": "Tour Relacionado",
+    "loadingTours": "Cargando tus tours...",
+    "noUpcomingTours": "No hay tours próximos asignados a ti",
+    "selectTourOptional": "Selecciona el tour relacionado con este incidente (opcional)",
+    "photosOptional": "Fotos (Opcional)",
+    "addPhoto": "Agregar",
+    "photosAdded": "fotos agregadas",
+    "descriptionPlaceholder": "Describe lo que sucedió, quién estuvo involucrado y cualquier acción tomada...",
+    "submitReport": "Enviar Reporte",
+    "submitting": "Enviando...",
+    "medicalEmergency": "Emergencia Médica",
+    "accident": "Accidente",
+    "vehicleIssue": "Problema de Vehículo",
+    "guestComplaint": "Queja de Huésped",
+    "weather": "Clima",
+    "other": "Otro",
+    "low": "Bajo",
+    "medium": "Medio",
+    "high": "Alto",
+    "critical": "Crítico"
   }
 }
