@@ -657,5 +657,29 @@
   },
   "app": {
     "title": "Tour Ops"
+  },
+  "adminDashboard": {
+    "title": "Panel de Empresa",
+    "toursToday": "Tours Hoy",
+    "guestsToday": "Huéspedes Hoy",
+    "onTimeRate": "% Puntual",
+    "incidents": "Incidentes",
+    "activeTours": "Tours Activos",
+    "teamStatus": "Estado del Equipo",
+    "guides": "Guías",
+    "vehicles": "Vehículos",
+    "attentionRequired": "Requieren Atención",
+    "items": "elementos",
+    "allClear": "✓ Todo bien",
+    "quickActions": "Acciones Rápidas",
+    "newTour": "Nuevo Tour",
+    "addUser": "Agregar Usuario",
+    "fleet": "Flota",
+    "todaysTimeline": "Línea de Tiempo de Hoy",
+    "fleetStatus": "Estado de la Flota",
+    "inUse": "En Uso",
+    "available": "Disponible",
+    "maintenance": "Mantenimiento",
+    "live": "EN VIVO"
   }
 }
