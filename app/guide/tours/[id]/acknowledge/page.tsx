@@ -382,12 +382,12 @@ export default function AcknowledgeTourPage() {
       {/* Time Confirmation */}
       <div className="bg-white rounded-2xl border border-gray-200 p-5">
         <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
-          <span>⏰</span> Confirm Your Times
+          <span>⏰</span> {t('guideAcknowledge.confirmYourTimes')}
         </h3>
         <div className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              My office arrival time
+              {t('guideAcknowledge.officeArrivalTime')}
             </label>
             <input
               type="time"
@@ -398,7 +398,7 @@ export default function AcknowledgeTourPage() {
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              My pickup start time
+              {t('guideAcknowledge.pickupStartTime')}
             </label>
             <input
               type="time"
@@ -424,12 +424,12 @@ export default function AcknowledgeTourPage() {
           {submitting ? (
             <>
               <span className="animate-spin">⟳</span>
-              Confirming...
+              {t('guideAcknowledge.acknowledging')}
             </>
           ) : (
             <>
               <span className="text-2xl">✓</span>
-              ACCEPT TOUR
+              {t('guideAcknowledge.acceptTour')}
             </>
           )}
         </button>
@@ -437,7 +437,7 @@ export default function AcknowledgeTourPage() {
           onClick={() => router.back()}
           className="w-full py-3 text-gray-500 font-medium text-center hover:text-gray-700"
         >
-          Need to Discuss
+          {t('guideAcknowledge.cancel')}
         </button>
       </div>
     </div>

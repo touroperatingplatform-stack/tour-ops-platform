@@ -862,7 +862,7 @@
     "pickupStartTime": "Mi hora de inicio de recogida",
     "acceptTour": "ACEPTAR TOUR",
     "acknowledging": "Confirmando...",
-    "cancel": "Cancelar",
+    "cancel": "Necesito Discutir",
     "confirmAllItems": "Por favor confirma todos los items",
     "failedToAcknowledge": "Error al confirmar el tour"
   }
