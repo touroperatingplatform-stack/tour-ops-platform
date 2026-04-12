@@ -10,19 +10,19 @@ import { uploadToCloudinary } from '@/lib/cloudinary/upload'
 import { useTranslation } from '@/lib/i18n/useTranslation'
 
 const incidentTypes = [
-  { value: 'medical', label: 'Medical Emergency', icon: '🏥' },
-  { value: 'accident', label: 'Accident', icon: '💥' },
-  { value: 'vehicle', label: 'Vehicle Issue', icon: '🚐' },
-  { value: 'guest', label: 'Guest Complaint', icon: '😤' },
-  { value: 'weather', label: 'Weather', icon: '⛈️' },
-  { value: 'other', label: 'Other', icon: '📝' },
+  { value: 'medical', labelKey: 'guideNewIncident.medicalEmergency', icon: '🏥' },
+  { value: 'accident', labelKey: 'guideNewIncident.accident', icon: '💥' },
+  { value: 'vehicle', labelKey: 'guideNewIncident.vehicleIssue', icon: '🚐' },
+  { value: 'guest', labelKey: 'guideNewIncident.guestComplaint', icon: '😤' },
+  { value: 'weather', labelKey: 'guideNewIncident.weather', icon: '⛈️' },
+  { value: 'other', labelKey: 'guideNewIncident.other', icon: '📝' },
 ]
 
 const severities = [
-  { value: 'low', label: 'Low', color: 'bg-green-100 text-green-700' },
-  { value: 'medium', label: 'Medium', color: 'bg-yellow-100 text-yellow-700' },
-  { value: 'high', label: 'High', color: 'bg-orange-100 text-orange-700' },
-  { value: 'critical', label: 'Critical', color: 'bg-red-100 text-red-700' },
+  { value: 'low', labelKey: 'guideNewIncident.low', color: 'bg-green-100 text-green-700' },
+  { value: 'medium', labelKey: 'guideNewIncident.medium', color: 'bg-yellow-100 text-yellow-700' },
+  { value: 'high', labelKey: 'guideNewIncident.high', color: 'bg-orange-100 text-orange-700' },
+  { value: 'critical', labelKey: 'guideNewIncident.critical', color: 'bg-red-100 text-red-700' },
 ]
 
 interface Tour {
@@ -147,7 +147,7 @@ export default function NewIncidentPage() {
       <form onSubmit={handleSubmit} className="bg-white rounded-2xl border border-gray-200 p-6 space-y-6">
         {/* Incident Type */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Incident Type *</label>
+          <label className="block text-sm font-medium text-gray-700 mb-2">{t('guideNewIncident.incidentType')} *</label>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
             {incidentTypes.map((type) => (
               <button
@@ -161,7 +161,7 @@ export default function NewIncidentPage() {
                 }`}
               >
                 <span className="text-2xl block mb-1">{type.icon}</span>
-                <p className="text-sm font-medium text-gray-900">{type.label}</p>
+                <p className="text-sm font-medium text-gray-900">{t(type.labelKey)}</p>
               </button>
             ))}
           </div>
@@ -169,7 +169,7 @@ export default function NewIncidentPage() {
 
         {/* Severity */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Severity *</label>
+          <label className="block text-sm font-medium text-gray-700 mb-2">{t('guideNewIncident.severity')} *</label>
           <div className="grid grid-cols-4 gap-2">
             {severities.map((sev) => (
               <button
@@ -182,7 +182,7 @@ export default function NewIncidentPage() {
                     : 'border-gray-200 hover:border-gray-300'
                 }`}
               >
-                <p className="text-sm font-medium">{sev.label}</p>
+                <p className="text-sm font-medium">{t(sev.labelKey)}</p>
               </button>
             ))}
           </div>
@@ -190,10 +190,10 @@ export default function NewIncidentPage() {
 
         {/* Related Tour - DROPDOWN */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Related Tour</label>
+          <label className="block text-sm font-medium text-gray-700 mb-2">{t('guideNewIncident.relatedTour')}</label>
           {toursLoading ? (
             <div className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-500">
-              Loading your tours...
+              {t('guideNewIncident.loadingTours')}
             </div>
           ) : myTours.length > 0 ? (
             <select
@@ -210,15 +210,15 @@ export default function NewIncidentPage() {
             </select>
           ) : (
             <div className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-500">
-              No upcoming tours assigned to you
+              {t('guideNewIncident.noUpcomingTours')}
             </div>
           )}
-          <p className="text-xs text-gray-500 mt-1">Select the tour this incident relates to (optional)</p>
+          <p className="text-xs text-gray-500 mt-1">{t('guideNewIncident.selectTourOptional')}</p>
         </div>
 
         {/* Photo Upload */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Photos (Optional)</label>
+          <label className="block text-sm font-medium text-gray-700 mb-2">{t('guideNewIncident.photosOptional')}</label>
           
           <div className="grid grid-cols-3 gap-2 mb-3">
             {photos.map((photo, idx) => (
@@ -236,7 +236,7 @@ export default function NewIncidentPage() {
             {photos.length < 4 && (
               <label className="aspect-square flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50">
                 <span className="text-2xl">📷</span>
-                <span className="text-xs text-gray-500 mt-1">Add</span>
+                <span className="text-xs text-gray-500 mt-1">{t('guideNewIncident.addPhoto')}</span>
                 <input
                   type="file"
                   accept="image/*"
@@ -248,20 +248,20 @@ export default function NewIncidentPage() {
               </label>
             )}
           </div>
-          <p className="text-xs text-gray-500">{photos.length}/4 photos added</p>
-          {uploading && <p className="text-sm text-blue-600 mt-2">⏳ Uploading...</p>}
+          <p className="text-xs text-gray-500">{photos.length}/4 {t('guideNewIncident.photosAdded')}</p>
+          {uploading && <p className="text-sm text-blue-600 mt-2">⏳ {t('common.loading')}...</p>}
         </div>
 
         {/* Description */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Description *</label>
+          <label className="block text-sm font-medium text-gray-700 mb-2">{t('common.description')} *</label>
           <textarea
             required
             value={formData.description}
             onChange={(e) => handleChange('description', e.target.value)}
             rows={4}
             className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="Describe what happened..."
+            placeholder={t('guideNewIncident.descriptionPlaceholder')}
           />
         </div>
 
@@ -271,14 +271,14 @@ export default function NewIncidentPage() {
             href="/guide"
             className="flex-1 bg-gray-100 text-gray-700 px-4 py-3 rounded-lg hover:bg-gray-200 transition-colors text-center font-medium"
           >
-            Cancel
+            {t('common.cancel')}
           </Link>
           <button
             type="submit"
             disabled={loading || uploading}
             className="flex-1 bg-blue-600 text-white px-4 py-3 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 font-medium"
           >
-            {loading ? 'Reporting...' : 'Report Incident'}
+            {loading ? t('guideNewIncident.submitting') : t('guideNewIncident.submitReport')}
           </button>
         </div>
       </form>
