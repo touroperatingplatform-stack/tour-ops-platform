@@ -8,6 +8,7 @@ import { useParams, useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase/client'
 import { uploadToCloudinary } from '@/lib/cloudinary/upload'
 import { compressImage } from '@/lib/image-compression'
+import { useTranslation } from '@/lib/i18n/useTranslation'
 
 interface Tour {
   id: string
@@ -65,15 +66,8 @@ interface Reservation {
   pickup_location: string | null
 }
 
-// Pre-departure checklist items (always shown)
-const preDepartureItems = [
-  { id: 'van_inspection', label: 'Van Inspection', description: 'Tires, fuel, cleanliness', icon: '🚐' },
-  { id: 'first_aid', label: 'First Aid Kit', description: 'Present and stocked', icon: '🩹' },
-  { id: 'emergency_contacts', label: 'Emergency Contacts', description: 'Reviewed', icon: '📞' },
-  { id: 'guest_manifest', label: 'Guest Manifest', description: 'Reviewed', icon: '📋' },
-]
-
 export default function GuideTourPage() {
+  const { t } = useTranslation()
   const params = useParams()
   const router = useRouter()
   const [tour, setTour] = useState<Tour | null>(null)
@@ -162,25 +156,6 @@ export default function GuideTourPage() {
     if (data) setReservations(data)
   }
 
-  async function loadEquipmentChecklist() {
-    const { data } = await supabase
-      .from('tour_equipment_checklists')
-      .select('items, completed_items, is_completed')
-      .eq('tour_id', params.id)
-      .is('activity_id', null)
-      .maybeSingle()
-    
-    if (data?.items) {
-      // Initialize checked state from saved progress
-      const checked: Record<string, boolean> = {}
-      data.completed_items?.forEach((item: any) => {
-        checked[item.id] = true
-      })
-      setPreDepartureChecked(checked)
-      setEquipmentItems(data.items)
-    }
-  }
-
   async function loadStops() {
     const { data: stopsData } = await supabase
       .from('pickup_stops')
@@ -202,7 +177,7 @@ export default function GuideTourPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="text-gray-500">Loading tour...</div>
+        <div className="text-gray-500">{t('guideTour.loadingTour')}</div>
       </div>
     )
   }
@@ -210,9 +185,9 @@ export default function GuideTourPage() {
   if (!tour) {
     return (
       <div className="text-center py-12">
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">Tour not found</h1>
+        <h1 className="text-2xl font-bold text-gray-900 mb-2">{t('guideTour.tourNotFound')}</h1>
         <Link href="/guide" className="text-blue-600 hover:underline">
-          ← Back to my tours
+          {t('guideTour.backToTours')}
         </Link>
       </div>
     )
@@ -259,13 +234,15 @@ export default function GuideTourPage() {
         .eq('id', params.id)
     } catch (err) {
       console.error('Photo upload error:', err)
-      alert('Failed to upload photo. Please try again.')
+      alert(t('guideNewIncident.errorUploading'))
     } finally {
       setUploading(false)
     }
   }
 
-  const allPreDepartureDone = preDepartureItems.every(item => preDepartureChecked[item.id])
+  const allPreDepartureDone = assignedChecklist.length > 0 
+    ? assignedChecklist.every((item: any) => preDepartureChecked[item.id])
+    : true
   const allEquipmentDone = equipmentItems.length === 0 || equipmentItems.every((item: any) => preDepartureChecked[item.id])
   const allPhotosDone = equipmentPhoto && vanPhoto
   const canStartTour = allPreDepartureDone && allEquipmentDone && allPhotosDone
@@ -302,7 +279,7 @@ export default function GuideTourPage() {
       .eq('id', params.id)
 
     if (error) {
-      alert('Failed to start tour')
+      alert(t('guideNewIncident.errorUploading'))
     } else {
       router.push('/guide')
     }
@@ -397,10 +374,10 @@ export default function GuideTourPage() {
               <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
                 <span className="text-blue-600 font-bold">1</span>
               </div>
-              <h2 className="font-semibold text-gray-900 text-lg">Pre-Departure Checklist</h2>
+              <h2 className="font-semibold text-gray-900 text-lg">{t('checklists.preDeparture')}</h2>
             </div>
             <div className="space-y-3">
-              {(assignedChecklist.length > 0 ? assignedChecklist : preDepartureItems).map((item: any) => (
+              {(assignedChecklist.length > 0 ? assignedChecklist : []).map((item: any) => (
                 <button
                   key={item.id}
                   onClick={() => togglePreDeparture(item.id)}
@@ -412,12 +389,12 @@ export default function GuideTourPage() {
                 >
                   <span className="text-2xl">{item.icon || '📋'}</span>
                   <div className="flex-1">
-                    <div className="font-medium text-gray-900">{item.label || item.text}</div>
+                    <div className="font-medium text-gray-900">{item.text}</div>
                     <div className="text-sm text-gray-500">{item.description || ''}</div>
                   </div>
                   {item.photo_required && (
                     <span className="text-xs bg-orange-100 text-orange-700 px-2 py-1 rounded">
-                      📷 Photo
+                      {t('guideTour.photo')}
                     </span>
                   )}
                   <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
@@ -443,10 +420,10 @@ export default function GuideTourPage() {
                 <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
                   <span className="text-blue-600 font-bold">2</span>
                 </div>
-                <h2 className="font-semibold text-gray-900 text-lg">Tour Equipment Checklist</h2>
+                <h2 className="font-semibold text-gray-900 text-lg">{t('checklists.equipmentCheck')}</h2>
               </div>
               <p className="text-sm text-gray-500 mb-4">
-                Equipment needed based on tour activities
+                {t('guideTour.equipmentNeeded')}
               </p>
               <div className="space-y-3">
                 {equipmentItems.map((item: any) => (
@@ -482,7 +459,7 @@ export default function GuideTourPage() {
                     </div>
                     {item.photo_required && (
                       <span className="text-xs bg-orange-100 text-orange-700 px-2 py-1 rounded">
-                        📷 Photo required
+                        {t('guideTour.photoRequired')}
                       </span>
                     )}
                   </div>
@@ -497,12 +474,12 @@ export default function GuideTourPage() {
               <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
                 <span className="text-blue-600 font-bold">3</span>
               </div>
-              <h2 className="font-semibold text-gray-900 text-lg">Required Photos</h2>
+              <h2 className="font-semibold text-gray-900 text-lg">{t('checklists.requiredPhotos')}</h2>
             </div>
             <div className="grid grid-cols-2 gap-4">
               {/* Van Photo */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Van Photo</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">{t('guideTour.vanPhoto')}</label>
                 {vanPhoto ? (
                   <div className="relative rounded-xl overflow-hidden">
                     <img src={vanPhoto} alt="Van" className="w-full h-32 object-cover" />
@@ -513,13 +490,13 @@ export default function GuideTourPage() {
                       ⟳
                     </button>
                     <div className="absolute bottom-2 left-2 bg-green-500 text-white px-2 py-1 rounded-full text-xs font-medium">
-                      ✓ Captured
+                      {t('guideTour.captured')}
                     </div>
                   </div>
                 ) : (
                   <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-gray-300 rounded-xl cursor-pointer hover:border-blue-400 hover:bg-blue-50 transition-colors">
                     <span className="text-3xl mb-1">🚐</span>
-                    <span className="text-sm text-gray-500">Tap to capture</span>
+                    <span className="text-sm text-gray-500">{t('guideTour.tapToCapture')}</span>
                     <input 
                       type="file" 
                       accept="image/*" 
@@ -534,7 +511,7 @@ export default function GuideTourPage() {
 
               {/* Equipment Photo */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Equipment Photo</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">{t('guideTour.equipmentPhoto')}</label>
                 {equipmentPhoto ? (
                   <div className="relative rounded-xl overflow-hidden">
                     <img src={equipmentPhoto} alt="Equipment" className="w-full h-32 object-cover" />
@@ -545,13 +522,13 @@ export default function GuideTourPage() {
                       ⟳
                     </button>
                     <div className="absolute bottom-2 left-2 bg-green-500 text-white px-2 py-1 rounded-full text-xs font-medium">
-                      ✓ Captured
+                      {t('guideTour.captured')}
                     </div>
                   </div>
                 ) : (
                   <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-gray-300 rounded-xl cursor-pointer hover:border-blue-400 hover:bg-blue-50 transition-colors">
                     <span className="text-3xl mb-1">🎒</span>
-                    <span className="text-sm text-gray-500">Tap to capture</span>
+                    <span className="text-sm text-gray-500">{t('guideTour.tapToCapture')}</span>
                     <input 
                       type="file" 
                       accept="image/*" 
@@ -579,15 +556,15 @@ export default function GuideTourPage() {
             {uploading ? (
               <>
                 <span className="animate-spin">⟳</span>
-                Uploading photos...
+                {t('guideTour.uploadingPhotos')}
               </>
             ) : canStartTour ? (
               <>
                 <span className="text-2xl">🚐</span>
-                START TOUR
+                {t('guideTour.startTour')}
               </>
             ) : (
-              'Complete all steps above to start'
+              t('guideTour.completeAllSteps')
             )}
           </button>
         </>
@@ -598,7 +575,7 @@ export default function GuideTourPage() {
         <>
           {/* Phase Indicator */}
           <div className="bg-white rounded-2xl border border-gray-200 p-6">
-            <h2 className="font-semibold text-gray-900 mb-4">Tour Progress</h2>
+            <h2 className="font-semibold text-gray-900 mb-4">{t('guideTour.tourProgress')}</h2>
             <div className="flex items-center gap-2">
               {/* Phase 1: Pickups */}
               <div className={`flex-1 p-3 rounded-xl border-2 ${
@@ -608,11 +585,11 @@ export default function GuideTourPage() {
                 <div className="flex items-center gap-2">
                   <span className="text-xl">{allPickupsDone ? '✅' : '📍'}</span>
                   <span className={`font-medium ${currentPhase === 'pickups' ? 'text-blue-900' : 'text-gray-600'}`}>
-                    Pickups
+                    {t('guideTour.pickups')}
                   </span>
                 </div>
                 <div className="text-sm text-gray-500 mt-1">
-                  {completedReservations.length}/{reservations.length} done
+                  {completedReservations.length}/{reservations.length} {t('guideTour.guestsDone')}
                 </div>
               </div>
               
@@ -628,11 +605,11 @@ export default function GuideTourPage() {
                 <div className="flex items-center gap-2">
                   <span className="text-xl">{allActivitiesDone ? '✅' : '🎯'}</span>
                   <span className={`font-medium ${currentPhase === 'activities' ? 'text-blue-900' : 'text-gray-600'}`}>
-                    Activities
+                    {t('guideTour.activities')}
                   </span>
                 </div>
                 <div className="text-sm text-gray-500 mt-1">
-                  {completedActivities.length}/{activityStops.length} done
+                  {completedActivities.length}/{activityStops.length} {t('guideTour.guestsDone')}
                 </div>
               </div>
               
@@ -648,11 +625,11 @@ export default function GuideTourPage() {
                 <div className="flex items-center gap-2">
                   <span className="text-xl">{allDropoffsDone ? '✅' : '🏁'}</span>
                   <span className={`font-medium ${currentPhase === 'dropoffs' ? 'text-blue-900' : 'text-gray-600'}`}>
-                    Dropoffs
+                    {t('guideTour.dropoffs')}
                   </span>
                 </div>
                 <div className="text-sm text-gray-500 mt-1">
-                  {completedDropoffs.length}/{dropoffStops.length} done
+                  {completedDropoffs.length}/{dropoffStops.length} {t('guideTour.guestsDone')}
                 </div>
               </div>
             </div>
@@ -666,8 +643,8 @@ export default function GuideTourPage() {
                   <span className="text-blue-600 font-bold">1</span>
                 </div>
                 <div>
-                  <h2 className="font-semibold text-gray-900 text-lg">Pickups</h2>
-                  <p className="text-sm text-gray-500">Complete all pickups to unlock activities</p>
+                  <h2 className="font-semibold text-gray-900 text-lg">{t('guideTour.pickups')}</h2>
+                  <p className="text-sm text-gray-500">{t('guideTour.pickupsComplete')}</p>
                 </div>
               </div>
               <div className="space-y-3">
@@ -685,21 +662,21 @@ export default function GuideTourPage() {
                           <div>
                             <div className="font-medium text-gray-900">{stop.location_name}</div>
                             <div className="text-sm text-gray-500">
-                              {stop.scheduled_time?.slice(0, 5)} • {stop.guest_count} guests
-                              {total > 0 && ` • ${total - pending}/${total} done`}
+                              {stop.scheduled_time?.slice(0, 5)} • {stop.guest_count} {t('guide.guests')}
+                              {total > 0 && ` • ${total - pending}/${total} ${t('guideTour.guestsDone')}`}
                             </div>
                           </div>
                         </div>
                         {isComplete ? (
                           <div className="bg-green-500 text-white px-3 py-1 rounded-full text-sm font-medium">
-                            ✓ Done
+                            ✓ {t('guideTour.done')}
                           </div>
                         ) : (
                           <Link
                             href={`/guide/tours/${tour.id}/checkin?type=pickup`}
                             className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700"
                           >
-                            {pending > 0 ? `${pending} pending` : 'Check In'}
+                            {pending > 0 ? `${pending} ${t('guideTour.pending')}` : t('guideTour.checkIn')}
                           </Link>
                         )}
                       </div>
@@ -708,7 +685,7 @@ export default function GuideTourPage() {
                 })}
                 {pickupStops.length === 0 && (
                   <div className="text-center p-6 text-gray-500">
-                    No pickup stops for this tour
+                    {t('guideTour.noPickupStops')}
                   </div>
                 )}
               </div>
@@ -723,8 +700,8 @@ export default function GuideTourPage() {
                   <span className="text-gray-500 font-bold">🔒</span>
                 </div>
                 <div>
-                  <h2 className="font-semibold text-gray-700 text-lg">Activities</h2>
-                  <p className="text-sm text-gray-500">Complete all pickups to unlock</p>
+                  <h2 className="font-semibold text-gray-700 text-lg">{t('guideTour.activities')}</h2>
+                  <p className="text-sm text-gray-500">{t('guideTour.pickupsUnlock')}</p>
                 </div>
               </div>
               <div className="space-y-3">
@@ -735,7 +712,7 @@ export default function GuideTourPage() {
                       <div>
                         <div className="font-medium text-gray-500">{stop.location_name}</div>
                         <div className="text-sm text-gray-400">
-                          {stop.scheduled_time?.slice(0, 5)} • {stop.guest_count} guests
+                          {stop.scheduled_time?.slice(0, 5)} • {stop.guest_count} {t('guide.guests')}
                         </div>
                       </div>
                     </div>
@@ -743,7 +720,7 @@ export default function GuideTourPage() {
                 ))}
                 {activityStops.length === 0 && (
                   <div className="text-center p-6 text-gray-400">
-                    No activities for this tour
+                    {t('guideTour.noActivities')}
                   </div>
                 )}
               </div>
@@ -760,10 +737,10 @@ export default function GuideTourPage() {
                 </div>
                 <div>
                   <h2 className="font-semibold text-gray-900 text-lg">
-                    {currentPhase === 'activities' ? 'Activities' : 'Activities ✅ Done'}
+                    {currentPhase === 'activities' ? t('guideTour.activities') : `${t('guideTour.activities')} ✅ ${t('guideTour.done')}`}
                   </h2>
                   {currentPhase === 'activities' && (
-                    <p className="text-sm text-gray-500">Complete all activities to unlock dropoffs</p>
+                    <p className="text-sm text-gray-500">{t('guideTour.activitiesComplete')}</p>
                   )}
                 </div>
               </div>
@@ -781,20 +758,20 @@ export default function GuideTourPage() {
                           <div>
                             <div className="font-medium text-gray-900">{stop.location_name}</div>
                             <div className="text-sm text-gray-500">
-                              {stop.scheduled_time?.slice(0, 5)} • {stop.guest_count} guests
+                              {stop.scheduled_time?.slice(0, 5)} • {stop.guest_count} {t('guide.guests')}
                             </div>
                           </div>
                         </div>
                         {hasCheckin ? (
                           <div className="bg-green-500 text-white px-3 py-1 rounded-full text-sm font-medium">
-                            ✓ Done
+                            ✓ {t('guideTour.done')}
                           </div>
                         ) : (
                           <Link
                             href={`/guide/tours/${tour.id}/checkin?type=activity`}
                             className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700"
                           >
-                            Check In
+                            {t('guideTour.checkIn')}
                           </Link>
                         )}
                       </div>
@@ -803,7 +780,7 @@ export default function GuideTourPage() {
                 })}
                 {activityStops.length === 0 && (
                   <div className="text-center p-6 text-gray-500">
-                    No activities for this tour
+                    {t('guideTour.noActivities')}
                   </div>
                 )}
               </div>
@@ -818,12 +795,12 @@ export default function GuideTourPage() {
                   <span className="text-gray-500 font-bold">🔒</span>
                 </div>
                 <div>
-                  <h2 className="font-semibold text-gray-700 text-lg">Dropoffs</h2>
-                  <p className="text-sm text-gray-500">Complete all activities to unlock</p>
+                  <h2 className="font-semibold text-gray-700 text-lg">{t('guideTour.dropoffs')}</h2>
+                  <p className="text-sm text-gray-500">{t('guideTour.activitiesUnlock')}</p>
                 </div>
               </div>
               <div className="text-center p-6 text-gray-400">
-                Dropoffs will appear here after activities are complete
+                {t('guideTour.dropoffsUnlock')}
               </div>
             </div>
           ) : (
@@ -838,10 +815,10 @@ export default function GuideTourPage() {
                 </div>
                 <div>
                   <h2 className="font-semibold text-gray-900 text-lg">
-                    {!allDropoffsDone ? 'Dropoffs' : 'Dropoffs ✅ Done'}
+                    {!allDropoffsDone ? t('guideTour.dropoffs') : `${t('guideTour.dropoffs')} ✅ ${t('guideTour.done')}`}
                   </h2>
                   {!allDropoffsDone && (
-                    <p className="text-sm text-gray-500">Complete all dropoffs to finish tour</p>
+                    <p className="text-sm text-gray-500">{t('guideTour.dropoffsComplete')}</p>
                   )}
                 </div>
               </div>
@@ -859,20 +836,20 @@ export default function GuideTourPage() {
                           <div>
                             <div className="font-medium text-gray-900">{stop.location_name}</div>
                             <div className="text-sm text-gray-500">
-                              {stop.scheduled_time?.slice(0, 5)} • {stop.guest_count} guests
+                              {stop.scheduled_time?.slice(0, 5)} • {stop.guest_count} {t('guide.guests')}
                             </div>
                           </div>
                         </div>
                         {hasCheckin ? (
                           <div className="bg-green-500 text-white px-3 py-1 rounded-full text-sm font-medium">
-                            ✓ Done
+                            ✓ {t('guideTour.done')}
                           </div>
                         ) : (
                           <Link
                             href={`/guide/tours/${tour.id}/checkin?type=dropoff`}
                             className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700"
                           >
-                            Check In
+                            {t('guideTour.checkIn')}
                           </Link>
                         )}
                       </div>
@@ -881,7 +858,7 @@ export default function GuideTourPage() {
                 })}
                 {dropoffStops.length === 0 && (
                   <div className="text-center p-6 text-gray-500">
-                    No dropoffs for this tour
+                    {t('guideTour.noDropoffs')}
                   </div>
                 )}
               </div>
@@ -896,9 +873,9 @@ export default function GuideTourPage() {
                 className="w-full flex items-center justify-between"
               >
                 <div>
-                  <h2 className="font-semibold text-gray-900">Guest Manifest</h2>
+                  <h2 className="font-semibold text-gray-900">{t('guideTour.guestManifest')}</h2>
                   <p className="text-sm text-gray-500 mt-1">
-                    {reservations.filter(r => r.checked_in).length}/{reservations.length} checked in
+                    {reservations.filter(r => r.checked_in).length}/{reservations.length} {t('guideTour.guestsDone')}
                   </p>
                 </div>
                 <span className={`transform transition-transform ${showGuestManifest ? 'rotate-180' : ''}`}>
@@ -919,14 +896,14 @@ export default function GuideTourPage() {
                             {reservation.primary_contact_name || 'Guest'}
                           </div>
                           <div className="text-sm text-gray-500">
-                            {reservation.adult_pax}A {reservation.child_pax > 0 ? `${reservation.child_pax}C` : ''} {reservation.infant_pax > 0 ? `${reservation.infant_pax}I` : ''}
+                            {reservation.adult_pax}{t('guests.adults')} {reservation.child_pax > 0 ? `${reservation.child_pax}${t('guests.children')}` : ''} {reservation.infant_pax > 0 ? `${reservation.infant_pax}I` : ''}
                           </div>
                         </div>
                         <div className={`px-2 py-1 rounded-full text-xs font-medium ${
                           reservation.no_show ? 'bg-red-100 text-red-700' :
                           reservation.checked_in ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-600'
                         }`}>
-                          {reservation.no_show ? 'No Show' : reservation.checked_in ? 'Checked In' : 'Pending'}
+                          {reservation.no_show ? t('guideTour.noShow') : reservation.checked_in ? t('guideTour.checkedIn') : t('guideTour.pending')}
                         </div>
                       </div>
                       {reservation.dietary_restrictions?.length > 0 && (
@@ -947,11 +924,11 @@ export default function GuideTourPage() {
               href={`/guide/tours/${tour.id}/complete`}
               className="block w-full bg-green-600 text-white py-4 rounded-xl font-semibold text-lg text-center hover:bg-green-700"
             >
-              🚐 Complete Tour
+              {t('guideTour.completeTour')}
             </Link>
           ) : (
             <div className="block w-full bg-gray-300 text-gray-500 py-4 rounded-xl font-semibold text-lg text-center cursor-not-allowed">
-              Complete all phases to finish tour
+              {t('guideTour.completeAllPhases')}
             </div>
           )}
         </>
@@ -961,8 +938,8 @@ export default function GuideTourPage() {
       {tour.status === 'completed' && (
         <div className="bg-green-50 rounded-2xl border border-green-200 p-6 text-center">
           <div className="text-4xl mb-2">✓</div>
-          <h2 className="text-xl font-bold text-gray-900">Tour Completed</h2>
-          <p className="text-gray-500 mt-1">Great work!</p>
+          <h2 className="text-xl font-bold text-gray-900">{t('guideTour.tourCompleted')}</h2>
+          <p className="text-gray-500 mt-1">{t('guideTour.greatWork')}</p>
         </div>
       )}
 
@@ -970,7 +947,7 @@ export default function GuideTourPage() {
         href="/guide"
         className="block text-center text-gray-600 hover:text-gray-900 text-sm py-4"
       >
-        ← Back to My Tours
+        {t('guideTour.backToTours')}
       </Link>
     </div>
   )
