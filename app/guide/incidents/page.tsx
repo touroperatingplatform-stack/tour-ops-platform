@@ -33,6 +33,7 @@ const statusColors: Record<string, string> = {
 }
 
 export default function GuideIncidentsPage() {
+  const { t } = useTranslation()
   const [incidents, setIncidents] = useState<Incident[]>([])
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState('all')
@@ -68,7 +69,7 @@ export default function GuideIncidentsPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="text-gray-500">Loading incidents...</div>
+        <div className="text-gray-500">{t('guideIncidents.loading')}</div>
       </div>
     )
   }
@@ -78,14 +79,14 @@ export default function GuideIncidentsPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">My Reports</h1>
-          <p className="text-gray-500 mt-1">View incidents you've reported</p>
+          <h1 className="text-2xl font-bold text-gray-900">{t('guideIncidents.myReports')}</h1>
+          <p className="text-gray-500 mt-1">{t('guideIncidents.viewIncidentsYouReported')}</p>
         </div>
         <Link
           href="/guide/incidents/new"
           className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
         >
-          + New Report
+          {t('guideIncidents.newReport')}
         </Link>
       </div>
 
@@ -99,7 +100,7 @@ export default function GuideIncidentsPage() {
               : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
           }`}
         >
-          All ({incidents.length})
+          {t('guideIncidents.all')} ({incidents.length})
         </button>
         <button
           onClick={() => setFilter('open')}
@@ -109,7 +110,7 @@ export default function GuideIncidentsPage() {
               : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
           }`}
         >
-          Open ({incidents.filter(i => i.status === 'open').length})
+          {t('guideIncidents.open')} ({incidents.filter(i => i.status === 'open').length})
         </button>
         <button
           onClick={() => setFilter('resolved')}
@@ -119,7 +120,7 @@ export default function GuideIncidentsPage() {
               : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
           }`}
         >
-          Resolved ({incidents.filter(i => i.status === 'resolved').length})
+          {t('guideIncidents.resolved')} ({incidents.filter(i => i.status === 'resolved').length})
         </button>
       </div>
 
@@ -127,8 +128,8 @@ export default function GuideIncidentsPage() {
       <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
         {incidents.length === 0 ? (
           <div className="p-8 text-center text-gray-500">
-            <p className="text-lg mb-2">No incidents reported</p>
-            <p className="text-sm">Tap + New Report to create your first incident.</p>
+            <p className="text-lg mb-2">{t('guideIncidents.noIncidents')}</p>
+            <p className="text-sm">{t('guideIncidents.tapNewReport')}</p>
           </div>
         ) : (
           <div className="divide-y divide-gray-200">
@@ -140,12 +141,12 @@ export default function GuideIncidentsPage() {
                     <h3 className="font-semibold text-gray-900">{incident.title}</h3>
                   </div>
                   <span className={`px-2 py-1 rounded-full text-xs font-medium ${statusColors[incident.status] || 'bg-gray-100'}`}>
-                    {incident.status}
+                    {t(`incident.${incident.status}`) || incident.status}
                   </span>
                 </div>
                 <div className="flex items-center gap-4 text-xs text-gray-500">
                   <span>{new Date(incident.created_at).toLocaleDateString()}</span>
-                  {incident.tour_id && <span>• Tour: {incident.tour_id}</span>}
+                  {incident.tour_id && <span>• {t('guideIncidents.tour')}: {incident.tour_id}</span>}
                 </div>
               </div>
             ))}
