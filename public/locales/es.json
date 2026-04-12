@@ -67,7 +67,10 @@
     "created": "Creado",
     "inactive": "Inactivo",
     "active": "Activo",
-    "description": "Descripción"
+    "description": "Descripción",
+    "total": "Total",
+    "done": "Hecho",
+    "upcoming": "Próximo"
   },
   "time": {
     "today": "Hoy",
@@ -255,7 +258,8 @@
     "addGuest": "Agregar Huésped",
     "addingTo": "Agregando a",
     "firstName": "Nombre",
-    "lastName": "Apellido"
+    "lastName": "Apellido",
+    "noToursToday": "No hay tours hoy"
   },
   "reports": {
     "title": "Reportes y Análisis",
@@ -681,5 +685,58 @@
     "available": "Disponible",
     "maintenance": "Mantenimiento",
     "live": "EN VIVO"
+  },
+  "guests": {
+    "allGuests": "Todos los Huéspedes",
+    "todayGuests": "Huéspedes de Hoy",
+    "showAll": "Ver Todos",
+    "showTodayOnly": "Solo Hoy",
+    "todayOnly": "Solo Hoy",
+    "total": "Total",
+    "checkedIn": "Registrados",
+    "noShow": "No Se Presentó",
+    "pending": "Pendiente",
+    "showing": "Mostrando",
+    "guests": "huéspedes",
+    "hotel": "Hotel",
+    "room": "Habitación",
+    "adults": "adultos",
+    "children": "niños",
+    "backToGuests": "Volver a Huéspedes",
+    "addGuest": "Agregar Huésped",
+    "addingTo": "Agregando a",
+    "firstName": "Nombre",
+    "lastName": "Apellido",
+    "email": "Correo",
+    "phone": "Teléfono",
+    "roomNumber": "No. de Cuarto",
+    "specialRequirements": "Requisitos Especiales",
+    "specialRequirementsPlaceholder": "Restricciones dietéticas, problemas de movilidad, etc.",
+    "notes": "Notas",
+    "notesPlaceholder": "Notas adicionales...",
+    "adding": "Agregando...",
+    "hotelPlaceholder": "Nombre del hotel"
+  },
+  "fleet": {
+    "total": "Total",
+    "ready": "Listo",
+    "onTour": "En Tour",
+    "maintenance": "Mantenimiento",
+    "seats": "asientos",
+    "manageVehicles": "Gestionar vehículos",
+    "noVehicles": "No hay vehículos"
+  },
+  "checklists": {
+    "title": "Checklists",
+    "subtitle": "Puntos de control del tour",
+    "totalItems": "Total de Elementos",
+    "mandatory": "Obligatorio",
+    "required": "*Requerido",
+    "stages": {
+      "pre_departure": "Pre-Salida",
+      "pre_pickup": "Pre-Recogida",
+      "dropoff": "Entrega",
+      "finish": "Finalización"
+    }
   }
 }
