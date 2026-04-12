@@ -90,7 +90,9 @@
     "passwordPlaceholder": "********",
     "invalidCredentials": "Correo o contraseña inválidos",
     "profileNotFound": "Perfil no encontrado",
-    "accountDeactivated": "Cuenta desactivada"
+    "accountDeactivated": "Cuenta desactivada",
+    "adminCreated": "Las cuentas son creadas por tu administrador",
+    "errorOccurred": "Ocurrió un error"
   },
   "profile": {
     "title": "Perfil",

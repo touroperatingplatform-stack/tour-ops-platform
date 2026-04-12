@@ -583,7 +583,9 @@
     "passwordPlaceholder": "********",
     "invalidCredentials": "Invalid email or password",
     "profileNotFound": "Profile not found",
-    "accountDeactivated": "Account deactivated"
+    "accountDeactivated": "Account deactivated",
+    "adminCreated": "Accounts are created by your administrator",
+    "errorOccurred": "An error occurred"
   },
   "time": {
     "today": "Today",

@@ -121,7 +121,7 @@ export default function LoginPage() {
       
     } catch (err: any) {
       console.error('Login error:', err)
-      setError('An error occurred')
+      setError(t('auth.errorOccurred'))
       setLoading(false)
     }
   }
