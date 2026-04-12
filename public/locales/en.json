@@ -577,7 +577,13 @@
     "email": "Email",
     "password": "Password",
     "forgotPassword": "Forgot Password?",
-    "rememberMe": "Remember Me"
+    "rememberMe": "Remember Me",
+    "signInPrompt": "Sign in to your account",
+    "emailPlaceholder": "you@example.com",
+    "passwordPlaceholder": "********",
+    "invalidCredentials": "Invalid email or password",
+    "profileNotFound": "Profile not found",
+    "accountDeactivated": "Account deactivated"
   },
   "time": {
     "today": "Today",
@@ -952,5 +958,8 @@
     "medium": "Medium",
     "high": "High",
     "critical": "Critical"
+  },
+  "app": {
+    "title": "Tour Ops"
   }
 }

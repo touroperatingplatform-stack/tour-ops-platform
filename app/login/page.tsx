@@ -4,13 +4,15 @@ export const dynamic = 'force-dynamic'
 
 import { useState, useEffect, useRef } from 'react'
 import { supabase } from '@/lib/supabase/client'
+import { useTranslation } from '@/lib/i18n/useTranslation'
 
 export default function LoginPage() {
+  const { t } = useTranslation()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
-  const [status, setStatus] = useState('Loading...')
+  const [status, setStatus] = useState(t('common.loading'))
   const checkedRef = useRef(false)
 
   // Check if already logged in on mount
@@ -72,7 +74,7 @@ export default function LoginPage() {
       console.log('Sign in result:', { user: !!data.user, error: signInError?.message })
 
       if (signInError || !data.user) {
-        setError('Invalid email or password')
+        setError(t('auth.invalidCredentials'))
         setLoading(false)
         return
       }
@@ -90,13 +92,13 @@ export default function LoginPage() {
       console.log('Profile result:', profile)
 
       if (!profile) {
-        setError('Profile not found')
+        setError(t('auth.profileNotFound'))
         setLoading(false)
         return
       }
 
       if (profile.status !== 'active') {
-        setError('Account deactivated')
+        setError(t('auth.accountDeactivated'))
         setLoading(false)
         return
       }
@@ -160,8 +162,8 @@ export default function LoginPage() {
           }}>
             <span style={{ color: 'white', fontSize: '24px', fontWeight: 'bold' }}>T</span>
           </div>
-          <h1 style={{ fontSize: '24px', fontWeight: 'bold', color: '#111827', margin: 0 }}>Tour Ops</h1>
-          <p style={{ color: '#6b7280', fontSize: '14px', marginTop: '4px' }}>Sign in to your account</p>
+          <h1 style={{ fontSize: '24px', fontWeight: 'bold', color: '#111827', margin: 0 }}>{t('app.title')}</h1>
+          <p style={{ color: '#6b7280', fontSize: '14px', marginTop: '4px' }}>{t('auth.signInPrompt')}</p>
         </div>
 
         <form onSubmit={handleLogin} style={{
@@ -173,7 +175,7 @@ export default function LoginPage() {
         }}>
           <div style={{ marginBottom: '16px' }}>
             <label style={{ display: 'block', fontSize: '14px', fontWeight: '500', color: '#374151', marginBottom: '4px' }}>
-              Email
+              {t('auth.email')}
             </label>
             <input
               type="email"
@@ -188,13 +190,13 @@ export default function LoginPage() {
                 borderRadius: '8px',
                 fontSize: '14px',
               }}
-              placeholder="you@example.com"
+              placeholder={t('auth.emailPlaceholder')}
             />
           </div>
 
           <div style={{ marginBottom: '16px' }}>
             <label style={{ display: 'block', fontSize: '14px', fontWeight: '500', color: '#374151', marginBottom: '4px' }}>
-              Password
+              {t('auth.password')}
             </label>
             <input
               type="password"
@@ -209,7 +211,7 @@ export default function LoginPage() {
                 borderRadius: '8px',
                 fontSize: '14px',
               }}
-              placeholder="********"
+              placeholder={t('auth.passwordPlaceholder')}
             />
           </div>
 
@@ -241,12 +243,12 @@ export default function LoginPage() {
               cursor: loading ? 'not-allowed' : 'pointer',
             }}
           >
-            {loading ? 'Signing in...' : 'Sign in'}
+            {loading ? t('auth.signingIn') : t('auth.signIn')}
           </button>
         </form>
 
         <p style={{ textAlign: 'center', fontSize: '12px', color: '#9ca3af', marginTop: '24px' }}>
-          Accounts are created by your administrator
+          {t('auth.adminCreated')}
         </p>
       </div>
     </div>
