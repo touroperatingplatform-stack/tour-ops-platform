@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase/client'
+import { useTranslation } from '@/lib/i18n/useTranslation'
 
 interface Tour {
   id: string
@@ -46,6 +47,7 @@ interface Profile {
 }
 
 export default function AcknowledgeTourPage() {
+  const { t } = useTranslation()
   const params = useParams()
   const router = useRouter()
   const [tour, setTour] = useState<Tour | null>(null)
@@ -126,7 +128,7 @@ export default function AcknowledgeTourPage() {
 
   async function handleAcknowledge() {
     if (!officeArrivalTime || !pickupStartTime || !vanConfirmed) {
-      alert('Please confirm all items')
+      alert(t('guideAcknowledge.confirmAllItems'))
       return
     }
 
@@ -142,7 +144,7 @@ export default function AcknowledgeTourPage() {
       .eq('id', params.id)
 
     if (error) {
-      alert('Failed to acknowledge tour')
+      alert(t('guideAcknowledge.failedToAcknowledge'))
       setSubmitting(false)
       return
     }
@@ -153,7 +155,7 @@ export default function AcknowledgeTourPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="text-gray-500">Loading...</div>
+        <div className="text-gray-500">{t('guideAcknowledge.loading')}</div>
       </div>
     )
   }
@@ -161,8 +163,8 @@ export default function AcknowledgeTourPage() {
   if (!tour) {
     return (
       <div className="text-center py-12">
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">Tour not found</h1>
-        <Link href="/guide" className="text-blue-600 hover:underline">← Back</Link>
+        <h1 className="text-2xl font-bold text-gray-900 mb-2">{t('guideAcknowledge.tourNotFound')}</h1>
+        <Link href="/guide" className="text-blue-600 hover:underline">{t('guideAcknowledge.back')}</Link>
       </div>
     )
   }
