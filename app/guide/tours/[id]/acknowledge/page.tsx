@@ -189,7 +189,7 @@ export default function AcknowledgeTourPage() {
   const tourDate = new Date(tour.tour_date)
   const now = new Date()
   const diffHours = Math.round((tourDate.getTime() - now.getTime()) / (1000 * 60 * 60))
-  const timeLabel = diffHours <= 0 ? 'Today' : diffHours <= 24 ? `${diffHours} hours` : `${Math.round(diffHours / 24)} days`
+  const timeLabel = diffHours <= 0 ? t('guideAcknowledge.today') : diffHours <= 24 ? `${diffHours} ${t('guideAcknowledge.hours')}` : `${Math.round(diffHours / 24)} ${t('guideAcknowledge.days')}`
 
   return (
     <div className="p-4 space-y-4">
@@ -197,7 +197,7 @@ export default function AcknowledgeTourPage() {
       <div className="bg-white rounded-2xl border border-gray-200 p-5">
         <div className="flex items-center justify-between mb-3">
           <Link href="/guide" className="text-blue-600 hover:text-blue-700 text-sm font-medium">
-            ← Back to Tours
+            {t('guideAcknowledge.backToTours')}
           </Link>
           <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm font-medium">
             {timeLabel}
@@ -212,23 +212,23 @@ export default function AcknowledgeTourPage() {
       {/* Guest Summary */}
       <div className="bg-white rounded-2xl border border-gray-200 p-5">
         <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
-          <span>👥</span> Guest Summary
+          <span>👥</span> {t('guideAcknowledge.guestSummary')}
         </h3>
         <div className="flex items-baseline gap-2 mb-3">
           <span className="text-3xl font-bold text-gray-900">{totalGuests}</span>
-          <span className="text-gray-500">guests total</span>
+          <span className="text-gray-500">{t('guideAcknowledge.guestsTotal')}</span>
         </div>
         <div className="flex flex-wrap gap-2">
-          <span className="bg-blue-100 text-blue-700 px-3 py-1.5 rounded-full text-sm font-medium">{totalAdults} Adults</span>
-          {totalChildren > 0 && <span className="bg-green-100 text-green-700 px-3 py-1.5 rounded-full text-sm font-medium">{totalChildren} Children</span>}
-          {totalInfants > 0 && <span className="bg-yellow-100 text-yellow-700 px-3 py-1.5 rounded-full text-sm font-medium">{totalInfants} Infants</span>}
+          <span className="bg-blue-100 text-blue-700 px-3 py-1.5 rounded-full text-sm font-medium">{totalAdults} {t('guideAcknowledge.adults')}</span>
+          {totalChildren > 0 && <span className="bg-green-100 text-green-700 px-3 py-1.5 rounded-full text-sm font-medium">{totalChildren} {t('guideAcknowledge.children')}</span>}
+          {totalInfants > 0 && <span className="bg-yellow-100 text-yellow-700 px-3 py-1.5 rounded-full text-sm font-medium">{totalInfants} {t('guideAcknowledge.infants')}</span>}
         </div>
       </div>
 
       {/* Pickup Locations */}
       <div className="bg-white rounded-2xl border border-gray-200 p-5">
         <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
-          <span>📍</span> Pickup Locations
+          <span>📍</span> {t('guideAcknowledge.pickupLocations')}
         </h3>
         <div className="space-y-3">
           {pickupStops.map((stop, idx) => (
@@ -238,7 +238,7 @@ export default function AcknowledgeTourPage() {
               </div>
               <div className="flex-1">
                 <div className="font-medium text-gray-900">{stop.location_name}</div>
-                <div className="text-sm text-gray-500">{stop.guest_count} guests</div>
+                <div className="text-sm text-gray-500">{stop.guest_count} {t('guideAcknowledge.guests')}</div>
               </div>
               <div className="text-blue-600 font-semibold">{stop.scheduled_time?.slice(0, 5)}</div>
             </div>
@@ -250,7 +250,7 @@ export default function AcknowledgeTourPage() {
       {activityStops.length > 0 && (
         <div className="bg-white rounded-2xl border border-gray-200 p-5">
           <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
-            <span>🎯</span> Activities
+            <span>🎯</span> {t('guideAcknowledge.activities')}
           </h3>
           <div className="space-y-2">
             {activityStops.map((stop, idx) => (
@@ -268,7 +268,7 @@ export default function AcknowledgeTourPage() {
       {/* Dropoff */}
       <div className="bg-white rounded-2xl border border-gray-200 p-5">
         <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
-          <span>🏁</span> Dropoff
+          <span>🏁</span> {t('guideAcknowledge.dropoff')}
         </h3>
         <div className="space-y-2">
           {dropoffStops.map((stop, idx) => (
@@ -285,21 +285,21 @@ export default function AcknowledgeTourPage() {
       {/* Return to Office */}
       <div className="bg-gray-100 rounded-2xl border border-gray-200 p-5">
         <h3 className="font-semibold text-gray-900 mb-1 flex items-center gap-2">
-          <span>🏢</span> Return to Office
+          <span>🏢</span> {t('guideAcknowledge.returnToOffice')}
         </h3>
-        <p className="text-gray-500 text-sm">After completing dropoff</p>
+        <p className="text-gray-500 text-sm">{t('guideAcknowledge.afterCompletingDropoff')}</p>
       </div>
 
       {/* Special Notes */}
       {(dietaryNeeds.length > 0 || accessibilityNeeds.length > 0 || specialRequests.length > 0) && (
         <div className="bg-orange-50 rounded-2xl border border-orange-200 p-5">
           <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
-            <span>⚠️</span> Special Notes
+            <span>⚠️</span> {t('guideAcknowledge.specialNotes')}
           </h3>
           <div className="space-y-3">
             {dietaryNeeds.length > 0 && (
               <div>
-                <span className="text-sm text-gray-500 flex items-center gap-1 mb-2">🍽️ Dietary Requirements</span>
+                <span className="text-sm text-gray-500 flex items-center gap-1 mb-2">🍽️ {t('guideAcknowledge.dietary')}</span>
                 <div className="flex flex-wrap gap-2">
                   {dietaryNeeds.map((need, idx) => (
                     <span key={idx} className="bg-orange-100 text-orange-700 px-3 py-1 rounded-full text-sm font-medium">{need}</span>
@@ -309,7 +309,7 @@ export default function AcknowledgeTourPage() {
             )}
             {accessibilityNeeds.length > 0 && (
               <div>
-                <span className="text-sm text-gray-500 flex items-center gap-1 mb-2">♿ Accessibility Needs</span>
+                <span className="text-sm text-gray-500 flex items-center gap-1 mb-2">♿ {t('guideAcknowledge.accessibility')}</span>
                 <div className="flex flex-wrap gap-2">
                   {accessibilityNeeds.map((need, idx) => (
                     <span key={idx} className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm font-medium">{need}</span>
@@ -319,7 +319,7 @@ export default function AcknowledgeTourPage() {
             )}
             {specialRequests.length > 0 && (
               <div>
-                <span className="text-sm text-gray-500 flex items-center gap-1 mb-2">📝 Special Requests</span>
+                <span className="text-sm text-gray-500 flex items-center gap-1 mb-2">📝 {t('guideAcknowledge.requests')}</span>
                 <div className="space-y-1">
                   {specialRequests.map((req, idx) => (
                     <div key={idx} className="text-sm text-gray-700 bg-white p-2 rounded-lg">{req}</div>
@@ -345,9 +345,9 @@ export default function AcknowledgeTourPage() {
           >
             <span className="text-2xl">🚐</span>
             <div className="flex-1 text-left">
-              <div className="font-semibold text-gray-900">Van Assigned</div>
+              <div className="font-semibold text-gray-900">{t('guideAcknowledge.vanAssigned')}</div>
               <div className="text-sm text-gray-500">
-                {tour.vehicles ? `${tour.vehicles.plate_number} • ${tour.vehicles.model}` : 'Confirm with dispatcher'}
+                {tour.vehicles ? `${tour.vehicles.plate_number} • ${tour.vehicles.model}` : t('guideAcknowledge.confirmWithDispatcher')}
               </div>
             </div>
             <div className={`w-8 h-8 rounded-full border-2 flex items-center justify-center ${
@@ -361,7 +361,7 @@ export default function AcknowledgeTourPage() {
             <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-xl">
               <span className="text-2xl">📞</span>
               <div className="flex-1">
-                <div className="font-semibold text-gray-900">Emergency Contact</div>
+                <div className="font-semibold text-gray-900">{t('guideAcknowledge.emergencyContact')}</div>
                 <div className="text-sm text-gray-500">{supervisor.full_name}</div>
               </div>
               <a href={`tel:${supervisor.phone}`} className="text-blue-600 font-semibold">{supervisor.phone}</a>
