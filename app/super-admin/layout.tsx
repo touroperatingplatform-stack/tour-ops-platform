@@ -16,6 +16,7 @@ const navItems = [
 const moreItems = [
   { href: '/super-admin/regional-data', labelKey: 'nav.regional', icon: '🗺️' },
   { href: '/super-admin/brands', labelKey: 'nav.brands', icon: '🏷️' },
+  { href: '/super-admin/checklist-presets', label: 'Checklist Presets', icon: '📋' },
   { href: '/super-admin/users', labelKey: 'nav.users', icon: '👤' },
   { href: '/super-admin/demo', labelKey: 'nav.demoData', icon: '📦' },
   { href: '/super-admin/import', labelKey: 'nav.import', icon: '📥' },
