@@ -5,6 +5,7 @@ export const dynamic = 'force-dynamic'
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase/client'
+import { useTranslation } from '@/lib/i18n/useTranslation'
 
 interface Tour {
   id: string
@@ -18,6 +19,7 @@ interface Tour {
 }
 
 export default function GuideDashboard() {
+  const { t } = useTranslation()
   const [loading, setLoading] = useState(true)
   const [todayTours, setTodayTours] = useState<Tour[]>([])
 
@@ -28,7 +30,6 @@ export default function GuideDashboard() {
   async function loadTours() {
     const today = new Date().toISOString().split('T')[0]
     
-    // Get current user
     const { data: { user } } = await supabase.auth.getUser()
     
     if (!user) {
@@ -36,11 +37,10 @@ export default function GuideDashboard() {
       return
     }
 
-    // Load only MY tours (assigned to this guide)
     const { data } = await supabase
       .from('tours')
       .select('*')
-      .eq('guide_id', user.id)  // Filter by current guide
+      .eq('guide_id', user.id)
       .eq('tour_date', today)
       .neq('status', 'cancelled')
       .order('start_time')
@@ -58,7 +58,7 @@ export default function GuideDashboard() {
     const diffMs = arrivalTime.getTime() - now.getTime()
     const diffMins = Math.floor(diffMs / 60000)
     
-    if (diffMins < 0) return { text: 'LATE', urgent: true }
+    if (diffMins < 0) return { text: t('guide.late'), urgent: true }
     if (diffMins < 30) return { text: `${diffMins}m`, urgent: true }
     return { text: `${Math.floor(diffMins / 60)}h ${diffMins % 60}m`, urgent: false }
   }
@@ -92,8 +92,8 @@ export default function GuideDashboard() {
         {todayTours.length === 0 ? (
           <div className="bg-white rounded-2xl p-8 text-center border border-gray-200 shadow-sm">
             <span className="text-4xl block mb-3">🎉</span>
-            <p className="text-gray-900 font-medium text-lg">No tours today</p>
-            <p className="text-sm text-gray-500 mt-1">Enjoy your day off!</p>
+            <p className="text-gray-900 font-medium text-lg">{t('driver.noTourToday')}</p>
+            <p className="text-sm text-gray-500 mt-1">{t('driver.enjoyDayOff')}</p>
           </div>
         ) : (
           <div className="space-y-4">
@@ -111,7 +111,7 @@ export default function GuideDashboard() {
                       <p className="text-sm text-gray-500 mt-1">{tour.pickup_location}</p>
                     </div>
                     <span className={`px-3 py-1.5 rounded-full text-xs font-medium ${getStatusBadge(tour.status)}`}>
-                      {tour.status === 'in_progress' ? 'Live' : 'Upcoming'}
+                      {tour.status === 'in_progress' ? t('guide.live') : t('guide.upcoming')}
                     </span>
                   </div>
                   
@@ -126,7 +126,7 @@ export default function GuideDashboard() {
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                       </svg>
-                      <span className="font-medium">{tour.guest_count} guests</span>
+                      <span className="font-medium">{tour.guest_count} {t('guide.guests')}</span>
                     </div>
                   </div>
                   
@@ -136,19 +136,19 @@ export default function GuideDashboard() {
                         ? 'bg-red-50 text-red-700 border border-red-200' 
                         : 'bg-blue-50 text-blue-700 border border-blue-200'
                     }`}>
-                      Arrive in {timeInfo.text}
+                      {t('guide.arriveIn')} {timeInfo.text}
                     </div>
                   )}
                   
                   {tour.status === 'in_progress' && (
                     <div className="p-3 rounded-xl text-center text-sm font-medium bg-green-50 text-green-700 border border-green-200">
-                      Tour in progress • Check details →
+                      {t('guide.tourInProgress')} • {t('guide.checkDetails')}
                     </div>
                   )}
                   
                   {tour.status === 'completed' && (
                     <div className="p-3 rounded-xl text-center text-sm font-medium bg-gray-50 text-gray-700 border border-gray-200">
-                      Tour completed
+                      {t('guide.tourCompleted')}
                     </div>
                   )}
                 </Link>
@@ -160,21 +160,21 @@ export default function GuideDashboard() {
 
       {/* Quick Actions */}
       <section>
-        <h2 className="font-semibold text-gray-900 mb-4 text-lg">Quick Actions</h2>
+        <h2 className="font-semibold text-gray-900 mb-4 text-lg">{t('guide.quickActions')}</h2>
         <div className="grid grid-cols-2 gap-4">
           <Link 
             href="/guide/incidents/new"
             className="bg-white rounded-2xl p-5 border border-gray-200 text-center hover:bg-gray-50 transition-colors"
           >
             <span className="text-3xl block mb-2">🚨</span>
-            <span className="font-medium text-gray-900">Report Incident</span>
+            <span className="font-medium text-gray-900">{t('guide.reportIncident')}</span>
           </Link>
           <Link 
             href="/guide/history"
             className="bg-white rounded-2xl p-5 border border-gray-200 text-center hover:bg-gray-50 transition-colors"
           >
             <span className="text-3xl block mb-2">📜</span>
-            <span className="font-medium text-gray-900">Tour History</span>
+            <span className="font-medium text-gray-900">{t('guide.tourHistory')}</span>
           </Link>
         </div>
       </section>

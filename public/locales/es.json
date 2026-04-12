@@ -606,5 +606,21 @@
     "guests": "huéspedes",
     "done": "hecho",
     "allDone": "Todo listo"
+  },
+  "guide": {
+    "dashboard": "Mis Tours",
+    "live": "En Vivo",
+    "upcoming": "Próximo",
+    "guests": "huéspedes",
+    "arriveIn": "Llegar en",
+    "tourInProgress": "Tour en progreso",
+    "checkDetails": "Ver detalles →",
+    "tourCompleted": "Tour completado",
+    "quickActions": "Acciones Rápidas",
+    "reportIncident": "Reportar Incidente",
+    "tourHistory": "Historial de Tours",
+    "noToursToday": "Sin tours hoy",
+    "enjoyDayOff": "¡Disfruta tu día libre!",
+    "late": "TARDE"
   }
 }

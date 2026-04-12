@@ -527,6 +527,22 @@
     "done": "done",
     "allDone": "All done"
   },
+  "guide": {
+    "dashboard": "My Tours",
+    "live": "Live",
+    "upcoming": "Upcoming",
+    "guests": "guests",
+    "arriveIn": "Arrive in",
+    "tourInProgress": "Tour in progress",
+    "checkDetails": "Check details →",
+    "tourCompleted": "Tour completed",
+    "quickActions": "Quick Actions",
+    "reportIncident": "Report Incident",
+    "tourHistory": "Tour History",
+    "noToursToday": "No tours today",
+    "enjoyDayOff": "Enjoy your day off!",
+    "late": "LATE"
+  },
   "supervisor": {
     "dashboard": "Supervisor Dashboard",
     "fieldView": "Field View",
