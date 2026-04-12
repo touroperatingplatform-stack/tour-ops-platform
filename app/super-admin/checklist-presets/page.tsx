@@ -153,7 +153,7 @@ export default function SuperAdminChecklistPresetsPage() {
   }
 
   async function handleDelete(id: string) {
-    if (!confirm('Delete this system preset? Companies won't be able to copy it anymore.')) return
+    if (!confirm("Delete this system preset? Companies won't be able to copy it anymore.")) return
 
     const { error } = await supabase
       .from('checklists')
