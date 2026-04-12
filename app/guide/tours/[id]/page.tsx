@@ -108,23 +108,23 @@ export default function GuideTourPage() {
       if (tourData.equipment_photo_url) setEquipmentPhoto(tourData.equipment_photo_url)
       if (tourData.van_photo_url) setVanPhoto(tourData.van_photo_url)
 
-      // Load tour-specific equipment
-      if (tourData.brand_id && tourData.activity_type) {
-        const { data: equipment } = await supabase
-          .from('tour_equipment')
-          .select('id, name, description, sort_order')
-          .eq('brand_id', tourData.brand_id)
-          .eq('activity_type', tourData.activity_type)
-          .eq('is_active', true)
-          .order('sort_order')
-        
-        if (equipment) {
-          setTourEquipment(equipment)
-          // Initialize equipment checked state
-          const checked: Record<string, boolean> = {}
-          equipment.forEach(item => { checked[item.id] = false })
-          setEquipmentChecked(checked)
-        }
+      // Load tour equipment checklist (auto-generated from activities)
+      const { data: equipmentChecklist } = await supabase
+        .from('tour_equipment_checklists')
+        .select('items, completed_items, is_completed')
+        .eq('tour_id', params.id)
+        .maybeSingle()
+      
+      if (equipmentChecklist?.items) {
+        setEquipmentItems(equipmentChecklist.items)
+        // Initialize checked state from completed items
+        const checked: Record<string, boolean> = {}
+        equipmentChecklist.items.forEach((item: any) => {
+          checked[item.id] = equipmentChecklist.completed_items?.some(
+            (completed: any) => completed.id === item.id
+          ) || false
+        })
+        setEquipmentChecked(checked)
       }
       // Load assigned checklist if exists
       if (tourData.checklist_id) {
