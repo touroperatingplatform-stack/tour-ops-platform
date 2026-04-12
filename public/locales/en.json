@@ -885,7 +885,7 @@
     "confirmAllItems": "Please confirm all items",
     "failedToAcknowledge": "Failed to acknowledge tour"
   },
-    "title": "Templates",
+  "templates": {
     "subtitle": "Tour templates",
     "noTemplates": "No templates yet",
     "inactive": "Inactive",
