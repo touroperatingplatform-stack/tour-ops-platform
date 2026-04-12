@@ -45,6 +45,7 @@
     "import": "Import",
     "settings": "Settings",
     "checklists": "Checklists",
+    "checklistPresets": "Checklist Presets",
     "templates": "Templates",
     "data": "Data"
   },
