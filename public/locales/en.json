@@ -574,6 +574,7 @@
   "auth": {
     "signIn": "Sign In",
     "signOut": "Sign Out",
+    "signingIn": "Signing in...",
     "email": "Email",
     "password": "Password",
     "forgotPassword": "Forgot Password?",
