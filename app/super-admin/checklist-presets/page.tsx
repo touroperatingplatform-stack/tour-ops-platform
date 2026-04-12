@@ -9,15 +9,13 @@ import { useTranslation } from '@/lib/i18n/useTranslation'
 interface ChecklistItem {
   id: string
   text: string
-  quantity: number
-  perPerson: boolean
-  photoRequired: boolean
+  required: boolean
+  photo_required: boolean
 }
 
-interface ChecklistTemplate {
+interface ChecklistPreset {
   id: string
   name: string
-  category: string
   description: string | null
   items: ChecklistItem[]
   is_active: boolean
@@ -26,40 +24,32 @@ interface ChecklistTemplate {
 
 export default function SuperAdminChecklistPresetsPage() {
   const { t } = useTranslation()
-  const [templates, setTemplates] = useState<ChecklistTemplate[]>([])
+  const [presets, setPresets] = useState<ChecklistPreset[]>([])
   const [loading, setLoading] = useState(true)
   const [showModal, setShowModal] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
-  const [filterCategory, setFilterCategory] = useState('all')
+  const [filter, setFilter] = useState('all')
   const [formData, setFormData] = useState({
     name: '',
-    category: 'activity',
     description: '',
     items: [] as ChecklistItem[]
   })
 
-  const categories = [
-    { value: 'activity', label: 'Activity Equipment', icon: '🏊' },
-    { value: 'van', label: 'Van Equipment', icon: '🚐' },
-    { value: 'general', label: 'General', icon: '📋' }
-  ]
-
   useEffect(() => {
-    loadTemplates()
+    loadPresets()
   }, [])
 
-  async function loadTemplates() {
+  async function loadPresets() {
     const { data, error } = await supabase
-      .from('checklist_templates')
+      .from('checklists')
       .select('*')
-      .eq('is_system', true)
-      .order('category')
-      .order('name')
+      .is('company_id', null)
+      .order('created_at', { ascending: false })
 
     if (error) {
-      console.error('Error loading templates:', error)
+      console.error('Error loading presets:', error)
     } else {
-      setTemplates(data || [])
+      setPresets(data || [])
     }
     setLoading(false)
   }
@@ -68,20 +58,18 @@ export default function SuperAdminChecklistPresetsPage() {
     setEditingId(null)
     setFormData({
       name: '',
-      category: 'activity',
       description: '',
       items: []
     })
     setShowModal(true)
   }
 
-  function openEdit(template: ChecklistTemplate) {
-    setEditingId(template.id)
+  function openEdit(preset: ChecklistPreset) {
+    setEditingId(preset.id)
     setFormData({
-      name: template.name,
-      category: template.category || 'activity',
-      description: template.description || '',
-      items: template.items || []
+      name: preset.name,
+      description: preset.description || '',
+      items: preset.items || []
     })
     setShowModal(true)
   }
@@ -92,9 +80,8 @@ export default function SuperAdminChecklistPresetsPage() {
       items: [...prev.items, {
         id: crypto.randomUUID(),
         text: '',
-        quantity: 1,
-        perPerson: true,
-        photoRequired: false
+        required: true,
+        photo_required: false
       }]
     }))
   }
@@ -130,71 +117,56 @@ export default function SuperAdminChecklistPresetsPage() {
 
     if (editingId) {
       const { error } = await supabase
-        .from('checklist_templates')
+        .from('checklists')
         .update({
           name: formData.name,
-          category: formData.category,
           description: formData.description || null,
-          items: validItems,
-          updated_at: new Date().toISOString()
+          items: validItems
         })
         .eq('id', editingId)
 
       if (error) {
-        console.error('Error updating template:', error)
-        alert('Error updating template')
+        console.error('Error updating preset:', error)
+        alert('Error updating preset')
         return
       }
     } else {
       const { error } = await supabase
-        .from('checklist_templates')
+        .from('checklists')
         .insert({
           name: formData.name,
-          category: formData.category,
           description: formData.description || null,
           items: validItems,
-          is_system: true,
-          is_active: true,
-          company_id: null
+          is_active: true
+          // company_id is null by default = system preset
         })
 
       if (error) {
-        console.error('Error creating template:', error)
-        alert('Error creating template')
+        console.error('Error creating preset:', error)
+        alert('Error creating preset')
         return
       }
     }
 
     setShowModal(false)
-    loadTemplates()
+    loadPresets()
   }
 
   async function handleDelete(id: string) {
-    if (!confirm('Delete this system preset? This will affect all companies using it.')) return
+    if (!confirm('Delete this system preset? Companies won't be able to copy it anymore.')) return
 
     const { error } = await supabase
-      .from('checklist_templates')
+      .from('checklists')
       .delete()
       .eq('id', id)
 
     if (error) {
-      console.error('Error deleting template:', error)
-      alert('Error deleting template')
+      console.error('Error deleting preset:', error)
+      alert('Error deleting preset')
     } else {
-      loadTemplates()
+      loadPresets()
     }
   }
-
-  const filteredTemplates = filterCategory === 'all'
-    ? templates
-    : templates.filter(t => t.category === filterCategory)
-
-  const groupedTemplates = filteredTemplates.reduce((acc, template) => {
-    const cat = template.category || 'general'
-    if (!acc[cat]) acc[cat] = []
-    acc[cat].push(template)
-    return acc
-  }, {} as Record<string, ChecklistTemplate[]>)
 
   if (loading) {
     return (
@@ -212,7 +184,7 @@ export default function SuperAdminChecklistPresetsPage() {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-xl font-bold text-gray-900">System Checklist Presets</h1>
-              <p className="text-gray-500 text-sm">Create default equipment checklists that companies can copy</p>
+              <p className="text-gray-500 text-sm">Create default checklists that companies can copy</p>
             </div>
             <button
               onClick={openCreate}
@@ -224,31 +196,9 @@ export default function SuperAdminChecklistPresetsPage() {
         </div>
       </header>
 
-      {/* Filter Bar */}
-      <div className="bg-white border-b border-gray-200 px-4 py-3">
-        <div className="flex items-center gap-4">
-          <span className="text-sm font-medium text-gray-700">Filter:</span>
-          <select
-            value={filterCategory}
-            onChange={(e) => setFilterCategory(e.target.value)}
-            className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm"
-          >
-            <option value="all">All Categories</option>
-            {categories.map(cat => (
-              <option key={cat.value} value={cat.value}>
-                {cat.icon} {cat.label}
-              </option>
-            ))}
-          </select>
-          <span className="text-sm text-gray-500">
-            {filteredTemplates.length} presets
-          </span>
-        </div>
-      </div>
-
       {/* Main Content */}
       <main className="flex-1 overflow-auto p-4">
-        {templates.length === 0 ? (
+        {presets.length === 0 ? (
           <div className="text-center py-12">
             <p className="text-gray-500 mb-4">No system presets yet</p>
             <button
@@ -259,80 +209,64 @@ export default function SuperAdminChecklistPresetsPage() {
             </button>
           </div>
         ) : (
-          <div className="space-y-6">
-            {Object.entries(groupedTemplates).map(([category, items]) => {
-              const catInfo = categories.find(c => c.value === category) || { label: 'General', icon: '📋' }
-              return (
-                <div key={category}>
-                  <h2 className="text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
-                    <span>{catInfo.icon}</span>
-                    {catInfo.label}
-                    <span className="text-sm font-normal text-gray-500">({items.length})</span>
-                  </h2>
-                  <div className="grid gap-3">
-                    {items.map(template => (
-                      <div
-                        key={template.id}
-                        className="bg-white rounded-xl border border-gray-200 p-4 hover:shadow-md transition-shadow"
-                      >
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2">
-                              <h3 className="font-semibold text-gray-900">{template.name}</h3>
-                              {!template.is_active && (
-                                <span className="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded">
-                                  Inactive
-                                </span>
-                              )}
-                            </div>
-                            {template.description && (
-                              <p className="text-gray-500 text-sm mt-1">{template.description}</p>
-                            )}
-                            <div className="mt-3">
-                              <p className="text-sm text-gray-600 mb-2">
-                                {template.items?.length || 0} items:
-                              </p>
-                              <div className="flex flex-wrap gap-2">
-                                {template.items?.slice(0, 5).map((item, idx) => (
-                                  <span
-                                    key={idx}
-                                    className="text-xs bg-blue-50 text-blue-700 px-2 py-1 rounded"
-                                  >
-                                    {item.text}
-                                    {item.quantity > 1 && ` (x${item.quantity})`}
-                                    {item.perPerson && '/person'}
-                                    {item.photoRequired && '📷'}
-                                  </span>
-                                ))}
-                                {(template.items?.length || 0) > 5 && (
-                                  <span className="text-xs text-gray-500">
-                                    +{template.items.length - 5} more
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-2 ml-4">
-                            <button
-                              onClick={() => openEdit(template)}
-                              className="text-blue-600 hover:text-blue-700 text-sm font-medium px-3 py-1"
-                            >
-                              Edit
-                            </button>
-                            <button
-                              onClick={() => handleDelete(template.id)}
-                              className="text-red-600 hover:text-red-700 text-sm font-medium px-3 py-1"
-                            >
-                              Delete
-                            </button>
-                          </div>
-                        </div>
+          <div className="grid gap-4">
+            {presets.map(preset => (
+              <div
+                key={preset.id}
+                className="bg-white rounded-xl border border-gray-200 p-4 hover:shadow-md transition-shadow"
+              >
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-semibold text-gray-900">{preset.name}</h3>
+                      {!preset.is_active && (
+                        <span className="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded">
+                          Inactive
+                        </span>
+                      )}
+                    </div>
+                    {preset.description && (
+                      <p className="text-gray-500 text-sm mt-1">{preset.description}</p>
+                    )}
+                    <div className="mt-3">
+                      <p className="text-sm text-gray-600 mb-2">
+                        {preset.items?.length || 0} items:
+                      </p>
+                      <div className="flex flex-wrap gap-2">
+                        {preset.items?.slice(0, 5).map((item, idx) => (
+                          <span
+                            key={idx}
+                            className="text-xs bg-blue-50 text-blue-700 px-2 py-1 rounded"
+                          >
+                            {item.text}
+                            {item.photo_required && '📷'}
+                          </span>
+                        ))}
+                        {(preset.items?.length || 0) > 5 && (
+                          <span className="text-xs text-gray-500">
+                            +{preset.items.length - 5} more
+                          </span>
+                        )}
                       </div>
-                    ))}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 ml-4">
+                    <button
+                      onClick={() => openEdit(preset)}
+                      className="text-blue-600 hover:text-blue-700 text-sm font-medium px-3 py-1"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      onClick={() => handleDelete(preset.id)}
+                      className="text-red-600 hover:text-red-700 text-sm font-medium px-3 py-1"
+                    >
+                      Delete
+                    </button>
                   </div>
                 </div>
-              )
-            })}
+              </div>
+            ))}
           </div>
         )}
       </main>
@@ -346,7 +280,7 @@ export default function SuperAdminChecklistPresetsPage() {
                 {editingId ? 'Edit Preset' : 'New System Preset'}
               </h2>
               <p className="text-gray-500 text-sm mt-1">
-                Create equipment checklists that companies can copy
+                Create a checklist that companies can copy
               </p>
             </div>
 
@@ -363,30 +297,6 @@ export default function SuperAdminChecklistPresetsPage() {
                   placeholder="e.g., Cenote Swimming Equipment"
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
-              </div>
-
-              {/* Category */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Category
-                </label>
-                <div className="grid grid-cols-3 gap-3">
-                  {categories.map(cat => (
-                    <button
-                      key={cat.value}
-                      type="button"
-                      onClick={() => setFormData(prev => ({ ...prev, category: cat.value }))}
-                      className={`p-3 rounded-lg border text-left transition-colors ${
-                        formData.category === cat.value
-                          ? 'border-blue-500 bg-blue-50'
-                          : 'border-gray-200 hover:bg-gray-50'
-                      }`}
-                    >
-                      <span className="text-xl mr-2">{cat.icon}</span>
-                      <span className="text-sm font-medium">{cat.label}</span>
-                    </button>
-                  ))}
-                </div>
               </div>
 
               {/* Description */}
@@ -407,7 +317,7 @@ export default function SuperAdminChecklistPresetsPage() {
               <div>
                 <div className="flex items-center justify-between mb-3">
                   <label className="block text-sm font-medium text-gray-700">
-                    Equipment Items
+                    Checklist Items
                   </label>
                   <button
                     onClick={addItem}
@@ -440,32 +350,21 @@ export default function SuperAdminChecklistPresetsPage() {
                       </div>
 
                       <div className="flex items-center gap-4">
-                        <div className="flex items-center gap-2">
-                          <label className="text-sm text-gray-600">Quantity:</label>
-                          <input
-                            type="number"
-                            value={item.quantity}
-                            onChange={(e) => updateItem(index, 'quantity', parseInt(e.target.value) || 1)}
-                            min={1}
-                            className="w-20 px-2 py-1 border border-gray-300 rounded text-sm"
-                          />
-                        </div>
-
                         <label className="flex items-center gap-2 cursor-pointer">
                           <input
                             type="checkbox"
-                            checked={item.perPerson}
-                            onChange={(e) => updateItem(index, 'perPerson', e.target.checked)}
+                            checked={item.required}
+                            onChange={(e) => updateItem(index, 'required', e.target.checked)}
                             className="w-4 h-4"
                           />
-                          <span className="text-sm text-gray-600">Per person</span>
+                          <span className="text-sm text-gray-600">Required</span>
                         </label>
 
                         <label className="flex items-center gap-2 cursor-pointer">
                           <input
                             type="checkbox"
-                            checked={item.photoRequired}
-                            onChange={(e) => updateItem(index, 'photoRequired', e.target.checked)}
+                            checked={item.photo_required}
+                            onChange={(e) => updateItem(index, 'photo_required', e.target.checked)}
                             className="w-4 h-4"
                           />
                           <span className="text-sm text-gray-600">Photo required 📷</span>
