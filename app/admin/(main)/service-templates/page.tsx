@@ -32,7 +32,7 @@ interface Checklist {
 interface ActivityChecklistLink {
   activity_id: string
   checklist_id: string
-  checklist: Checklist
+  checklists: Checklist[]
 }
 
 const STAGES = [
@@ -100,8 +100,12 @@ export default function ServiceTemplatesPage() {
     setActivities([...(systemActivities || []), ...(companyActivities || [])])
     setChecklists([...(systemChecklists || []), ...(companyChecklists || [])])
     
-    const allLinks = [...(systemLinks || []), ...(companyLinks || [])]
-    setLinks(allLinks as ActivityChecklistLink[])
+    const allLinks = [...(systemLinks || []), ...(companyLinks || [])].map(l => ({
+      activity_id: l.activity_id,
+      checklist_id: l.checklist_id,
+      checklists: l.checklists || []
+    })) as ActivityChecklistLink[]
+    setLinks(allLinks)
     
     setLoading(false)
   }
@@ -113,8 +117,7 @@ export default function ServiceTemplatesPage() {
   function getActivityChecklists(activityId: string) {
     return links
       .filter(l => l.activity_id === activityId)
-      .map(l => l.checklist)
-      .filter(Boolean)
+      .flatMap(l => l.checklists || [])
   }
 
   function getStageChecklists(stageId: string, activityId?: string) {
