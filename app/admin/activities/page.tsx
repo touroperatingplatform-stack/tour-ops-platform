@@ -56,14 +56,24 @@ export default function ActivitiesPage() {
       return
     }
     
-    const { data } = await supabase
-      .from('activities')
-      .select('*, checklist_templates(name)')
-      .or(`company_id.eq.${profile.company_id},company_id.is.null`)
-      .eq('is_active', true)
-      .order('name')
+    // Load both system activities (NULL company_id) and company activities
+    const [{ data: systemData }, { data: companyData }] = await Promise.all([
+      supabase
+        .from('activities')
+        .select('*, checklist_templates(name)')
+        .is('company_id', null)
+        .eq('is_active', true),
+      supabase
+        .from('activities')
+        .select('*, checklist_templates(name)')
+        .eq('company_id', profile.company_id)
+        .eq('is_active', true)
+    ])
     
-    if (data) setActivities(data)
+    const combined = [...(systemData || []), ...(companyData || [])]
+      .sort((a, b) => a.name.localeCompare(b.name))
+    
+    if (combined.length) setActivities(combined)
     setLoading(false)
   }
 
