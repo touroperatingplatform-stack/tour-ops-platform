@@ -1439,7 +1439,6 @@ export default function OrdenImportPage() {
                                   Remove
                                 </button>
                               </div>
-                              <!-- Show assigned checklist -->
                               {activity.checklist_templates?.name ? (
                                 <div className="flex items-center gap-2 text-sm text-green-700">
                                   <span>📋 {activity.checklist_templates.name}</span>
