@@ -59,7 +59,7 @@ export default function ActivitiesPage() {
     const { data } = await supabase
       .from('activities')
       .select('*, checklist_templates(name)')
-      .eq('company_id', profile.company_id)
+      .or(`company_id.eq.${profile.company_id},company_id.is.null`)
       .eq('is_active', true)
       .order('name')
     
