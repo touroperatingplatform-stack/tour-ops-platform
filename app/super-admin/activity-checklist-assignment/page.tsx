@@ -146,6 +146,16 @@ export default function ActivityChecklistAssignmentPage() {
     setSaving(false)
   }
 
+  async function updateChecklistStage(checklistId: string, stage: string) {
+    setSaving(true)
+    await supabase
+      .from('checklists')
+      .update({ stage })
+      .eq('id', checklistId)
+    await loadData()
+    setSaving(false)
+  }
+
   function toggleUnassigned(activityId: string) {
     const newSet = new Set(selectedUnassigned)
     if (newSet.has(activityId)) {
@@ -194,28 +204,26 @@ export default function ActivityChecklistAssignmentPage() {
 
       {/* Main Content */}
       <main className="flex-1 overflow-auto p-4 space-y-6">
-        {/* Checklists with Activities */}
-        {groupedActivities.map(({ checklist, activities: assigned }) => (
-          <div key={checklist.id} className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+        {/* Stage Groups */}
+        {groupedByStage.map(({ stage, activities: stageActivities }) => (
+          <div key={stage.id} className="bg-white rounded-xl border border-gray-200 overflow-hidden">
             <div className="bg-blue-50 px-4 py-3 border-b border-blue-100">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <span className="text-2xl">📋</span>
-                  <div>
-                    <h2 className="font-semibold text-gray-900">{checklist.name}</h2>
-                    <p className="text-sm text-gray-500">{checklist.items?.length || 0} equipment items • {assigned.length} activities</p>
-                  </div>
+              <div className="flex items-center gap-3">
+                <span className="text-2xl">{stage.icon}</span>
+                <div>
+                  <h2 className="font-semibold text-gray-900">{stage.label}</h2>
+                  <p className="text-sm text-gray-500">{stageActivities.length} activities</p>
                 </div>
               </div>
             </div>
             <div className="divide-y divide-gray-100">
-              {assigned.map(activity => (
+              {stageActivities.map((activity: any) => (
                 <div key={activity.id} className="px-4 py-3 flex items-center justify-between hover:bg-gray-50">
                   <div className="flex items-center gap-3">
                     <span className="text-lg">🏃</span>
                     <div>
                       <p className="font-medium text-gray-900">{activity.name}</p>
-                      <p className="text-sm text-gray-500">{activity.duration_minutes} min</p>
+                      <p className="text-sm text-gray-500">{activity.duration_minutes} min • 📋 {activity.checklist.name}</p>
                     </div>
                   </div>
                   <button
@@ -230,6 +238,39 @@ export default function ActivityChecklistAssignmentPage() {
             </div>
           </div>
         ))}
+
+        {/* Checklists with Stage Selector */}
+        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+          <div className="bg-gray-50 px-4 py-3 border-b border-gray-200">
+            <h2 className="font-semibold text-gray-900">Manage Checklist Stages</h2>
+            <p className="text-sm text-gray-500">Assign stages to system checklists</p>
+          </div>
+          <div className="divide-y divide-gray-100">
+            {checklists.map(checklist => (
+              <div key={checklist.id} className="px-4 py-3 flex items-center justify-between hover:bg-gray-50">
+                <div className="flex items-center gap-3">
+                  <span className="text-2xl">📋</span>
+                  <div>
+                    <p className="font-medium text-gray-900">{checklist.name}</p>
+                    <p className="text-sm text-gray-500">{checklist.items?.length || 0} items</p>
+                  </div>
+                </div>
+                <select
+                  value={checklist.stage || 'pre_departure'}
+                  onChange={(e) => updateChecklistStage(checklist.id, e.target.value)}
+                  disabled={saving}
+                  className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm"
+                >
+                  <option value="pre_departure">Pre-Departure</option>
+                  <option value="pre_pickup">Pre-Pickup</option>
+                  <option value="activity">Activity</option>
+                  <option value="dropoff">Dropoff</option>
+                  <option value="finish">Finish</option>
+                </select>
+              </div>
+            ))}
+          </div>
+        </div>
 
         {/* Unassigned Activities */}
         {unassigned.length > 0 && (
