@@ -57,18 +57,22 @@ export default function ActivitiesPage() {
     }
     
     // Load system activities first
-    const { data: systemActivities } = await supabase
+    const { data: systemActivities, error: systemError } = await supabase
       .from('activities')
       .select('*, checklist_templates(name)')
       .is('company_id', null)
       .eq('is_active', true)
     
-    // Load company activities
-    const { data: companyActivities } = await supabase
+    if (systemError) console.error('System activities error:', systemError)
+    
+    // Load company activities  
+    const { data: companyActivities, error: companyError } = await supabase
       .from('activities')
       .select('*, checklist_templates(name)')
       .eq('company_id', profile.company_id)
       .eq('is_active', true)
+    
+    if (companyError) console.error('Company activities error:', companyError)
     
     // Combine and sort
     const all = [
@@ -76,6 +80,7 @@ export default function ActivitiesPage() {
       ...(companyActivities || [])
     ].sort((a, b) => a.name.localeCompare(b.name))
     
+    console.log('Loaded activities:', all.length, 'system:', systemActivities?.length, 'company:', companyActivities?.length)
     setActivities(all)
     setLoading(false)
   }
