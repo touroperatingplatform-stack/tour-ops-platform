@@ -10,7 +10,7 @@ interface Activity {
   id: string
   name: string
   duration_minutes: number
-  default_checklist_template_id: string | null
+  checklist_ids: string[]
 }
 
 interface Checklist {
@@ -69,17 +69,23 @@ export default function ActivityChecklistAssignmentPage() {
   // Group activities by checklist
   const groupedActivities = checklists.map(checklist => ({
     checklist,
-    activities: activities.filter(a => a.default_checklist_template_id === checklist.id)
+    activities: activities.filter(a => a.checklist_ids.includes(checklist.id))
   })).filter(g => g.activities.length > 0)
 
   // Unassigned activities
-  const unassigned = activities.filter(a => !a.default_checklist_template_id)
+  const unassigned = activities.filter(a => a.checklist_ids.length === 0)
 
   async function assignActivity(activityId: string, checklistId: string | null) {
     setSaving(true)
     
     if (checklistId) {
-      // Create link
+      // Create link - delete existing first to avoid conflicts
+      await supabase
+        .from('activity_checklist_links')
+        .delete()
+        .eq('activity_id', activityId)
+        .eq('is_system', true)
+      
       const { error } = await supabase
         .from('activity_checklist_links')
         .insert({
@@ -87,8 +93,6 @@ export default function ActivityChecklistAssignmentPage() {
           checklist_id: checklistId,
           is_system: true
         })
-        .onConflict(['activity_id', 'checklist_id'])
-        .ignore()
       
       if (error) console.error('Link error:', error)
     } else {
