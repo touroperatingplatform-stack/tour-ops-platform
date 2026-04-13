@@ -269,7 +269,10 @@ export default function AdminChecklistsPage() {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-xl font-bold text-gray-900">{t('checklists.title')}</h1>
-              <p className="text-gray-500 text-sm">Manage equipment checklists and activity assignments</p>
+              <p className="text-gray-500 text-sm">
+                Manage equipment checklists and activity assignments • 
+                <a href="/admin/activities" className="text-blue-600 hover:underline">Go to Activities →</a>
+              </p>
             </div>
             <button
               onClick={openCreate}
@@ -424,11 +427,21 @@ export default function AdminChecklistsPage() {
         {/* Activities Tab */}
         {activeTab === 'activities' && (
           <div className="space-y-4">
-            <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-              <p className="text-green-800 text-sm">
-                <strong>Activities</strong> can have equipment checklists assigned to them. 
-                When tours include these activities, guides will see the combined equipment list.
-              </p>
+            <div className="bg-green-50 border border-green-200 rounded-lg p-4 flex items-center justify-between">
+              <div>
+                <p className="text-green-800 text-sm">
+                  <strong>Activities</strong> can have equipment checklists assigned to them.
+                </p>
+                <p className="text-green-700 text-sm mt-1">
+                  When tours include these activities, guides will see the combined equipment list.
+                </p>
+              </div>
+              <a 
+                href="/admin/activities"
+                className="bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-green-700 whitespace-nowrap"
+              >
+                Manage Activities →
+              </a>
             </div>
 
             {activities.length === 0 ? (
