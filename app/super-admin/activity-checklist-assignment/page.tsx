@@ -253,7 +253,7 @@ export default function ActivityChecklistAssignmentPage() {
         )}
 
         {/* Empty state */}
-        {groupedActivities.length === 0 &> unassigned.length === 0 && (
+        {groupedActivities.length === 0 && unassigned.length === 0 && (
           <div className="text-center py-12 bg-white rounded-xl border border-gray-200">
             <p className="text-gray-500">No activities found</p>
           </div>
