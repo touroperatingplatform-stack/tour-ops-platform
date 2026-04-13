@@ -433,13 +433,17 @@ export default function OrdenImportPage() {
       // Load servicio patterns
       const { data: patternsData } = await supabase
         .from('servicio_patterns')
-        .select('servicio_name, activities')
+        .select('servicio_name, normalized_name, activities')
         .eq('company_id', profile.company_id)
       
       if (patternsData) {
         const patterns: Record<string, { activities: string[], isNew: boolean }> = {}
         patternsData.forEach(p => {
+          // Store by both original and normalized name for lookup
           patterns[p.servicio_name] = { activities: p.activities || [], isNew: false }
+          if (p.normalized_name) {
+            patterns[p.normalized_name] = { activities: p.activities || [], isNew: false }
+          }
         })
         setServicioPatterns(patterns)
       }
@@ -1368,12 +1372,15 @@ export default function OrdenImportPage() {
                   </button>
                   <button
                     onClick={() => {
-                      // Initialize activity assignments for each tour
+                      // Initialize activity assignments - USE EXISTING patterns if available
                       const initialAssignments: Record<string, { activities: string[], isNew: boolean }> = {}
                       parsedTours.forEach(tour => {
-                        const normalizedName = tour.service.toLowerCase().trim()
-                        if (servicioPatterns[normalizedName]) {
-                          initialAssignments[tour.service] = servicioPatterns[normalizedName]
+                        // Check by original service name (how it's stored in DB)
+                        if (servicioPatterns[tour.service] && servicioPatterns[tour.service].activities.length > 0) {
+                          initialAssignments[tour.service] = { 
+                            activities: [...servicioPatterns[tour.service].activities], 
+                            isNew: false 
+                          }
                         } else {
                           initialAssignments[tour.service] = { activities: [], isNew: true }
                         }
