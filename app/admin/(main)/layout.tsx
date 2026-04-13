@@ -19,8 +19,9 @@ const moreItems = [
   { href: '/admin/users', label: 'Team', icon: '👥' },
   { href: '/admin/brands', label: 'Brands', icon: '🏷️' },
   { href: '/admin/checklists', label: 'Checklists', icon: '☑️' },
+  { href: '/admin/service-templates', label: 'Services', icon: '📋' },
   { href: '/admin/guides/availability', label: 'Guides', icon: '🎯' },
-  { href: '/admin/templates', label: 'Templates', icon: '📋' },
+  { href: '/admin/templates', label: 'Templates', icon: '📄' },
   { href: '/admin/data', label: 'Data', icon: '💾' },
   { href: '/admin/settings', label: 'Settings', icon: '⚙️' },
 ]
