@@ -33,7 +33,7 @@ export default function ActivityChecklistAssignmentPage() {
   }, [])
 
   async function loadData() {
-    // Load system activities only (for preset management)
+    // Load ALL system activities
     const { data: systemActivities } = await supabase
       .from('activities')
       .select('*')
@@ -41,7 +41,19 @@ export default function ActivityChecklistAssignmentPage() {
       .eq('is_active', true)
       .order('name')
     
-    // Load system checklists only
+    // Load links
+    const { data: links } = await supabase
+      .from('activity_checklist_links')
+      .select('activity_id, checklist_id')
+      .eq('is_system', true)
+    
+    // Merge links into activities
+    const activitiesWithLinks = (systemActivities || []).map(activity => ({
+      ...activity,
+      checklist_ids: links?.filter(l => l.activity_id === activity.id).map(l => l.checklist_id) || []
+    }))
+    
+    // Load system checklists
     const { data: systemChecklists } = await supabase
       .from('checklists')
       .select('id, name, items')
@@ -49,7 +61,7 @@ export default function ActivityChecklistAssignmentPage() {
       .eq('is_active', true)
       .order('name')
     
-    setActivities(systemActivities || [])
+    setActivities(activitiesWithLinks)
     setChecklists(systemChecklists || [])
     setLoading(false)
   }
@@ -65,16 +77,32 @@ export default function ActivityChecklistAssignmentPage() {
 
   async function assignActivity(activityId: string, checklistId: string | null) {
     setSaving(true)
-    const { error } = await supabase
-      .from('activities')
-      .update({ default_checklist_template_id: checklistId })
-      .eq('id', activityId)
     
-    if (!error) {
-      await loadData()
+    if (checklistId) {
+      // Create link
+      const { error } = await supabase
+        .from('activity_checklist_links')
+        .insert({
+          activity_id: activityId,
+          checklist_id: checklistId,
+          is_system: true
+        })
+        .onConflict(['activity_id', 'checklist_id'])
+        .ignore()
+      
+      if (error) console.error('Link error:', error)
     } else {
-      console.error('Assignment error:', error)
+      // Remove all links for this activity
+      const { error } = await supabase
+        .from('activity_checklist_links')
+        .delete()
+        .eq('activity_id', activityId)
+        .eq('is_system', true)
+      
+      if (error) console.error('Unlink error:', error)
     }
+    
+    await loadData()
     setSaving(false)
   }
 
