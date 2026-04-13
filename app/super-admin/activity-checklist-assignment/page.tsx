@@ -10,7 +10,7 @@ interface Activity {
   id: string
   name: string
   duration_minutes: number
-  checklist_template_id: string | null
+  default_checklist_template_id: string | null
 }
 
 interface Checklist {
@@ -57,21 +57,23 @@ export default function ActivityChecklistAssignmentPage() {
   // Group activities by checklist
   const groupedActivities = checklists.map(checklist => ({
     checklist,
-    activities: activities.filter(a => a.checklist_template_id === checklist.id)
+    activities: activities.filter(a => a.default_checklist_template_id === checklist.id)
   })).filter(g => g.activities.length > 0)
 
   // Unassigned activities
-  const unassigned = activities.filter(a => !a.checklist_template_id)
+  const unassigned = activities.filter(a => !a.default_checklist_template_id)
 
   async function assignActivity(activityId: string, checklistId: string | null) {
     setSaving(true)
     const { error } = await supabase
       .from('activities')
-      .update({ checklist_template_id: checklistId })
+      .update({ default_checklist_template_id: checklistId })
       .eq('id', activityId)
     
     if (!error) {
       await loadData()
+    } else {
+      console.error('Assignment error:', error)
     }
     setSaving(false)
   }
@@ -83,7 +85,7 @@ export default function ActivityChecklistAssignmentPage() {
     const promises = Array.from(selectedUnassigned).map(activityId =>
       supabase
         .from('activities')
-        .update({ checklist_template_id: bulkChecklistId })
+        .update({ default_checklist_template_id: bulkChecklistId })
         .eq('id', activityId)
     )
     
