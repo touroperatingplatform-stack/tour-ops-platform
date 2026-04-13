@@ -17,6 +17,7 @@ interface Checklist {
   id: string
   name: string
   items: any[]
+  stage: string
 }
 
 export default function ActivityChecklistAssignmentPage() {
@@ -56,7 +57,7 @@ export default function ActivityChecklistAssignmentPage() {
     // Load system checklists
     const { data: systemChecklists } = await supabase
       .from('checklists')
-      .select('id, name, items')
+      .select('id, name, items, stage')
       .is('company_id', null)
       .eq('is_active', true)
       .order('name')
@@ -66,7 +67,24 @@ export default function ActivityChecklistAssignmentPage() {
     setLoading(false)
   }
 
-  // Group activities by checklist
+  // Group activities by checklist, then by stage
+  const STAGES = [
+    { id: 'pre_departure', label: 'Pre-Departure', icon: '🚌' },
+    { id: 'pre_pickup', label: 'Pre-Pickup', icon: '📍' },
+    { id: 'activity', label: 'Activity', icon: '🏃' },
+    { id: 'dropoff', label: 'Dropoff', icon: '🏨' },
+    { id: 'finish', label: 'Finish', icon: '✅' }
+  ]
+  
+  const groupedByStage = STAGES.map(stage => {
+    const stageChecklists = checklists.filter(c => c.stage === stage.id)
+    const stageActivities = stageChecklists.flatMap(checklist => 
+      activities.filter(a => a.checklist_ids.includes(checklist.id))
+        .map(a => ({ ...a, checklist }))
+    )
+    return { stage, activities: stageActivities }
+  }).filter(g => g.activities.length > 0)
+  
   const groupedActivities = checklists.map(checklist => ({
     checklist,
     activities: activities.filter(a => a.checklist_ids.includes(checklist.id))
