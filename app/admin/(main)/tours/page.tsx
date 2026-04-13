@@ -307,6 +307,12 @@ export default function ToursPage() {
                         Assign Staff
                       </Link>
                     )}
+                    <button
+                      onClick={() => handleDeleteTour(tour.id)}
+                      className="py-2 px-4 bg-gray-100 text-gray-600 rounded-lg text-sm font-medium hover:bg-gray-200"
+                    >
+                      Delete
+                    </button>
                   </div>
                 </div>
               ))}
