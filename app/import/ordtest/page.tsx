@@ -418,10 +418,10 @@ export default function OrdenImportPage() {
       setCompanyId(profile.company_id)
       setBrandId(profile.brand_id)
 
-      // Load company activities for assignment
+      // Load company activities for assignment (with checklist template info)
       const { data: activitiesData } = await supabase
         .from('activities')
-        .select('id, name')
+        .select('id, name, checklist_template_id, checklist_templates(name)')
         .eq('company_id', profile.company_id)
         .eq('is_active', true)
         .order('name')
@@ -1420,23 +1420,49 @@ export default function OrdenImportPage() {
                           )}
                         </div>
 
-                        {/* Selected Activities */}
+                        {/* Selected Activities with Checklist Info */}
                         <div className="space-y-2 mb-3">
                           {selectedActivities.map((activity, idx) => (
-                            <div key={activity.id} className="flex items-center justify-between bg-gray-50 rounded-lg px-3 py-2">
-                              <span className="text-sm">{idx + 1}. {activity.name}</span>
-                              <button
-                                onClick={() => {
-                                  const newActivities = pattern.activities.filter(id => id !== activity.id)
-                                  setServicioPatterns(prev => ({
-                                    ...prev,
-                                    [tour.service]: { ...pattern, activities: newActivities }
-                                  }))
-                                }}
-                                className="text-red-600 hover:bg-red-50 px-2 py-1 rounded text-sm"
-                              >
-                                Remove
-                              </button>
+                            <div key={activity.id} className="bg-gray-50 rounded-lg px-3 py-3">
+                              <div className="flex items-center justify-between mb-1">
+                                <span className="font-medium text-sm">{idx + 1}. {activity.name}</span>
+                                <button
+                                  onClick={() => {
+                                    const newActivities = pattern.activities.filter(id => id !== activity.id)
+                                    setServicioPatterns(prev => ({
+                                      ...prev,
+                                      [tour.service]: { ...pattern, activities: newActivities }
+                                    }))
+                                  }}
+                                  className="text-red-600 hover:bg-red-50 px-2 py-1 rounded text-sm"
+                                >
+                                  Remove
+                                </button>
+                              </div>
+                              <!-- Show assigned checklist -->
+                              {activity.checklist_templates?.name ? (
+                                <div className="flex items-center gap-2 text-sm text-green-700">
+                                  <span>📋 {activity.checklist_templates.name}</span>
+                                  <a 
+                                    href={`/admin/activities`}
+                                    target="_blank"
+                                    className="text-blue-600 hover:underline text-xs"
+                                  >
+                                    Edit
+                                  </a>
+                                </div>
+                              ) : (
+                                <div className="flex items-center gap-2 text-sm text-amber-600">
+                                  <span>⚠️ No equipment checklist assigned</span>
+                                  <a 
+                                    href={`/admin/activities`}
+                                    target="_blank"
+                                    className="text-blue-600 hover:underline text-xs"
+                                  >
+                                    Assign in Activities
+                                  </a>
+                                </div>
+                              )}
                             </div>
                           ))}
                           {selectedActivities.length === 0 && (
