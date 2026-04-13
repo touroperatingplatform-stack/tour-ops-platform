@@ -361,7 +361,7 @@ export default function OrdenImportPage() {
   const [step, setStep] = useState<1 | 2 | 3 | 4 | 5 | 6 | 7>(1)
 
   // Activity assignment state
-  const [companyActivities, setCompanyActivities] = useState<{id: string, name: string, checklist_template_id: string | null, checklist_templates?: {name: string}[] | null}[]>([])
+  const [companyActivities, setCompanyActivities] = useState<{id: string, name: string}[]>([])
   const [servicioPatterns, setServicioPatterns] = useState<Record<string, {activities: string[], isNew: boolean}>>({})
   const [file, setFile] = useState<File | null>(null)
   const [parsedTours, setParsedTours] = useState<ParsedTour[]>([])
@@ -1449,29 +1449,15 @@ export default function OrdenImportPage() {
                                   Remove
                                 </button>
                               </div>
-                              {activity.checklist_templates?.[0]?.name ? (
-                                <div className="flex items-center gap-2 text-sm text-green-700">
-                                  <span>📋 {activity.checklist_templates[0].name}</span>
-                                  <a 
-                                    href={`/admin/activities`}
-                                    target="_blank"
-                                    className="text-blue-600 hover:underline text-xs"
-                                  >
-                                    Edit
-                                  </a>
-                                </div>
-                              ) : (
-                                <div className="flex items-center gap-2 text-sm text-amber-600">
-                                  <span>⚠️ No equipment checklist assigned</span>
-                                  <a 
-                                    href={`/admin/activities`}
-                                    target="_blank"
-                                    className="text-blue-600 hover:underline text-xs"
-                                  >
-                                    Assign in Activities
-                                  </a>
-                                </div>
-                              )}
+                              <div className="flex items-center gap-2 text-sm text-gray-500">
+                                <a 
+                                  href={`/admin/activities`}
+                                  target="_blank"
+                                  className="text-blue-600 hover:underline text-xs"
+                                >
+                                  Manage activities →
+                                </a>
+                              </div>
                             </div>
                           ))}
                           {selectedActivities.length === 0 && (
