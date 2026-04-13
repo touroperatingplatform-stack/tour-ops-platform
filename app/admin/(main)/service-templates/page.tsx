@@ -5,7 +5,6 @@ export const dynamic = 'force-dynamic'
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase/client'
 import { useTranslation } from '@/lib/i18n/useTranslation'
-import Link from 'next/link'
 
 interface ServiceTemplate {
   id: string
@@ -340,12 +339,12 @@ export default function ServiceTemplatesPage() {
                               <span className="text-sm">📋 {checklist.name}</span>
                               <span className="text-xs text-gray-400">({checklist.items?.length || 0} items)</span>
                             </div>
-                            <Link 
-                              href={`/admin/checklists/${checklist.id}`}
+                            <button
+                              onClick={() => alert('Edit checklist: ' + checklist.name)}
                               className="text-sm text-blue-600 hover:text-blue-800"
                             >
                               Edit
-                            </Link>
+                            </button>
                           </div>
                         ))}
                         
