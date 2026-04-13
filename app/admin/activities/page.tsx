@@ -56,24 +56,27 @@ export default function ActivitiesPage() {
       return
     }
     
-    // Load both system activities (NULL company_id) and company activities
-    const [{ data: systemData }, { data: companyData }] = await Promise.all([
-      supabase
-        .from('activities')
-        .select('*, checklist_templates(name)')
-        .is('company_id', null)
-        .eq('is_active', true),
-      supabase
-        .from('activities')
-        .select('*, checklist_templates(name)')
-        .eq('company_id', profile.company_id)
-        .eq('is_active', true)
-    ])
+    // Load system activities first
+    const { data: systemActivities } = await supabase
+      .from('activities')
+      .select('*, checklist_templates(name)')
+      .is('company_id', null)
+      .eq('is_active', true)
     
-    const combined = [...(systemData || []), ...(companyData || [])]
-      .sort((a, b) => a.name.localeCompare(b.name))
+    // Load company activities
+    const { data: companyActivities } = await supabase
+      .from('activities')
+      .select('*, checklist_templates(name)')
+      .eq('company_id', profile.company_id)
+      .eq('is_active', true)
     
-    if (combined.length) setActivities(combined)
+    // Combine and sort
+    const all = [
+      ...(systemActivities || []), 
+      ...(companyActivities || [])
+    ].sort((a, b) => a.name.localeCompare(b.name))
+    
+    setActivities(all)
     setLoading(false)
   }
 
@@ -90,14 +93,26 @@ export default function ActivitiesPage() {
     
     if (!profile?.company_id) return
     
-    const { data } = await supabase
-      .from('checklist_templates')
-      .select('id, name')
-      .eq('company_id', profile.company_id)
-      .eq('is_active', true)
-      .order('name')
+    // Load system checklists (NULL company_id) + company checklists
+    const [{ data: systemChecklists }, { data: companyChecklists }] = await Promise.all([
+      supabase
+        .from('checklists')
+        .select('id, name')
+        .is('company_id', null)
+        .eq('is_active', true),
+      supabase
+        .from('checklists')
+        .select('id, name')
+        .eq('company_id', profile.company_id)
+        .eq('is_active', true)
+    ])
     
-    if (data) setChecklists(data)
+    const combined = [
+      ...(systemChecklists || []),
+      ...(companyChecklists || [])
+    ].sort((a, b) => a.name.localeCompare(b.name))
+    
+    setChecklists(combined)
   }
 
   async function handleSubmit(e: React.FormEvent) {
