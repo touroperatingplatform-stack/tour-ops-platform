@@ -33,26 +33,24 @@ export default function ActivityChecklistAssignmentPage() {
   }, [])
 
   async function loadData() {
-    // Load system activities + company activities
-    const [{ data: systemActivities }, { data: companyActivities }] = await Promise.all([
-      supabase.from('activities').select('*').is('company_id', null).eq('is_active', true),
-      supabase.from('activities').select('*').eq('is_active', true)
-    ])
+    // Load system activities only (for preset management)
+    const { data: systemActivities } = await supabase
+      .from('activities')
+      .select('*')
+      .is('company_id', null)
+      .eq('is_active', true)
+      .order('name')
     
-    const allActivities = [...(systemActivities || []), ...(companyActivities || [])]
-      .sort((a, b) => a.name.localeCompare(b.name))
+    // Load system checklists only
+    const { data: systemChecklists } = await supabase
+      .from('checklists')
+      .select('id, name, items')
+      .is('company_id', null)
+      .eq('is_active', true)
+      .order('name')
     
-    // Load checklists (system + company)
-    const [{ data: systemChecklists }, { data: companyChecklists }] = await Promise.all([
-      supabase.from('checklists').select('id, name, items').is('company_id', null).eq('is_active', true),
-      supabase.from('checklists').select('id, name, items').eq('is_active', true)
-    ])
-    
-    const allChecklists = [...(systemChecklists || []), ...(companyChecklists || [])]
-      .sort((a, b) => a.name.localeCompare(b.name))
-    
-    setActivities(allActivities)
-    setChecklists(allChecklists)
+    setActivities(systemActivities || [])
+    setChecklists(systemChecklists || [])
     setLoading(false)
   }
 
