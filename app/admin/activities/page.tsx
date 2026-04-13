@@ -56,19 +56,19 @@ export default function ActivitiesPage() {
       return
     }
     
-    // Load system activities first
+    // Load system activities first - without checklist_templates join
     const { data: systemActivities, error: systemError } = await supabase
       .from('activities')
-      .select('*, checklist_templates(name)')
+      .select('*')
       .is('company_id', null)
       .eq('is_active', true)
     
     if (systemError) console.error('System activities error:', systemError)
     
-    // Load company activities  
+    // Load company activities - without checklist_templates join
     const { data: companyActivities, error: companyError } = await supabase
       .from('activities')
-      .select('*, checklist_templates(name)')
+      .select('*')
       .eq('company_id', profile.company_id)
       .eq('is_active', true)
     
