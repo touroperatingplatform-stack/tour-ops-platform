@@ -68,6 +68,21 @@ export default function ToursPage() {
     setLoading(false)
   }
 
+  async function handleDeleteTour(tourId: string) {
+    if (!confirm('Delete this tour? This cannot be undone.')) return
+    
+    const { error } = await supabase
+      .from('tours')
+      .delete()
+      .eq('id', tourId)
+    
+    if (error) {
+      alert('Error deleting tour: ' + error.message)
+    } else {
+      loadTours()
+    }
+  }
+
   function getStatusColor(status: string) {
     switch (status) {
       case 'in_progress': return 'bg-green-500'
@@ -211,6 +226,12 @@ export default function ToursPage() {
                         Assign Staff
                       </Link>
                     )}
+                    <button
+                      onClick={() => handleDeleteTour(tour.id)}
+                      className="py-2 px-4 bg-gray-100 text-gray-600 rounded-lg text-sm font-medium hover:bg-gray-200"
+                    >
+                      Delete
+                    </button>
                   </div>
                 </div>
               ))
