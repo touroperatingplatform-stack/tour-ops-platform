@@ -418,17 +418,27 @@ export default function OrdenImportPage() {
       setCompanyId(profile.company_id)
       setBrandId(profile.brand_id)
 
-      // Load company activities for assignment (with checklist template info)
-      const { data: activitiesData } = await supabase
-        .from('activities')
-        .select('id, name, checklist_template_id, checklist_templates(name)')
-        .eq('company_id', profile.company_id)
-        .eq('is_active', true)
-        .order('name')
+      // Load system activities + company activities
+      const [{ data: systemActivities }, { data: companyActivities }] = await Promise.all([
+        supabase
+          .from('activities')
+          .select('id, name')
+          .is('company_id', null)
+          .eq('is_active', true)
+          .order('name'),
+        supabase
+          .from('activities')
+          .select('id, name')
+          .eq('company_id', profile.company_id)
+          .eq('is_active', true)
+          .order('name')
+      ])
       
-      if (activitiesData) {
-        setCompanyActivities(activitiesData)
-      }
+      const allActivities = [
+        ...(systemActivities || []),
+        ...(companyActivities || [])
+      ]
+      setCompanyActivities(allActivities)
 
       // Load servicio patterns
       const { data: patternsData } = await supabase
