@@ -200,7 +200,7 @@ export default function ServiceTemplatesPage() {
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 overflow-auto p-4">
+      <main className="flex-1 overflow-auto border-8 border-transparent">
         {!selectedTemplate ? (
           /* Template List View */
           <div className="space-y-4 max-w-4xl">
@@ -346,35 +346,50 @@ export default function ServiceTemplatesPage() {
                       </div>
                     ) : (
                       /* General stage checklists */
-                      <div className="space-y-2">
-                        {checklists.filter(c => c.stage === stage.id).map(checklist => (
-                          <div key={checklist.id} className="flex items-center justify-between bg-gray-50 rounded-lg px-3 py-2">
-                            <div className="flex items-center gap-3">
-                              <input 
-                                type="checkbox" 
-                                checked={selectedChecklists.has(checklist.id)}
-                                onChange={() => toggleChecklist(checklist.id)}
-                                className="w-4 h-4"
-                              />
-                              <span className="text-sm">📋 {checklist.name}</span>
-                              <span className="text-xs text-gray-400">({checklist.items?.length || 0} items)</span>
+                      <div className="space-y-3">
+                        {/* Selected checklists */}
+                        {Array.from(selectedChecklists)
+                          .map(id => checklists.find(c => c.id === id && c.stage === stage.id))
+                          .filter(Boolean)
+                          .map(checklist => (
+                            <div key={checklist!.id} className="flex items-center justify-between bg-green-50 border border-green-200 rounded-lg px-3 py-2">
+                              <div className="flex items-center gap-3">
+                                <span className="text-sm">✅ {checklist!.name}</span>
+                                <span className="text-xs text-gray-500">({checklist!.items?.length || 0} items)</span>
+                              </div>
+                              <button
+                                onClick={() => toggleChecklist(checklist!.id)}
+                                className="text-red-600 text-sm hover:text-red-800"
+                              >
+                                Remove
+                              </button>
                             </div>
-                            <button
-                              onClick={() => alert('Edit checklist: ' + checklist.name)}
-                              className="text-sm text-blue-600 hover:text-blue-800"
-                            >
-                              Edit
-                            </button>
-                          </div>
-                        ))}
+                          ))}
+                        
+                        {/* Add checklist dropdown */}
+                        <div className="flex items-center gap-2">
+                          <select
+                            value=""
+                            onChange={(e) => {
+                              if (e.target.value) {
+                                toggleChecklist(e.target.value)
+                                e.target.value = ''
+                              }
+                            }}
+                            className="border border-gray-300 rounded-lg px-3 py-2 text-sm flex-1"
+                          >
+                            <option value="">+ Add checklist to {stage.label}...</option>
+                            {checklists
+                              .filter(c => c.stage === stage.id && !selectedChecklists.has(c.id))
+                              .map(c => (
+                                <option key={c.id} value={c.id}>📋 {c.name}</option>
+                              ))}
+                          </select>
+                        </div>
                         
                         {checklists.filter(c => c.stage === stage.id).length === 0 && (
-                          <p className="text-sm text-gray-400 italic">No checklists assigned to this stage</p>
+                          <p className="text-sm text-gray-400 italic">No checklists available for this stage</p>
                         )}
-                        
-                        <button className="mt-2 text-sm text-blue-600 hover:text-blue-800">
-                          + Assign Checklist to {stage.label}
-                        </button>
                       </div>
                     )}
                   </div>
