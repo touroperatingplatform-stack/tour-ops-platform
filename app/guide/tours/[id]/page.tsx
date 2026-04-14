@@ -84,6 +84,7 @@ export default function GuideTourPage() {
   const [preDepartureChecked, setPreDepartureChecked] = useState<Record<string, boolean>>({})
   const [equipmentChecked, setEquipmentChecked] = useState<Record<string, boolean>>({})
   const [equipmentItems, setEquipmentItems] = useState<any[]>([])
+  const [preDepartureItems, setPreDepartureItems] = useState<any[]>([])
   const [assignedChecklist, setAssignedChecklist] = useState<any[]>([])
 
   // Guest manifest expanded
@@ -116,7 +117,12 @@ export default function GuideTourPage() {
         .maybeSingle()
       
       if (equipmentChecklist?.items) {
-        setEquipmentItems(equipmentChecklist.items)
+        // Filter to only Pre-Departure items (activity === 'Pre-Departure')
+        const preDepartureOnly = equipmentChecklist.items.filter((item: any) => 
+          item.activity === 'Pre-Departure' || item.activity?.includes('Pre-Departure')
+        )
+        setEquipmentItems(preDepartureOnly)
+        setPreDepartureItems(preDepartureOnly)
         // Initialize checked state from completed items
         const checked: Record<string, boolean> = {}
         equipmentChecklist.items.forEach((item: any) => {
@@ -125,6 +131,7 @@ export default function GuideTourPage() {
           ) || false
         })
         setEquipmentChecked(checked)
+        setPreDepartureChecked(checked)
       }
       // Load assigned checklist if exists
       if (tourData.checklist_id) {
