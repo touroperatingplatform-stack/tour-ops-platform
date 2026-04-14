@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: #f5f5f5;
+  padding: 20px;
+  color: #333;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+h2 {
+  color: #333;
+  margin-top: 40px;
+  border-bottom: 2px solid #3b82f6;
+  padding-bottom: 10px;
+}
+
+.mockup {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  margin: 20px 0;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+/* Header */
+.header {
+  background: #3b82f6;
+  color: white;
+  padding: 16px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.header h1 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.btn {
+  background: white;
+  color: #3b82f6;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+/* Tabs */
+.tabs {
+  display: flex;
+  background: #f9fafb;
+  border-bottom: 1px solid #e5e7eb;
+  padding: 0 20px;
+}
+
+.tab {
+  padding: 12px 20px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 14px;
+  color: #6b7280;
+  border-bottom: 2px solid transparent;
+}
+
+.tab.active {
+  color: #3b82f6;
+  border-bottom-color: #3b82f6;
+  font-weight: 500;
+}
+
+/* Content */
+.content {
+  padding: 20px;
+}
+
+.section-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 12px;
+}
+
+/* Checklist Card */
+.checklist-card {
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.checklist-icon {
+  width: 40px;
+  height: 40px;
+  background: #dbeafe;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+.checklist-info {
+  flex: 1;
+}
+
+.checklist-title {
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.checklist-meta {
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.checklist-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.action-btn {
+  padding: 6px 12px;
+  border: 1px solid #d1d5db;
+  background: white;
+  border-radius: 6px;
+  font-size: 13px;
+  cursor: pointer;
+  color: #374151;
+}
+
+.action-btn:hover {
+  background: #f9fafb;
+}
+
+/* Activity Card */
+.activity-card {
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 16px;
+}
+
+.activity-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 16px;
+}
+
+.activity-title {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.activity-desc {
+  font-size: 14px;
+  color: #6b7280;
+}
+
+/* Assignment Grid */
+.assignment-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  background: #f9fafb;
+  padding: 16px;
+  border-radius: 8px;
+}
+
+.assignment-item {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  padding: 12px;
+}
+
+.assignment-label {
+  font-size: 12px;
+  color: #6b7280;
+  margin-bottom: 4px;
+}
+
+.assignment-value {
+  font-weight: 500;
+  font-size: 14px;
+}
+
+.assignment-value.empty {
+  color: #9ca3af;
+  font-style: italic;
+}
+
+.checkbox {
+  width: 18px;
+  height: 18px;
+  border: 2px solid #3b82f6;
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 8px;
+  vertical-align: middle;
+}
+
+.checkbox.checked {
+  background: #3b82f6;
+  color: white;
+}
+
+/* Modal Overlay */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.modal {
+  background: white;
+  border-radius: 8px;
+  width: 90%;
+  max-width: 600px;
+  max-height: 90vh;
+  overflow: auto;
+}
+
+.modal-header {
+  padding: 20px;
+  border-bottom: 1px solid #e5e7eb;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modal-header h3 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: #6b7280;
+}
+
+.modal-body {
+  padding: 20px;
+}
+
+.form-group {
+  margin-bottom: 16px;
+}
+
+.form-label {
+  display: block;
+  font-size: 14px;
+  font-weight: 500;
+  margin-bottom: 6px;
+}
+
+.form-input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 14px;
+  box-sizing: border-box;
+}
+
+.form-select {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 14px;
+  background: white;
+}
+
+/* Items List */
+.items-list {
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  margin-top: 8px;
+}
+
+.item-row {
+  display: flex;
+  align-items: center;
+  padding: 12px;
+  border-bottom: 1px solid #f3f4f6;
+  gap: 12px;
+}
+
+.item-row:last-child {
+  border-bottom: none;
+}
+
+.item-check {
+  width: 18px;
+  height: 18px;
+  border: 2px solid #d1d5db;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.item-text {
+  flex: 1;
+  font-size: 14px;
+}
+
+.item-badges {
+  display: flex;
+  gap: 6px;
+}
+
+.badge {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-weight: 500;
+}
+
+.badge-required {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.badge-photo {
+  background: #fef3c7;
+  color: #d97706;
+}
+
+.modal-footer {
+  padding: 20px;
+  border-top: 1px solid #e5e7eb;
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.btn-secondary {
+  padding: 10px 20px;
+  border: 1px solid #d1d5db;
+  background: white;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.btn-primary {
+  padding: 10px 20px;
+  border: none;
+  background: #3b82f6;
+  color: white;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.view-toggle {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.view-btn {
+  padding: 8px 16px;
+  border: 1px solid #d1d5db;
+  background: white;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.view-btn.active {
+  background: #3b82f6;
+  color: white;
+  border-color: #3b82f6;
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+
+<h2>View 1: By Tour Phase</h2>
+<div class="mockup">
+  <div class="header">
+    <h1>Activities & Checklists</h1>
+    <button class="btn">+ New Checklist</button>
+  </div>
+  
+  <div class="tabs">
+    <button class="tab active">Acknowledgement</button>
+    <button class="tab">Pre-Departure</button>
+    <button class="tab">Pre-Pickup</button>
+    <button class="tab">Activity</button>
+    <button class="tab">Dropoff</button>
+    <button class="tab">Finish</button>
+  </div>
+  
+  <div class="content">
+    <div class="section-title">Acknowledgement Checklists (2)</div>
+    <p style="color: #6b7280; font-size: 14px; margin-bottom: 16px;">
+      These checklists appear when guides acknowledge a tour assignment
+    </p>
+    
+    <div class="checklist-card">
+      <div class="checklist-icon">📋</div>
+      <div class="checklist-info">
+        <div class="checklist-title">Guide Readiness Checklist</div>
+        <div class="checklist-meta">
+          <span style="color: #3b82f6;">8 items</span> • 
+          <span style="color: #dc2626;">6 required</span> • 
+          <span style="color: #d97706;">2 photo required</span>
+        </div>
+      </div>
+      <div class="checklist-actions">
+        <button class="action-btn">Edit</button>
+        <button class="action-btn">Duplicate</button>
+        <button class="action-btn" style="color: #dc2626;">Deactivate</button>
+      </div>
+    </div>
+    
+    <div class="checklist-card">
+      <div class="checklist-icon">🚐</div>
+      <div class="checklist-info">
+        <div class="checklist-title">Vehicle Handoff Checklist</div>
+        <div class="checklist-meta">
+          <span style="color: #3b82f6;">12 items</span> • 
+          <span style="color: #dc2626;">10 required</span> • 
+          <span style="color: #d97706;">4 photo required</span>
+        </div>
+      </div>
+      <div class="checklist-actions">
+        <button class="action-btn">Edit</button>
+        <button class="action-btn">Duplicate</button>
+        <button class="action-btn" style="color: #dc2626;">Deactivate</button>
+      </div>
+    </div>
+    
+    <button class="action-btn" style="margin-top: 8px;">
+      + Add Checklist to This Phase
+    </button>
+  </div>
+</div>
+
+<h2>View 2: By Activity</h2>
+<div class="mockup">
+  <div class="header">
+    <h1>Activities & Checklists</h1>
+    <button class="btn">+ New Activity</button>
+  </div>
+  
+  <div class="content">
+    <div class="view-toggle">
+      <button class="view-btn">By Tour Phase</button>
+      <button class="view-btn active">By Activity</button>
+    </div>
+    
+    <div class="activity-card">
+      <div class="activity-header">
+        <div>
+          <div class="activity-title">🏊 Cenote Swimming</div>
+          <div class="activity-desc">Swimming in natural cenotes with snorkeling</div>
+        </div>
+        <button class="action-btn">Edit Activity</button>
+      </div>
+      
+      <div style="font-size: 12px; color: #6b7280; margin-bottom: 8px; text-transform: uppercase; font-weight: 600;">
+        Required Checklists
+      </div>
+      
+      <div class="assignment-grid">
+        <div class="assignment-item">
+          <div class="assignment-label">Acknowledgement</div>
+          <div class="assignment-value empty">—</div>
+        </div>
+        <div class="assignment-item">
+          <div class="assignment-label">Pre-Departure</div>
+          <div class="assignment-value"><span class="checkbox checked">✓</span>Van Equipment</div>
+        </div>
+        <div class="assignment-item">
+          <div class="assignment-label">Pre-Pickup</div>
+          <div class="assignment-value"><span class="checkbox checked">✓</span>Guest Count</div>
+        </div>
+        <div class="assignment-item">
+          <div class="assignment-label">Activity</div>
+          <div class="assignment-value"><span class="checkbox checked">✓</span>Cenote Equipment</div>
+        </div>
+        <div class="assignment-item">
+          <div class="assignment-label">Dropoff</div>
+          <div class="assignment-value empty">—</div>
+        </div>
+        <div class="assignment-item">
+          <div class="assignment-label">Finish</div>
+          <div class="assignment-value"><span class="checkbox checked">✓</span>Return Items</div>
+        </div>
+      </div>
+      
+      <div style="margin-top: 12px;">
+        <button class="action-btn">+ Assign Checklist</button>
+        <button class="action-btn" style="margin-left: 8px;">Manage All Checklists</button>
+      </div>
+    </div>
+    
+    <div class="activity-card">
+      <div class="activity-header">
+        <div>
+          <div class="activity-title">🏛️ Mayan Ruins Visit</div>
+          <div class="activity-desc">Archaeological site tours with guide</div>
+        </div>
+        <button class="action-btn">Edit Activity</button>
+      </div>
+      
+      <div style="font-size: 12px; color: #6b7280; margin-bottom: 8px; text-transform: uppercase; font-weight: 600;">
+        Required Checklists
+      </div>
+      
+      <div class="assignment-grid">
+        <div class="assignment-item">
+          <div class="assignment-label">Acknowledgement</div>
+          <div class="assignment-value"><span class="checkbox checked">✓</span>Guide Readiness</div>
+        </div>
+        <div class="assignment-item">
+          <div class="assignment-label">Pre-Departure</div>
+          <div class="assignment-value"><span class="checkbox checked">✓</span>Van Equipment</div>
+        </div>
+        <div class="assignment-item">
+          <div class="assignment-label">Pre-Pickup</div>
+          <div class="assignment-value"><span class="checkbox checked">✓</span>Ticket Check</div>
+        </div>
+        <div class="assignment-item">
+          <div class="assignment-label">Activity</div>
+          <div class="assignment-value"><span class="checkbox checked">✓</span>Ruins Equipment</div>
+        </div>
+        <div class="assignment-item">
+          <div class="assignment-label">Dropoff</div>
+          <div class="assignment-value"><span class="checkbox checked">✓</span>Guest Return</div>
+        </div>
+        <div class="assignment-item">
+          <div class="assignment-label">Finish</div>
+          <div class="assignment-value"><span class="checkbox checked">✓</span>Return Items</div>
+        </div>
+      </div>
+      
+      <div style="margin-top: 12px;">
+        <button class="action-btn">+ Assign Checklist</button>
+        <button class="action-btn" style="margin-left: 8px;">Manage All Checklists</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<h2>Edit Checklist Modal</h2>
+<div class="mockup" style="position: relative; height: 600px;">
+  <!-- Modal Overlay -->
+  <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center;">
+    <div style="background: white; border-radius: 8px; width: 90%; max-width: 600px; max-height: 90%; overflow: auto;">
+      <div class="modal-header">
+        <h3>Edit Checklist</h3>
+        <button class="modal-close">×</button>
+      </div>
+      
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">Checklist Name</label>
+          <input type="text" class="form-input" value="Guide Readiness Checklist">
+        </div>
+        
+        <div class="form-group">
+          <label class="form-label">Tour Phase / Stage</label>
+          <select class="form-select">
+            <option>Acknowledgement</option>
+            <option>Pre-Departure</option>
+            <option>Pre-Pickup</option>
+            <option selected>Activity</option>
+            <option>Dropoff</option>
+            <option>Finish</option>
+          </select>
+        </div>
+        
+        <div class="form-group">
+          <label class="form-label">Description</label>
+          <input type="text" class="form-input" value="Pre-tour guide confirmation checklist">
+        </div>
+        
+        <div class="form-group">
+          <label class="form-label">Checklist Items</label>
+          <div class="items-list">
+            <div class="item-row">
+              <input type="checkbox" class="item-check" checked>
+              <span class="item-text">Guide license verified</span>
+              <div class="item-badges">
+                <span class="badge badge-required">Required</span>
+                <span class="badge badge-photo">📷 Photo</span>
+              </div>
+            </div>
+            <div class="item-row">
+              <input type="checkbox" class="item-check">
+              <span class="item-text">Vehicle inspection photos taken</span>
+              <div class="item-badges">
+                <span class="badge badge-required">Required</span>
+                <span class="badge badge-photo">📷 Photo</span>
+              </div>
+            </div>
+            <div class="item-row">
+              <input type="checkbox" class="item-check" checked>
+              <span class="item-text">Fuel level confirmed (75%+)</span>
+              <div class="item-badges">
+                <span class="badge badge-required">Required</span>
+              </div>
+            </div>
+            <div class="item-row">
+              <input type="checkbox" class="item-check">
+              <span class="item-text">Emergency contact verified</span>
+              <div class="item-badges">
+                <span class="badge badge-photo">📷 Photo</span>
+              </div>
+            </div>
+          </div>
+          <button class="action-btn" style="margin-top: 8px;">+ Add Item</button>
+        </div>
+        
+        <div style="font-size: 12px; color: #6b7280; margin-top: 12px;">
+          <strong>Legend:</strong> Required = must be checked • Photo = photo proof required
+        </div>
+      </div>
+      
+      <div class="modal-footer">
+        <button class="btn-secondary">Cancel</button>
+        <button class="btn-primary">Save Changes</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div>
+
+</body>
+</html>
