@@ -26,7 +26,6 @@ interface ActivityChecklistLink {
   activity_id: string
   checklist_id: string
   stage: string
-  sort_order: number
 }
 
 const STAGES = [
@@ -83,8 +82,7 @@ export default function ActivityManagementPage() {
       activity_id: selectedActivity.id,
       checklist_id: checklistId,
       stage,
-      is_system: true,
-      sort_order: 0
+      is_system: true
     })
     
     if (error) {
