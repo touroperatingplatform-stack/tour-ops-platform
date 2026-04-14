@@ -64,6 +64,10 @@ export default function CheckinPage() {
   const [submitting, setSubmitting] = useState(false)
   const [actionType, setActionType] = useState<'checkin' | 'noshow' | null>(null)
   const [uploading, setUploading] = useState(false)
+  
+  // Activity checklist state
+  const [activityChecklist, setActivityChecklist] = useState<any[]>([])
+  const [checkedItems, setCheckedItems] = useState<Record<string, boolean>>({})
 
   useEffect(() => {
     loadData()
@@ -152,6 +156,47 @@ export default function CheckinPage() {
     setLoading(false)
   }
 
+  // Load activity checklist when activity stop selected
+  async function loadActivityChecklist(stopId: string) {
+    if (checkinType !== 'activity') return
+    
+    // Get the activity for this stop from tour_activities
+    const { data: tourActivity } = await supabase
+      .from('tour_activities')
+      .select('activity_id, activities(name)')
+      .eq('tour_id', tourId)
+      .order('sort_order')
+      .limit(1)
+      .maybeSingle()
+    
+    if (!tourActivity) return
+    
+    // Get checklists for this activity with stage='activity'
+    const { data: checklistLinks } = await supabase
+      .from('activity_checklist_links')
+      .select('checklist_id, checklists(items, name)')
+      .eq('activity_id', tourActivity.activity_id)
+      .eq('stage', 'activity')
+    
+    if (checklistLinks && checklistLinks.length > 0) {
+      const items: any[] = []
+      checklistLinks.forEach((link: any) => {
+        if (link.checklists?.items) {
+          link.checklists.items.forEach((item: any) => {
+            items.push({
+              ...item,
+              checklist_name: link.checklists.name
+            })
+          })
+        }
+      })
+      setActivityChecklist(items)
+      const checked: Record<string, boolean> = {}
+      items.forEach((item: any) => { checked[item.id] = false })
+      setCheckedItems(checked)
+    }
+  }
+
   function getLocation() {
     if (!navigator.geolocation) {
       setLocationError('GPS not supported on this device')
@@ -209,6 +254,9 @@ export default function CheckinPage() {
     setSelectedStop(stop)
     setStep('checkin')
     getLocation() // Capture GPS when arriving at stop
+    if (checkinType === 'activity') {
+      loadActivityChecklist(stop.id) // Load checklist for activity
+    }
   }
 
   async function handleActivityCheckin() {
@@ -398,6 +446,10 @@ export default function CheckinPage() {
   }
 
   if (loading) {
+    // Calculate if all required activity checklist items are checked
+    const allActivityItemsChecked = activityChecklist.length === 0 || 
+      activityChecklist.filter((item: any) => item.required).every((item: any) => checkedItems[item.id])
+
     return (
       <div className="p-4">
         <div className="flex items-center justify-center h-64">
@@ -524,6 +576,10 @@ export default function CheckinPage() {
   // Step 2: Check-in Flow
   // Handle activity/dropoff check-in UI
   if ((checkinType === 'activity' || checkinType === 'dropoff') && selectedStop) {
+    // Calculate if all required activity checklist items are checked
+    const allActivityItemsChecked = activityChecklist.length === 0 || 
+      activityChecklist.filter((item: any) => item.required).every((item: any) => checkedItems[item.id])
+    
     return (
       <div className="p-4 pb-20">
         {/* Header */}
@@ -606,6 +662,40 @@ export default function CheckinPage() {
           )}
         </div>
 
+        {/* Activity Checklist */}
+        {checkinType === 'activity' && activityChecklist.length > 0 && (
+          <div className="bg-white rounded-xl p-4 border border-gray-200 mb-4">
+            <p className="text-sm font-medium text-gray-700 mb-3">✓ Activity Checklist</p>
+            <div className="space-y-2">
+              {activityChecklist.map((item: any) => (
+                <button
+                  key={item.id}
+                  onClick={() => setCheckedItems(prev => ({ ...prev, [item.id]: !prev[item.id] }))}
+                  className="w-full flex items-center gap-3 p-3 rounded-lg border-2 text-left transition-all"
+                  style={{
+                    borderColor: checkedItems[item.id] ? '#22c55e' : '#e5e7eb',
+                    backgroundColor: checkedItems[item.id] ? '#f0fdf4' : 'white'
+                  }}
+                >
+                  <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${
+                    checkedItems[item.id] ? 'bg-green-500 border-green-500' : 'border-gray-300'
+                  }`}>
+                    {checkedItems[item.id] && (
+                      <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                    )}
+                  </div>
+                  <span className="flex-1 text-sm">{item.text}</span>
+                  {item.required && (
+                    <span className="text-xs text-orange-600 font-medium">Required</span>
+                  )}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Notes */}
         <div className="bg-white rounded-xl p-4 border border-gray-200 mb-4">
           <p className="text-sm font-medium text-gray-700 mb-2">Notes (optional)</p>
@@ -620,7 +710,7 @@ export default function CheckinPage() {
         {/* Submit Button */}
         <button
           onClick={handleActivityCheckin}
-          disabled={!photoUrl || !location || submitting}
+          disabled={!photoUrl || !location || submitting || (checkinType === 'activity' && activityChecklist.length > 0 && !allActivityItemsChecked)}
           className="w-full py-4 rounded-xl font-semibold text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50"
         >
           {submitting ? 'Saving...' : checkinType === 'activity' ? 'Confirm Activity Check-in' : 'Confirm Dropoff'}
