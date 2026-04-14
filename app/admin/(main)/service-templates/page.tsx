@@ -51,6 +51,7 @@ export default function ServiceTemplatesPage() {
   const [links, setLinks] = useState<ActivityChecklistLink[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedTemplate, setSelectedTemplate] = useState<ServiceTemplate | null>(null)
+  const [selectedChecklists, setSelectedChecklists] = useState<Set<string>>(new Set())
   const [saving, setSaving] = useState(false)
   const [companyId, setCompanyId] = useState<string | null>(null)
 
@@ -148,6 +149,18 @@ export default function ServiceTemplatesPage() {
     return counts
   }
 
+  function toggleChecklist(checklistId: string) {
+    setSelectedChecklists(prev => {
+      const newSet = new Set(prev)
+      if (newSet.has(checklistId)) {
+        newSet.delete(checklistId)
+      } else {
+        newSet.add(checklistId)
+      }
+      return newSet
+    })
+  }
+
   async function saveTemplate(template: ServiceTemplate, updates: Partial<ServiceTemplate>) {
     setSaving(true)
     await supabase
@@ -240,7 +253,10 @@ export default function ServiceTemplatesPage() {
                         </div>
                         
                         <button
-                          onClick={() => setSelectedTemplate(template)}
+                          onClick={() => {
+                            setSelectedTemplate(template)
+                            setSelectedChecklists(new Set())
+                          }}
                           className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium text-sm hover:bg-blue-700"
                         >
                           Configure
@@ -258,7 +274,10 @@ export default function ServiceTemplatesPage() {
             {/* Header */}
             <div className="flex items-center gap-4">
               <button
-                onClick={() => setSelectedTemplate(null)}
+                onClick={() => {
+                  setSelectedTemplate(null)
+                  setSelectedChecklists(new Set())
+                }}
                 className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-medium text-sm hover:bg-gray-200"
               >
                 ← Back to List
@@ -333,8 +352,8 @@ export default function ServiceTemplatesPage() {
                             <div className="flex items-center gap-3">
                               <input 
                                 type="checkbox" 
-                                checked={true}
-                                readOnly
+                                checked={selectedChecklists.has(checklist.id)}
+                                onChange={() => toggleChecklist(checklist.id)}
                                 className="w-4 h-4"
                               />
                               <span className="text-sm">📋 {checklist.name}</span>
