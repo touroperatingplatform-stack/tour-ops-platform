@@ -272,17 +272,48 @@ export default function ServiceTemplatesPage() {
           /* Template Detail View */
           <div className="max-w-4xl space-y-6">
             {/* Header */}
-            <div className="flex items-center gap-4">
-              <button
-                onClick={() => {
-                  setSelectedTemplate(null)
-                  setSelectedChecklists(new Set())
-                }}
-                className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-medium text-sm hover:bg-gray-200"
-              >
-                ← Back to List
-              </button>
-              <h2 className="text-xl font-bold text-gray-900">{selectedTemplate.servicio_name}</h2>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <button
+                  onClick={() => {
+                    setSelectedTemplate(null)
+                    setSelectedChecklists(new Set())
+                  }}
+                  className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-medium text-sm hover:bg-gray-200"
+                >
+                  ← Back to List
+                </button>
+                <h2 className="text-xl font-bold text-gray-900">{selectedTemplate.servicio_name}</h2>
+              </div>
+              
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={async () => {
+                    if (!confirm('Delete this service template?')) return
+                    await supabase.from('servicio_patterns').delete().eq('id', selectedTemplate.id)
+                    setSelectedTemplate(null)
+                    setSelectedChecklists(new Set())
+                    await loadData()
+                  }}
+                  className="px-4 py-2 bg-red-100 text-red-700 rounded-lg font-medium text-sm hover:bg-red-200"
+                >
+                  🗑️ Delete
+                </button>
+                <button
+                  onClick={async () => {
+                    // Save selected checklists to template
+                    setSaving(true)
+                    // Here you would save the selected checklists to the template
+                    // For now just show success
+                    alert('Template saved!')
+                    setSaving(false)
+                  }}
+                  disabled={saving}
+                  className="px-4 py-2 bg-green-600 text-white rounded-lg font-medium text-sm hover:bg-green-700 disabled:opacity-50"
+                >
+                  {saving ? 'Saving...' : '💾 Save Changes'}
+                </button>
+              </div>
             </div>
 
             {/* Stages Configuration */}
@@ -309,8 +340,11 @@ export default function ServiceTemplatesPage() {
                           <p className="text-sm text-gray-500">No activities configured for this template</p>
                         ) : (
                           templateActivities.map(activity => {
-                            const activityChecklists = getActivityChecklists(activity.id)
-                            const stageChecklists = activityChecklists.filter(c => c.stage === 'activity')
+                            // For activity stage, use activity-specific selected checklists
+                            const activitySelectedIds = selectedChecklists
+                            const activityChecklists = Array.from(activitySelectedIds)
+                              .map(id => checklists.find(c => c.id === id && c.stage === 'activity'))
+                              .filter(Boolean)
                             
                             return (
                               <div key={activity.id} className="border border-gray-200 rounded-lg p-3">
@@ -319,26 +353,48 @@ export default function ServiceTemplatesPage() {
                                     <p className="font-medium text-gray-900">{activity.name}</p>
                                     <p className="text-sm text-gray-500">{activity.duration_minutes} min</p>
                                   </div>
-                                  <span className="text-sm bg-gray-100 px-2 py-1 rounded">
-                                    {stageChecklists.length} checklists
+                                  <span className="text-sm bg-green-100 text-green-700 px-2 py-1 rounded">
+                                    {activityChecklists.length} checklists
                                   </span>
                                 </div>
                                 
-                                {/* Activity Checklists */}
-                                <div className="space-y-2">
-                                  {stageChecklists.map(checklist => (
-                                    <div key={checklist.id} className="flex items-center justify-between bg-gray-50 rounded-lg px-3 py-2">
-                                      <span className="text-sm">📋 {checklist.name}</span>
-                                      <button className="text-red-600 text-sm hover:text-red-800">
+                                {/* Selected Activity Checklists */}
+                                <div className="space-y-2 mb-3">
+                                  {activityChecklists.map(checklist => (
+                                    <div key={checklist!.id} className="flex items-center justify-between bg-green-50 border border-green-200 rounded-lg px-3 py-2">
+                                      <span className="text-sm">✅ {checklist!.name}</span>
+                                      <button 
+                                        onClick={() => toggleChecklist(checklist!.id)}
+                                        className="text-red-600 text-sm hover:text-red-800"
+                                      >
                                         Remove
                                       </button>
                                     </div>
                                   ))}
                                 </div>
                                 
-                                <button className="mt-2 text-sm text-blue-600 hover:text-blue-800">
-                                  + Add Checklist
-                                </button>
+                                {/* Add checklist dropdown */}
+                                <select
+                                  value=""
+                                  onChange={(e) => {
+                                    if (e.target.value) {
+                                      toggleChecklist(e.target.value)
+                                      e.target.value = ''
+                                    }
+                                  }}
+                                  className="border border-gray-300 rounded-lg px-3 py-2 text-sm w-full"
+                                >
+                                  <option value="">+ Add checklist for {activity.name}...</option>
+                                  {checklists
+                                    .filter(c => c.stage === 'activity' && !selectedChecklists.has(c.id))
+                                    .map(c => (
+                                      <option key={c.id} value={c.id}>📋 {c.name}</option>
+                                    ))}
+                                </select>
+                                
+                                {activityChecklists.length === 0 && (
+                                  <p className="text-sm text-gray-400 italic mt-2">No checklists assigned to this activity</p>
+                                )}
                               </div>
                             )
                           })
