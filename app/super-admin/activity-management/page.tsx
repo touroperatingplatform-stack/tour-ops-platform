@@ -25,7 +25,6 @@ interface Checklist {
 interface ActivityChecklistLink {
   activity_id: string
   checklist_id: string
-  stage: string
 }
 
 const STAGES = [
@@ -70,18 +69,16 @@ export default function ActivityManagementPage() {
 
   function getChecklistsForStage(stageId: string) {
     return activityLinks
-      .filter(l => l.stage === stageId)
-      .map(l => checklists.find(c => c.id === l.checklist_id))
+      .map(l => checklists.find(c => c.id === l.checklist_id && c.stage === stageId))
       .filter(Boolean)
   }
 
-  async function assignChecklist(checklistId: string, stage: string) {
+  async function assignChecklist(checklistId: string) {
     if (!selectedActivity) return
     
     const { error } = await supabase.from('activity_checklist_links').insert({
       activity_id: selectedActivity.id,
       checklist_id: checklistId,
-      stage,
       is_system: true
     })
     
@@ -94,14 +91,13 @@ export default function ActivityManagementPage() {
     }
   }
 
-  async function removeChecklist(checklistId: string, stage: string) {
+  async function removeChecklist(checklistId: string) {
     if (!selectedActivity) return
     
     const { error } = await supabase.from('activity_checklist_links')
       .delete()
       .eq('activity_id', selectedActivity.id)
       .eq('checklist_id', checklistId)
-      .eq('stage', stage)
     
     if (!error) loadData()
   }
@@ -197,7 +193,7 @@ export default function ActivityManagementPage() {
                                   <div className="text-xs text-gray-500">{chk!.items?.length || 0} items</div>
                                 </div>
                                 <button
-                                  onClick={() => removeChecklist(chk!.id, stage.id)}
+                                  onClick={() => removeChecklist(chk!.id)}
                                   className="text-red-600 hover:text-red-700 text-sm"
                                 >
                                   Remove
@@ -232,13 +228,12 @@ export default function ActivityManagementPage() {
                 .filter(c => c.stage === addingToStage)
                 .filter(c => !activityLinks.some(l => 
                   l.activity_id === selectedActivity.id && 
-                  l.checklist_id === c.id && 
-                  l.stage === addingToStage
+                  l.checklist_id === c.id
                 ))
                 .map(chk => (
                   <button
                     key={chk.id}
-                    onClick={() => assignChecklist(chk.id, addingToStage)}
+                    onClick={() => assignChecklist(chk.id)}
                     className="w-full text-left px-4 py-3 border-b border-gray-100 hover:bg-gray-50"
                   >
                     <div className="font-medium text-sm">{chk.name}</div>
