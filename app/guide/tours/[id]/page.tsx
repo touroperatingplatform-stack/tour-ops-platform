@@ -90,6 +90,9 @@ export default function GuideTourPage() {
   // Guest manifest expanded
   const [showGuestManifest, setShowGuestManifest] = useState(false)
 
+  // Pre-Pickup state (for private tours)
+  const [prePickupDone, setPrePickupDone] = useState(false)
+
   useEffect(() => {
     loadTour()
     loadReservations()
@@ -642,8 +645,45 @@ export default function GuideTourPage() {
             </div>
           </div>
 
-          {/* Phase 1: Pickups */}
-          {currentPhase === 'pickups' && (
+          {/* Pre-Pickup (for private tours) */}
+          {(tour as any).has_pre_pickup && !prePickupDone && pickupStops.length > 0 && (
+            <div className="bg-white rounded-2xl border border-orange-200 p-6 mb-4">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-8 h-8 rounded-full bg-orange-100 flex items-center justify-center">
+                  <span className="text-orange-600 font-bold">⏱️</span>
+                </div>
+                <div>
+                  <h2 className="font-semibold text-gray-900 text-lg">Pre-Pickup</h2>
+                  <p className="text-sm text-gray-500">Arrive 20 min before pickup time</p>
+                </div>
+              </div>              
+              <div className="bg-orange-50 rounded-xl p-4 border border-orange-200">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <span className="text-2xl">📍</span>
+                    <div>
+                      <div className="font-medium text-gray-900">{pickupStops[0]?.location_name}</div>
+                      <div className="text-sm text-gray-500">
+                        {pickupStops[0]?.scheduled_time?.slice(0, 5)} • GPS check-in required
+                      </div>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setPrePickupDone(true)}
+                    className="px-4 py-2 bg-orange-600 text-white rounded-lg text-sm font-medium hover:bg-orange-700"
+                  >
+                    Check In Early
+                  </button>
+                </div>
+              </div>
+              <p className="text-xs text-gray-500 mt-3">
+                Complete Pre-Pickup to unlock regular pickups
+              </p>
+            </div>
+          )}
+
+          {/* Phase 1: Pickups - LOCKED if pre-pickup not done */}
+          {currentPhase === 'pickups' && (!(tour as any).has_pre_pickup || prePickupDone) && (
             <div className="bg-white rounded-2xl border border-gray-200 p-6">
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
@@ -695,6 +735,21 @@ export default function GuideTourPage() {
                     {t('guideTour.noPickupStops')}
                   </div>
                 )}
+              </div>
+            </div>
+          )}
+
+          {/* Phase 1: Pickups - LOCKED if pre-pickup required but not done */}
+          {currentPhase === 'pickups' && (tour as any).has_pre_pickup && !prePickupDone && (
+            <div className="bg-gray-50 rounded-2xl border border-gray-200 p-6 opacity-75">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center">
+                  <span className="text-gray-500 font-bold">🔒</span>
+                </div>
+                <div>
+                  <h2 className="font-semibold text-gray-700 text-lg">{t('guideTour.pickups')}</h2>
+                  <p className="text-sm text-gray-500">Complete Pre-Pickup to unlock</p>
+                </div>
               </div>
             </div>
           )}
