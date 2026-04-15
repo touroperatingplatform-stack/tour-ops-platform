@@ -56,6 +56,10 @@ export default function CompleteTourPage() {
   const [cashSpent, setCashSpent] = useState('')
   const [ticketCount, setTicketCount] = useState('')
   const [vehicleCheck, setVehicleCheck] = useState({ forgottenItems: false, notes: '' })
+  
+  // Finish checklist state
+  const [finishChecklist, setFinishChecklist] = useState<any[]>([])
+  const [checkedItems, setCheckedItems] = useState<Record<string, boolean>>({})
 
   useEffect(() => {
     loadTour()
@@ -80,8 +84,63 @@ export default function CompleteTourPage() {
         router.push(`/guide/tours/${params.id}`)
         return
       }
+      
+      // Load finish checklist for tour activities
+      loadFinishChecklist()
     }
     setLoading(false)
+  }
+
+  // Load finish checklist for all activities in tour
+  async function loadFinishChecklist() {
+    const { data: tourActivities } = await supabase
+      .from('tour_activities')
+      .select('activity_id')
+      .eq('tour_id', params.id)
+    
+    if (!tourActivities || tourActivities.length === 0) return
+    
+    const activityIds = tourActivities.map((ta: any) => ta.activity_id)
+    
+    // Get checklists for these activities - filter by stage='finish'
+    const { data: checklistLinks } = await supabase
+      .from('activity_checklist_links')
+      .select(`
+        checklist_id,
+        checklists!inner(id, items, name, stage)
+      `)
+      .in('activity_id', activityIds)
+    
+    if (checklistLinks && checklistLinks.length > 0) {
+      // Filter to only finish-stage checklists
+      const finishStageLinks = checklistLinks.filter((link: any) => 
+        link.checklists?.stage === 'finish'
+      )
+      
+      // Remove duplicates
+      const seenChecklistIds = new Set<string>()
+      const uniqueLinks = finishStageLinks.filter((link: any) => {
+        if (seenChecklistIds.has(link.checklist_id)) return false
+        seenChecklistIds.add(link.checklist_id)
+        return true
+      })
+      
+      const items: any[] = []
+      uniqueLinks.forEach((link: any) => {
+        if (link.checklists?.items) {
+          link.checklists.items.forEach((item: any) => {
+            items.push({
+              ...item,
+              checklist_name: link.checklists.name
+            })
+          })
+        }
+      })
+      setFinishChecklist(items)
+      const checked: Record<string, boolean> = {}
+      items.forEach((item: any) => { checked[item.id] = false })
+      setCheckedItems(checked)
+    }
   }
 
   async function handlePhotoUpload(file: File) {
@@ -175,6 +234,10 @@ export default function CompleteTourPage() {
   const cashToReturn = cashReceived && cashSpent 
     ? (parseFloat(cashReceived) - parseFloat(cashSpent)).toFixed(2)
     : null
+  
+  // Check if all required finish checklist items are checked
+  const allFinishItemsChecked = finishChecklist.length === 0 || 
+    finishChecklist.filter((item: any) => item.required).every((item: any) => checkedItems[item.id])
 
   return (
     <div className="pb-16">
@@ -404,15 +467,49 @@ export default function CompleteTourPage() {
             />
           )}
         </div>
+        {/* Finish Checklist */}
+        {finishChecklist.length > 0 && (
+          <div className="bg-white rounded-2xl border border-gray-200 p-6">
+            <h3 className="font-semibold text-gray-900 mb-4">✓ Finish Checklist</h3>
+            <div className="space-y-3">
+              {finishChecklist.map((item: any) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => setCheckedItems(prev => ({ ...prev, [item.id]: !prev[item.id] }))}
+                  className="w-full flex items-center gap-4 p-4 rounded-xl border-2 text-left transition-all"
+                  style={{
+                    borderColor: checkedItems[item.id] ? '#22c55e' : '#e5e7eb',
+                    backgroundColor: checkedItems[item.id] ? '#f0fdf4' : 'white'
+                  }}
+                >
+                  <div className={`w-6 h-6 rounded border-2 flex items-center justify-center ${
+                    checkedItems[item.id] ? 'bg-green-500 border-green-500' : 'border-gray-300'
+                  }`}>
+                    {checkedItems[item.id] && (
+                      <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                    )}
+                  </div>
+                  <span className="flex-1 font-medium">{item.text}</span>
+                  {item.required && (
+                    <span className="text-xs text-orange-600 font-medium">Required</span>
+                  )}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
       </form>
 
       {/* Submit Button */}
       <div className="p-4 bg-white border-t border-gray-200">
         <button
           onClick={handleSubmit}
-          disabled={submitting || uploading}
+          disabled={submitting || uploading || (finishChecklist.length > 0 && !allFinishItemsChecked)}
           className={`w-full py-4 rounded-2xl font-bold text-lg transition-colors flex items-center justify-center gap-3 ${
-            !submitting && !uploading
+            !submitting && !uploading && (finishChecklist.length === 0 || allFinishItemsChecked)
               ? 'bg-green-600 text-white hover:bg-green-700 shadow-lg'
               : 'bg-gray-300 text-gray-500 cursor-not-allowed'
           }`}
