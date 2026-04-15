@@ -49,25 +49,27 @@ export interface Profile {
   updated_at: string
 }
 
-export interface Tour {
+export interface TourProduct {
   id: string
-  brand_id: string
-  tour_type_id: string | null
-  guide_id: string | null
-  vehicle_id: string | null
-  tour_date: string
-  departure_time: string
-  estimated_return_time: string | null
-  guest_count: number
-  guest_names: string | null
-  booking_reference: string | null
-  status: 'scheduled' | 'in_progress' | 'completed' | 'cancelled'
-  notes: string | null
-  import_source: string
-  external_id: string | null
+  company_id: string
+  name: string
+  description: string | null
+  duration_minutes: number
+  capacity: number
+  pickup_location: string | null
+  dropoff_location: string | null
+  price: number | null
+  is_active: boolean
   created_by: string | null
   created_at: string
   updated_at: string
+  // Enhanced fields
+  service_code: string | null
+  activity_ids: string[]
+  pre_tour_checklist_id: string | null
+  requires_guide: boolean
+  requires_driver: boolean
+  max_guests: number
 }
 
 export interface Incident {
