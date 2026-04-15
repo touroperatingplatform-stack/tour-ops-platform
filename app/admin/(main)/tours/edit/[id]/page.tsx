@@ -30,6 +30,7 @@ export default function EditTourPage() {
     guide_id: '',
     vehicle_id: '',
     status: 'scheduled',
+    has_pre_pickup: false,
   })
 
   useEffect(() => {
@@ -56,6 +57,7 @@ export default function EditTourPage() {
         guide_id: tour.guide_id || '',
         vehicle_id: tour.vehicle_id || '',
         status: tour.status || 'scheduled',
+        has_pre_pickup: tour.has_pre_pickup || false,
       })
     }
 
@@ -98,6 +100,7 @@ export default function EditTourPage() {
         guide_id: formData.guide_id || null,
         vehicle_id: formData.vehicle_id || null,
         status: formData.status,
+        has_pre_pickup: formData.has_pre_pickup,
       })
       .eq('id', tourId)
 
@@ -262,6 +265,23 @@ export default function EditTourPage() {
                 <option value="completed">{t('templates.completed')}</option>
                 <option value="cancelled">{t('templates.cancelled')}</option>
               </select>
+            </div>
+
+            <!-- Pre-Pickup Toggle -->
+            <div className="bg-orange-50 rounded-lg p-4 border border-orange-200">
+              <label className="flex items-center gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  name="has_pre_pickup"
+                  checked={formData.has_pre_pickup}
+                  onChange={(e) => setFormData({ ...formData, has_pre_pickup: e.target.checked })}
+                  className="w-5 h-5 text-orange-600 border-gray-300 rounded focus:ring-orange-500"
+                />
+                <div>
+                  <span className="font-medium text-gray-900">Require Pre-Pickup</span>
+                  <p className="text-sm text-gray-600">Guide must check in 20 min before pickup time (for private tours)</p>
+                </div>
+              </label>
             </div>
 
             <div className="flex items-center gap-4 pt-4">
