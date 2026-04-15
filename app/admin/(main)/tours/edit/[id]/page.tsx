@@ -267,7 +267,7 @@ export default function EditTourPage() {
               </select>
             </div>
 
-            <!-- Pre-Pickup Toggle -->
+            {/* Pre-Pickup Toggle */}
             <div className="bg-orange-50 rounded-lg p-4 border border-orange-200">
               <label className="flex items-center gap-3 cursor-pointer">
                 <input
