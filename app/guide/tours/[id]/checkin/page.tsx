@@ -68,6 +68,10 @@ export default function CheckinPage() {
   // Activity checklist state
   const [activityChecklist, setActivityChecklist] = useState<any[]>([])
   const [checkedItems, setCheckedItems] = useState<Record<string, boolean>>({})
+  
+  // Dropoff checklist state
+  const [dropoffChecklist, setDropoffChecklist] = useState<any[]>([])
+  const [dropoffCheckedItems, setDropoffCheckedItems] = useState<Record<string, boolean>>({})
 
   useEffect(() => {
     loadData()
@@ -204,6 +208,55 @@ export default function CheckinPage() {
     }
   }
 
+  // Load dropoff checklist for this tour
+  async function loadDropoffChecklist() {
+    if (checkinType !== 'dropoff') return
+    
+    // Get checklists for any activity in this tour - filter by stage='dropoff'
+    const { data: checklistLinks } = await supabase
+      .from('activity_checklist_links')
+      .select(`
+        checklist_id,
+        checklists!inner(id, items, name, stage)
+      `)
+      .in('activity_id', (await supabase
+        .from('tour_activities')
+        .select('activity_id')
+        .eq('tour_id', tourId)
+      ).data?.map((ta: any) => ta.activity_id) || [])
+    
+    if (checklistLinks && checklistLinks.length > 0) {
+      // Filter to only dropoff-stage checklists
+      const dropoffStageLinks = checklistLinks.filter((link: any) => 
+        link.checklists?.stage === 'dropoff'
+      )
+      
+      // Remove duplicates (same checklist linked to multiple activities)
+      const seenChecklistIds = new Set<string>()
+      const uniqueLinks = dropoffStageLinks.filter((link: any) => {
+        if (seenChecklistIds.has(link.checklist_id)) return false
+        seenChecklistIds.add(link.checklist_id)
+        return true
+      })
+      
+      const items: any[] = []
+      uniqueLinks.forEach((link: any) => {
+        if (link.checklists?.items) {
+          link.checklists.items.forEach((item: any) => {
+            items.push({
+              ...item,
+              checklist_name: link.checklists.name
+            })
+          })
+        }
+      })
+      setDropoffChecklist(items)
+      const checked: Record<string, boolean> = {}
+      items.forEach((item: any) => { checked[item.id] = false })
+      setDropoffCheckedItems(checked)
+    }
+  }
+
   function getLocation() {
     if (!navigator.geolocation) {
       setLocationError('GPS not supported on this device')
@@ -263,6 +316,8 @@ export default function CheckinPage() {
     getLocation() // Capture GPS when arriving at stop
     if (checkinType === 'activity') {
       loadActivityChecklist(stop.id) // Load checklist for activity
+    } else if (checkinType === 'dropoff') {
+      loadDropoffChecklist() // Load checklist for dropoff
     }
   }
 
@@ -587,6 +642,10 @@ export default function CheckinPage() {
     const allActivityItemsChecked = activityChecklist.length === 0 || 
       activityChecklist.filter((item: any) => item.required).every((item: any) => checkedItems[item.id])
     
+    // Calculate if all required dropoff checklist items are checked
+    const allDropoffItemsChecked = dropoffChecklist.length === 0 || 
+      dropoffChecklist.filter((item: any) => item.required).every((item: any) => dropoffCheckedItems[item.id])
+    
     return (
       <div className="p-4 pb-20">
         {/* Header */}
@@ -703,6 +762,40 @@ export default function CheckinPage() {
           </div>
         )}
 
+        {/* Dropoff Checklist */}
+        {checkinType === 'dropoff' && dropoffChecklist.length > 0 && (
+          <div className="bg-white rounded-xl p-4 border border-gray-200 mb-4">
+            <p className="text-sm font-medium text-gray-700 mb-3">✓ Dropoff Checklist</p>
+            <div className="space-y-2">
+              {dropoffChecklist.map((item: any) => (
+                <button
+                  key={item.id}
+                  onClick={() => setDropoffCheckedItems(prev => ({ ...prev, [item.id]: !prev[item.id] }))}
+                  className="w-full flex items-center gap-3 p-3 rounded-lg border-2 text-left transition-all"
+                  style={{
+                    borderColor: dropoffCheckedItems[item.id] ? '#22c55e' : '#e5e7eb',
+                    backgroundColor: dropoffCheckedItems[item.id] ? '#f0fdf4' : 'white'
+                  }}
+                >
+                  <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${
+                    dropoffCheckedItems[item.id] ? 'bg-green-500 border-green-500' : 'border-gray-300'
+                  }`}>
+                    {dropoffCheckedItems[item.id] && (
+                      <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                    )}
+                  </div>
+                  <span className="flex-1 text-sm">{item.text}</span>
+                  {item.required && (
+                    <span className="text-xs text-orange-600 font-medium">Required</span>
+                  )}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Notes */}
         <div className="bg-white rounded-xl p-4 border border-gray-200 mb-4">
           <p className="text-sm font-medium text-gray-700 mb-2">Notes (optional)</p>
@@ -717,7 +810,7 @@ export default function CheckinPage() {
         {/* Submit Button */}
         <button
           onClick={handleActivityCheckin}
-          disabled={!photoUrl || !location || submitting || (checkinType === 'activity' && activityChecklist.length > 0 && !allActivityItemsChecked)}
+          disabled={!photoUrl || !location || submitting || (checkinType === 'activity' && activityChecklist.length > 0 && !allActivityItemsChecked) || (checkinType === 'dropoff' && dropoffChecklist.length > 0 && !allDropoffItemsChecked)}
           className="w-full py-4 rounded-xl font-semibold text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50"
         >
           {submitting ? 'Saving...' : checkinType === 'activity' ? 'Confirm Activity Check-in' : 'Confirm Dropoff'}
