@@ -90,9 +90,6 @@ export default function GuideTourPage() {
   // Guest manifest expanded
   const [showGuestManifest, setShowGuestManifest] = useState(false)
 
-  // Pre-Pickup state (for private tours)
-  const [prePickupDone, setPrePickupDone] = useState(false)
-
   useEffect(() => {
     loadTour()
     loadReservations()
