@@ -120,7 +120,7 @@ export default function NewTourProductPage() {
 
     setSaving(true)
 
-    const durationMinutes = (durationHours * 60) + durationMinutes
+    const totalDurationMinutes = (durationHours * 60) + durationMinutes
 
     const { error: insertError } = await supabase
       .from('tour_products')
@@ -129,7 +129,7 @@ export default function NewTourProductPage() {
         service_code: normalizedCode,
         name: name.trim(),
         description: description.trim() || null,
-        duration_minutes: durationMinutes,
+        duration_minutes: totalDurationMinutes,
         activity_ids: selectedActivities,
         pre_tour_checklist_id: selectedChecklist || null,
         requires_guide: requiresGuide,
