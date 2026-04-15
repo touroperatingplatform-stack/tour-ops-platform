@@ -171,16 +171,23 @@ export default function CheckinPage() {
     
     if (!tourActivity) return
     
-    // Get checklists for this activity with stage='activity'
+    // Get checklists for this activity - filter by stage in application code
     const { data: checklistLinks } = await supabase
       .from('activity_checklist_links')
-      .select('checklist_id, checklists(items, name)')
+      .select(`
+        checklist_id,
+        checklists!inner(id, items, name, stage)
+      `)
       .eq('activity_id', tourActivity.activity_id)
-      .eq('stage', 'activity')
     
     if (checklistLinks && checklistLinks.length > 0) {
+      // Filter to only activity-stage checklists
+      const activityStageLinks = checklistLinks.filter((link: any) => 
+        link.checklists?.stage === 'activity'
+      )
+      
       const items: any[] = []
-      checklistLinks.forEach((link: any) => {
+      activityStageLinks.forEach((link: any) => {
         if (link.checklists?.items) {
           link.checklists.items.forEach((item: any) => {
             items.push({
