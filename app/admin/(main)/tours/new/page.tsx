@@ -34,6 +34,7 @@ export default function CreateTourPage() {
     guideId: '',
     driverId: '',
     vehicleId: '',
+    hasPrePickup: false,
   })
 
   useEffect(() => {
@@ -131,6 +132,7 @@ export default function CreateTourPage() {
           driver_id: formData.driverId || null,
           vehicle_id: formData.vehicleId || null,
           status: 'scheduled',
+          has_pre_pickup: formData.hasPrePickup,
         })
         .select('id')
         .single()
@@ -376,6 +378,23 @@ export default function CreateTourPage() {
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder={t('tours.descriptionPlaceholder')}
               />
+            </div>
+
+            <!-- Pre-Pickup Toggle -->
+            <div className="bg-orange-50 rounded-lg p-4 border border-orange-200">
+              <label className="flex items-center gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  name="hasPrePickup"
+                  checked={formData.hasPrePickup}
+                  onChange={(e) => setFormData(prev => ({ ...prev, hasPrePickup: e.target.checked }))}
+                  className="w-5 h-5 text-orange-600 border-gray-300 rounded focus:ring-orange-500"
+                />
+                <div>
+                  <span className="font-medium text-gray-900">Require Pre-Pickup</span>
+                  <p className="text-sm text-gray-600">Guide must check in 20 min before pickup time (for private tours)</p>
+                </div>
+              </label>
             </div>
 
             <div className="flex items-center gap-4 pt-4 border-t border-gray-200">
