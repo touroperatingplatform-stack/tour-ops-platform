@@ -316,6 +316,10 @@ export default function GuideTourPage() {
   )
   const allDropoffsDone = dropoffStops.length > 0 && completedDropoffs.length === dropoffStops.length
   
+  // Check if pre-pickup is done (for private tours)
+  const prePickupDone = pickupStops.length > 0 && 
+    checkins.some(c => c.checkin_type === 'pre_pickup')
+  
   // Determine current phase
   let currentPhase: 'pickups' | 'activities' | 'dropoffs' = 'pickups'
   if (allPickupsDone && !allActivitiesDone) currentPhase = 'activities'
@@ -668,12 +672,12 @@ export default function GuideTourPage() {
                       </div>
                     </div>
                   </div>
-                  <button
-                    onClick={() => setPrePickupDone(true)}
+                  <Link
+                    href={`/guide/tours/${tour.id}/checkin?type=pre_pickup&stopId=${pickupStops[0]?.id}`}
                     className="px-4 py-2 bg-orange-600 text-white rounded-lg text-sm font-medium hover:bg-orange-700"
                   >
                     Check In Early
-                  </button>
+                  </Link>
                 </div>
               </div>
               <p className="text-xs text-gray-500 mt-3">

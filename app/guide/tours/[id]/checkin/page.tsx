@@ -72,6 +72,10 @@ export default function CheckinPage() {
   // Dropoff checklist state
   const [dropoffChecklist, setDropoffChecklist] = useState<any[]>([])
   const [dropoffCheckedItems, setDropoffCheckedItems] = useState<Record<string, boolean>>({})
+  
+  // Pre-Pickup checklist state
+  const [prePickupChecklist, setPrePickupChecklist] = useState<any[]>([])
+  const [prePickupCheckedItems, setPrePickupCheckedItems] = useState<Record<string, boolean>>({})
 
   useEffect(() => {
     loadData()
@@ -119,6 +123,7 @@ export default function CheckinPage() {
     let stopType: 'pickup' | 'activity' | 'dropoff' = 'pickup'
     if (checkinType === 'activity') stopType = 'activity'
     if (checkinType === 'dropoff') stopType = 'dropoff'
+    if (checkinType === 'pre_pickup') stopType = 'pickup' // Pre-pickup uses pickup stops
     
     const { data: stopsData } = await supabase
       .from('pickup_stops')
@@ -129,6 +134,22 @@ export default function CheckinPage() {
     
     if (stopsData) {
       setStops(stopsData)
+    }
+
+    // For pre_pickup, auto-select first stop if stopId provided
+    if (checkinType === 'pre_pickup') {
+      const stopIdFromUrl = searchParams.get('stopId')
+      if (stopIdFromUrl && stopsData) {
+        const stop = stopsData.find((s: any) => s.id === stopIdFromUrl)
+        if (stop) {
+          setSelectedStop(stop)
+          setStep('checkin')
+          getLocation()
+          loadPrePickupChecklist(stop.id)
+        }
+      }
+      setLoading(false)
+      return
     }
 
     // Only load reservations for pickup check-ins
@@ -257,6 +278,55 @@ export default function CheckinPage() {
     }
   }
 
+  // Load pre-pickup checklist for first pickup stop
+  async function loadPrePickupChecklist(stopId: string) {
+    if (checkinType !== 'pre_pickup') return
+    
+    // Get checklists for this stop's activity - filter by stage='pre_pickup'
+    const { data: checklistLinks } = await supabase
+      .from('activity_checklist_links')
+      .select(`
+        checklist_id,
+        checklists!inner(id, items, name, stage)
+      `)
+      .in('activity_id', (await supabase
+        .from('tour_activities')
+        .select('activity_id')
+        .eq('tour_id', tourId)
+      ).data?.map((ta: any) => ta.activity_id) || [])
+    
+    if (checklistLinks && checklistLinks.length > 0) {
+      // Filter to only pre_pickup-stage checklists
+      const prePickupStageLinks = checklistLinks.filter((link: any) => 
+        link.checklists?.stage === 'pre_pickup'
+      )
+      
+      // Remove duplicates
+      const seenChecklistIds = new Set<string>()
+      const uniqueLinks = prePickupStageLinks.filter((link: any) => {
+        if (seenChecklistIds.has(link.checklist_id)) return false
+        seenChecklistIds.add(link.checklist_id)
+        return true
+      })
+      
+      const items: any[] = []
+      uniqueLinks.forEach((link: any) => {
+        if (link.checklists?.items) {
+          link.checklists.items.forEach((item: any) => {
+            items.push({
+              ...item,
+              checklist_name: link.checklists.name
+            })
+          })
+        }
+      })
+      setPrePickupChecklist(items)
+      const checked: Record<string, boolean> = {}
+      items.forEach((item: any) => { checked[item.id] = false })
+      setPrePickupCheckedItems(checked)
+    }
+  }
+
   function getLocation() {
     if (!navigator.geolocation) {
       setLocationError('GPS not supported on this device')
@@ -315,9 +385,11 @@ export default function CheckinPage() {
     setStep('checkin')
     getLocation() // Capture GPS when arriving at stop
     if (checkinType === 'activity') {
-      loadActivityChecklist(stop.id) // Load checklist for activity
+      loadActivityChecklist(stop.id)
     } else if (checkinType === 'dropoff') {
-      loadDropoffChecklist() // Load checklist for dropoff
+      loadDropoffChecklist()
+    } else if (checkinType === 'pre_pickup') {
+      loadPrePickupChecklist(stop.id)
     }
   }
 
@@ -344,13 +416,13 @@ export default function CheckinPage() {
         .eq('id', tourId)
         .single()
 
-      // Create guide checkin record for activity/dropoff
+      // Create guide checkin record for activity/dropoff/pre_pickup
       const checkinData = {
         tour_id: tourId,
         brand_id: tourData?.brand_id,
         guide_id: user.id,
         pickup_stop_id: selectedStop.id,
-        checkin_type: checkinType, // 'activity' or 'dropoff'
+        checkin_type: checkinType, // 'activity', 'dropoff', or 'pre_pickup'
         checked_in_at: new Date().toISOString(),
         latitude: location.lat,
         longitude: location.lng,
@@ -380,8 +452,8 @@ export default function CheckinPage() {
   }
 
   async function handleSubmit() {
-    // Handle activity/dropoff check-ins separately
-    if (checkinType === 'activity' || checkinType === 'dropoff') {
+    // Handle activity/dropoff/pre_pickup check-ins separately
+    if (checkinType === 'activity' || checkinType === 'dropoff' || checkinType === 'pre_pickup') {
       return handleActivityCheckin()
     }
     
@@ -636,8 +708,8 @@ export default function CheckinPage() {
   }
 
   // Step 2: Check-in Flow
-  // Handle activity/dropoff check-in UI
-  if ((checkinType === 'activity' || checkinType === 'dropoff') && selectedStop) {
+  // Handle activity/dropoff/pre_pickup check-in UI
+  if ((checkinType === 'activity' || checkinType === 'dropoff' || checkinType === 'pre_pickup') && selectedStop) {
     // Calculate if all required activity checklist items are checked
     const allActivityItemsChecked = activityChecklist.length === 0 || 
       activityChecklist.filter((item: any) => item.required).every((item: any) => checkedItems[item.id])
@@ -645,6 +717,10 @@ export default function CheckinPage() {
     // Calculate if all required dropoff checklist items are checked
     const allDropoffItemsChecked = dropoffChecklist.length === 0 || 
       dropoffChecklist.filter((item: any) => item.required).every((item: any) => dropoffCheckedItems[item.id])
+    
+    // Calculate if all required pre-pickup checklist items are checked
+    const allPrePickupItemsChecked = prePickupChecklist.length === 0 || 
+      prePickupChecklist.filter((item: any) => item.required).every((item: any) => prePickupCheckedItems[item.id])
     
     return (
       <div className="p-4 pb-20">
@@ -796,6 +872,40 @@ export default function CheckinPage() {
           </div>
         )}
 
+        {/* Pre-Pickup Checklist */}
+        {checkinType === 'pre_pickup' && prePickupChecklist.length > 0 && (
+          <div className="bg-white rounded-xl p-4 border border-orange-200 mb-4">
+            <p className="text-sm font-medium text-gray-700 mb-3">✓ Pre-Pickup Checklist</p>
+            <div className="space-y-2">
+              {prePickupChecklist.map((item: any) => (
+                <button
+                  key={item.id}
+                  onClick={() => setPrePickupCheckedItems(prev => ({ ...prev, [item.id]: !prev[item.id] }))}
+                  className="w-full flex items-center gap-3 p-3 rounded-lg border-2 text-left transition-all"
+                  style={{
+                    borderColor: prePickupCheckedItems[item.id] ? '#22c55e' : '#e5e7eb',
+                    backgroundColor: prePickupCheckedItems[item.id] ? '#f0fdf4' : 'white'
+                  }}
+                >
+                  <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${
+                    prePickupCheckedItems[item.id] ? 'bg-green-500 border-green-500' : 'border-gray-300'
+                  }`}>
+                    {prePickupCheckedItems[item.id] && (
+                      <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                    )}
+                  </div>
+                  <span className="flex-1 text-sm">{item.text}</span>
+                  {item.required && (
+                    <span className="text-xs text-orange-600 font-medium">Required</span>
+                  )}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Notes */}
         <div className="bg-white rounded-xl p-4 border border-gray-200 mb-4">
           <p className="text-sm font-medium text-gray-700 mb-2">Notes (optional)</p>
@@ -810,10 +920,10 @@ export default function CheckinPage() {
         {/* Submit Button */}
         <button
           onClick={handleActivityCheckin}
-          disabled={!photoUrl || !location || submitting || (checkinType === 'activity' && activityChecklist.length > 0 && !allActivityItemsChecked) || (checkinType === 'dropoff' && dropoffChecklist.length > 0 && !allDropoffItemsChecked)}
+          disabled={!photoUrl || !location || submitting || (checkinType === 'activity' && activityChecklist.length > 0 && !allActivityItemsChecked) || (checkinType === 'dropoff' && dropoffChecklist.length > 0 && !allDropoffItemsChecked) || (checkinType === 'pre_pickup' && prePickupChecklist.length > 0 && !allPrePickupItemsChecked)}
           className="w-full py-4 rounded-xl font-semibold text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50"
         >
-          {submitting ? 'Saving...' : checkinType === 'activity' ? 'Confirm Activity Check-in' : 'Confirm Dropoff'}
+          {submitting ? 'Saving...' : checkinType === 'activity' ? 'Confirm Activity Check-in' : checkinType === 'pre_pickup' ? 'Confirm Pre-Pickup Check-in' : 'Confirm Dropoff'}
         </button>
       </div>
     )
