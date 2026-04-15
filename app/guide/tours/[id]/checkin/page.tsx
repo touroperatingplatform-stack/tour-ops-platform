@@ -42,7 +42,7 @@ export default function CheckinPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const tourId = params.id as string
-  const checkinType = (searchParams.get('type') as 'pickup' | 'activity' | 'dropoff') || 'pickup'
+  const checkinType = (searchParams.get('type') as 'pickup' | 'activity' | 'dropoff' | 'pre_pickup') || 'pickup'
 
   // Step management
   const [step, setStep] = useState<'select' | 'checkin'>('select')
