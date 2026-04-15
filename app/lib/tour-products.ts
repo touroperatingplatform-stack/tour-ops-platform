@@ -1,7 +1,7 @@
 // Tour Products Utilities
 // Helper functions for working with tour_products
 
-import { supabase } from './supabase/client'
+import { supabase } from '@/lib/supabase/client'
 
 export interface TourProduct {
   id: string
