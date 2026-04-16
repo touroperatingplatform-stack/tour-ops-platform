@@ -229,10 +229,10 @@ export default function NewTourProductPage() {
           [activityId]: [...(prev.activity[activityId] || []), checklistId]
         }
       }))
-    } else if (stage !== 'pre_pickup' && stage !== 'activity') {
+    } else if (stage === 'pre_departure' || stage === 'dropoff' || stage === 'finish') {
       setChecklistAssignments(prev => ({
         ...prev,
-        [stage]: [...prev[stage], checklistId]
+        [stage]: [...(prev[stage] as string[]), checklistId]
       }))
     }
   }
@@ -254,10 +254,10 @@ export default function NewTourProductPage() {
           [activityId]: (prev.activity[activityId] || []).filter(id => id !== checklistId)
         }
       }))
-    } else if (stage !== 'pre_pickup' && stage !== 'activity') {
+    } else if (stage === 'pre_departure' || stage === 'dropoff' || stage === 'finish') {
       setChecklistAssignments(prev => ({
         ...prev,
-        [stage]: prev[stage].filter(id => id !== checklistId)
+        [stage]: (prev[stage] as string[]).filter(id => id !== checklistId)
       }))
     }
   }
