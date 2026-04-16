@@ -112,7 +112,16 @@
     "total": "Total",
     "active": "Active",
     "done": "Done",
-    "upcoming": "Upcoming"
+    "upcoming": "Upcoming",
+    "past": "Past",
+    "view": "View",
+    "assign": "Assign",
+    "allStatuses": "All Statuses",
+    "scheduled": "Scheduled",
+    "inProgress": "In Progress",
+    "completed": "Completed",
+    "cancelled": "Cancelled",
+    "tours": "tours"
   },
   "incident": {
     "title": "Incident Management",

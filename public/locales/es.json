@@ -70,7 +70,16 @@
     "description": "Descripción",
     "total": "Total",
     "done": "Hecho",
-    "upcoming": "Próximo"
+    "upcoming": "Próximo",
+    "past": "Pasado",
+    "view": "Ver",
+    "assign": "Asignar",
+    "allStatuses": "Todos los Estados",
+    "scheduled": "Programado",
+    "inProgress": "En Progreso",
+    "completed": "Completado",
+    "cancelled": "Cancelado",
+    "tours": "tours"
   },
   "time": {
     "today": "Hoy",

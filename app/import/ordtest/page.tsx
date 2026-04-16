@@ -953,6 +953,38 @@ export default function OrdenImportPage() {
             duration_minutes: pattern.activities.length * 60
           }, { onConflict: 'company_id, normalized_name' })
 
+          // Create tour_product if doesn't exist
+          const serviceCode = tour.service.toUpperCase().replace(/\s+/g, '').substring(0, 20)
+          const { data: existingProduct } = await supabase
+            .from('tour_products')
+            .select('id')
+            .eq('company_id', companyId)
+            .eq('service_code', serviceCode)
+            .maybeSingle()
+          
+          if (!existingProduct) {
+            await supabase.from('tour_products').insert({
+              company_id: companyId,
+              brand_id: brandId,
+              service_code: serviceCode,
+              name: tour.service,
+              description: `Auto-created from import: ${tour.service}`,
+              duration_minutes: pattern.activities.length * 90,
+              activity_ids: pattern.activities,
+              checklist_assignments: {
+                pre_departure: [],
+                pre_pickup: { enabled: false, checklists: [] },
+                activity: {},
+                dropoff: [],
+                finish: []
+              },
+              requires_guide: true,
+              requires_driver: true,
+              max_guests: 20,
+              is_active: true
+            })
+          }
+
           // Create activity stops and tour_activities
           const lastPickupStop = await supabase
             .from('pickup_stops')
