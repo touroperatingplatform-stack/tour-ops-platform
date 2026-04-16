@@ -285,7 +285,7 @@ export default function NewTourProductPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-20">
+    <div className="h-full overflow-auto bg-gray-50 pb-20">
       {/* Header */}
       <header className="bg-white border-b border-gray-200">
         <div className="px-4 py-4">
