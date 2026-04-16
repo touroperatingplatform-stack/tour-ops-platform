@@ -165,6 +165,22 @@ export default function EditTourProductPage() {
     setLoading(false)
   }
 
+  async function handleDelete() {
+    if (!confirm(t('tourProducts.confirmDelete') || 'Delete this product permanently?')) return
+    
+    const { error: deleteError } = await supabase
+      .from('tour_products')
+      .delete()
+      .eq('id', productId)
+
+    if (deleteError) {
+      setError(deleteError.message)
+      return
+    }
+
+    router.push('/admin/tour-products')
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError('')
@@ -605,6 +621,17 @@ export default function EditTourProductPage() {
             {saving ? (t('common.saving') || 'Saving...') : (t('common.save') || 'Save Changes')}
           </button>
         </div>
+
+        {/* Delete - only if no linked tours */}
+        {linkedTours === 0 && (
+          <button
+            type="button"
+            onClick={handleDelete}
+            className="w-full py-3 bg-red-50 text-red-600 rounded-xl font-medium hover:bg-red-100 border border-red-200"
+          >
+            {t('tourProducts.delete') || 'Delete Product'}
+          </button>
+        )}
       </form>
     </div>
   )

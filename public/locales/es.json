@@ -910,6 +910,8 @@
     "save": "Guardar Producto",
     "create": "Crear Producto",
     "cancel": "Cancelar",
-    "back": "Atrás"
+    "back": "Atrás",
+    "delete": "Eliminar Producto",
+    "confirmDelete": "¿Eliminar este producto permanentemente? Esta acción no se puede deshacer."
   }
 }

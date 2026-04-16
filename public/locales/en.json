@@ -1102,6 +1102,8 @@
     "save": "Save Product",
     "create": "Create Product",
     "cancel": "Cancel",
-    "back": "Back"
+    "back": "Back",
+    "delete": "Delete Product",
+    "confirmDelete": "Delete this product permanently? This cannot be undone."
   }
 }
