@@ -342,7 +342,7 @@ export default function EditTourProductPage() {
         {/* Linked Tours Info */}
         <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
           <p className="text-sm text-blue-800">
-            {t('tourProducts.inUseBy', { count: linkedTours }) || `Used by ${linkedTours} tours`}
+            {t('tourProducts.inUseBy')?.replace('{count}', String(linkedTours)) || `Used by ${linkedTours} tours`}
           </p>
         </div>
 
