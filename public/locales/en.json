@@ -218,8 +218,7 @@
     "delayed": "Delayed"
   },
   "tours": {
-    "noToursFound": "No tours found"
-  },
+    "noToursFound": "No tours found",
     "noToursToday": "No tours today",
     "backToTours": "Back to Tours",
     "createNew": "Create New Tour",
