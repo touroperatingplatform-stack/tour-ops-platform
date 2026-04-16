@@ -963,9 +963,8 @@ export default function OrdenImportPage() {
             .maybeSingle()
           
           if (!existingProduct) {
-            await supabase.from('tour_products').insert({
+            const { error: productError } = await supabase.from('tour_products').insert({
               company_id: companyId,
-              brand_id: brandId,
               service_code: serviceCode,
               name: tour.service,
               description: `Auto-created from import: ${tour.service}`,
@@ -983,6 +982,9 @@ export default function OrdenImportPage() {
               max_guests: 20,
               is_active: true
             })
+            if (productError) {
+              console.error('tour_products insert error:', productError)
+            }
           }
 
           // Create activity stops and tour_activities
