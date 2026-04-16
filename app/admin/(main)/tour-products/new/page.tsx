@@ -458,7 +458,7 @@ export default function NewTourProductPage() {
         
         {/* Pre-Departure */}
         <div className="bg-white rounded-xl border border-gray-200 p-4">
-          <h2 className="font-semibold text-gray-900 mb-4">🚌 Pre-Departure Checklists</h2>
+          <h2 className="font-semibold text-gray-900 mb-4">🚌 {t('tourProducts.preDeparture')}</h2>
           <div className="space-y-2">
             {checklistAssignments.pre_departure.map((checklistId, idx) => (
               <div key={idx} className="flex items-center gap-2">
@@ -471,7 +471,7 @@ export default function NewTourProductPage() {
                   }}
                   className="flex-1 px-4 py-2 border border-gray-300 rounded-lg bg-white"
                 >
-                  <option value="">Select checklist...</option>
+                  <option value="">{t('common.select')}</option>
                   {checklists.filter(c => c.stage === 'pre_departure').map(c => (
                     <option key={c.id} value={c.id}>{c.name}</option>
                   ))}
@@ -487,14 +487,14 @@ export default function NewTourProductPage() {
               type="button"
               onClick={() => addChecklist('pre_departure', '')}
               className="w-full py-2 border-2 border-dashed border-gray-300 rounded-lg text-gray-500 hover:border-gray-400 hover:text-gray-600"
-            >+ Add Pre-Departure Checklist</button>
+            >+ {t('tourProducts.addChecklist')}</button>
           </div>
         </div>
 
         {/* Pre-Pickup (Optional) */}
         <div className="bg-white rounded-xl border border-gray-200 p-4">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="font-semibold text-gray-900">📍 Pre-Pickup Checklists</h2>
+            <h2 className="font-semibold text-gray-900">📍 {t('tourProducts.prePickup')}</h2>
             <label className="flex items-center gap-2 cursor-pointer">
               <input
                 type="checkbox"
@@ -502,7 +502,7 @@ export default function NewTourProductPage() {
                 onChange={(e) => togglePrePickup(e.target.checked)}
                 className="w-5 h-5"
               />
-              <span className="text-sm text-gray-700">Enable pre-pickup step (private tours)</span>
+              <span className="text-sm text-gray-700">{t('tourProducts.enablePrePickup')}</span>
             </label>
           </div>
           {checklistAssignments.pre_pickup.enabled && (
@@ -565,7 +565,7 @@ export default function NewTourProductPage() {
                           }}
                           className="flex-1 px-4 py-2 border border-gray-300 rounded-lg bg-white"
                         >
-                          <option value="">Select checklist...</option>
+                          <option value="">{t('common.select')}</option>
                           {checklists.filter(c => c.stage === 'activity').map(c => (
                             <option key={c.id} value={c.id}>{c.name}</option>
                           ))}
@@ -581,7 +581,7 @@ export default function NewTourProductPage() {
                       type="button"
                       onClick={() => addChecklist('activity', '', activity.id)}
                       className="w-full py-2 border-2 border-dashed border-gray-300 rounded-lg text-gray-500 hover:border-gray-400 hover:text-gray-600"
-                    >+ Add Checklist for {activity.name}</button>
+                    >+ {t('tourProducts.addChecklist')}</button>
                   </div>
                 </div>
               ))}
@@ -604,7 +604,7 @@ export default function NewTourProductPage() {
                   }}
                   className="flex-1 px-4 py-2 border border-gray-300 rounded-lg bg-white"
                 >
-                  <option value="">Select checklist...</option>
+                  <option value="">{t('common.select')}</option>
                   {checklists.filter(c => c.stage === 'dropoff').map(c => (
                     <option key={c.id} value={c.id}>{c.name}</option>
                   ))}
@@ -620,7 +620,7 @@ export default function NewTourProductPage() {
               type="button"
               onClick={() => addChecklist('dropoff', '')}
               className="w-full py-2 border-2 border-dashed border-gray-300 rounded-lg text-gray-500 hover:border-gray-400 hover:text-gray-600"
-            >+ Add Dropoff Checklist</button>
+            >+ {t('tourProducts.addChecklist')}</button>
           </div>
         </div>
 
@@ -639,7 +639,7 @@ export default function NewTourProductPage() {
                   }}
                   className="flex-1 px-4 py-2 border border-gray-300 rounded-lg bg-white"
                 >
-                  <option value="">Select checklist...</option>
+                  <option value="">{t('common.select')}</option>
                   {checklists.filter(c => c.stage === 'finish').map(c => (
                     <option key={c.id} value={c.id}>{c.name}</option>
                   ))}
@@ -655,7 +655,7 @@ export default function NewTourProductPage() {
               type="button"
               onClick={() => addChecklist('finish', '')}
               className="w-full py-2 border-2 border-dashed border-gray-300 rounded-lg text-gray-500 hover:border-gray-400 hover:text-gray-600"
-            >+ Add Finish Checklist</button>
+            >+ {t('tourProducts.addChecklist')}</button>
           </div>
         </div>
 
