@@ -18,6 +18,7 @@ interface Activity {
 interface Checklist {
   id: string
   name: string
+  stage: string
 }
 
 export default function NewTourProductPage() {
@@ -35,7 +36,17 @@ export default function NewTourProductPage() {
   const [durationHours, setDurationHours] = useState(8)
   const [durationMinutes, setDurationMinutes] = useState(0)
   const [selectedActivities, setSelectedActivities] = useState<string[]>([])
-  const [selectedChecklist, setSelectedChecklist] = useState('')
+  // Checklist assignments by stage
+  const [checklistAssignments, setChecklistAssignments] = useState({
+    pre_departure: [] as string[],
+    pre_pickup: {
+      enabled: false,
+      checklists: [] as string[]
+    },
+    activity: {} as Record<string, string[]>,
+    dropoff: [] as string[],
+    finish: [] as string[]
+  })
   const [requiresGuide, setRequiresGuide] = useState(true)
   const [requiresDriver, setRequiresDriver] = useState(true)
   const [maxGuests, setMaxGuests] = useState(20)
@@ -79,10 +90,10 @@ export default function NewTourProductPage() {
 
     setActivities(activitiesData || [])
 
-    // Load checklists
+    // Load checklists with stage
     const { data: checklistsData } = await supabase
       .from('checklists')
-      .select('id, name')
+      .select('id, name, stage')
       .or(`company_id.eq.${profile.company_id},company_id.is.null`)
       .eq('is_active', true)
       .order('name')
@@ -131,7 +142,7 @@ export default function NewTourProductPage() {
         description: description.trim() || null,
         duration_minutes: totalDurationMinutes,
         activity_ids: selectedActivities,
-        pre_tour_checklist_id: selectedChecklist || null,
+        checklist_assignments: checklistAssignments,
         requires_guide: requiresGuide,
         requires_driver: requiresDriver,
         max_guests: maxGuests,
@@ -149,24 +160,116 @@ export default function NewTourProductPage() {
     router.push('/admin/tour-products')
   }
 
-  function toggleActivity(activityId: string) {
-    setSelectedActivities(prev =>
-      prev.includes(activityId)
-        ? prev.filter(id => id !== activityId)
-        : [...prev, activityId]
-    )
-  }
+
 
   function moveActivity(index: number, direction: 'up' | 'down') {
     if (direction === 'up' && index > 0) {
       const newOrder = [...selectedActivities]
       ;[newOrder[index], newOrder[index - 1]] = [newOrder[index - 1], newOrder[index]]
       setSelectedActivities(newOrder)
+      // Also reorder activity checklists
+      const newActivityAssignments: Record<string, string[]> = {}
+      newOrder.forEach(id => {
+        newActivityAssignments[id] = checklistAssignments.activity[id] || []
+      })
+      setChecklistAssignments(prev => ({...prev, activity: newActivityAssignments}))
     } else if (direction === 'down' && index < selectedActivities.length - 1) {
       const newOrder = [...selectedActivities]
       ;[newOrder[index], newOrder[index + 1]] = [newOrder[index + 1], newOrder[index]]
       setSelectedActivities(newOrder)
+      // Also reorder activity checklists
+      const newActivityAssignments: Record<string, string[]> = {}
+      newOrder.forEach(id => {
+        newActivityAssignments[id] = checklistAssignments.activity[id] || []
+      })
+      setChecklistAssignments(prev => ({...prev, activity: newActivityAssignments}))
     }
+  }
+
+  function toggleActivity(activityId: string) {
+    setSelectedActivities(prev =>
+      prev.includes(activityId)
+        ? prev.filter(id => id !== activityId)
+        : [...prev, activityId]
+    )
+    // Initialize activity checklists when activity added
+    if (!selectedActivities.includes(activityId)) {
+      setChecklistAssignments(prev => ({
+        ...prev,
+        activity: {
+          ...prev.activity,
+          [activityId]: []
+        }
+      }))
+    } else {
+      // Remove activity checklists when activity removed
+      setChecklistAssignments(prev => {
+        const newActivity = {...prev.activity}
+        delete newActivity[activityId]
+        return {...prev, activity: newActivity}
+      })
+    }
+  }
+
+  // Helper to add/remove checklists from arrays
+  function addChecklist(stage: keyof typeof checklistAssignments, checklistId: string, activityId?: string) {
+    if (stage === 'pre_pickup') {
+      setChecklistAssignments(prev => ({
+        ...prev,
+        pre_pickup: {
+          ...prev.pre_pickup,
+          checklists: [...prev.pre_pickup.checklists, checklistId]
+        }
+      }))
+    } else if (stage === 'activity' && activityId) {
+      setChecklistAssignments(prev => ({
+        ...prev,
+        activity: {
+          ...prev.activity,
+          [activityId]: [...(prev.activity[activityId] || []), checklistId]
+        }
+      }))
+    } else if (stage !== 'pre_pickup' && stage !== 'activity') {
+      setChecklistAssignments(prev => ({
+        ...prev,
+        [stage]: [...prev[stage], checklistId]
+      }))
+    }
+  }
+
+  function removeChecklist(stage: keyof typeof checklistAssignments, checklistId: string, activityId?: string) {
+    if (stage === 'pre_pickup') {
+      setChecklistAssignments(prev => ({
+        ...prev,
+        pre_pickup: {
+          ...prev.pre_pickup,
+          checklists: prev.pre_pickup.checklists.filter(id => id !== checklistId)
+        }
+      }))
+    } else if (stage === 'activity' && activityId) {
+      setChecklistAssignments(prev => ({
+        ...prev,
+        activity: {
+          ...prev.activity,
+          [activityId]: (prev.activity[activityId] || []).filter(id => id !== checklistId)
+        }
+      }))
+    } else if (stage !== 'pre_pickup' && stage !== 'activity') {
+      setChecklistAssignments(prev => ({
+        ...prev,
+        [stage]: prev[stage].filter(id => id !== checklistId)
+      }))
+    }
+  }
+
+  function togglePrePickup(enabled: boolean) {
+    setChecklistAssignments(prev => ({
+      ...prev,
+      pre_pickup: {
+        ...prev.pre_pickup,
+        enabled
+      }
+    }))
   }
 
   const selectedActivitiesList = selectedActivities
@@ -351,28 +454,209 @@ export default function NewTourProductPage() {
           </div>
         </div>
 
-        {/* Checklist */}
+        {/* Checklist Sections by Stage */}
+        
+        {/* Pre-Departure */}
         <div className="bg-white rounded-xl border border-gray-200 p-4">
-          <h2 className="font-semibold text-gray-900 mb-4">
-            {t('tourProducts.preTourChecklist') || 'Pre-Tour Checklist'}
-          </h2>
-
-          <select
-            value={selectedChecklist}
-            onChange={(e) => setSelectedChecklist(e.target.value)}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-white"
-          >
-            <option value="">{t('tourProducts.noChecklist') || 'No pre-tour checklist'}</option>
-            {checklists.map((checklist) => (
-              <option key={checklist.id} value={checklist.id}>
-                {checklist.name}
-              </option>
+          <h2 className="font-semibold text-gray-900 mb-4">🚌 Pre-Departure Checklists</h2>
+          <div className="space-y-2">
+            {checklistAssignments.pre_departure.map((checklistId, idx) => (
+              <div key={idx} className="flex items-center gap-2">
+                <select
+                  value={checklistId}
+                  onChange={(e) => {
+                    const newChecklists = [...checklistAssignments.pre_departure]
+                    newChecklists[idx] = e.target.value
+                    setChecklistAssignments(prev => ({...prev, pre_departure: newChecklists}))
+                  }}
+                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg bg-white"
+                >
+                  <option value="">Select checklist...</option>
+                  {checklists.filter(c => c.stage === 'pre_departure').map(c => (
+                    <option key={c.id} value={c.id}>{c.name}</option>
+                  ))}
+                </select>
+                <button
+                  type="button"
+                  onClick={() => removeChecklist('pre_departure', checklistId)}
+                  className="text-red-400 hover:text-red-600 px-2"
+                >×</button>
+              </div>
             ))}
-          </select>
+            <button
+              type="button"
+              onClick={() => addChecklist('pre_departure', '')}
+              className="w-full py-2 border-2 border-dashed border-gray-300 rounded-lg text-gray-500 hover:border-gray-400 hover:text-gray-600"
+            >+ Add Pre-Departure Checklist</button>
+          </div>
+        </div>
 
-          <p className="text-sm text-gray-500 mt-2">
-            {t('tourProducts.checklistHelp') || 'This checklist will be assigned to all tours of this product (e.g., van inspection)'}
-          </p>
+        {/* Pre-Pickup (Optional) */}
+        <div className="bg-white rounded-xl border border-gray-200 p-4">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="font-semibold text-gray-900">📍 Pre-Pickup Checklists</h2>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={checklistAssignments.pre_pickup.enabled}
+                onChange={(e) => togglePrePickup(e.target.checked)}
+                className="w-5 h-5"
+              />
+              <span className="text-sm text-gray-700">Enable pre-pickup step (private tours)</span>
+            </label>
+          </div>
+          {checklistAssignments.pre_pickup.enabled && (
+            <div className="space-y-2">
+              {checklistAssignments.pre_pickup.checklists.map((checklistId, idx) => (
+                <div key={idx} className="flex items-center gap-2">
+                  <select
+                    value={checklistId}
+                    onChange={(e) => {
+                      const newChecklists = [...checklistAssignments.pre_pickup.checklists]
+                      newChecklists[idx] = e.target.value
+                      setChecklistAssignments(prev => ({
+                        ...prev,
+                        pre_pickup: {...prev.pre_pickup, checklists: newChecklists}
+                      }))
+                    }}
+                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg bg-white"
+                  >
+                    <option value="">Select checklist...</option>
+                    {checklists.filter(c => c.stage === 'pre_pickup').map(c => (
+                      <option key={c.id} value={c.id}>{c.name}</option>
+                    ))}
+                  </select>
+                  <button
+                    type="button"
+                    onClick={() => removeChecklist('pre_pickup', checklistId)}
+                    className="text-red-400 hover:text-red-600 px-2"
+                  >×</button>
+                </div>
+              ))}
+              <button
+                type="button"
+                onClick={() => addChecklist('pre_pickup', '')}
+                className="w-full py-2 border-2 border-dashed border-gray-300 rounded-lg text-gray-500 hover:border-gray-400 hover:text-gray-600"
+              >+ Add Pre-Pickup Checklist</button>
+            </div>
+          )}
+        </div>
+
+        {/* Activity Checklists */}
+        {selectedActivitiesList.length > 0 && (
+          <div className="bg-white rounded-xl border border-gray-200 p-4">
+            <h2 className="font-semibold text-gray-900 mb-4">🏃 Activity Checklists</h2>
+            <div className="space-y-4">
+              {selectedActivitiesList.map((activity) => (
+                <div key={activity.id} className="bg-gray-50 rounded-lg p-3">
+                  <p className="font-medium text-gray-900 mb-2">{activity.name}</p>
+                  <div className="space-y-2">
+                    {(checklistAssignments.activity[activity.id] || []).map((checklistId, idx) => (
+                      <div key={idx} className="flex items-center gap-2">
+                        <select
+                          value={checklistId}
+                          onChange={(e) => {
+                            const newChecklists = [...(checklistAssignments.activity[activity.id] || [])]
+                            newChecklists[idx] = e.target.value
+                            setChecklistAssignments(prev => ({
+                              ...prev,
+                              activity: {...prev.activity, [activity.id]: newChecklists}
+                            }))
+                          }}
+                          className="flex-1 px-4 py-2 border border-gray-300 rounded-lg bg-white"
+                        >
+                          <option value="">Select checklist...</option>
+                          {checklists.filter(c => c.stage === 'activity').map(c => (
+                            <option key={c.id} value={c.id}>{c.name}</option>
+                          ))}
+                        </select>
+                        <button
+                          type="button"
+                          onClick={() => removeChecklist('activity', checklistId, activity.id)}
+                          className="text-red-400 hover:text-red-600 px-2"
+                        >×</button>
+                      </div>
+                    ))}
+                    <button
+                      type="button"
+                      onClick={() => addChecklist('activity', '', activity.id)}
+                      className="w-full py-2 border-2 border-dashed border-gray-300 rounded-lg text-gray-500 hover:border-gray-400 hover:text-gray-600"
+                    >+ Add Checklist for {activity.name}</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Dropoff */}
+        <div className="bg-white rounded-xl border border-gray-200 p-4">
+          <h2 className="font-semibold text-gray-900 mb-4">🏨 Dropoff Checklists</h2>
+          <div className="space-y-2">
+            {checklistAssignments.dropoff.map((checklistId, idx) => (
+              <div key={idx} className="flex items-center gap-2">
+                <select
+                  value={checklistId}
+                  onChange={(e) => {
+                    const newChecklists = [...checklistAssignments.dropoff]
+                    newChecklists[idx] = e.target.value
+                    setChecklistAssignments(prev => ({...prev, dropoff: newChecklists}))
+                  }}
+                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg bg-white"
+                >
+                  <option value="">Select checklist...</option>
+                  {checklists.filter(c => c.stage === 'dropoff').map(c => (
+                    <option key={c.id} value={c.id}>{c.name}</option>
+                  ))}
+                </select>
+                <button
+                  type="button"
+                  onClick={() => removeChecklist('dropoff', checklistId)}
+                  className="text-red-400 hover:text-red-600 px-2"
+                >×</button>
+              </div>
+            ))}
+            <button
+              type="button"
+              onClick={() => addChecklist('dropoff', '')}
+              className="w-full py-2 border-2 border-dashed border-gray-300 rounded-lg text-gray-500 hover:border-gray-400 hover:text-gray-600"
+            >+ Add Dropoff Checklist</button>
+          </div>
+        </div>
+
+        {/* Finish */}
+        <div className="bg-white rounded-xl border border-gray-200 p-4">
+          <h2 className="font-semibold text-gray-900 mb-4">✅ Finish Checklists</h2>
+          <div className="space-y-2">
+            {checklistAssignments.finish.map((checklistId, idx) => (
+              <div key={idx} className="flex items-center gap-2">
+                <select
+                  value={checklistId}
+                  onChange={(e) => {
+                    const newChecklists = [...checklistAssignments.finish]
+                    newChecklists[idx] = e.target.value
+                    setChecklistAssignments(prev => ({...prev, finish: newChecklists}))
+                  }}
+                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg bg-white"
+                >
+                  <option value="">Select checklist...</option>
+                  {checklists.filter(c => c.stage === 'finish').map(c => (
+                    <option key={c.id} value={c.id}>{c.name}</option>
+                  ))}
+                </select>
+                <button
+                  type="button"
+                  onClick={() => removeChecklist('finish', checklistId)}
+                  className="text-red-400 hover:text-red-600 px-2"
+                >×</button>
+              </div>
+            ))}
+            <button
+              type="button"
+              onClick={() => addChecklist('finish', '')}
+              className="w-full py-2 border-2 border-dashed border-gray-300 rounded-lg text-gray-500 hover:border-gray-400 hover:text-gray-600"
+            >+ Add Finish Checklist</button>
+          </div>
         </div>
 
         {/* Requirements */}
