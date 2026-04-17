@@ -155,13 +155,16 @@ export default function EditTourProductPage() {
 
     setChecklists(checklistsData || [])
 
-    // Count linked tours
-    const { count } = await supabase
-      .from('tours')
-      .select('*', { count: 'exact', head: true })
-      .eq('tour_product_id', productId)
-
-    setLinkedTours(count || 0)
+    // Count linked tours (column is product_id, not tour_product_id)
+    try {
+      const { count } = await supabase
+        .from('tours')
+        .select('*', { count: 'exact', head: true })
+        .eq('product_id', productId)
+      setLinkedTours(count || 0)
+    } catch {
+      setLinkedTours(0)
+    }
     setLoading(false)
   }
 
