@@ -994,7 +994,6 @@ export default function OrdenImportPage() {
         })
 
         // Save servicio pattern and create activities
-        const pattern = servicioPatterns[tour.service]
         if (pattern && pattern.activities.length > 0) {
           // Save pattern for future imports
           const normalizedName = tour.service.toLowerCase().trim()
