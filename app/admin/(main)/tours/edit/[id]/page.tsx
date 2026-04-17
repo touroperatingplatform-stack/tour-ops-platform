@@ -66,7 +66,6 @@ export default function EditTourPage() {
       .from('profiles')
       .select('id, first_name, last_name')
       .eq('role', 'guide')
-      .eq('is_active', true)
 
     setGuides(guidesData || [])
 
