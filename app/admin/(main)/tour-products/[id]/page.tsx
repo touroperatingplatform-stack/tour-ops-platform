@@ -135,15 +135,23 @@ export default function EditTourProductPage() {
     setMaxGuests(product.max_guests)
     setIsActive(product.is_active)
 
-    // Load activities
-    const { data: activitiesData } = await supabase
-      .from('activities')
-      .select('id, name, duration_minutes')
-      .eq('company_id', profile.company_id)
-      .eq('is_active', true)
-      .order('name')
+    // Load activities (both company-specific and system-wide)
+    const [{ data: systemActivities }, { data: companyActivitiesData }] = await Promise.all([
+      supabase
+        .from('activities')
+        .select('id, name, duration_minutes')
+        .is('company_id', null)
+        .eq('is_active', true)
+        .order('name'),
+      supabase
+        .from('activities')
+        .select('id, name, duration_minutes')
+        .eq('company_id', profile.company_id)
+        .eq('is_active', true)
+        .order('name')
+    ])
 
-    setActivities(activitiesData || [])
+    setActivities([...(systemActivities || []), ...(companyActivitiesData || [])])
 
     // Load checklists with stage
     const { data: checklistsData } = await supabase
