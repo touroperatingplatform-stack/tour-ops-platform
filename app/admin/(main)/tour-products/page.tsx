@@ -270,28 +270,6 @@ export default function TourProductsPage() {
           )}
         </div>
       </main>
-
-      {/* Bottom Navigation */}
-      <nav className="flex-none bg-white z-50 border-t border-gray-200">
-        <div className="flex justify-around items-center px-2 py-2">
-          <Link href="/admin" className="flex flex-col items-center justify-center py-2 px-2 min-w-[48px] text-gray-500">
-            <span className="text-xl mb-1">📊</span>
-            <span className="text-xs">{t('nav.dashboard')}</span>
-          </Link>
-          <Link href="/admin/tours" className="flex flex-col items-center justify-center py-2 px-2 min-w-[48px] text-gray-500">
-            <span className="text-xl mb-1">🚌</span>
-            <span className="text-xs">{t('nav.tours')}</span>
-          </Link>
-          <Link href="/admin/tour-products" className="flex flex-col items-center justify-center py-2 px-2 min-w-[48px] text-blue-600">
-            <span className="text-xl mb-1">🎫</span>
-            <span className="text-xs">{t('nav.products') || 'Products'}</span>
-          </Link>
-          <Link href="/admin/users" className="flex flex-col items-center justify-center py-2 px-2 min-w-[48px] text-gray-500">
-            <span className="text-xl mb-1">👥</span>
-            <span className="text-xs">{t('nav.team')}</span>
-          </Link>
-        </div>
-      </nav>
     </div>
   )
 }
