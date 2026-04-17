@@ -811,6 +811,58 @@ export default function OrdenImportPage() {
     parsedTours.forEach((t, i) => console.log(`tour ${i} (${t.operador}):`, t.reservations.map(r => r.clientName)))
     try {
       for (const tour of parsedTours) {
+        // Get or create tour_product first (before creating tour)
+        let productId: string | null = null
+        const pattern = servicioPatterns[tour.service]
+        
+        if (pattern && pattern.activities.length > 0) {
+          const serviceCode = tour.service.toUpperCase().replace(/\s+/g, '').substring(0, 20)
+          const { data: existingProduct } = await supabase
+            .from('tour_products')
+            .select('id')
+            .eq('company_id', companyId)
+            .eq('service_code', serviceCode)
+            .maybeSingle()
+          
+          if (existingProduct) {
+            productId = existingProduct.id
+            console.log('Using existing tour_product:', productId)
+          } else {
+            console.log('Creating tour_product for:', tour.service)
+            const { data: newProduct, error: productError } = await supabase
+              .from('tour_products')
+              .insert({
+                company_id: companyId,
+                service_code: serviceCode,
+                name: tour.service,
+                description: `Auto-created from import: ${tour.service}`,
+                duration_minutes: pattern.activities.length * 90,
+                activity_ids: pattern.activities,
+                checklist_assignments: {
+                  pre_departure: [],
+                  pre_pickup: { enabled: false, checklists: [] },
+                  activity: {},
+                  dropoff: [],
+                  finish: []
+                },
+                requires_guide: true,
+                requires_driver: true,
+                max_guests: 20,
+                is_active: true
+              })
+              .select('id')
+              .single()
+            
+            if (productError) {
+              console.error('tour_products insert error:', productError)
+            } else {
+              productId = newProduct.id
+              console.log('tour_product created:', productId)
+            }
+          }
+        }
+
+        // Create tour with product_id linked
         const { data: newTour, error: tourErr } = await supabase
           .from('tours')
           .insert({
@@ -822,7 +874,8 @@ export default function OrdenImportPage() {
             status: 'scheduled',
             guest_count: tour.totalPax,
             driver_id: tour.operadorId || null,
-            guide_id: tour.guiaId || null
+            guide_id: tour.guiaId || null,
+            product_id: productId
           })
           .select('id, name, tour_date')
           .maybeSingle()
