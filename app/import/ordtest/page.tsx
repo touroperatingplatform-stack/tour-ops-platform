@@ -963,6 +963,7 @@ export default function OrdenImportPage() {
             .maybeSingle()
           
           if (!existingProduct) {
+            console.log('Creating tour_product for:', tour.service, 'activities:', pattern.activities)
             const { error: productError } = await supabase.from('tour_products').insert({
               company_id: companyId,
               service_code: serviceCode,
@@ -984,7 +985,11 @@ export default function OrdenImportPage() {
             })
             if (productError) {
               console.error('tour_products insert error:', productError)
+            } else {
+              console.log('tour_product created successfully for:', serviceCode)
             }
+          } else {
+            console.log('Tour product already exists:', existingProduct.id)
           }
 
           // Create activity stops and tour_activities
