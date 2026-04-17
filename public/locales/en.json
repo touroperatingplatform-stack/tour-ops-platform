@@ -114,6 +114,8 @@
     "done": "Done",
     "upcoming": "Upcoming",
     "past": "Past",
+    "hours": "Hours",
+    "minutes": "Minutes",
     "allStatuses": "All Statuses",
     "scheduled": "Scheduled",
     "inProgress": "In Progress",

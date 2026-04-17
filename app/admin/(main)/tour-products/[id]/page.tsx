@@ -218,8 +218,8 @@ export default function EditTourProductPage() {
       .select('id')
       .eq('company_id', companyId)
       .eq('service_code', normalizedCode)
-      .neq('id', productId)
-      .single()
+      .not('id', 'eq', productId)
+      .maybeSingle()
 
     if (existing) {
       setError(t('tourProducts.errorDuplicateCode') || `Service code "${normalizedCode}" already exists`)
