@@ -19,7 +19,7 @@ export default function TourDetailPage() {
   const [guides, setGuides] = useState<any[]>([])
   const [drivers, setDrivers] = useState<any[]>([])
   const [vehicles, setVehicles] = useState<any[]>([])
-  const [checklists, setChecklists] = useState<any[]>([])
+  const [productChecklists, setProductChecklists] = useState<any>(null)
   const [saving, setSaving] = useState(false)
   const [guestCount, setGuestCount] = useState(0)
   const [pickupCount, setPickupCount] = useState(0)
@@ -129,14 +129,49 @@ export default function TourDetailPage() {
     )
     setVehicles(availableVehicles)
 
-    // Load checklists for this company + system defaults
-    const { data: checklistsData } = await supabase
-      .from('checklists')
-      .select('id, name, company_id')
-      .or(`company_id.eq.${companyId},company_id.is.null`)
-      .eq('is_active', true)
-
-    setChecklists(checklistsData || [])
+    // Load checklists from product if tour has a product_id
+    if (tourData.product_id) {
+      const { data: productData } = await supabase
+        .from('tour_products')
+        .select('id, name, service_code, checklist_assignments')
+        .eq('id', tourData.product_id)
+        .single()
+      
+      if (productData?.checklist_assignments) {
+        // Load checklist details for each assigned checklist
+        const allChecklistIds: string[] = []
+        const assignments = productData.checklist_assignments
+        
+        // Collect all checklist IDs
+        if (assignments.pre_departure) allChecklistIds.push(...assignments.pre_departure)
+        if (assignments.pre_pickup?.checklists) allChecklistIds.push(...assignments.pre_pickup.checklists)
+        if (assignments.dropoff) allChecklistIds.push(...assignments.dropoff)
+        if (assignments.finish) allChecklistIds.push(...assignments.finish)
+        if (assignments.activity) {
+          Object.values(assignments.activity).forEach((ids: any) => allChecklistIds.push(...ids))
+        }
+        
+        // Get checklist names
+        if (allChecklistIds.length > 0) {
+          const { data: checklistDetails } = await supabase
+            .from('checklists')
+            .select('id, name, stage')
+            .in('id', allChecklistIds)
+          
+          setProductChecklists({
+            assignments: assignments,
+            checklists: checklistDetails || []
+          })
+        } else {
+          setProductChecklists({
+            assignments: assignments,
+            checklists: []
+          })
+        }
+      }
+    } else {
+      setProductChecklists(null)
+    }
 
     // Load guest count
     const { data: manifestData } = await supabase
@@ -268,21 +303,106 @@ export default function TourDetailPage() {
               </select>
             </div>
 
-            {/* Checklist */}
+            {/* Checklists from Product */}
             <div>
-              <label className="block text-sm text-gray-500 mb-1">📋 Checklist</label>
-              <select
-                value={tour.checklist_id || ''}
-                onChange={(e) => handleUpdate({ checklist_id: e.target.value || null })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-white"
-              >
-                <option value="">No checklist assigned</option>
-                {checklists.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name} {!c.company_id ? '(System)' : ''}
-                  </option>
-                ))}
-              </select>
+              <label className="block text-sm text-gray-500 mb-1">📋 Checklists</label>
+              {productChecklists ? (
+                <div className="space-y-2">
+                  {/* Pre-Departure */}
+                  {productChecklists.assignments.pre_departure?.length > 0 && (
+                    <div className="p-2 bg-blue-50 rounded-lg">
+                      <p className="text-xs font-medium text-blue-700 mb-1">Pre-Departure</p>
+                      <div className="flex flex-wrap gap-1">
+                        {productChecklists.assignments.pre_departure.map((id: string) => {
+                          const c = productChecklists.checklists.find((cl: any) => cl.id === id)
+                          return c ? (
+                            <span key={id} className="px-2 py-1 bg-white text-blue-700 text-xs rounded">
+                              {c.name}
+                            </span>
+                          ) : null
+                        })}
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Pre-Pickup */}
+                  {productChecklists.assignments.pre_pickup?.enabled && productChecklists.assignments.pre_pickup.checklists?.length > 0 && (
+                    <div className="p-2 bg-purple-50 rounded-lg">
+                      <p className="text-xs font-medium text-purple-700 mb-1">Pre-Pickup</p>
+                      <div className="flex flex-wrap gap-1">
+                        {productChecklists.assignments.pre_pickup.checklists.map((id: string) => {
+                          const c = productChecklists.checklists.find((cl: any) => cl.id === id)
+                          return c ? (
+                            <span key={id} className="px-2 py-1 bg-white text-purple-700 text-xs rounded">
+                              {c.name}
+                            </span>
+                          ) : null
+                        })}
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Activity Checklists */}
+                  {Object.entries(productChecklists.assignments.activity || {}).length > 0 && (
+                    <div className="p-2 bg-green-50 rounded-lg">
+                      <p className="text-xs font-medium text-green-700 mb-1">Activities</p>
+                      <div className="space-y-1">
+                        {Object.entries(productChecklists.assignments.activity).map(([activityId, checklistIds]: [string, any]) => {
+                          const checklistsForActivity = (checklistIds as string[]).map((id: string) => 
+                            productChecklists.checklists.find((cl: any) => cl.id === id)
+                          ).filter(Boolean)
+                          if (checklistsForActivity.length === 0) return null
+                          return (
+                            <div key={activityId} className="flex flex-wrap gap-1">
+                              {checklistsForActivity.map((c: any) => (
+                                <span key={c.id} className="px-2 py-1 bg-white text-green-700 text-xs rounded">
+                                  {c.name}
+                                </span>
+                              ))}
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Dropoff */}
+                  {productChecklists.assignments.dropoff?.length > 0 && (
+                    <div className="p-2 bg-orange-50 rounded-lg">
+                      <p className="text-xs font-medium text-orange-700 mb-1">Dropoff</p>
+                      <div className="flex flex-wrap gap-1">
+                        {productChecklists.assignments.dropoff.map((id: string) => {
+                          const c = productChecklists.checklists.find((cl: any) => cl.id === id)
+                          return c ? (
+                            <span key={id} className="px-2 py-1 bg-white text-orange-700 text-xs rounded">
+                              {c.name}
+                            </span>
+                          ) : null
+                        })}
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Finish */}
+                  {productChecklists.assignments.finish?.length > 0 && (
+                    <div className="p-2 bg-gray-100 rounded-lg">
+                      <p className="text-xs font-medium text-gray-700 mb-1">Finish</p>
+                      <div className="flex flex-wrap gap-1">
+                        {productChecklists.assignments.finish.map((id: string) => {
+                          const c = productChecklists.checklists.find((cl: any) => cl.id === id)
+                          return c ? (
+                            <span key={id} className="px-2 py-1 bg-white text-gray-700 text-xs rounded">
+                              {c.name}
+                            </span>
+                          ) : null
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <p className="text-sm text-gray-400 italic">No product assigned</p>
+              )}
             </div>
           </div>
         </div>
@@ -317,7 +437,17 @@ export default function TourDetailPage() {
             ✏️ Edit Tour
           </Link>
           <div className="flex-1 py-3 bg-blue-100 text-blue-700 rounded-xl font-medium text-center">
-            📋 {tour.checklist_id && checklists.find(c => c.id === tour.checklist_id)?.name || 'No Checklist'}
+            📋 {productChecklists && (productChecklists.assignments.pre_departure?.length > 0 || 
+               productChecklists.assignments.pre_pickup?.checklists?.length > 0 ||
+               Object.values(productChecklists.assignments.activity || {}).flat().length > 0 ||
+               productChecklists.assignments.dropoff?.length > 0 ||
+               productChecklists.assignments.finish?.length > 0)
+               ? `${Object.values(productChecklists.assignments.activity || {}).flat().length + 
+                   (productChecklists.assignments.pre_departure?.length || 0) +
+                   (productChecklists.assignments.pre_pickup?.checklists?.length || 0) +
+                   (productChecklists.assignments.dropoff?.length || 0) +
+                   (productChecklists.assignments.finish?.length || 0)} checklists assigned`
+               : 'No checklists assigned'}
           </div>
         </div>
       </div>
