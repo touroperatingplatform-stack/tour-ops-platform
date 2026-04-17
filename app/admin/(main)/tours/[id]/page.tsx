@@ -142,21 +142,26 @@ export default function TourDetailPage() {
         const allChecklistIds: string[] = []
         const assignments = productData.checklist_assignments
         
-        // Collect all checklist IDs
-        if (assignments.pre_departure) allChecklistIds.push(...assignments.pre_departure)
-        if (assignments.pre_pickup?.checklists) allChecklistIds.push(...assignments.pre_pickup.checklists)
-        if (assignments.dropoff) allChecklistIds.push(...assignments.dropoff)
-        if (assignments.finish) allChecklistIds.push(...assignments.finish)
+        // Collect all checklist IDs (filter out any empty/undefined values)
+        if (assignments.pre_departure) allChecklistIds.push(...assignments.pre_departure.filter(Boolean))
+        if (assignments.pre_pickup?.checklists) allChecklistIds.push(...assignments.pre_pickup.checklists.filter(Boolean))
+        if (assignments.dropoff) allChecklistIds.push(...assignments.dropoff.filter(Boolean))
+        if (assignments.finish) allChecklistIds.push(...assignments.finish.filter(Boolean))
         if (assignments.activity) {
-          Object.values(assignments.activity).forEach((ids: any) => allChecklistIds.push(...ids))
+          Object.values(assignments.activity).forEach((ids: any) => {
+            if (Array.isArray(ids)) allChecklistIds.push(...ids.filter(Boolean))
+          })
         }
         
+        // Remove duplicates
+        const uniqueChecklistIds = [...new Set(allChecklistIds)]
+        
         // Get checklist names
-        if (allChecklistIds.length > 0) {
+        if (uniqueChecklistIds.length > 0) {
           const { data: checklistDetails } = await supabase
             .from('checklists')
             .select('id, name, stage')
-            .in('id', allChecklistIds)
+            .in('id', uniqueChecklistIds)
           
           setProductChecklists({
             assignments: assignments,
