@@ -16,6 +16,7 @@ const navItems = [
 const moreItems = [
   { href: '/super-admin/regional-data', labelKey: 'nav.regional', icon: '🗺️' },
   { href: '/super-admin/brands', labelKey: 'nav.brands', icon: '🏷️' },
+  { href: '/super-admin/tour-configuration', labelKey: 'nav.tourConfig', icon: '🔧' },
   { href: '/super-admin/checklist-presets', labelKey: 'nav.checklistPresets', icon: '📋' },
   { href: '/super-admin/activities', labelKey: 'nav.activities', icon: '🏃' },
   { href: '/super-admin/activity-checklist-assignment', labelKey: 'nav.assignment', icon: '🔗' },
