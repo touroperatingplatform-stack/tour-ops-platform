@@ -8,23 +8,20 @@ import LanguageToggle from '@/components/LanguageToggle'
 
 const navItems = [
   { href: '/admin', label: 'Dashboard', icon: '📊' },
-  { href: '/admin/tour-products', label: 'Products', icon: '📦' },
   { href: '/admin/tours', label: 'Tours', icon: '🚌' },
-  { href: '/admin/guests', label: 'Guests', icon: '👤' },
-  { href: '/admin/reports', label: 'Reports', icon: '📈' },
+  { href: '/admin/guides', label: 'Guides', icon: '🎯' },
+  { href: '/admin/drivers', label: 'Drivers', icon: '🚗' },
   { href: '/admin/vehicles', label: 'Fleet', icon: '🚐' },
-  { href: '/admin/expenses', label: 'Expenses', icon: '💵' },
+  { href: '/admin/guests', label: 'Guests', icon: '👤' },
+  { href: '/admin/import', label: 'Import', icon: '📥' },
 ]
 
 const moreItems = [
   { href: '/admin/users', label: 'Team', icon: '👥' },
-  { href: '/admin/brands', label: 'Brands', icon: '🏷️' },
   { href: '/admin/tour-configuration', label: 'Configuration', icon: '🔧' },
-  { href: '/admin/checklists', label: 'Checklists', icon: '☑️' },
-  { href: '/admin/service-templates', label: 'Services', icon: '📋' },
-  { href: '/admin/guides/availability', label: 'Guides', icon: '🎯' },
-  { href: '/admin/import', label: 'Import', icon: '📥' },
-  { href: '/admin/data', label: 'Data', icon: '💾' },
+  { href: '/admin/reports', label: 'Reports', icon: '📈' },
+  { href: '/admin/brands', label: 'Brands', icon: '🏷️' },
+  { href: '/admin/expenses', label: 'Expenses', icon: '💵' },
   { href: '/admin/settings', label: 'Settings', icon: '⚙️' },
 ]
 
