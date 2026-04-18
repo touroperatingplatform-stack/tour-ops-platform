@@ -23,7 +23,6 @@ const moreItems = [
   { href: '/admin/checklists', label: 'Checklists', icon: '☑️' },
   { href: '/admin/service-templates', label: 'Services', icon: '📋' },
   { href: '/admin/guides/availability', label: 'Guides', icon: '🎯' },
-  { href: '/admin/templates', label: 'Templates', icon: '📄' },
   { href: '/admin/import', label: 'Import', icon: '📥' },
   { href: '/admin/data', label: 'Data', icon: '💾' },
   { href: '/admin/settings', label: 'Settings', icon: '⚙️' },
