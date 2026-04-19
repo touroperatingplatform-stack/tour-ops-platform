@@ -245,19 +245,19 @@ export default function CreateTourPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Tour Type</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">{t('tours.tourType')}</label>
               <select
                 name="tourTypeId"
                 value={formData.tourTypeId}
                 onChange={handleChange}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
-                <option value="">Select tour type (optional)</option>
+                <option value="">{t('tours.selectTourType')}</option>
                 {tourTypes.map((type) => (
                   <option key={type.id} value={type.id}>{type.name}</option>
                 ))}
               </select>
-              <p className="text-xs text-gray-500 mt-1">Activities will be auto-created from tour type</p>
+              <p className="text-xs text-gray-500 mt-1">{t('tours.autoCreateActivities')}</p>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
@@ -339,14 +339,14 @@ export default function CreateTourPage() {
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Assigned Driver</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t('tours.assignedDriver')}</label>
                 <select
                   name="driverId"
                   value={formData.driverId}
                   onChange={handleChange}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
-                  <option value="">Select driver...</option>
+                  <option value="">{t('tours.selectDriver')}</option>
                   {drivers.map((driver) => (
                     <option key={driver.id} value={driver.id}>{driver.full_name}</option>
                   ))}
@@ -391,8 +391,8 @@ export default function CreateTourPage() {
                   className="w-5 h-5 text-orange-600 border-gray-300 rounded focus:ring-orange-500"
                 />
                 <div>
-                  <span className="font-medium text-gray-900">Require Pre-Pickup</span>
-                  <p className="text-sm text-gray-600">Guide must check in 20 min before pickup time (for private tours)</p>
+                  <span className="font-medium text-gray-900">{t('tours.requirePrePickup')}</span>
+                  <p className="text-sm text-gray-600">{t('tours.prePickupDesc')}</p>
                 </div>
               </label>
             </div>
