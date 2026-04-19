@@ -305,7 +305,14 @@
     "confirmDelete": "¿Estás seguro de que quieres eliminar este tour?",
     "notFound": "Tour no encontrado",
     "backToTours": "Volver a Tours",
-    "noToursFound": "No se encontraron tours"
+    "noToursFound": "No se encontraron tours",
+    "tourType": "Tipo de Tour",
+    "selectTourType": "Seleccionar tipo de tour (opcional)",
+    "autoCreateActivities": "Las actividades se crearán automáticamente del tipo de tour",
+    "assignedDriver": "Chofer Asignado",
+    "selectDriver": "Seleccionar chofer...",
+    "requirePrePickup": "Requerir Pre-Recogida",
+    "prePickupDesc": "El guía debe hacer check-in 20 min antes de la hora de recogida (para tours privados)"
   },
   "reports": {
     "title": "Reportes y Análisis",
