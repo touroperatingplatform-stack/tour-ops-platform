@@ -107,18 +107,18 @@ export default function DriverAssignment({ onAssignmentChange }: DriverAssignmen
         .neq('status', 'cancelled')
         .order('start_time')
 
-      // Get driver IDs and fetch names
-      const driverIds = toursData?.map(t => t.driver_id).filter(Boolean) || []
+      // Get driver IDs from tours to fetch names
+      const tourDriverIds = toursData?.map(t => t.driver_id).filter(Boolean) || []
       let driverNames: Record<string, string> = {}
       
-      if (driverIds.length > 0) {
-        const { data: driversData } = await supabase
+      if (tourDriverIds.length > 0) {
+        const { data: assignedDriversData } = await supabase
           .from('profiles')
           .select('id, first_name, last_name')
-          .in('id', driverIds)
+          .in('id', tourDriverIds)
         
         driverNames = {}
-        driversData?.forEach(d => {
+        assignedDriversData?.forEach(d => {
           driverNames[d.id] = `${d.first_name || ''} ${d.last_name || ''}`.trim()
         })
       }
