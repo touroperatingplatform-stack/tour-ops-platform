@@ -494,6 +494,7 @@
   "vehicles": {
     "vehicle": "Vehículo",
     "title": "Flotilla de Vehículos",
+    "subtitle": "Gestionar vehículos y asignaciones",
     "name": "Nombre",
     "plate": "Placa",
     "status": "Estado",

@@ -317,7 +317,9 @@
   },
   "vehicles": {
     "title": "Vehicle Fleet",
-    "total": "Total",
+    "subtitle": "Manage vehicles and assignments",
+    "plate": "Plate Number",
+    "name": "Vehicle",
     "vehicle": "Vehicle",
     "name": "Name",
     "plate": "Plate",

@@ -5,7 +5,6 @@ export const dynamic = 'force-dynamic'
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase/client'
-import AdminLayout from '../components/AdminLayout'
 import { useTranslation } from '@/lib/i18n/useTranslation'
 
 interface Vehicle {
@@ -67,99 +66,102 @@ export default function VehiclesPage() {
 
   if (loading) {
     return (
-      <AdminLayout title={t('adminDashboard.fleet')} activeNav="menu">
-        <div className="flex items-center justify-center h-full border-8 border-transparent">
-          <div className="text-gray-500">{t('common.loading')}</div>
-        </div>
-      </AdminLayout>
+      <div className="h-full flex items-center justify-center border-8 border-transparent">
+        <div className="text-gray-500">{t('common.loading')}</div>
+      </div>
     )
   }
 
   return (
-    <AdminLayout title={t('adminDashboard.fleet')} activeNav="menu">
-      <div className="h-full grid grid-cols-12 grid-rows-[auto_1fr] gap-3 border-8 border-transparent">
+    <div className="h-full border-8 border-transparent">
+      <div className="h-full flex flex-col gap-4">
         
-        {/* Row 1: Stats Cards */}
-        <div className="col-span-12 grid grid-cols-3 gap-3 border-8 border-transparent">
-          <div className="bg-white rounded-lg border border-gray-200 p-3 text-center">
-            <p className="text-xs text-gray-500 uppercase font-medium">{t('fleet.total')}</p>
-            <p className="text-2xl font-bold text-gray-900 mt-1">{vehicles.length}</p>
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">{t('vehicles.title')}</h1>
+            <p className="text-sm text-gray-500">{t('vehicles.subtitle')}</p>
           </div>
-          <div className="bg-white rounded-lg border border-gray-200 p-3 text-center">
-            <p className="text-xs text-green-600 uppercase font-medium">{t('fleet.ready')}</p>
-            <p className="text-2xl font-bold text-green-600 mt-1">{available}</p>
+          <Link 
+            href="/admin/vehicles/new" 
+            className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700"
+          >
+            + {t('common.add')}
+          </Link>
+        </div>
+        
+        {/* Stats */}
+        <div className="grid grid-cols-4 gap-4">
+          <div className="bg-white rounded-lg border border-gray-200 p-4 text-center">
+            <p className="text-2xl font-bold">{vehicles.length}</p>
+            <p className="text-sm text-gray-500">{t('fleet.total')}</p>
           </div>
-          <div className="bg-white rounded-lg border border-gray-200 p-3 text-center">
-            <p className="text-xs text-blue-600 uppercase font-medium">{t('fleet.onTour')}</p>
-            <p className="text-2xl font-bold text-blue-600 mt-1">{inUse}</p>
+          <div className="bg-white rounded-lg border border-gray-200 p-4 text-center">
+            <p className="text-2xl font-bold text-green-600">{available}</p>
+            <p className="text-sm text-gray-500">{t('fleet.ready')}</p>
+          </div>
+          <div className="bg-white rounded-lg border border-gray-200 p-4 text-center">
+            <p className="text-2xl font-bold text-blue-600">{inUse}</p>
+            <p className="text-sm text-gray-500">{t('fleet.onTour')}</p>
+          </div>
+          <div className="bg-white rounded-lg border border-gray-200 p-4 text-center">
+            <p className="text-2xl font-bold text-orange-600">{vehicles.filter((v) => v.status === 'maintenance').length}</p>
+            <p className="text-sm text-gray-500">{t('fleet.maintenance')}</p>
           </div>
         </div>
 
-        {/* Row 2: Vehicle List + Quick Actions */}
-        <div className="col-span-12 grid grid-cols-12 gap-3 border-8 border-transparent">
-          {/* Vehicle List - Left */}
-          <div className="col-span-9 bg-white rounded-lg border border-gray-200 p-3 flex flex-col">
-            <div className="flex items-center justify-between mb-2">
-              <span className="font-semibold text-sm">🚐 {t('fleet.manageVehicles')}</span>
-              <Link href="/admin/vehicles/new" className="text-xs bg-blue-600 text-white px-3 py-1 rounded-full">
-                + {t('common.add')}
-              </Link>
-            </div>
-            
-            <div className="flex-1 overflow-y-auto space-y-2">
-              {vehicles.length === 0 ? (
-                <div className="text-center text-gray-500 py-8">{t('fleet.noVehicles')}</div>
-              ) : (
-                vehicles.map((vehicle) => (
-                  <Link
-                    key={vehicle.id}
-                    href={`/admin/vehicles/${vehicle.id}`}
-                    className="block bg-gray-50 rounded-lg p-3 hover:bg-gray-100"
-                  >
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                          <span className="text-lg">🚌</span>
-                          <p className="font-semibold text-gray-900">{vehicle.plate_number}</p>
-                          <span className={`px-2 py-0.5 text-xs rounded-full ${getStatusColor(vehicle.status)}`}>
-                            {vehicle.status === 'in_use' ? t('fleet.onTour') : vehicle.status === 'available' ? t('fleet.ready') : t('fleet.maintenance')}
-                          </span>
-                        </div>
-                        <p className="text-sm text-gray-500 ml-6">{vehicle.year} {vehicle.make} {vehicle.model}</p>
-                        <p className="text-xs text-gray-400 ml-6">{vehicle.capacity} {t('fleet.seats')}</p>
-                      </div>
-                      <span className="text-blue-600 text-xs">→</span>
-                    </div>
-                  </Link>
-                ))
-              )}
-            </div>
-          </div>
-
-          {/* Quick Actions - Right */}
-          <div className="col-span-3 bg-white rounded-lg border border-gray-200 p-3 flex flex-col">
-            <span className="font-semibold text-sm mb-2">{t('adminDashboard.quickActions')}</span>
-            <div className="flex-1 grid grid-cols-2 gap-2">
-              <Link href="/admin/tours/new" className="flex flex-col items-center justify-center p-2 bg-blue-50 hover:bg-blue-100 rounded transition-colors">
-                <span className="text-xl mb-1">🚌</span>
-                <span className="text-xs font-medium">{t('adminDashboard.newTour')}</span>
-              </Link>
-              <Link href="/admin/users/new" className="flex flex-col items-center justify-center p-2 bg-green-50 hover:bg-green-100 rounded transition-colors">
-                <span className="text-xl mb-1">👤</span>
-                <span className="text-xs font-medium">{t('adminDashboard.addUser')}</span>
-              </Link>
-              <Link href="/admin/reports" className="flex flex-col items-center justify-center p-2 bg-purple-50 hover:bg-purple-100 rounded transition-colors">
-                <span className="text-xl mb-1">📊</span>
-                <span className="text-xs font-medium">{t('nav.reports')}</span>
-              </Link>
-              <Link href="/admin/vehicles" className="flex flex-col items-center justify-center p-2 bg-orange-50 hover:bg-orange-100 rounded transition-colors">
-                <span className="text-xl mb-1">🚗</span>
-                <span className="text-xs font-medium">{t('adminDashboard.fleet')}</span>
-              </Link>
-            </div>
+        {/* Vehicle List */}
+        <div className="flex-1 bg-white rounded-lg border border-gray-200 overflow-hidden">
+          <div className="overflow-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-gray-50 text-left text-xs uppercase text-gray-500">
+                <tr>
+                  <th className="px-4 py-3 font-medium">{t('vehicles.plate')}</th>
+                  <th className="px-4 py-3 font-medium">{t('vehicles.name')}</th>
+                  <th className="px-4 py-3 font-medium">{t('vehicles.capacity')}</th>
+                  <th className="px-4 py-3 font-medium">{t('common.status')}</th>
+                  <th className="px-4 py-3 font-medium text-right">{t('common.actions')}</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {vehicles.map((vehicle) => (
+                  <tr key={vehicle.id} className="hover:bg-gray-50">
+                    <td className="px-4 py-3">
+                      <span className="font-mono text-sm">{vehicle.plate_number}</span>
+                    </td>
+                    <td className="px-4 py-3">
+                      <p className="font-medium text-gray-900">{vehicle.year} {vehicle.make} {vehicle.model}</p>
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className="text-gray-600">{vehicle.capacity} {t('fleet.seats')}</span>
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(vehicle.status)}`}>
+                        {vehicle.status === 'in_use' ? t('fleet.onTour') : vehicle.status === 'available' ? t('fleet.ready') : t('fleet.maintenance')}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      <Link 
+                        href={`/admin/vehicles/${vehicle.id}`}
+                        className="text-blue-600 hover:underline text-xs font-medium"
+                      >
+                        {t('common.edit')}
+                      </Link>
+                    </td>
+                  </tr>
+                ))}
+                {vehicles.length === 0 && (
+                  <tr>
+                    <td colSpan={5} className="px-4 py-8 text-center text-gray-500">
+                      {t('fleet.noVehicles')}
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
           </div>
         </div>
       </div>
-    </AdminLayout>
+    </div>
   )
 }
