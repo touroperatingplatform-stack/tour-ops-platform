@@ -495,7 +495,7 @@ export default function AdminDriversManagement() {
                             : (t('drivers.unavailable') || 'Unavailable')
                           }
                         </button>
-                        {driver.assigned_tours_count > 0 && (
+                        {(driver.assigned_tours_count || 0) > 0 && (
                           <p className="text-xs text-blue-600 font-medium mt-1">
                             🚌 {driver.assigned_tours_count} {t('drivers.assigned') || 'assigned'}
                           </p>

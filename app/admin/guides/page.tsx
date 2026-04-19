@@ -377,7 +377,7 @@ export default function GuidesManagement() {
                             : (t('guides.unavailable') || 'Unavailable')
                           }
                         </button>
-                        {guide.assigned_tours_count > 0 && (
+                        {(guide.assigned_tours_count || 0) > 0 && (
                           <p className="text-xs text-blue-600 font-medium mt-1">
                             🚌 {guide.assigned_tours_count} {t('guides.toursAssigned') || 'assigned'}
                           </p>
