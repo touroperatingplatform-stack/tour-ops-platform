@@ -18,6 +18,7 @@ interface Guide {
   phone?: string
   status: 'active' | 'inactive'
   assigned_tours_count?: number
+  is_available?: boolean // For today's availability
 }
 
 export default function GuidesManagement() {
@@ -79,6 +80,19 @@ export default function GuidesManagement() {
         }
       })
 
+      // Load availability for today
+      const guideIds = (data || []).map((g: any) => g.id)
+      const { data: availabilityData } = await supabase
+        .from('guide_schedules')
+        .select('guide_id, is_available')
+        .in('guide_id', guideIds.length > 0 ? guideIds : ['00000000-0000-0000-0000-000000000000'])
+        .eq('schedule_date', today)
+
+      const availabilityMap: Record<string, boolean> = {}
+      availabilityData?.forEach((a: any) => {
+        availabilityMap[a.guide_id] = a.is_available
+      })
+
       const formatted: Guide[] = (data || []).map((g: any) => ({
         id: g.id,
         first_name: g.first_name,
@@ -86,7 +100,9 @@ export default function GuidesManagement() {
         email: g.email,
         phone: g.phone,
         status: g.status,
-        assigned_tours_count: assignmentCount[g.id] || 0
+        assigned_tours_count: assignmentCount[g.id] || 0,
+        // Available if: no schedule entry (implicitly available) OR is_available=true
+        is_available: availabilityMap[g.id] !== false
       }))
 
       setGuides(formatted)
@@ -199,6 +215,29 @@ export default function GuidesManagement() {
     return true
   })
 
+  async function toggleGuideAvailability(guide: Guide) {
+    try {
+      const today = getLocalDate()
+      const newAvailability = !guide.is_available
+      
+      // Use upsert to create or update availability
+      const { error } = await supabase
+        .from('guide_schedules')
+        .upsert({
+          guide_id: guide.id,
+          schedule_date: today,
+          is_available: newAvailability
+        }, {
+          onConflict: 'guide_id,schedule_date'
+        })
+
+      if (error) throw error
+      loadGuides()
+    } catch (error: any) {
+      alert('Error updating availability: ' + error.message)
+    }
+  }
+
   function openEditModal(guide: Guide) {
     setEditingGuide(guide)
     setFormData({
@@ -241,7 +280,7 @@ export default function GuidesManagement() {
           </div>
 
           {/* Stats */}
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-4 gap-4">
             <div className="bg-white rounded-lg border border-gray-200 p-4 text-center">
               <p className="text-2xl font-bold">{guides.length}</p>
               <p className="text-sm text-gray-500">{t('guides.totalGuides') || 'Total Guides'}</p>
@@ -255,6 +294,12 @@ export default function GuidesManagement() {
                 {guides.reduce((sum, g) => sum + (g.assigned_tours_count || 0), 0)}
               </p>
               <p className="text-sm text-gray-500">{t('guides.toursToday') || 'Tours Today'}</p>
+            </div>
+            <div className="bg-white rounded-lg border border-gray-200 p-4 text-center">
+              <p className="text-2xl font-bold text-green-600">
+                {guides.filter(g => g.status === 'active' && g.is_available).length}
+              </p>
+              <p className="text-sm text-gray-500">{t('guides.availableToday') || 'Available Today'}</p>
             </div>
           </div>
 
@@ -295,7 +340,7 @@ export default function GuidesManagement() {
                     <th className="px-4 py-3 font-medium">{t('common.name')}</th>
                     <th className="px-4 py-3 font-medium">{t('guides.contact') || 'Contact'}</th>
                     <th className="px-4 py-3 font-medium">{t('common.status')}</th>
-                    <th className="px-4 py-3 font-medium">{t('guides.todayStatus') || 'Today'}</th>
+                    <th className="px-4 py-3 font-medium">{t('guides.availability') || 'Availability'}</th>
                     <th className="px-4 py-3 font-medium text-right">{t('common.actions')}</th>
                   </tr>
                 </thead>
@@ -319,14 +364,23 @@ export default function GuidesManagement() {
                         </span>
                       </td>
                       <td className="px-4 py-3">
-                        {guide.assigned_tours_count ? (
-                          <span className="text-xs text-blue-600 font-medium">
-                            🚌 {guide.assigned_tours_count} {t('guides.toursAssigned') || 'tours'}
-                          </span>
-                        ) : (
-                          <span className="text-xs text-green-600 font-medium">
-                            ✓ {t('guides.available') || 'Available'}
-                          </span>
+                        <button
+                          onClick={() => toggleGuideAvailability(guide)}
+                          className={`px-2 py-1 rounded-full text-xs font-medium ${
+                            guide.is_available
+                              ? 'bg-green-100 text-green-700 hover:bg-green-200'
+                              : 'bg-red-100 text-red-700 hover:bg-red-200'
+                          }`}
+                        >
+                          {guide.is_available
+                            ? (t('guides.available') || 'Available')
+                            : (t('guides.unavailable') || 'Unavailable')
+                          }
+                        </button>
+                        {guide.assigned_tours_count > 0 && (
+                          <p className="text-xs text-blue-600 font-medium mt-1">
+                            🚌 {guide.assigned_tours_count} {t('guides.toursAssigned') || 'assigned'}
+                          </p>
                         )}
                       </td>
                       <td className="px-4 py-3 text-right">

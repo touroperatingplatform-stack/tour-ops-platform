@@ -189,7 +189,7 @@ export default function OperationsSchedulePage() {
       })
       setTours(Array.from(uniqueMap.values()))
 
-      // Load available drivers for company
+      // Load available drivers for company with availability check
       const { data: driversData } = await supabase
         .from('driver_profiles')
         .select(`
@@ -204,12 +204,26 @@ export default function OperationsSchedulePage() {
         `)
         .eq('status', 'active')
 
+      // Load availability for selected date
+      const driverProfileIds = (driversData || []).map((d: any) => d.profile_id)
+      const { data: driverAvailability } = await supabase
+        .from('driver_schedules')
+        .select('driver_id, is_available')
+        .in('driver_id', driverProfileIds.length > 0 ? driverProfileIds : ['00000000-0000-0000-0000-000000000000'])
+        .eq('schedule_date', selectedDate)
+
+      const availabilityMap: Record<string, boolean> = {}
+      driverAvailability?.forEach((a: any) => {
+        availabilityMap[a.driver_id] = a.is_available
+      })
+
       const formattedDrivers: Driver[] = (driversData || []).map((d: any) => ({
         id: d.profile_id,
         name: `${d.profiles.first_name || ''} ${d.profiles.last_name || ''}`.trim(),
         type: d.driver_type,
         phone: d.profiles.phone,
-        available: !toursData?.some(t => t.driver_id === d.profile_id)
+        // Available if not already assigned AND (no schedule entry OR is_available=true)
+        available: !toursData?.some(t => t.driver_id === d.profile_id) && availabilityMap[d.profile_id] !== false
       }))
 
       // Deduplicate drivers

@@ -12,6 +12,7 @@ interface Driver {
   license_number?: string
   driver_type?: 'employee' | 'freelance'
   status: 'active' | 'inactive'
+  is_available: boolean
 }
 
 interface Tour {
@@ -42,7 +43,7 @@ export default function DriverAssignment({ onAssignmentChange }: DriverAssignmen
   async function loadData() {
     setLoading(true)
     try {
-      // Load active drivers
+      // Load active drivers with availability for selected date
       const { data: driversData } = await supabase
         .from('driver_profiles')
         .select(`
@@ -59,19 +60,34 @@ export default function DriverAssignment({ onAssignmentChange }: DriverAssignmen
         `)
         .eq('status', 'active')
 
+      // Load availability for selected date
+      const driverIds = (driversData || []).map((d: any) => d.profile_id)
+      const { data: availabilityData } = await supabase
+        .from('driver_schedules')
+        .select('driver_id, is_available')
+        .in('driver_id', driverIds.length > 0 ? driverIds : ['00000000-0000-0000-0000-000000000000'])
+        .eq('schedule_date', selectedDate)
+
+      const availabilityMap: Record<string, boolean> = {}
+      availabilityData?.forEach((a: any) => {
+        availabilityMap[a.driver_id] = a.is_available
+      })
+
       const formattedDrivers: Driver[] = (driversData || []).map((d: any) => ({
         id: d.profile_id,
         first_name: d.profiles.first_name,
         last_name: d.profiles.last_name,
         license_number: d.license_number,
         driver_type: d.driver_type,
-        status: d.status
+        status: d.status,
+        // Available if: no schedule entry (implicitly available) OR is_available=true
+        is_available: availabilityMap[d.profile_id] !== false
       }))
       
-      // Deduplicate drivers by profile_id
+      // Deduplicate drivers by profile_id, filter to only available ones
       const uniqueDriversMap = new Map<string, Driver>()
       formattedDrivers.forEach((d) => {
-        if (!uniqueDriversMap.has(d.id)) {
+        if (!uniqueDriversMap.has(d.id) && d.is_available) {
           uniqueDriversMap.set(d.id, d)
         }
       })

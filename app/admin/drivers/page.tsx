@@ -22,6 +22,7 @@ interface Driver {
   status: 'active' | 'inactive'
   hire_date?: string
   assigned_tours_count?: number
+  is_available?: boolean // For today's availability
 }
 
 export default function AdminDriversManagement() {
@@ -101,6 +102,19 @@ export default function AdminDriversManagement() {
         }
       })
 
+      // Load availability for today
+      const driverProfileIds = (data || []).map((d: any) => d.profile_id)
+      const { data: availabilityData } = await supabase
+        .from('driver_schedules')
+        .select('driver_id, is_available')
+        .in('driver_id', driverProfileIds.length > 0 ? driverProfileIds : ['00000000-0000-0000-0000-000000000000'])
+        .eq('schedule_date', today)
+
+      const availabilityMap: Record<string, boolean> = {}
+      availabilityData?.forEach((a: any) => {
+        availabilityMap[a.driver_id] = a.is_available
+      })
+
       const formatted: Driver[] = (data || []).map((d: any) => ({
         id: d.id,
         profile_id: d.profile_id,
@@ -113,7 +127,9 @@ export default function AdminDriversManagement() {
         driver_type: d.driver_type,
         status: d.status,
         hire_date: d.hire_date || undefined,
-        assigned_tours_count: assignmentCount[d.profile_id] || 0
+        assigned_tours_count: assignmentCount[d.profile_id] || 0,
+        // Available if: no schedule entry (implicitly available) OR is_available=true
+        is_available: availabilityMap[d.profile_id] !== false
       }))
 
       // Deduplicate by profile_id
@@ -242,6 +258,29 @@ export default function AdminDriversManagement() {
     }
   }
 
+  async function toggleDriverAvailability(driver: Driver) {
+    try {
+      const today = getLocalDate()
+      const newAvailability = !driver.is_available
+      
+      // Use upsert to create or update availability
+      const { error } = await supabase
+        .from('driver_schedules')
+        .upsert({
+          driver_id: driver.profile_id,
+          schedule_date: today,
+          is_available: newAvailability
+        }, {
+          onConflict: 'driver_id,schedule_date'
+        })
+
+      if (error) throw error
+      loadDrivers()
+    } catch (error: any) {
+      alert('Error updating availability: ' + error.message)
+    }
+  }
+
   function resetForm() {
     setFormData({
       first_name: '',
@@ -316,7 +355,7 @@ export default function AdminDriversManagement() {
           </div>
 
           {/* Stats */}
-          <div className="grid grid-cols-4 gap-4">
+          <div className="grid grid-cols-5 gap-4">
             <div className="bg-white rounded-lg border border-gray-200 p-4 text-center">
               <p className="text-2xl font-bold">{drivers.length}</p>
               <p className="text-sm text-gray-500">{t('drivers.totalDrivers') || 'Total Drivers'}</p>
@@ -332,6 +371,12 @@ export default function AdminDriversManagement() {
             <div className="bg-white rounded-lg border border-gray-200 p-4 text-center">
               <p className="text-2xl font-bold text-purple-600">{drivers.filter(d => d.driver_type === 'freelance').length}</p>
               <p className="text-sm text-gray-500">{t('drivers.freelance') || 'Freelance'}</p>
+            </div>
+            <div className="bg-white rounded-lg border border-gray-200 p-4 text-center">
+              <p className="text-2xl font-bold text-green-600">
+                {drivers.filter(d => d.status === 'active' && d.is_available).length}
+              </p>
+              <p className="text-sm text-gray-500">{t('drivers.availableToday') || 'Available Today'}</p>
             </div>
           </div>
 
@@ -386,7 +431,7 @@ export default function AdminDriversManagement() {
                     <th className="px-4 py-3 font-medium">{t('drivers.license') || 'License'}</th>
                     <th className="px-4 py-3 font-medium">{t('drivers.type') || 'Type'}</th>
                     <th className="px-4 py-3 font-medium">{t('common.status')}</th>
-                    <th className="px-4 py-3 font-medium">{t('drivers.today') || 'Today'}</th>
+                    <th className="px-4 py-3 font-medium">{t('drivers.availability') || 'Availability'}</th>
                     <th className="px-4 py-3 font-medium text-right">{t('common.actions')}</th>
                   </tr>
                 </thead>
@@ -437,14 +482,23 @@ export default function AdminDriversManagement() {
                         </span>
                       </td>
                       <td className="px-4 py-3">
-                        {driver.assigned_tours_count ? (
-                          <span className="text-xs text-blue-600 font-medium">
-                            🚌 {driver.assigned_tours_count} {t('drivers.tours') || 'tours'}
-                          </span>
-                        ) : (
-                          <span className="text-xs text-green-600 font-medium">
-                            ✓ {t('drivers.available') || 'Available'}
-                          </span>
+                        <button
+                          onClick={() => toggleDriverAvailability(driver)}
+                          className={`px-2 py-1 rounded-full text-xs font-medium ${
+                            driver.is_available
+                              ? 'bg-green-100 text-green-700 hover:bg-green-200'
+                              : 'bg-red-100 text-red-700 hover:bg-red-200'
+                          }`}
+                        >
+                          {driver.is_available
+                            ? (t('drivers.available') || 'Available')
+                            : (t('drivers.unavailable') || 'Unavailable')
+                          }
+                        </button>
+                        {driver.assigned_tours_count > 0 && (
+                          <p className="text-xs text-blue-600 font-medium mt-1">
+                            🚌 {driver.assigned_tours_count} {t('drivers.assigned') || 'assigned'}
+                          </p>
                         )}
                       </td>
                       <td className="px-4 py-3 text-right">
