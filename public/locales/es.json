@@ -715,6 +715,7 @@
     "activeTours": "Tours Activos",
     "teamStatus": "Estado del Equipo",
     "guides": "Guías",
+    "drivers": "Choferes",
     "vehicles": "Vehículos",
     "attentionRequired": "Requieren Atención",
     "items": "elementos",
@@ -922,29 +923,5 @@
     "back": "Atrás",
     "delete": "Eliminar Producto",
     "confirmDelete": "¿Eliminar este producto permanentemente? Esta acción no se puede deshacer."
-  },
-  "adminDashboard": {
-    "title": "Panel de Control",
-    "toursToday": "Tours Hoy",
-    "guestsToday": "Huéspedes Hoy",
-    "onTimeRate": "% a Tiempo",
-    "incidents": "Incidentes",
-    "activeTours": "Tours Activos",
-    "teamStatus": "Estado del Equipo",
-    "guides": "Guías",
-    "drivers": "Choferes",
-    "attentionRequired": "Atención Requerida",
-    "items": "items",
-    "allClear": "✓ Todo bien",
-    "quickActions": "Acciones Rápidas",
-    "newTour": "Nuevo Tour",
-    "addUser": "Agregar Usuario",
-    "fleet": "Flota",
-    "todaysTimeline": "Timeline de Hoy",
-    "fleetStatus": "Estado de Flota",
-    "inUse": "En Uso",
-    "available": "Disponible",
-    "maintenance": "Mantenimiento",
-    "live": "EN VIVO"
   }
 }
