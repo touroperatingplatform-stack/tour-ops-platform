@@ -105,6 +105,8 @@
     "severity": "Severity",
     "description": "Description",
     "name": "Name",
+    "firstName": "First Name",
+    "lastName": "Last Name",
     "created": "Created",
     "updated": "Updated",
     "assignedTo": "Assigned To",

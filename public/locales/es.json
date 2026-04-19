@@ -46,6 +46,8 @@
     "view": "Ver",
     "details": "Detalles",
     "name": "Nombre",
+    "firstName": "Nombre",
+    "lastName": "Apellido",
     "email": "Email",
     "phone": "Teléfono",
     "address": "Dirección",
