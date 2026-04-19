@@ -303,7 +303,9 @@
     "vehicle": "Vehículo",
     "unassigned": "No Asignado",
     "confirmDelete": "¿Estás seguro de que quieres eliminar este tour?",
-    "notFound": "Tour no encontrado"
+    "notFound": "Tour no encontrado",
+    "backToTours": "Volver a Tours",
+    "noToursFound": "No se encontraron tours"
   },
   "reports": {
     "title": "Reportes y Análisis",
