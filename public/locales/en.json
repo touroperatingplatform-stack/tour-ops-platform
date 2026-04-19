@@ -257,7 +257,14 @@
     "vehicle": "Vehicle",
     "unassigned": "Unassigned",
     "confirmDelete": "Are you sure you want to delete this tour?",
-    "notFound": "Tour not found"
+    "notFound": "Tour not found",
+    "tourType": "Tour Type",
+    "selectTourType": "Select tour type (optional)",
+    "autoCreateActivities": "Activities will be auto-created from tour type",
+    "assignedDriver": "Assigned Driver",
+    "selectDriver": "Select driver...",
+    "requirePrePickup": "Require Pre-Pickup",
+    "prePickupDesc": "Guide must check in 20 min before pickup time (for private tours)"
   },
   "drivers": {
     "title": "Drivers",
@@ -941,14 +948,7 @@
     "completed": "Completed",
     "cancelled": "Cancelled",
     "saving": "Saving...",
-    "saveChanges": "Save Changes",
-    "tourType": "Tour Type",
-    "selectTourType": "Select tour type (optional)",
-    "autoCreateActivities": "Activities will be auto-created from tour type",
-    "assignedDriver": "Assigned Driver",
-    "selectDriver": "Select driver...",
-    "requirePrePickup": "Require Pre-Pickup",
-    "prePickupDesc": "Guide must check in 20 min before pickup time (for private tours)"
+    "saveChanges": "Save Changes"
   },
   "data": {
     "title": "Data",
