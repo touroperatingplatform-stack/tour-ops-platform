@@ -179,6 +179,31 @@
     "tour": "Tour",
     "guide": "Guía"
   },
+  "guides": {
+    "title": "Guías",
+    "subtitle": "Gestionar guías y asignaciones",
+    "addGuide": "Agregar Guía",
+    "totalGuides": "Total Guías",
+    "toursToday": "Tours Hoy",
+    "availableToday": "Disponibles Hoy",
+    "contact": "Contacto",
+    "availability": "Disponibilidad",
+    "available": "Disponible",
+    "unavailable": "No Disponible",
+    "toursAssigned": "tours asignados",
+    "assigned": "asignado",
+    "deactivate": "Desactivar",
+    "activate": "Activar",
+    "editGuide": "Editar Guía",
+    "addNewGuide": "Agregar Nuevo Guía",
+    "phone": "Teléfono",
+    "emailNote": "Nota: Para cambiar el email, el guía debe actualizarlo desde su propia cuenta",
+    "updateGuide": "Actualizar Guía",
+    "createGuide": "Crear Guía",
+    "noGuides": "No se encontraron guías",
+    "searchPlaceholder": "Buscar por nombre o email...",
+    "teamAvailability": "Disponibilidad del equipo"
+  },
   "drivers": {
     "title": "Choferes",
     "subtitle": "Gestionar choferes, licencias y asignaciones",
@@ -215,10 +240,15 @@
     "assign": "Asignar",
     "unassigned": "No Asignado",
     "available": "Disponible",
+    "unavailable": "No Disponible",
+    "availability": "Disponibilidad",
+    "availableToday": "Disponibles Hoy",
     "expires": "Vence",
     "notProvided": "No proporcionado",
     "toursToday": "tours hoy",
-    "today": "hoy"
+    "today": "hoy",
+    "assigned": "asignado",
+    "tours": "tours"
   },
   "tour": {
     "scheduled": "Programado",

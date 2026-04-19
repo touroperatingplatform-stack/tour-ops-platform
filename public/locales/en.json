@@ -303,10 +303,15 @@
     "assign": "Assign",
     "unassigned": "Unassigned",
     "available": "Available",
+    "unavailable": "Unavailable",
+    "availability": "Availability",
+    "availableToday": "Available Today",
     "expires": "Expires",
     "notProvided": "Not provided",
     "toursToday": "tours today",
-    "today": "today"
+    "today": "today",
+    "assigned": "assigned",
+    "tours": "tours"
   },
   "vehicles": {
     "title": "Vehicle Fleet",
@@ -704,8 +709,29 @@
     "more": "more"
   },
   "guides": {
-    "teamAvailability": "Team availability",
-    "available": "Available"
+    "title": "Guides",
+    "subtitle": "Manage guides and assignments",
+    "addGuide": "Add Guide",
+    "totalGuides": "Total Guides",
+    "toursToday": "Tours Today",
+    "availableToday": "Available Today",
+    "contact": "Contact",
+    "availability": "Availability",
+    "available": "Available",
+    "unavailable": "Unavailable",
+    "toursAssigned": "tours assigned",
+    "assigned": "assigned",
+    "deactivate": "Deactivate",
+    "activate": "Activate",
+    "editGuide": "Edit Guide",
+    "addNewGuide": "Add New Guide",
+    "phone": "Phone",
+    "emailNote": "Note: To change email, the guide must update via their own account",
+    "updateGuide": "Update Guide",
+    "createGuide": "Create Guide",
+    "noGuides": "No guides found",
+    "searchPlaceholder": "Search by name or email...",
+    "teamAvailability": "Team availability"
   },
   "driver": {
     "tours": "Tours",
