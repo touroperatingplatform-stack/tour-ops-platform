@@ -673,6 +673,9 @@
     "driver": "Driver"
   },
   "users": {
+    "title": "Team",
+    "subtitle": "Manage staff and user accounts",
+    "noUsers": "No users found",
     "manageStaff": "Manage staff",
     "backToUsers": "Back to Users",
     "createNew": "Create New User",

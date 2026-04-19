@@ -27,7 +27,6 @@ export default function UsersPage() {
   }, [])
 
   async function loadUsers() {
-    // Get current user's company
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) {
       setLoading(false)
@@ -88,101 +87,96 @@ export default function UsersPage() {
 
   if (loading) {
     return (
-      <div className="h-screen flex items-center justify-center bg-gray-50">
+      <div className="h-full flex items-center justify-center border-8 border-transparent">
         <div className="text-gray-500">{t('common.loading')}</div>
       </div>
     )
   }
 
   return (
-    <div className="h-screen flex flex-col bg-gray-50 overflow-hidden">
-      {/* Header */}
-      <header className="bg-white flex-shrink-0">
-        <div className="px-4 py-3 border-8 border-transparent">
-          <div className="flex items-center justify-between px-4 py-3">
-            <div>
-              <h1 className="text-xl font-bold">{t('nav.team')}</h1>
-              <p className="text-gray-500 text-sm">{t('users.manageStaff')}</p>
-            </div>
-            <Link 
-              href="/admin/users/new"
-              className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium text-sm"
-            >
-              + {t('common.add')}
-            </Link>
+    <div className="h-full border-8 border-transparent">
+      <div className="h-full flex flex-col gap-4">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">{t('nav.team')}</h1>
+            <p className="text-sm text-gray-500">{t('users.manageStaff')}</p>
+          </div>
+          <Link 
+            href="/admin/users/new"
+            className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700"
+          >
+            + {t('common.add')}
+          </Link>
+        </div>
+
+        {/* Stats */}
+        <div className="grid grid-cols-3 gap-4">
+          <div className="bg-white rounded-lg border border-gray-200 p-4 text-center">
+            <p className="text-2xl font-bold">{stats.total}</p>
+            <p className="text-sm text-gray-500">{t('common.total')}</p>
+          </div>
+          <div className="bg-white rounded-lg border border-gray-200 p-4 text-center">
+            <p className="text-2xl font-bold text-green-600">{stats.guides}</p>
+            <p className="text-sm text-gray-500">{t('roles.guide')}</p>
+          </div>
+          <div className="bg-white rounded-lg border border-gray-200 p-4 text-center">
+            <p className="text-2xl font-bold text-blue-600">{stats.drivers}</p>
+            <p className="text-sm text-gray-500">{t('roles.driver')}</p>
           </div>
         </div>
-      </header>
 
-      {/* Stats */}
-      <div className="px-4 py-3 flex-shrink-0 border-8 border-transparent">
-        <div className="grid grid-cols-3 gap-3">
-          <div className="bg-white rounded-xl shadow p-3 text-center">
-            <div className="text-2xl font-bold">{stats.total}</div>
-            <div className="text-gray-500 text-xs">{t('common.total')}</div>
-          </div>
-          <div className="bg-white rounded-xl shadow p-3 text-center">
-            <div className="text-2xl font-bold text-green-600">{stats.guides}</div>
-            <div className="text-gray-500 text-xs">{t('roles.guide')}</div>
-          </div>
-          <div className="bg-white rounded-xl shadow p-3 text-center">
-            <div className="text-2xl font-bold text-blue-600">{stats.drivers}</div>
-            <div className="text-gray-500 text-xs">{t('roles.driver')}</div>
+        {/* Users List */}
+        <div className="flex-1 bg-white rounded-lg border border-gray-200 overflow-hidden">
+          <div className="overflow-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-gray-50 text-left text-xs uppercase text-gray-500">
+                <tr>
+                  <th className="px-4 py-3 font-medium">{t('common.name')}</th>
+                  <th className="px-4 py-3 font-medium">{t('common.email')}</th>
+                  <th className="px-4 py-3 font-medium">{t('common.role')}</th>
+                  <th className="px-4 py-3 font-medium text-right">{t('common.actions')}</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {users.map(user => (
+                  <tr key={user.id} className="hover:bg-gray-50">
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-3">
+                        <span className="text-lg">{getRoleIcon(user.role)}</span>
+                        <p className="font-medium text-gray-900">{user.first_name} {user.last_name}</p>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3">
+                      <p className="text-gray-900 text-xs">{user.email}</p>
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${getRoleColor(user.role)}`}>
+                        {t(`roles.${user.role}`)}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      <Link 
+                        href={`/admin/users/${user.id}`}
+                        className="text-blue-600 hover:underline text-xs font-medium"
+                      >
+                        {t('common.edit')}
+                      </Link>
+                    </td>
+                  </tr>
+                ))}
+                {users.length === 0 && (
+                  <tr>
+                    <td colSpan={4} className="px-4 py-8 text-center text-gray-500">
+                      {t('users.noUsers') || 'No users found'}
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
           </div>
         </div>
       </div>
-
-      {/* Main Content */}
-      <main className="flex-1 overflow-hidden bg-white border-8 border-transparent">
-        <div className="h-full overflow-auto px-4 py-4 border-8 border-transparent">
-          <div className="space-y-2">
-            {users.map(user => (
-              <Link
-                key={user.id}
-                href={`/admin/users/${user.id}`}
-                className="block bg-white rounded-xl shadow p-4 hover:shadow-md transition-shadow"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center text-2xl">
-                    {getRoleIcon(user.role)}
-                  </div>
-                  
-                  <div className="flex-1">
-                    <h3 className="font-bold">{user.first_name} {user.last_name}</h3>
-                    <p className="text-gray-500 text-sm truncate">{user.email}</p>
-                  </div>
-                  
-                  <span className={`text-xs px-2 py-1 rounded-full ${getRoleColor(user.role)}`}>
-                    {t(`roles.${user.role}`)}
-                  </span>
-                </div>
-              </Link>
-            ))}
-          </div>
-        </div>
-      </main>
-
-      {/* Bottom Navigation */}
-      <nav className="flex-none bg-white z-50">
-        <div className="flex justify-around items-center px-2 py-2">
-          <Link href="/admin" className="flex flex-col items-center justify-center py-2 px-2 min-w-[48px] text-gray-500">
-            <span className="text-xl mb-1">📊</span>
-            <span className="text-xs">{t('nav.dashboard')}</span>
-          </Link>
-          <Link href="/admin/tours" className="flex flex-col items-center justify-center py-2 px-2 min-w-[48px] text-gray-500">
-            <span className="text-xl mb-1">🚌</span>
-            <span className="text-xs">{t('nav.tours')}</span>
-          </Link>
-          <Link href="/admin/users" className="flex flex-col items-center justify-center py-2 px-2 min-w-[48px] text-blue-600">
-            <span className="text-xl mb-1">👥</span>
-            <span className="text-xs">{t('nav.team')}</span>
-          </Link>
-          <Link href="/admin/settings" className="flex flex-col items-center justify-center py-2 px-2 min-w-[48px] text-gray-500">
-            <span className="text-xl mb-1">⚙️</span>
-            <span className="text-xs">{t('profile.settings')}</span>
-          </Link>
-        </div>
-      </nav>
     </div>
   )
 }
