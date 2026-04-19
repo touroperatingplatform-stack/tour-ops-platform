@@ -20,6 +20,8 @@ interface DashboardStats {
   onTimeRate: number
   guidesActive: number
   guidesTotal: number
+  driversActive: number
+  driversTotal: number
   vehiclesTotal: number
   vehiclesInUse: number
   vehiclesAvailable: number
@@ -32,8 +34,11 @@ interface AttentionItem {
   severity: 'high' | 'medium' | 'low'
   title: string
   tour: string
+  tourId: string
   time: string
 }
+
+const TIME_BUCKETS = ['06:00', '09:00', '12:00', '15:00', '18:00', '21:00']
 
 export default function AdminDashboard() {
   const router = useRouter()
@@ -48,12 +53,15 @@ export default function AdminDashboard() {
     onTimeRate: 0,
     guidesActive: 0,
     guidesTotal: 0,
+    driversActive: 0,
+    driversTotal: 0,
     vehiclesTotal: 0,
     vehiclesInUse: 0,
     vehiclesAvailable: 0,
     vehiclesMaintenance: 0,
   })
   const [attentionItems, setAttentionItems] = useState<AttentionItem[]>([])
+  const [timelineData, setTimelineData] = useState<number[]>([0, 0, 0, 0, 0, 0])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -88,7 +96,6 @@ export default function AdminDashboard() {
   async function loadDashboardData(companyId?: string) {
     const today = getLocalDate()
 
-    // Get company_id from profile if not provided
     let cid = companyId
     if (!cid) {
       const { data: { user } } = await supabase.auth.getUser()
@@ -105,12 +112,11 @@ export default function AdminDashboard() {
 
     const { data: tours } = await supabase
       .from('tours')
-      .select('id, status, guest_count, guide_id')
+      .select('id, status, guest_count, guide_id, start_time')
       .eq('company_id', cid)
       .eq('tour_date', today)
       .neq('status', 'cancelled')
 
-    // Get incidents only for this company's tours
     const { data: companyTours } = await supabase
       .from('tours')
       .select('id')
@@ -137,34 +143,48 @@ export default function AdminDashboard() {
       .eq('role', 'guide')
       .eq('status', 'active')
 
+    const { count: driversCount } = await supabase
+      .from('profiles')
+      .select('*', { count: 'exact', head: true })
+      .eq('company_id', cid)
+      .eq('role', 'driver')
+
+    const { count: activeDriversCount } = await supabase
+      .from('profiles')
+      .select('*', { count: 'exact', head: true })
+      .eq('company_id', cid)
+      .eq('role', 'driver')
+      .eq('status', 'active')
+
     const { data: vehicles } = await supabase
       .from('vehicles')
       .select('id, status')
       .eq('company_id', cid)
-
-    const { data: completedTours } = await supabase
-      .from('tours')
-      .select('id')
-      .eq('company_id', cid)
-      .eq('tour_date', today)
-      .eq('status', 'completed')
 
     const activeTours = tours?.filter(t => t.status === 'in_progress').length || 0
     const completedToursCount = tours?.filter(t => t.status === 'completed').length || 0
     const totalGuests = tours?.reduce((sum, t) => sum + (t.guest_count || 0), 0) || 0
     const openIncidents = incidents?.filter(i => i.status !== 'resolved').length || 0
 
-    // Calculate on-time rate from completed tours
     let onTimeRate = 0
-    if (completedTours && completedTours.length > 0) {
-      // Without actual_end_time, assume all completed tours are on-time
+    if (completedToursCount > 0) {
       onTimeRate = 100
     }
 
-    // Vehicle counts by status
     const vehiclesInUse = vehicles?.filter(v => v.status === 'in_use').length || 0
     const vehiclesAvailable = vehicles?.filter(v => v.status === 'available').length || 0
     const vehiclesMaintenance = vehicles?.filter(v => v.status === 'maintenance').length || 0
+
+    // Calculate timeline data (tours by time bucket)
+    const bucketCounts = TIME_BUCKETS.map(time => {
+      const hour = parseInt(time.split(':')[0])
+      return tours?.filter(t => {
+        const tourHour = t.start_time ? parseInt(t.start_time.split(':')[0]) : 0
+        return tourHour >= hour && tourHour < hour + 3
+      }).length || 0
+    })
+    const maxCount = Math.max(...bucketCounts, 1)
+    setTimelineData(bucketCounts.map(c => (c / maxCount) * 100))
 
     const attention: AttentionItem[] = []
     incidents?.forEach(inc => {
@@ -175,6 +195,7 @@ export default function AdminDashboard() {
           severity: inc.severity as 'high' | 'medium' | 'low',
           title: `${inc.type}: needs attention`,
           tour: inc.tour_id || '',
+          tourId: inc.tour_id || '',
           time: new Date(inc.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
         })
       }
@@ -190,6 +211,8 @@ export default function AdminDashboard() {
       onTimeRate,
       guidesActive: activeGuidesCount || 0,
       guidesTotal: guidesCount || 0,
+      driversActive: activeDriversCount || 0,
+      driversTotal: driversCount || 0,
       vehiclesTotal: vehicles?.length || 0,
       vehiclesInUse,
       vehiclesAvailable,
@@ -208,6 +231,10 @@ export default function AdminDashboard() {
     }
   }
 
+  function handleAttentionClick(tourId: string) {
+    router.push(`/admin/tours/${tourId}`)
+  }
+
   if (loading) {
     return (
       <RoleGuard requiredRole="company_admin">
@@ -222,9 +249,6 @@ export default function AdminDashboard() {
     <RoleGuard requiredRole="company_admin">
       <div className="h-full border-8 border-transparent">
         <div className="h-full flex flex-col gap-3">
-          {/* Spacer for header in layout */}
-          <div className="flex-none" />
-
           {/* KPI CARDS ROW */}
           <div className="flex-none">
             <div className="grid grid-cols-4 gap-3">
@@ -252,143 +276,147 @@ export default function AdminDashboard() {
               </div>
             </div>
           </div>
-        </div>
 
-        {/* MIDDLE SECTION */}
-        <div className="flex-1 min-h-0 overflow-hidden">
-          <div className="h-full grid grid-cols-12 gap-6">
-            {/* Timeline - Left */}
-            <div className="col-span-4 h-full overflow-auto bg-white rounded-lg border border-gray-100 p-3 flex flex-col border-8 border-transparent">
-              <div className="flex items-center justify-center gap-2 mb-4">
-                <span className="font-semibold text-sm">{t('adminDashboard.todaysTimeline')}</span>
-                <span className="text-gray-400 text-xs">{stats.toursTotal} {t('nav.tours').toLowerCase()}</span>
-              </div>
-              <div className="flex-1 flex items-end gap-1">
-                {['06:00', '09:00', '12:00', '15:00', '18:00', '21:00'].map((time, i) => (
-                  <div key={time} className="flex-1 text-center">
-                    <div
-                      className={`w-full rounded-t ${i < 3 ? 'bg-green-500' : i === 3 ? 'bg-blue-500' : 'bg-gray-200'}`}
-                      style={{ height: `${30 + Math.random() * 20}px` }}
-                    />
-                    <div className="text-xs text-gray-400 mt-1">{time}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Fleet Status - Center */}
-            <div className="col-span-4 h-full overflow-auto bg-white rounded-lg border border-gray-100 p-3 flex flex-col border-8 border-transparent">
-              <span className="font-semibold text-sm text-center mb-4">{t('adminDashboard.fleetStatus')}</span>
-              <div className="flex-1 flex flex-col justify-between">
-                <div className="flex items-center justify-between px-4 py-3 bg-gray-50 rounded-lg">
-                  <span className="text-sm">{t('adminDashboard.inUse')}</span>
-                  <span className="font-bold text-xl">{stats.vehiclesInUse}</span>
+          {/* MIDDLE SECTION */}
+          <div className="flex-1 min-h-0 overflow-hidden">
+            <div className="h-full grid grid-cols-12 gap-6">
+              {/* Timeline - Left */}
+              <div className="col-span-4 h-full overflow-auto bg-white rounded-lg border border-gray-100 p-3 flex flex-col border-8 border-transparent">
+                <div className="flex items-center justify-center gap-2 mb-4">
+                  <span className="font-semibold text-sm">{t('adminDashboard.todaysTimeline')}</span>
+                  <span className="text-gray-400 text-xs">{stats.toursTotal} {t('nav.tours').toLowerCase()}</span>
                 </div>
-                <div className="flex items-center justify-between px-4 py-3 bg-gray-50 rounded-lg">
-                  <span className="text-sm">{t('adminDashboard.available')}</span>
-                  <span className="font-bold text-xl">{stats.vehiclesAvailable}</span>
-                </div>
-                <div className="flex items-center justify-between px-4 py-3 bg-gray-50 rounded-lg">
-                  <span className="text-sm">{t('adminDashboard.maintenance')}</span>
-                  <span className="font-bold text-xl text-red-600">{stats.vehiclesMaintenance}</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Active Tours + Team - Right */}
-            <div className="col-span-4 h-full overflow-auto">
-              <div className="space-y-6">
-                <div className="bg-white rounded-lg border border-gray-100 p-3 text-center border-8 border-transparent">
-                  <div className="flex items-center justify-center gap-2 mb-2">
-                    <span className="text-xs text-gray-500 uppercase font-medium">{t('adminDashboard.activeTours')}</span>
-                    <span className="bg-green-100 text-green-700 text-xs px-2 py-0.5 rounded-full">{stats.toursActive} {t('adminDashboard.live')}</span>
-                  </div>
-                  <p className="text-3xl font-bold text-blue-600">{stats.toursActive}</p>
-                </div>
-
-                <div className="bg-white rounded-lg border border-gray-100 p-3 border-8 border-transparent">
-                  <p className="text-xs text-gray-500 uppercase font-medium text-center mb-3">{t('adminDashboard.teamStatus')}</p>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="text-center">
-                      <p className="text-xl font-bold">{stats.guidesActive}/{stats.guidesTotal}</p>
-                      <p className="text-xs text-gray-500">{t('adminDashboard.guides')}</p>
+                <div className="flex-1 flex items-end gap-1">
+                  {TIME_BUCKETS.map((time, i) => (
+                    <div key={time} className="flex-1 text-center">
+                      <div
+                        className={`w-full rounded-t ${timelineData[i] > 0 ? 'bg-green-500' : 'bg-gray-200'}`}
+                        style={{ height: `${Math.max(timelineData[i], 5)}px` }}
+                      />
+                      <div className="text-xs text-gray-400 mt-1">{time}</div>
                     </div>
-                    <div className="text-center">
-                      <p className="text-xl font-bold">{stats.vehiclesTotal}</p>
-                      <p className="text-xs text-gray-500">{t('adminDashboard.vehicles')}</p>
+                  ))}
+                </div>
+              </div>
+
+              {/* Fleet Status - Center */}
+              <div className="col-span-4 h-full overflow-auto bg-white rounded-lg border border-gray-100 p-3 flex flex-col border-8 border-transparent">
+                <span className="font-semibold text-sm text-center mb-4">{t('adminDashboard.fleetStatus')}</span>
+                <div className="flex-1 flex flex-col justify-between">
+                  <div className="flex items-center justify-between px-4 py-3 bg-gray-50 rounded-lg">
+                    <span className="text-sm">{t('adminDashboard.inUse')}</span>
+                    <span className="font-bold text-xl">{stats.vehiclesInUse}</span>
+                  </div>
+                  <div className="flex items-center justify-between px-4 py-3 bg-gray-50 rounded-lg">
+                    <span className="text-sm">{t('adminDashboard.available')}</span>
+                    <span className="font-bold text-xl">{stats.vehiclesAvailable}</span>
+                  </div>
+                  <div className="flex items-center justify-between px-4 py-3 bg-gray-50 rounded-lg">
+                    <span className="text-sm">{t('adminDashboard.maintenance')}</span>
+                    <span className="font-bold text-xl text-red-600">{stats.vehiclesMaintenance}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Active Tours + Team - Right */}
+              <div className="col-span-4 h-full overflow-auto">
+                <div className="space-y-6">
+                  <div className="bg-white rounded-lg border border-gray-100 p-3 text-center border-8 border-transparent">
+                    <div className="flex items-center justify-center gap-2 mb-2">
+                      <span className="text-xs text-gray-500 uppercase font-medium">{t('adminDashboard.activeTours')}</span>
+                      <span className="bg-green-100 text-green-700 text-xs px-2 py-0.5 rounded-full">{stats.toursActive} {t('adminDashboard.live')}</span>
+                    </div>
+                    <p className="text-3xl font-bold text-blue-600">{stats.toursActive}</p>
+                  </div>
+
+                  <div className="bg-white rounded-lg border border-gray-100 p-3 border-8 border-transparent">
+                    <p className="text-xs text-gray-500 uppercase font-medium text-center mb-3">{t('adminDashboard.teamStatus')}</p>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="text-center">
+                        <p className="text-xl font-bold">{stats.guidesActive}/{stats.guidesTotal}</p>
+                        <p className="text-xs text-gray-500">{t('adminDashboard.guides')}</p>
+                      </div>
+                      <div className="text-center">
+                        <p className="text-xl font-bold">{stats.driversActive}/{stats.driversTotal}</p>
+                        <p className="text-xs text-gray-500">{t('adminDashboard.drivers')}</p>
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
 
-        {/* BOTTOM SECTION */}
-        <div className="flex-1 min-h-0 overflow-hidden">
-          <div className="h-full grid grid-cols-12 gap-6">
-            {/* Attention Required - Left */}
-            <div className="col-span-6 h-full overflow-auto bg-white rounded-lg border border-gray-100 p-3 flex flex-col border-8 border-transparent">
-              <div className="flex items-center justify-center gap-2 mb-4">
-                <span className="font-semibold text-sm">⚠️ {t('adminDashboard.attentionRequired')}</span>
-                <span className="text-gray-400 text-xs">{attentionItems.length} {t('adminDashboard.items')}</span>
-              </div>
-              <div className="flex-1 overflow-hidden">
-                {attentionItems.length === 0 ? (
-                  <div className="h-full flex items-center justify-center text-gray-400 text-sm">
-                    {t('adminDashboard.allClear')}
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    {attentionItems.map(item => (
-                      <div key={item.id} className="flex items-start gap-2 p-2 bg-gray-50 rounded">
-                        <div className={`w-2 h-2 rounded-full mt-1.5 ${getSeverityColor(item.severity)}`} />
-                        <div className="flex-1 min-w-0">
-                          <p className="font-medium text-sm truncate">{item.title}</p>
-                          <p className="text-gray-500 text-xs truncate">{item.tour} • {item.time}</p>
+          {/* BOTTOM SECTION */}
+          <div className="flex-1 min-h-0 overflow-hidden">
+            <div className="h-full grid grid-cols-12 gap-6">
+              {/* Attention Required - Left */}
+              <div className="col-span-6 h-full overflow-auto bg-white rounded-lg border border-gray-100 p-3 flex flex-col border-8 border-transparent">
+                <div className="flex items-center justify-center gap-2 mb-4">
+                  <span className="font-semibold text-sm">⚠️ {t('adminDashboard.attentionRequired')}</span>
+                  <span className="text-gray-400 text-xs">{attentionItems.length} {t('adminDashboard.items')}</span>
+                </div>
+                <div className="flex-1 overflow-hidden">
+                  {attentionItems.length === 0 ? (
+                    <div className="h-full flex items-center justify-center text-gray-400 text-sm">
+                      {t('adminDashboard.allClear')}
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {attentionItems.map(item => (
+                        <div 
+                          key={item.id} 
+                          onClick={() => handleAttentionClick(item.tourId)}
+                          className="flex items-start gap-2 p-2 bg-gray-50 rounded cursor-pointer hover:bg-gray-100"
+                        >
+                          <div className={`w-2 h-2 rounded-full mt-1.5 ${getSeverityColor(item.severity)}`} />
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium text-sm truncate">{item.title}</p>
+                            <p className="text-gray-500 text-xs truncate">{item.tour} • {item.time}</p>
+                          </div>
+                          <button className="text-blue-600 text-xs whitespace-nowrap">
+                            {t('common.view')} →
+                          </button>
                         </div>
-                        <button className="text-blue-600 text-xs whitespace-nowrap">
-                          {t('common.view')} →
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
 
-            {/* Quick Actions - Right */}
-            <div className="col-span-6 h-full overflow-auto bg-white rounded-lg border border-gray-100 p-3 flex flex-col border-8 border-transparent">
-              <span className="font-semibold text-sm text-center mb-4">{t('adminDashboard.quickActions')}</span>
-              <div className="flex-1 grid grid-cols-2 gap-4">
-                <Link
-                  href="/admin/tours/new"
-                  className="flex flex-col items-center justify-center p-2 bg-blue-50 hover:bg-blue-100 rounded transition-colors"
-                >
-                  <span className="text-xl mb-1">🚌</span>
-                  <span className="text-xs font-medium">{t('adminDashboard.newTour')}</span>
-                </Link>
-                <Link
-                  href="/admin/users/new"
-                  className="flex flex-col items-center justify-center p-2 bg-green-50 hover:bg-green-100 rounded transition-colors"
-                >
-                  <span className="text-xl mb-1">👤</span>
-                  <span className="text-xs font-medium">{t('adminDashboard.addUser')}</span>
-                </Link>
-                <Link
-                  href="/admin/reports"
-                  className="flex flex-col items-center justify-center p-2 bg-purple-50 hover:bg-purple-100 rounded transition-colors"
-                >
-                  <span className="text-xl mb-1">📊</span>
-                  <span className="text-xs font-medium">{t('nav.reports')}</span>
-                </Link>
-                <Link
-                  href="/admin/vehicles"
-                  className="flex flex-col items-center justify-center p-2 bg-orange-50 hover:bg-orange-100 rounded transition-colors"
-                >
-                  <span className="text-xl mb-1">🚗</span>
-                  <span className="text-xs font-medium">{t('adminDashboard.fleet')}</span>
-                </Link>
+              {/* Quick Actions - Right */}
+              <div className="col-span-6 h-full overflow-auto bg-white rounded-lg border border-gray-100 p-3 flex flex-col border-8 border-transparent">
+                <span className="font-semibold text-sm text-center mb-4">{t('adminDashboard.quickActions')}</span>
+                <div className="flex-1 grid grid-cols-2 gap-4">
+                  <Link
+                    href="/admin/tours/new"
+                    className="flex flex-col items-center justify-center p-2 bg-blue-50 hover:bg-blue-100 rounded transition-colors"
+                  >
+                    <span className="text-xl mb-1">🚌</span>
+                    <span className="text-xs font-medium">{t('adminDashboard.newTour')}</span>
+                  </Link>
+                  <Link
+                    href="/admin/users/new"
+                    className="flex flex-col items-center justify-center p-2 bg-green-50 hover:bg-green-100 rounded transition-colors"
+                  >
+                    <span className="text-xl mb-1">👤</span>
+                    <span className="text-xs font-medium">{t('adminDashboard.addUser')}</span>
+                  </Link>
+                  <Link
+                    href="/admin/reports"
+                    className="flex flex-col items-center justify-center p-2 bg-purple-50 hover:bg-purple-100 rounded transition-colors"
+                  >
+                    <span className="text-xl mb-1">📊</span>
+                    <span className="text-xs font-medium">{t('nav.reports')}</span>
+                  </Link>
+                  <Link
+                    href="/admin/vehicles"
+                    className="flex flex-col items-center justify-center p-2 bg-orange-50 hover:bg-orange-100 rounded transition-colors"
+                  >
+                    <span className="text-xl mb-1">🚗</span>
+                    <span className="text-xs font-medium">{t('adminDashboard.fleet')}</span>
+                  </Link>
+                </div>
               </div>
             </div>
           </div>
