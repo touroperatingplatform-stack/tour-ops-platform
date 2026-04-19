@@ -1174,5 +1174,21 @@
     "back": "Back",
     "delete": "Delete Product",
     "confirmDelete": "Delete this product permanently? This cannot be undone."
+  },
+  "tourConfiguration": {
+    "title": "Tour Configuration",
+    "subtitle": "View system activities and manage custom ones",
+    "activities": "Activities",
+    "activitiesSubtitle": "System + Custom",
+    "checklists": "Checklists",
+    "checklistsSubtitle": "System + Custom",
+    "acknowledgement": "Acknowledgement",
+    "preDeparture": "Pre-Departure",
+    "prePickup": "Pre-Pickup",
+    "activity": "Activity",
+    "dropoff": "Dropoff",
+    "finish": "Finish",
+    "system": "System",
+    "custom": "Custom"
   }
 }

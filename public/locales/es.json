@@ -1002,5 +1002,21 @@
     "updateUser": "Actualizar detalles del usuario",
     "saving": "Guardando...",
     "saveChanges": "Guardar Cambios"
+  },
+  "tourConfiguration": {
+    "title": "Configuración de Tours",
+    "subtitle": "Ver actividades del sistema y gestionar personalizadas",
+    "activities": "Actividades",
+    "activitiesSubtitle": "Sistema + Personalizadas",
+    "checklists": "Listas de Verificación",
+    "checklistsSubtitle": "Sistema + Personalizadas",
+    "acknowledgement": "Confirmación",
+    "preDeparture": "Pre-Salida",
+    "prePickup": "Pre-Recogida",
+    "activity": "Actividad",
+    "dropoff": "Entrega",
+    "finish": "Finalización",
+    "system": "Sistema",
+    "custom": "Personalizado"
   }
 }

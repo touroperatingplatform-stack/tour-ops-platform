@@ -5,15 +5,14 @@ export const dynamic = 'force-dynamic'
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase/client'
 import { useTranslation } from '@/lib/i18n/useTranslation'
-import Link from 'next/link'
 
 const STAGES = [
-  { id: 'acknowledgement', label: 'Acknowledgement', icon: '👋' },
-  { id: 'pre_departure', label: 'Pre-Departure', icon: '🚐' },
-  { id: 'pre_pickup', label: 'Pre-Pickup', icon: '📍' },
-  { id: 'activity', label: 'Activity', icon: '🎯' },
-  { id: 'dropoff', label: 'Dropoff', icon: '🏁' },
-  { id: 'finish', label: 'Finish', icon: '✅' }
+  { id: 'acknowledgement', labelKey: 'acknowledgement', icon: '👋' },
+  { id: 'pre_departure', labelKey: 'preDeparture', icon: '🚐' },
+  { id: 'pre_pickup', labelKey: 'prePickup', icon: '📍' },
+  { id: 'activity', labelKey: 'activity', icon: '🎯' },
+  { id: 'dropoff', labelKey: 'dropoff', icon: '🏁' },
+  { id: 'finish', labelKey: 'finish', icon: '✅' }
 ]
 
 export default function CompanyTourConfigurationPage() {
@@ -62,27 +61,27 @@ export default function CompanyTourConfigurationPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-full">
-        <div className="text-gray-500">Loading...</div>
+      <div className="h-full flex items-center justify-center border-8 border-transparent">
+        <div className="text-gray-500">{t('common.loading')}</div>
       </div>
     )
   }
 
   return (
-    <div className="h-full overflow-auto">
-      {/* Page Header */}
-      <div className="px-6 py-4 border-b border-gray-200 bg-white">
-        <h1 className="text-xl font-bold text-gray-900">Tour Configuration</h1>
-        <p className="text-gray-500 text-sm">View system activities and manage custom ones</p>
-      </div>
+    <div className="h-full border-8 border-transparent">
+      <div className="h-full flex flex-col gap-4">
+        {/* Header */}
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">{t('tourConfiguration.title')}</h1>
+          <p className="text-sm text-gray-500">{t('tourConfiguration.subtitle')}</p>
+        </div>
 
-      <div className="p-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4 overflow-auto">
           {/* Activities */}
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
+          <div className="bg-white rounded-lg border border-gray-200 p-6">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold">Activities ({activities.length})</h2>
-              <span className="text-xs text-gray-500">System + Custom</span>
+              <h2 className="text-lg font-semibold text-gray-900">{t('tourConfiguration.activities')} ({activities.length})</h2>
+              <span className="text-xs text-gray-500">{t('tourConfiguration.activitiesSubtitle')}</span>
             </div>
             <div className="space-y-3">
               {activities.map(activity => (
@@ -95,9 +94,9 @@ export default function CompanyTourConfigurationPage() {
                     </div>
                   </div>
                   {activity.is_system ? (
-                    <span className="text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded">System</span>
+                    <span className="text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded">{t('tourConfiguration.system')}</span>
                   ) : (
-                    <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded">Custom</span>
+                    <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded">{t('tourConfiguration.custom')}</span>
                   )}
                 </div>
               ))}
@@ -105,10 +104,10 @@ export default function CompanyTourConfigurationPage() {
           </div>
 
           {/* Checklists */}
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
+          <div className="bg-white rounded-lg border border-gray-200 p-6">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold">Checklists ({checklists.length})</h2>
-              <span className="text-xs text-gray-500">System + Custom</span>
+              <h2 className="text-lg font-semibold text-gray-900">{t('tourConfiguration.checklists')} ({checklists.length})</h2>
+              <span className="text-xs text-gray-500">{t('tourConfiguration.checklistsSubtitle')}</span>
             </div>
             <div className="space-y-2">
               {STAGES.map(stage => {
@@ -117,7 +116,7 @@ export default function CompanyTourConfigurationPage() {
                   <div key={stage.id} className="border border-gray-200 rounded-lg p-3">
                     <div className="flex items-center gap-2 mb-2">
                       <span>{stage.icon}</span>
-                      <span className="font-medium text-sm">{stage.label}</span>
+                      <span className="font-medium text-sm">{t(`tourConfiguration.${stage.labelKey}`)}</span>
                       <span className="text-xs text-gray-500">({stageChecklists.length})</span>
                     </div>
                     <div className="space-y-1">
@@ -125,9 +124,9 @@ export default function CompanyTourConfigurationPage() {
                         <div key={checklist.id} className="flex items-center justify-between text-sm">
                           <span className="text-gray-700">📋 {checklist.name}</span>
                           {checklist.is_system ? (
-                            <span className="text-xs text-gray-400">System</span>
+                            <span className="text-xs text-gray-400">{t('tourConfiguration.system')}</span>
                           ) : (
-                            <span className="text-xs text-blue-600">Custom</span>
+                            <span className="text-xs text-blue-600">{t('tourConfiguration.custom')}</span>
                           )}
                         </div>
                       ))}
