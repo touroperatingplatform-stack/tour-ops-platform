@@ -386,6 +386,22 @@
     "vehicle": "Vehicle",
     "guests": "Guests"
   },
+  "guests": {
+    "title": "Guests",
+    "subtitle": "Manage guest check-ins and assignments",
+    "total": "Total",
+    "checkedIn": "Checked In",
+    "pending": "Pending",
+    "noShow": "No Show",
+    "contact": "Contact",
+    "hotel": "Hotel",
+    "tour": "Tour",
+    "searchPlaceholder": "Search by name, email, hotel...",
+    "checkIn": "Check In",
+    "markNoShow": "Mark No Show",
+    "noGuests": "No guests found",
+    "room": "Room"
+  },
   "expenses": {
     "title": "Expense Approvals",
     "expenseApprovals": "Expense Approvals",
