@@ -9,7 +9,6 @@ import { supabase } from '@/lib/supabase/client'
 import RoleGuard from '@/lib/auth/RoleGuard'
 import { getLocalDate } from '@/lib/timezone'
 import { useTranslation } from '@/lib/i18n/useTranslation'
-import { Calendar } from 'lucide-react'
 
 interface Guide {
   id: string
@@ -274,8 +273,7 @@ export default function GuidesManagement() {
                 href="/admin/guides/availability"
                 className="flex items-center gap-2 bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-lg font-medium hover:bg-gray-50"
               >
-                <Calendar className="w-4 h-4" />
-                {t('guides.manageAvailability') || 'Manage Availability'}
+                📅 {t('guides.manageAvailability') || 'Manage Availability'}
               </Link>
               <button
                 onClick={() => {

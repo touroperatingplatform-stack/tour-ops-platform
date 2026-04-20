@@ -8,7 +8,6 @@ import { supabase } from '@/lib/supabase/client'
 import RoleGuard from '@/lib/auth/RoleGuard'
 import { getLocalDate } from '@/lib/timezone'
 import { useTranslation } from '@/lib/i18n/useTranslation'
-import { Calendar } from 'lucide-react'
 
 interface Driver {
   id: string
@@ -344,15 +343,23 @@ export default function AdminDriversManagement() {
               <h1 className="text-2xl font-bold text-gray-900">{t('drivers.title') || 'Drivers'}</h1>
               <p className="text-sm text-gray-500">{t('drivers.subtitle') || 'Manage drivers, licenses, and assignments'}</p>
             </div>
-            <button
-              onClick={() => {
-                resetForm()
-                setShowAddModal(true)
-              }}
-              className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700"
-            >
-              + {t('drivers.addDriver') || 'Add Driver'}
-            </button>
+            <div className="flex items-center gap-2">
+              <Link
+                href="/admin/drivers/availability"
+                className="flex items-center gap-2 bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-lg font-medium hover:bg-gray-50"
+              >
+                📅 {t('drivers.manageAvailability') || 'Manage Availability'}
+              </Link>
+              <button
+                onClick={() => {
+                  resetForm()
+                  setShowAddModal(true)
+                }}
+                className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700"
+              >
+                + {t('drivers.addDriver') || 'Add Driver'}
+              </button>
+            </div>
           </div>
 
           {/* Stats */}

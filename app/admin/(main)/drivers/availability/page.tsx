@@ -7,7 +7,6 @@ import Link from 'next/link'
 import { supabase } from '@/lib/supabase/client'
 import { getLocalDate, formatDate } from '@/lib/timezone'
 import { useTranslation } from '@/lib/i18n/useTranslation'
-import { ChevronLeft, ChevronRight, X, AlertCircle } from 'lucide-react'
 
 interface Driver {
   id: string
@@ -215,14 +214,14 @@ export default function DriverAvailabilityPage() {
                 onClick={prevMonth}
                 className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
               >
-                <ChevronLeft className="w-5 h-5" />
+                ←
               </button>
               <span className="text-lg font-semibold min-w-[140px] text-center">{monthYear}</span>
               <button
                 onClick={nextMonth}
                 className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
               >
-                <ChevronRight className="w-5 h-5" />
+                →
               </button>
             </div>
           </div>
@@ -291,7 +290,7 @@ export default function DriverAvailabilityPage() {
                   {/* Conflict indicator */}
                   {conflicts.length > 0 && (
                     <div className="absolute top-2 right-2" title={`${conflicts.length} conflict(s)`}>
-                      <AlertCircle className="w-4 h-4 text-red-500" />
+                      ⚠️
                     </div>
                   )}
                 </div>
@@ -338,7 +337,7 @@ export default function DriverAvailabilityPage() {
                   onClick={() => setSelectedDate(null)}
                   className="p-2 hover:bg-gray-100 rounded-lg"
                 >
-                  <X className="w-5 h-5" />
+                  ✕
                 </button>
               </div>
               
@@ -435,8 +434,7 @@ function DatePanelContent({ date, drivers, availability, tours, onSave, saving }
             
             {hasAssignedTour && (
               <div className="flex items-center gap-1 text-xs text-red-600">
-                <AlertCircle className="w-3 h-3" />
-                <span>Has tour</span>
+                ⚠️ <span>{t('calendar.hasTour')}</span>
               </div>
             )}
           </div>
