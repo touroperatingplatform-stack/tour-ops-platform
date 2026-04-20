@@ -258,7 +258,7 @@
   "calendar": {
     "title": "Disponibilidad",
     "clickDate": "Haz clic en una fecha para gestionar la disponibilidad",
-    "selectUnavailable": "Seleccionar {role}s no disponibles",
+    "selectUnavailable": "Seleccionar personal no disponible",
     "saveChanges": "Guardar Cambios",
     "saving": "Guardando...",
     "hasTour": "Tiene tour",

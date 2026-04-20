@@ -360,7 +360,7 @@ export default function DriverAvailabilityPage() {
                   <h2 className="text-lg font-semibold text-gray-900">
                     {selectedDate}
                   </h2>
-                  <p className="text-sm text-gray-500">{t('calendar.selectUnavailable', { role: t('roles.driver').toLowerCase() })}</p>
+                  <p className="text-sm text-gray-500">{t('calendar.selectUnavailable')}</p>
                 </div>
                 <button
                   onClick={() => setSelectedDate(null)}

@@ -331,7 +331,7 @@
   "calendar": {
     "title": "Availability",
     "clickDate": "Click a date to manage availability",
-    "selectUnavailable": "Select unavailable {role}s",
+    "selectUnavailable": "Select unavailable staff",
     "saveChanges": "Save Changes",
     "saving": "Saving...",
     "hasTour": "Has tour",
