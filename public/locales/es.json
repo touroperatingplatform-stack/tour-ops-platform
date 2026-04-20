@@ -292,7 +292,7 @@
     "noShow": "No Se Presentó",
     "pending": "Pendiente",
     "showing": "Mostrando",
-    "guests": "huéspedes",
+    "guests": "Huéspedes",
     "hotel": "Hotel",
     "room": "Habitación",
     "adults": "adultos",
@@ -345,7 +345,10 @@
     "assignedDriver": "Chofer Asignado",
     "selectDriver": "Seleccionar chofer...",
     "requirePrePickup": "Requerir Pre-Recogida",
-    "prePickupDesc": "El guía debe hacer check-in 20 min antes de la hora de recogida (para tours privados)"
+    "prePickupDesc": "El guía debe hacer check-in 20 min antes de la hora de recogida (para tours privados)",
+    "name": "Nombre del Tour",
+    "time": "Hora",
+    "driver": "Chofer"
   },
   "reports": {
     "title": "Reportes y Análisis",

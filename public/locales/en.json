@@ -274,7 +274,11 @@
     "assignedDriver": "Assigned Driver",
     "selectDriver": "Select driver...",
     "requirePrePickup": "Require Pre-Pickup",
-    "prePickupDesc": "Guide must check in 20 min before pickup time (for private tours)"
+    "prePickupDesc": "Guide must check in 20 min before pickup time (for private tours)",
+    "name": "Tour Name",
+    "time": "Time",
+    "guests": "Guests",
+    "driver": "Driver"
   },
   "drivers": {
     "title": "Drivers",
