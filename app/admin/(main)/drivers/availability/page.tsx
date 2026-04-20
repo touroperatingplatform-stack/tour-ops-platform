@@ -25,11 +25,12 @@ interface Availability {
 interface Tour {
   id: string
   driver_id: string
-  date: string
+  tour_date: string
 }
 
 // Helper to get year and month from date string YYYY-MM-DD
 function parseDateStr(dateStr: string): { year: number; month: number; day: number } {
+  if (!dateStr) return { year: 2024, month: 0, day: 1 }
   const [year, month, day] = dateStr.split('-').map(Number)
   return { year, month: month - 1, day } // month is 0-indexed
 }
@@ -135,10 +136,10 @@ export default function DriverAvailabilityPage() {
     // Load tours for conflict checking
     const { data: toursData } = await supabase
       .from('tours')
-      .select('id, driver_id, date')
+      .select('id, driver_id, tour_date')
       .eq('company_id', profile.company_id)
-      .gte('date', startDate)
-      .lt('date', endDate)
+      .gte('tour_date', startDate)
+      .lt('tour_date', endDate)
       .not('driver_id', 'is', null)
 
     if (toursData) {
@@ -182,7 +183,7 @@ export default function DriverAvailabilityPage() {
     const unavailableIds = availability
       .filter(a => a.schedule_date === dateStr && !a.is_available)
       .map(a => a.driver_id)
-    return tours.filter(t => t.date === dateStr && unavailableIds.includes(t.driver_id))
+    return tours.filter(t => t.tour_date === dateStr && unavailableIds.includes(t.driver_id))
   }
 
   function isPastDate(dateStr: string): boolean {
@@ -420,7 +421,7 @@ function DatePanelContent({ date, drivers, availability, tours, onSave, saving }
   }
   
   const hasTour = (driverId: string) => {
-    return tours.some(t => t.date === date && t.driver_id === driverId)
+    return tours.some(t => t.tour_date === date && t.driver_id === driverId)
   }
 
   return (
