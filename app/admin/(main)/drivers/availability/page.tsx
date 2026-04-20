@@ -3,7 +3,6 @@
 export const dynamic = 'force-dynamic'
 
 import { useState, useEffect, useMemo } from 'react'
-import Link from 'next/link'
 import { supabase } from '@/lib/supabase/client'
 import { getLocalDate } from '@/lib/timezone'
 import { useTranslation } from '@/lib/i18n/useTranslation'
@@ -13,7 +12,6 @@ interface Driver {
   first_name: string
   last_name: string
   email: string
-  avatar_url?: string
 }
 
 interface Availability {
@@ -22,206 +20,184 @@ interface Availability {
   is_available: boolean
 }
 
-interface Tour {
-  id: string
-  driver_id: string
-  tour_date: string
+// Get today's date as YYYY-MM-DD
+function getToday(): string {
+  return getLocalDate()
 }
 
-// Helper to get year and month from date string YYYY-MM-DD
-function parseDateStr(dateStr: string): { year: number; month: number; day: number } {
-  if (!dateStr) return { year: 2024, month: 0, day: 1 }
-  const [year, month, day] = dateStr.split('-').map(Number)
-  return { year, month: month - 1, day } // month is 0-indexed
+// Get year/month from YYYY-MM-DD
+function getYearMonthDay(dateStr: string): { year: number; month: number; day: number } {
+  const parts = dateStr.split('-')
+  return {
+    year: parseInt(parts[0]) || 2024,
+    month: parseInt(parts[1]) || 1,
+    day: parseInt(parts[2]) || 1
+  }
 }
 
-// Helper to format date string for display
-function formatMonthYear(dateStr: string, locale: string = 'en-US'): string {
-  const { year, month } = parseDateStr(dateStr)
-  const date = new Date(year, month, 1)
-  return date.toLocaleDateString(locale, { month: 'long', year: 'numeric' })
+// Create YYYY-MM-DD from components
+function makeDateStr(year: number, month: number, day: number): string {
+  return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`
 }
 
-// Helper to get days in month
+// Get first day of month (0 = Sunday)
+function getFirstDay(year: number, month: number): number {
+  return new Date(year, month - 1, 1).getDay()
+}
+
+// Get days in month
 function getDaysInMonth(year: number, month: number): number {
-  return new Date(year, month + 1, 0).getDate()
+  return new Date(year, month, 0).getDate()
 }
 
-// Helper to get first day of month (0 = Sunday)
-function getFirstDayOfMonth(year: number, month: number): number {
-  return new Date(year, month, 1).getDay()
+// Add months to a date
+function addMonths(dateStr: string, addMonths: number): string {
+  const { year, month, day } = getYearMonthDay(dateStr)
+  const newDate = new Date(year, month - 1 + addMonths, day)
+  return makeDateStr(newDate.getFullYear(), newDate.getMonth() + 1, newDate.getDate())
 }
 
-// Helper to create date string
-function createDateStr(year: number, month: number, day: number): string {
-  return `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
-}
-
-// Helper to add months to a date string
-function addMonths(dateStr: string, months: number): string {
-  const { year, month, day } = parseDateStr(dateStr)
-  const newDate = new Date(year, month + months, day)
-  return createDateStr(newDate.getFullYear(), newDate.getMonth(), newDate.getDate())
+// Format month name
+function formatMonthName(dateStr: string): string {
+  const { year, month } = getYearMonthDay(dateStr)
+  return new Date(year, month - 1, 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
 }
 
 export default function DriverAvailabilityPage() {
   const { t } = useTranslation()
   const [drivers, setDrivers] = useState<Driver[]>([])
   const [availability, setAvailability] = useState<Availability[]>([])
-  const [tours, setTours] = useState<Tour[]>([])
   const [loading, setLoading] = useState(true)
-  // Use string dates (YYYY-MM-DD) like the rest of the platform
-  const [currentMonth, setCurrentMonth] = useState<string>(getLocalDate().slice(0, 7) + '-01')
+  const [error, setError] = useState<string | null>(null)
+  
+  const today = getToday()
+  const [currentMonthStr, setCurrentMonthStr] = useState(today.slice(0, 7) + '-01') // YYYY-MM-01
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
-  const [companyId, setCompanyId] = useState<string | null>(null)
 
-  const today = getLocalDate()
+  // Parse current month
+  const { year: currentYear, month: currentMonth } = getYearMonthDay(currentMonthStr)
 
   useEffect(() => {
     loadData()
-  }, [currentMonth])
+  }, [currentMonthStr])
 
   async function loadData() {
     setLoading(true)
+    setError(null)
     
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) {
-      setLoading(false)
-      return
-    }
-    
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('company_id')
-      .eq('id', user.id)
-      .single()
-    
-    if (!profile?.company_id) {
-      setLoading(false)
-      return
-    }
-    
-    setCompanyId(profile.company_id)
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) {
+        setError('Not authenticated')
+        setLoading(false)
+        return
+      }
+      
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('company_id')
+        .eq('id', user.id)
+        .single()
+      
+      if (!profile?.company_id) {
+        setError('No company')
+        setLoading(false)
+        return
+      }
 
-    // Load drivers
-    const { data: driversData } = await supabase
-      .from('profiles')
-      .select('id, first_name, last_name, email, avatar_url')
-      .eq('company_id', profile.company_id)
-      .eq('role', 'driver')
-      .eq('status', 'active')
-      .order('first_name')
+      // Load drivers
+      const { data: driversData, error: driversError } = await supabase
+        .from('profiles')
+        .select('id, first_name, last_name, email')
+        .eq('company_id', profile.company_id)
+        .eq('role', 'driver')
+        .eq('status', 'active')
+        .order('first_name')
 
-    if (driversData) {
-      setDrivers(driversData)
-    }
+      if (driversError) {
+        setError('Failed to load drivers: ' + driversError.message)
+        setLoading(false)
+        return
+      }
 
-    // Load availability for current month view
-    const { year, month } = parseDateStr(currentMonth)
-    const startDate = createDateStr(year, month, 1)
-    const endDate = createDateStr(year, month + 1, 1)
+      if (driversData) {
+        setDrivers(driversData)
+      }
 
-    const { data: availData } = await supabase
-      .from('driver_schedules')
-      .select('driver_id, schedule_date, is_available')
-      .eq('company_id', profile.company_id)
-      .gte('schedule_date', startDate)
-      .lt('schedule_date', endDate)
+      // Load availability
+      const startDate = makeDateStr(currentYear, currentMonth, 1)
+      const endDate = makeDateStr(currentYear, currentMonth + 1, 1)
 
-    if (availData) {
-      setAvailability(availData)
-    }
+      const { data: availData, error: availError } = await supabase
+        .from('driver_schedules')
+        .select('driver_id, schedule_date, is_available')
+        .eq('company_id', profile.company_id)
+        .gte('schedule_date', startDate)
+        .lt('schedule_date', endDate)
 
-    // Load tours for conflict checking
-    const { data: toursData } = await supabase
-      .from('tours')
-      .select('id, driver_id, tour_date')
-      .eq('company_id', profile.company_id)
-      .gte('tour_date', startDate)
-      .lt('tour_date', endDate)
-      .not('driver_id', 'is', null)
+      if (availError) {
+        setError('Failed to load availability: ' + availError.message)
+        setLoading(false)
+        return
+      }
 
-    if (toursData) {
-      setTours(toursData)
+      if (availData) {
+        setAvailability(availData)
+      }
+    } catch (e: any) {
+      setError('Error: ' + e.message)
     }
 
     setLoading(false)
   }
 
+  // Build calendar days
   const calendarDays = useMemo(() => {
-    const { year, month } = parseDateStr(currentMonth)
-    const daysInMonth = getDaysInMonth(year, month)
-    const firstDay = getFirstDayOfMonth(year, month)
+    const firstDay = getFirstDay(currentYear, currentMonth)
+    const daysInMonth = getDaysInMonth(currentYear, currentMonth)
     
     const days: (string | null)[] = []
     
-    // Padding from previous month
+    // Empty slots for previous month
     for (let i = 0; i < firstDay; i++) {
       days.push(null)
     }
     
     // Actual days
     for (let i = 1; i <= daysInMonth; i++) {
-      days.push(createDateStr(year, month, i))
+      days.push(makeDateStr(currentYear, currentMonth, i))
     }
     
     return days
-  }, [currentMonth])
+  }, [currentYear, currentMonth])
 
-  const monthYear = formatMonthYear(currentMonth)
-  const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
-
-  function getUnavailableForDate(dateStr: string): Driver[] {
-    const unavailableIds = availability
-      .filter(a => a.schedule_date === dateStr && !a.is_available)
-      .map(a => a.driver_id)
-    return drivers.filter(d => unavailableIds.includes(d.id))
+  function getUnavailableCount(dateStr: string): number {
+    return availability.filter(a => a.schedule_date === dateStr && !a.is_available).length
   }
 
-  function getConflictsForDate(dateStr: string): Tour[] {
-    const unavailableIds = availability
-      .filter(a => a.schedule_date === dateStr && !a.is_available)
-      .map(a => a.driver_id)
-    return tours.filter(t => t.tour_date === dateStr && unavailableIds.includes(t.driver_id))
-  }
-
-  function isPastDate(dateStr: string): boolean {
+  function isPast(dateStr: string): boolean {
     return dateStr < today
   }
 
-  function isToday(dateStr: string): boolean {
+  function isTodayDate(dateStr: string): boolean {
     return dateStr === today
   }
 
-  async function saveAllChanges(selectedIds: Set<string>) {
-    if (!selectedDate || !companyId) return
-    
-    setSaving(true)
-    
-    const updates = drivers.map(driver => ({
-      driver_id: driver.id,
-      schedule_date: selectedDate,
-      is_available: !selectedIds.has(driver.id)
-    }))
-    
-    await supabase
-      .from('driver_schedules')
-      .upsert(updates, {
-        onConflict: 'driver_id,schedule_date'
-      })
-    
-    await loadData()
-    setSaving(false)
-  }
-
-  const prevMonth = () => setCurrentMonth(addMonths(currentMonth, -1))
-  const nextMonth = () => setCurrentMonth(addMonths(currentMonth, 1))
+  const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
   if (loading) {
     return (
       <div className="h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-gray-500">{t('common.loading')}</div>
+        <div className="text-gray-500">{t('common.loading') || 'Loading...'}</div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-red-500">{error}</div>
       </div>
     )
   }
@@ -233,20 +209,22 @@ export default function DriverAvailabilityPage() {
         <div className="px-6 py-4">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-xl font-bold text-gray-900">{t('roles.driver')} {t('calendar.title')}</h1>
-              <p className="text-gray-500 text-sm">{t('calendar.clickDate')}</p>
+              <h1 className="text-xl font-bold text-gray-900">Driver Availability</h1>
+              <p className="text-gray-500 text-sm">Click a date to manage availability</p>
             </div>
             <div className="flex items-center gap-4">
               <button
-                onClick={prevMonth}
-                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                onClick={() => setCurrentMonthStr(addMonths(currentMonthStr, -1))}
+                className="p-2 hover:bg-gray-100 rounded-lg"
               >
                 ←
               </button>
-              <span className="text-lg font-semibold min-w-[140px] text-center">{monthYear}</span>
+              <span className="text-lg font-semibold min-w-[180px] text-center">
+                {formatMonthName(currentMonthStr)}
+              </span>
               <button
-                onClick={nextMonth}
-                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                onClick={() => setCurrentMonthStr(addMonths(currentMonthStr, 1))}
+                className="p-2 hover:bg-gray-100 rounded-lg"
               >
                 →
               </button>
@@ -274,208 +252,145 @@ export default function DriverAvailabilityPage() {
                 return <div key={`empty-${i}`} className="bg-gray-50 min-h-[100px]" />
               }
               
-              const unavailable = getUnavailableForDate(dateStr)
-              const conflicts = getConflictsForDate(dateStr)
-              const isPast = isPastDate(dateStr)
-              const isTodayDate = isToday(dateStr)
-              const parsed = parseDateStr(dateStr)
-              const dayNum = parsed.day
-              const isWeekend = [0, 6].includes(new Date(parsed.year, parsed.month, dayNum).getDay())
+              const unavailableCount = getUnavailableCount(dateStr)
+              const isPastDate = isPast(dateStr)
+              const isToday = isTodayDate(dateStr)
+              const dayNum = parseInt(dateStr.split('-')[2]) || 1
+              const isWeekend = [0, 6].includes(new Date(currentYear, currentMonth - 1, dayNum).getDay())
               
               return (
                 <div
                   key={dateStr}
-                  onClick={() => !isPast && setSelectedDate(dateStr)}
+                  onClick={() => !isPastDate && setSelectedDate(dateStr)}
                   className={`
                     bg-white min-h-[100px] p-2 cursor-pointer transition-colors relative
-                    ${isPast ? 'bg-gray-50' : 'hover:bg-gray-50'}
-                    ${isTodayDate ? 'ring-2 ring-blue-500 ring-inset' : ''}
-                    ${isWeekend && !isPast ? 'bg-gray-50/50' : ''}
+                    ${isPastDate ? 'bg-gray-50' : 'hover:bg-gray-50'}
+                    ${isToday ? 'ring-2 ring-blue-500 ring-inset' : ''}
+                    ${isWeekend && !isPastDate ? 'bg-gray-50/50' : ''}
                   `}
                 >
                   <div className={`
                     text-sm font-semibold mb-1
-                    ${isPast ? 'text-gray-400' : 'text-gray-700'}
-                    ${isTodayDate ? 'text-blue-600' : ''}
+                    ${isPastDate ? 'text-gray-400' : 'text-gray-700'}
+                    ${isToday ? 'text-blue-600' : ''}
                   `}>
                     {dayNum}
                   </div>
                   
-                  {/* Unavailable badges */}
-                  <div className="space-y-1">
-                    {unavailable.slice(0, 3).map(driver => (
-                      <div
-                        key={driver.id}
-                        className="text-xs bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded truncate"
-                      >
-                        {driver.first_name}
-                      </div>
-                    ))}
-                    {unavailable.length > 3 && (
-                      <div className="text-xs text-gray-500">+{unavailable.length - 3} more</div>
-                    )}
-                  </div>
-                  
-                  {/* Conflict indicator */}
-                  {conflicts.length > 0 && (
-                    <div className="absolute top-2 right-2" title={`${conflicts.length} conflict(s)`}>
-                      ⚠️
+                  {unavailableCount > 0 && (
+                    <div className="text-xs bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded inline-block">
+                      {unavailableCount} unavailable
                     </div>
                   )}
                 </div>
               )
             })}
           </div>
-          
-          {/* Legend */}
-          <div className="flex items-center gap-6 mt-4 text-sm text-gray-600">
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-blue-400"></div>
-              <span>{t('calendar.unavailable')}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-red-500"></div>
-              <span>{t('calendar.conflict')}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 border-2 border-blue-500"></div>
-              <span>{t('calendar.today')}</span>
-            </div>
-          </div>
         </div>
       </main>
 
       {/* Slide-out Panel */}
       {selectedDate && (
-        <div className="fixed inset-0 z-50">
-          <div 
-            className="absolute inset-0 bg-black/30"
-            onClick={() => setSelectedDate(null)}
-          />
-          <div className="absolute right-0 top-0 bottom-0 w-96 bg-white shadow-xl">
-            <div className="h-full flex flex-col">
-              {/* Panel header */}
-              <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
-                <div>
-                  <h2 className="text-lg font-semibold text-gray-900">
-                    {selectedDate}
-                  </h2>
-                  <p className="text-sm text-gray-500">{t('calendar.selectUnavailable')}</p>
-                </div>
-                <button
-                  onClick={() => setSelectedDate(null)}
-                  className="p-2 hover:bg-gray-100 rounded-lg"
-                >
-                  ✕
-                </button>
-              </div>
+        <SlideOutPanel
+          date={selectedDate}
+          drivers={drivers}
+          availability={availability}
+          onClose={() => setSelectedDate(null)}
+          onSave={async (selectedIds) => {
+            setSaving(true)
+            try {
+              const updates = drivers.map(driver => ({
+                driver_id: driver.id,
+                schedule_date: selectedDate,
+                is_available: !selectedIds.has(driver.id)
+              }))
               
-              {/* Driver list */}
-              <div className="flex-1 overflow-auto p-6">
-                <DatePanelContent
-                  date={selectedDate}
-                  drivers={drivers}
-                  availability={availability}
-                  tours={tours}
-                  onSave={saveAllChanges}
-                  saving={saving}
-                />
-              </div>
-            </div>
-          </div>
-        </div>
+              await supabase
+                .from('driver_schedules')
+                .upsert(updates, { onConflict: 'driver_id,schedule_date' })
+              
+              await loadData()
+            } catch (e) {
+              console.error(e)
+            }
+            setSaving(false)
+          }}
+          saving={saving}
+        />
       )}
     </div>
   )
 }
 
-interface DatePanelContentProps {
+interface SlideOutPanelProps {
   date: string
   drivers: Driver[]
   availability: Availability[]
-  tours: Tour[]
+  onClose: () => void
   onSave: (selectedIds: Set<string>) => void
   saving: boolean
 }
 
-function DatePanelContent({ date, drivers, availability, tours, onSave, saving }: DatePanelContentProps) {
-  const { t } = useTranslation()
+function SlideOutPanel({ date, drivers, availability, onClose, onSave, saving }: SlideOutPanelProps) {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   
   useEffect(() => {
-    // Initialize with currently unavailable drivers
     const unavailableIds = availability
       .filter(a => a.schedule_date === date && !a.is_available)
       .map(a => a.driver_id)
     setSelectedIds(new Set(unavailableIds))
   }, [date, availability])
   
-  const toggleDriver = (driverId: string) => {
-    const newSet = new Set(selectedIds)
-    if (newSet.has(driverId)) {
-      newSet.delete(driverId)
-    } else {
-      newSet.add(driverId)
-    }
-    setSelectedIds(newSet)
-  }
-  
-  const hasTour = (driverId: string) => {
-    return tours.some(t => t.tour_date === date && t.driver_id === driverId)
+  const toggle = (id: string) => {
+    const next = new Set(selectedIds)
+    if (next.has(id)) next.delete(id)
+    else next.add(id)
+    setSelectedIds(next)
   }
 
   return (
-    <div className="space-y-4">
-      {drivers.map(driver => {
-        const isSelected = selectedIds.has(driver.id)
-        const hasAssignedTour = hasTour(driver.id)
-        
-        return (
-          <div
-            key={driver.id}
-            onClick={() => toggleDriver(driver.id)}
-            className={`
-              flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors
-              ${isSelected 
-                ? 'border-blue-300 bg-blue-50' 
-                : 'border-gray-200 hover:border-gray-300'
-              }
-            `}
-          >
-            <div className={`
-              w-5 h-5 rounded border-2 flex items-center justify-center
-              ${isSelected ? 'bg-blue-500 border-blue-500' : 'border-gray-300'}
-            `}>
-              {isSelected && <span className="text-white text-xs">✓</span>}
-            </div>
-            
-            <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center text-sm">
-              {driver.first_name[0]}{driver.last_name[0]}
-            </div>
-            
-            <div className="flex-1">
-              <div className="font-medium text-gray-900">
-                {driver.first_name} {driver.last_name}
-              </div>
-              <div className="text-xs text-gray-500">{driver.email}</div>
-            </div>
-            
-            {hasAssignedTour && (
-              <div className="flex items-center gap-1 text-xs text-red-600">
-                ⚠️ <span>{t('calendar.hasTour')}</span>
-              </div>
-            )}
+    <div className="fixed inset-0 z-50">
+      <div className="absolute inset-0 bg-black/30" onClick={onClose} />
+      <div className="absolute right-0 top-0 bottom-0 w-96 bg-white shadow-xl">
+        <div className="h-full flex flex-col">
+          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+            <h2 className="text-lg font-semibold">{date}</h2>
+            <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded">✕</button>
           </div>
-        )
-      })}
-      
-      <button
-        onClick={() => onSave(selectedIds)}
-        disabled={saving}
-        className="w-full py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50"
-      >
-        {saving ? t('calendar.saving') : t('calendar.saveChanges')}
-      </button>
+          
+          <div className="flex-1 overflow-auto p-6">
+            <div className="space-y-3">
+              {drivers.map(driver => {
+                const selected = selectedIds.has(driver.id)
+                return (
+                  <div
+                    key={driver.id}
+                    onClick={() => toggle(driver.id)}
+                    className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer ${
+                      selected ? 'border-blue-300 bg-blue-50' : 'border-gray-200'
+                    }`}
+                  >
+                    <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${
+                      selected ? 'bg-blue-500 border-blue-500' : 'border-gray-300'
+                    }`}>
+                      {selected && <span className="text-white text-xs">✓</span>}
+                    </div>
+                    <span className="flex-1">{driver.first_name} {driver.last_name}</span>
+                  </div>
+                )
+              })}
+            </div>
+            
+            <button
+              onClick={() => onSave(selectedIds)}
+              disabled={saving}
+              className="w-full mt-6 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50"
+            >
+              {saving ? 'Saving...' : 'Save Changes'}
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   )
 }
