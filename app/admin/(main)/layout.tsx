@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { supabase } from '@/lib/supabase/client'
@@ -25,6 +25,13 @@ const moreItems = [
   { href: '/admin/settings', label: 'Settings', icon: '⚙️' },
 ]
 
+interface UserProfile {
+  first_name: string
+  last_name: string
+  email: string
+  role: string
+}
+
 export default function AdminLayout({
   children,
 }: {
@@ -34,6 +41,41 @@ export default function AdminLayout({
   const [showMore, setShowMore] = useState(false)
   const [showUserMenu, setShowUserMenu] = useState(false)
   const [notifications, setNotifications] = useState(3)
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    loadUserProfile()
+  }, [])
+
+  async function loadUserProfile() {
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) {
+        setLoading(false)
+        return
+      }
+
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('first_name, last_name, email, role')
+        .eq('id', user.id)
+        .single()
+
+      if (profile) {
+        setUserProfile({
+          first_name: profile.first_name || '',
+          last_name: profile.last_name || '',
+          email: profile.email || user.email || '',
+          role: profile.role || ''
+        })
+      }
+    } catch (error) {
+      console.error('Error loading profile:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const isActive = (href: string) => {
     if (href === '/admin') return pathname === '/admin'
@@ -44,6 +86,10 @@ export default function AdminLayout({
     await supabase.auth.signOut()
     window.location.href = '/login'
   }
+
+  const displayName = userProfile 
+    ? `${userProfile.first_name} ${userProfile.last_name}`.trim() || userProfile.email?.split('@')[0] || 'User'
+    : 'User'
 
   return (
     <div className="h-screen flex flex-col bg-gray-50 overflow-hidden">
@@ -168,12 +214,15 @@ export default function AdminLayout({
             <div className="p-2">
               <div className="border-b pb-3 mb-3">
                 <div className="flex flex-col items-center gap-3 p-2">
-                  <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white">
-                    👤
+                  <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold">
+                    {displayName[0]?.toUpperCase() || '?'}
                   </div>
                   <div className="text-center">
-                    <p className="font-semibold">Admin User</p>
-                    <p className="text-xs text-gray-500">admin@example.com</p>
+                    <p className="font-semibold">{displayName}</p>
+                    <p className="text-xs text-gray-500">{userProfile?.email}</p>
+                    {userProfile?.role && (
+                      <p className="text-xs text-gray-400 capitalize">{userProfile.role}</p>
+                    )}
                   </div>
                 </div>
               </div>
