@@ -9,7 +9,7 @@ import { getLocalDate, formatDate } from '@/lib/timezone'
 import { useTranslation } from '@/lib/i18n/useTranslation'
 import { ChevronLeft, ChevronRight, X, AlertCircle } from 'lucide-react'
 
-interface Guide {
+interface Driver {
   id: string
   first_name: string
   last_name: string
@@ -18,20 +18,20 @@ interface Guide {
 }
 
 interface Availability {
-  guide_id: string
+  driver_id: string
   date: string
   is_available: boolean
 }
 
 interface Tour {
   id: string
-  guide_id: string
+  driver_id: string
   date: string
 }
 
-export default function GuideAvailabilityPage() {
+export default function DriverAvailabilityPage() {
   const { t } = useTranslation()
-  const [guides, setGuides] = useState<Guide[]>([])
+  const [drivers, setDrivers] = useState<Driver[]>([])
   const [availability, setAvailability] = useState<Availability[]>([])
   const [tours, setTours] = useState<Tour[]>([])
   const [loading, setLoading] = useState(true)
@@ -68,17 +68,17 @@ export default function GuideAvailabilityPage() {
     
     setCompanyId(profile.company_id)
 
-    // Load guides
-    const { data: guidesData } = await supabase
+    // Load drivers
+    const { data: driversData } = await supabase
       .from('profiles')
       .select('id, first_name, last_name, email, avatar_url')
       .eq('company_id', profile.company_id)
-      .eq('role', 'guide')
+      .eq('role', 'driver')
       .eq('status', 'active')
       .order('first_name')
 
-    if (guidesData) {
-      setGuides(guidesData)
+    if (driversData) {
+      setDrivers(driversData)
     }
 
     // Load availability for current month
@@ -88,8 +88,8 @@ export default function GuideAvailabilityPage() {
     const endDate = `${year}-${String(month + 2).padStart(2, '0')}-01`
 
     const { data: availData } = await supabase
-      .from('guide_schedules')
-      .select('guide_id, date, is_available')
+      .from('driver_schedules')
+      .select('driver_id, date, is_available')
       .eq('company_id', profile.company_id)
       .gte('date', startDate)
       .lt('date', endDate)
@@ -101,11 +101,11 @@ export default function GuideAvailabilityPage() {
     // Load tours for conflict checking
     const { data: toursData } = await supabase
       .from('tours')
-      .select('id, guide_id, date')
+      .select('id, driver_id, date')
       .eq('company_id', profile.company_id)
       .gte('date', startDate)
       .lt('date', endDate)
-      .not('guide_id', 'is', null)
+      .not('driver_id', 'is', null)
 
     if (toursData) {
       setTours(toursData)
@@ -140,20 +140,20 @@ export default function GuideAvailabilityPage() {
   const monthYear = currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
   const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
-  function getUnavailableForDate(date: Date): Guide[] {
+  function getUnavailableForDate(date: Date): Driver[] {
     const dateStr = date.toISOString().split('T')[0]
     const unavailableIds = availability
       .filter(a => a.date === dateStr && !a.is_available)
-      .map(a => a.guide_id)
-    return guides.filter(g => unavailableIds.includes(g.id))
+      .map(a => a.driver_id)
+    return drivers.filter(d => unavailableIds.includes(d.id))
   }
 
   function getConflictsForDate(date: Date): Tour[] {
     const dateStr = date.toISOString().split('T')[0]
     const unavailableIds = availability
       .filter(a => a.date === dateStr && !a.is_available)
-      .map(a => a.guide_id)
-    return tours.filter(t => t.date === dateStr && unavailableIds.includes(t.guide_id))
+      .map(a => a.driver_id)
+    return tours.filter(t => t.date === dateStr && unavailableIds.includes(t.driver_id))
   }
 
   function isPastDate(date: Date): boolean {
@@ -166,46 +166,23 @@ export default function GuideAvailabilityPage() {
     return dateStr === today
   }
 
-  async function toggleAvailability(guideId: string, isAvailable: boolean) {
-    if (!selectedDate || !companyId) return
-    
-    const dateStr = selectedDate.toISOString().split('T')[0]
-    
-    setSaving(true)
-    
-    await supabase
-      .from('guide_schedules')
-      .upsert({
-        guide_id: guideId,
-        company_id: companyId,
-        date: dateStr,
-        is_available: isAvailable
-      }, {
-        onConflict: 'guide_id,date'
-      })
-    
-    // Refresh availability
-    await loadData()
-    setSaving(false)
-  }
-
   async function saveAllChanges(selectedIds: Set<string>) {
     if (!selectedDate || !companyId) return
     
     const dateStr = selectedDate.toISOString().split('T')[0]
     setSaving(true)
     
-    const updates = guides.map(guide => ({
-      guide_id: guide.id,
+    const updates = drivers.map(driver => ({
+      driver_id: driver.id,
       company_id: companyId,
       date: dateStr,
-      is_available: !selectedIds.has(guide.id)
+      is_available: !selectedIds.has(driver.id)
     }))
     
     await supabase
-      .from('guide_schedules')
+      .from('driver_schedules')
       .upsert(updates, {
-        onConflict: 'guide_id,date'
+        onConflict: 'driver_id,date'
       })
     
     await loadData()
@@ -230,7 +207,7 @@ export default function GuideAvailabilityPage() {
         <div className="px-6 py-4">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-xl font-bold text-gray-900">{t('roles.guide')} {t('calendar.title')}</h1>
+              <h1 className="text-xl font-bold text-gray-900">{t('roles.driver')} {t('calendar.title')}</h1>
               <p className="text-gray-500 text-sm">{t('calendar.clickDate')}</p>
             </div>
             <div className="flex items-center gap-4">
@@ -282,7 +259,7 @@ export default function GuideAvailabilityPage() {
                   key={date.toISOString()}
                   onClick={() => !isPast && setSelectedDate(date)}
                   className={`
-                    bg-white min-h-[100px] p-2 cursor-pointer transition-colors
+                    bg-white min-h-[100px] p-2 cursor-pointer transition-colors relative
                     ${isPast ? 'bg-gray-50' : 'hover:bg-gray-50'}
                     ${isTodayDate ? 'ring-2 ring-blue-500 ring-inset' : ''}
                     ${isWeekend && !isPast ? 'bg-gray-50/50' : ''}
@@ -298,12 +275,12 @@ export default function GuideAvailabilityPage() {
                   
                   {/* Unavailable badges */}
                   <div className="space-y-1">
-                    {unavailable.slice(0, 3).map(guide => (
+                    {unavailable.slice(0, 3).map(driver => (
                       <div
-                        key={guide.id}
-                        className="text-xs bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded truncate"
+                        key={driver.id}
+                        className="text-xs bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded truncate"
                       >
-                        {guide.first_name}
+                        {driver.first_name}
                       </div>
                     ))}
                     {unavailable.length > 3 && (
@@ -325,7 +302,7 @@ export default function GuideAvailabilityPage() {
           {/* Legend */}
           <div className="flex items-center gap-6 mt-4 text-sm text-gray-600">
             <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-amber-400"></div>
+              <div className="w-3 h-3 rounded-full bg-blue-400"></div>
               <span>{t('calendar.unavailable')}</span>
             </div>
             <div className="flex items-center gap-2">
@@ -355,7 +332,7 @@ export default function GuideAvailabilityPage() {
                   <h2 className="text-lg font-semibold text-gray-900">
                     {selectedDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
                   </h2>
-                  <p className="text-sm text-gray-500">{t('calendar.selectUnavailable', { role: t('roles.guide').toLowerCase() })}</p>
+                  <p className="text-sm text-gray-500">{t('calendar.selectUnavailable', { role: t('roles.driver').toLowerCase() })}</p>
                 </div>
                 <button
                   onClick={() => setSelectedDate(null)}
@@ -365,11 +342,11 @@ export default function GuideAvailabilityPage() {
                 </button>
               </div>
               
-              {/* Guide list */}
+              {/* Driver list */}
               <div className="flex-1 overflow-auto p-6">
                 <DatePanelContent
                   date={selectedDate}
-                  guides={guides}
+                  drivers={drivers}
                   availability={availability}
                   tours={tours}
                   onSave={saveAllChanges}
@@ -386,74 +363,74 @@ export default function GuideAvailabilityPage() {
 
 interface DatePanelContentProps {
   date: Date
-  guides: Guide[]
+  drivers: Driver[]
   availability: Availability[]
   tours: Tour[]
   onSave: (selectedIds: Set<string>) => void
   saving: boolean
 }
 
-function DatePanelContent({ date, guides, availability, tours, onSave, saving }: DatePanelContentProps) {
+function DatePanelContent({ date, drivers, availability, tours, onSave, saving }: DatePanelContentProps) {
   const { t } = useTranslation()
   const dateStr = date.toISOString().split('T')[0]
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   
   useEffect(() => {
-    // Initialize with currently unavailable guides
+    // Initialize with currently unavailable drivers
     const unavailableIds = availability
       .filter(a => a.date === dateStr && !a.is_available)
-      .map(a => a.guide_id)
+      .map(a => a.driver_id)
     setSelectedIds(new Set(unavailableIds))
   }, [date, availability])
   
-  const toggleGuide = (guideId: string) => {
+  const toggleDriver = (driverId: string) => {
     const newSet = new Set(selectedIds)
-    if (newSet.has(guideId)) {
-      newSet.delete(guideId)
+    if (newSet.has(driverId)) {
+      newSet.delete(driverId)
     } else {
-      newSet.add(guideId)
+      newSet.add(driverId)
     }
     setSelectedIds(newSet)
   }
   
-  const hasTour = (guideId: string) => {
-    return tours.some(t => t.date === dateStr && t.guide_id === guideId)
+  const hasTour = (driverId: string) => {
+    return tours.some(t => t.date === dateStr && t.driver_id === driverId)
   }
 
   return (
     <div className="space-y-4">
-      {guides.map(guide => {
-        const isSelected = selectedIds.has(guide.id)
-        const hasAssignedTour = hasTour(guide.id)
+      {drivers.map(driver => {
+        const isSelected = selectedIds.has(driver.id)
+        const hasAssignedTour = hasTour(driver.id)
         
         return (
           <div
-            key={guide.id}
-            onClick={() => toggleGuide(guide.id)}
+            key={driver.id}
+            onClick={() => toggleDriver(driver.id)}
             className={`
               flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors
               ${isSelected 
-                ? 'border-amber-300 bg-amber-50' 
+                ? 'border-blue-300 bg-blue-50' 
                 : 'border-gray-200 hover:border-gray-300'
               }
             `}
           >
             <div className={`
               w-5 h-5 rounded border-2 flex items-center justify-center
-              ${isSelected ? 'bg-amber-500 border-amber-500' : 'border-gray-300'}
+              ${isSelected ? 'bg-blue-500 border-blue-500' : 'border-gray-300'}
             `}>
               {isSelected && <span className="text-white text-xs">✓</span>}
             </div>
             
-            <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center text-sm">
-              {guide.first_name[0]}{guide.last_name[0]}
+            <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center text-sm">
+              {driver.first_name[0]}{driver.last_name[0]}
             </div>
             
             <div className="flex-1">
               <div className="font-medium text-gray-900">
-                {guide.first_name} {guide.last_name}
+                {driver.first_name} {driver.last_name}
               </div>
-              <div className="text-xs text-gray-500">{guide.email}</div>
+              <div className="text-xs text-gray-500">{driver.email}</div>
             </div>
             
             {hasAssignedTour && (

@@ -325,7 +325,20 @@
     "toursToday": "tours today",
     "today": "today",
     "assigned": "assigned",
-    "tours": "tours"
+    "tours": "tours",
+    "manageAvailability": "Manage Availability"
+  },
+  "calendar": {
+    "title": "Availability",
+    "clickDate": "Click a date to manage availability",
+    "selectUnavailable": "Select unavailable {role}s",
+    "saveChanges": "Save Changes",
+    "saving": "Saving...",
+    "hasTour": "Has tour",
+    "conflict": "Conflict (has tour)",
+    "today": "Today",
+    "available": "Available",
+    "unavailable": "Unavailable"
   },
   "vehicles": {
     "title": "Vehicle Fleet",
@@ -756,7 +769,8 @@
     "createGuide": "Create Guide",
     "noGuides": "No guides found",
     "searchPlaceholder": "Search by name or email...",
-    "teamAvailability": "Team availability"
+    "teamAvailability": "Team availability",
+    "manageAvailability": "Manage Availability"
   },
   "driver": {
     "tours": "Tours",

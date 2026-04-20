@@ -9,6 +9,7 @@ import { supabase } from '@/lib/supabase/client'
 import RoleGuard from '@/lib/auth/RoleGuard'
 import { getLocalDate } from '@/lib/timezone'
 import { useTranslation } from '@/lib/i18n/useTranslation'
+import { Calendar } from 'lucide-react'
 
 interface Guide {
   id: string
@@ -268,15 +269,24 @@ export default function GuidesManagement() {
               <h1 className="text-2xl font-bold text-gray-900">{t('guides.title') || 'Guides'}</h1>
               <p className="text-sm text-gray-500">{t('guides.subtitle') || 'Manage guides and assignments'}</p>
             </div>
-            <button
-              onClick={() => {
-                resetForm()
-                setShowAddModal(true)
-              }}
-              className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700"
-            >
-              + {t('guides.addGuide') || 'Add Guide'}
-            </button>
+            <div className="flex items-center gap-2">
+              <Link
+                href="/admin/guides/availability"
+                className="flex items-center gap-2 bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-lg font-medium hover:bg-gray-50"
+              >
+                <Calendar className="w-4 h-4" />
+                {t('guides.manageAvailability') || 'Manage Availability'}
+              </Link>
+              <button
+                onClick={() => {
+                  resetForm()
+                  setShowAddModal(true)
+                }}
+                className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700"
+              >
+                + {t('guides.addGuide') || 'Add Guide'}
+              </button>
+            </div>
           </div>
 
           {/* Stats */}

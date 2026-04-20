@@ -205,7 +205,8 @@
     "createGuide": "Crear Guía",
     "noGuides": "No se encontraron guías",
     "searchPlaceholder": "Buscar por nombre o email...",
-    "teamAvailability": "Disponibilidad del equipo"
+    "teamAvailability": "Disponibilidad del equipo",
+    "manageAvailability": "Gestionar Disponibilidad"
   },
   "drivers": {
     "title": "Choferes",
@@ -251,7 +252,20 @@
     "toursToday": "tours hoy",
     "today": "hoy",
     "assigned": "asignado",
-    "tours": "tours"
+    "tours": "tours",
+    "manageAvailability": "Gestionar Disponibilidad"
+  },
+  "calendar": {
+    "title": "Disponibilidad",
+    "clickDate": "Haz clic en una fecha para gestionar la disponibilidad",
+    "selectUnavailable": "Seleccionar {role}s no disponibles",
+    "saveChanges": "Guardar Cambios",
+    "saving": "Guardando...",
+    "hasTour": "Tiene tour",
+    "conflict": "Conflicto (tiene tour)",
+    "today": "Hoy",
+    "available": "Disponible",
+    "unavailable": "No Disponible"
   },
   "tour": {
     "scheduled": "Programado",
