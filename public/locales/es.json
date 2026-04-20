@@ -1040,6 +1040,13 @@
     "cloudinaryApiKey": "Clave API",
     "cloudinaryApiSecret": "Secreto API",
     "cloudinaryUploadPreset": "Preset de Subida",
-    "uploadPresetHint": "Crea un unsigned upload preset en tu dashboard de Cloudinary"
+    "uploadPresetHint": "Crea un unsigned upload preset en tu dashboard de Cloudinary",
+    "googleDrive": "Google Drive",
+    "googleDriveDesc": "Integración con Google Drive para almacenamiento de fotos",
+    "clientId": "ID de Cliente",
+    "clientSecret": "Secreto de Cliente",
+    "refreshToken": "Token de Actualización",
+    "folderId": "ID de Carpeta",
+    "folderIdHint": "El ID de la URL: drive.google.com/drive/folders/ESTA_PARTE"
   }
 }
