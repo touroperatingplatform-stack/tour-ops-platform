@@ -118,7 +118,7 @@ export default function ExpensesPage() {
         total: newStatus === 'approved' 
           ? prev.total + amount
           : prev.total - amount,
-        pending: newStatus === 'pending' ? prev.pending + 1 : prev.pending - 1
+        pending: prev.pending - 1
       }))
     } catch (err: any) {
       alert(t('expenses.errorUpdating') || 'Error updating expense')
