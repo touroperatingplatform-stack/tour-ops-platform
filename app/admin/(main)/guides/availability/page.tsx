@@ -18,7 +18,7 @@ interface Guide {
 
 interface Availability {
   guide_id: string
-  date: string
+  schedule_date: string
   is_available: boolean
 }
 
@@ -123,10 +123,9 @@ export default function GuideAvailabilityPage() {
 
     const { data: availData } = await supabase
       .from('guide_schedules')
-      .select('guide_id, date, is_available')
-      .eq('company_id', profile.company_id)
-      .gte('date', startDate)
-      .lt('date', endDate)
+      .select('guide_id, schedule_date, is_available')
+      .gte('schedule_date', startDate)
+      .lt('schedule_date', endDate)
 
     if (availData) {
       setAvailability(availData)
@@ -173,14 +172,14 @@ export default function GuideAvailabilityPage() {
 
   function getUnavailableForDate(dateStr: string): Guide[] {
     const unavailableIds = availability
-      .filter(a => a.date === dateStr && !a.is_available)
+      .filter(a => a.schedule_date === dateStr && !a.is_available)
       .map(a => a.guide_id)
     return guides.filter(g => unavailableIds.includes(g.id))
   }
 
   function getConflictsForDate(dateStr: string): Tour[] {
     const unavailableIds = availability
-      .filter(a => a.date === dateStr && !a.is_available)
+      .filter(a => a.schedule_date === dateStr && !a.is_available)
       .map(a => a.guide_id)
     return tours.filter(t => t.date === dateStr && unavailableIds.includes(t.guide_id))
   }
@@ -200,15 +199,14 @@ export default function GuideAvailabilityPage() {
     
     const updates = guides.map(guide => ({
       guide_id: guide.id,
-      company_id: companyId,
-      date: selectedDate,
+      schedule_date: selectedDate,
       is_available: !selectedIds.has(guide.id)
     }))
     
     await supabase
       .from('guide_schedules')
       .upsert(updates, {
-        onConflict: 'guide_id,date'
+        onConflict: 'guide_id,schedule_date'
       })
     
     await loadData()
@@ -405,7 +403,7 @@ function DatePanelContent({ date, guides, availability, tours, onSave, saving }:
   useEffect(() => {
     // Initialize with currently unavailable guides
     const unavailableIds = availability
-      .filter(a => a.date === date && !a.is_available)
+      .filter(a => a.schedule_date === date && !a.is_available)
       .map(a => a.guide_id)
     setSelectedIds(new Set(unavailableIds))
   }, [date, availability])

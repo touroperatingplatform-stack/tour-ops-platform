@@ -18,7 +18,7 @@ interface Driver {
 
 interface Availability {
   driver_id: string
-  date: string
+  schedule_date: string
   is_available: boolean
 }
 
@@ -123,10 +123,10 @@ export default function DriverAvailabilityPage() {
 
     const { data: availData } = await supabase
       .from('driver_schedules')
-      .select('driver_id, date, is_available')
+      .select('driver_id, schedule_date, is_available')
       .eq('company_id', profile.company_id)
-      .gte('date', startDate)
-      .lt('date', endDate)
+      .gte('schedule_date', startDate)
+      .lt('schedule_date', endDate)
 
     if (availData) {
       setAvailability(availData)
@@ -173,14 +173,14 @@ export default function DriverAvailabilityPage() {
 
   function getUnavailableForDate(dateStr: string): Driver[] {
     const unavailableIds = availability
-      .filter(a => a.date === dateStr && !a.is_available)
+      .filter(a => a.schedule_date === dateStr && !a.is_available)
       .map(a => a.driver_id)
     return drivers.filter(d => unavailableIds.includes(d.id))
   }
 
   function getConflictsForDate(dateStr: string): Tour[] {
     const unavailableIds = availability
-      .filter(a => a.date === dateStr && !a.is_available)
+      .filter(a => a.schedule_date === dateStr && !a.is_available)
       .map(a => a.driver_id)
     return tours.filter(t => t.date === dateStr && unavailableIds.includes(t.driver_id))
   }
@@ -200,15 +200,14 @@ export default function DriverAvailabilityPage() {
     
     const updates = drivers.map(driver => ({
       driver_id: driver.id,
-      company_id: companyId,
-      date: selectedDate,
+      schedule_date: selectedDate,
       is_available: !selectedIds.has(driver.id)
     }))
     
     await supabase
       .from('driver_schedules')
       .upsert(updates, {
-        onConflict: 'driver_id,date'
+        onConflict: 'driver_id,schedule_date'
       })
     
     await loadData()
@@ -405,7 +404,7 @@ function DatePanelContent({ date, drivers, availability, tours, onSave, saving }
   useEffect(() => {
     // Initialize with currently unavailable drivers
     const unavailableIds = availability
-      .filter(a => a.date === date && !a.is_available)
+      .filter(a => a.schedule_date === date && !a.is_available)
       .map(a => a.driver_id)
     setSelectedIds(new Set(unavailableIds))
   }, [date, availability])
