@@ -278,9 +278,9 @@ export default function DriverAvailabilityPage() {
               const conflicts = getConflictsForDate(dateStr)
               const isPast = isPastDate(dateStr)
               const isTodayDate = isToday(dateStr)
-              const { day } = parseDateStr(dateStr)
-              const isWeekend = new Date(parseDateStr(dateStr).year, parseDateStr(dateStr).month, day).getDay() === 0 || 
-                               new Date(parseDateStr(dateStr).year, parseDateStr(dateStr).month, day).getDay() === 6
+              const parsed = parseDateStr(dateStr)
+              const dayNum = parsed.day
+              const isWeekend = [0, 6].includes(new Date(parsed.year, parsed.month, dayNum).getDay())
               
               return (
                 <div
@@ -298,7 +298,7 @@ export default function DriverAvailabilityPage() {
                     ${isPast ? 'text-gray-400' : 'text-gray-700'}
                     ${isTodayDate ? 'text-blue-600' : ''}
                   `}>
-                    {day}
+                    {dayNum}
                   </div>
                   
                   {/* Unavailable badges */}
