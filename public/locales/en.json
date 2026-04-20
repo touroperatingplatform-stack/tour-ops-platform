@@ -535,7 +535,15 @@
     "onTimePercentage": "On-Time %",
     "activeTours": "Active Tours",
     "approved": "Approved",
-    "expenseSummary": "Expense Summary"
+    "expenseSummary": "Expense Summary",
+    "analytics": "Analytics & Performance",
+    "activeGuides": "Active Guides",
+    "tourTrend": "Tour Trend",
+    "guestTrend": "Guest Trend",
+    "recentTours": "Recent Tours",
+    "scheduled": "Scheduled",
+    "inProgress": "In Progress",
+    "completed": "Completed"
   },
   "fieldView": {
     "title": "Field View",

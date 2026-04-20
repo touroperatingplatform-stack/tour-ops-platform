@@ -81,7 +81,8 @@
     "inProgress": "En Progreso",
     "completed": "Completado",
     "cancelled": "Cancelado",
-    "tours": "tours"
+    "tours": "tours",
+    "export": "Exportar"
   },
   "time": {
     "today": "Hoy",
@@ -359,8 +360,8 @@
     "tours": "Tours",
     "guides": "Guías",
     "satisfaction": "Satisfacción",
-    "totalTours": "Total Tours",
-    "totalGuests": "Total Huéspedes",
+    "totalTours": "Total de Tours",
+    "totalGuests": "Total de Huéspedes",
     "revenueLabel": "Ingresos",
     "avgRating": "Calif. Promedio",
     "revenueSummary": "Resumen de Ingresos",
@@ -406,7 +407,7 @@
     "vehicleUsage": "Uso de Vehículos",
     "guidePerformance": "Rendimiento de Guías",
     "capacityUsed": "Capacidad Usada",
-    "cancelled": "Cancelados",
+    "cancelled": "Cancelado",
     "cashSummary": "Resumen de Efectivo",
     "cashCollected": "Recaudado",
     "cashSpent": "Gastado",
@@ -443,7 +444,15 @@
     "onTimePercentage": "% Puntualidad",
     "activeTours": "Tours Activos",
     "approved": "Aprobado",
-    "expenseSummary": "Resumen de Gastos"
+    "expenseSummary": "Resumen de Gastos",
+    "analytics": "Análisis y Rendimiento",
+    "activeGuides": "Guías Activos",
+    "tourTrend": "Tendencia de Tours",
+    "guestTrend": "Tendencia de Huéspedes",
+    "recentTours": "Tours Recientes",
+    "scheduled": "Programado",
+    "inProgress": "En Progreso",
+    "completed": "Completado"
   },
   "supervisor": {
     "dashboard": "Panel de Supervisor",
