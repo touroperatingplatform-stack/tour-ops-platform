@@ -110,11 +110,14 @@ export default function ExpensesPage() {
       setExpenses(expenses.map(e => e.id === id ? { ...e, status: newStatus } : e))
       
       // Update stats
+      const expense = expenses.find(e => e.id === id)
+      const amount = expense?.amount || 0
+      
       setStats(prev => ({
         ...prev,
         total: newStatus === 'approved' 
-          ? prev.total + expenses.find(e => e.id === id)?.amount || 0
-          : prev.total - expenses.find(e => e.id === id)?.amount || 0,
+          ? prev.total + amount
+          : prev.total - amount,
         pending: newStatus === 'pending' ? prev.pending + 1 : prev.pending - 1
       }))
     } catch (err: any) {
