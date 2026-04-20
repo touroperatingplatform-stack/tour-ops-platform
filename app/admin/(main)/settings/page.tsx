@@ -297,6 +297,77 @@ export default function SettingsPage() {
           </button>
         </div>
 
+        {/* Photo Storage */}
+        <div className="bg-white rounded-lg border border-gray-200 p-6">
+          <h2 className="text-lg font-semibold text-gray-900 mb-2">{t('settings.photoStorage') || 'Photo Storage'}</h2>
+          <p className="text-sm text-gray-500 mb-4">{t('settings.photoStorageDesc') || 'Configure where tour photos are stored'}</p>
+          
+          <div className="mb-4">
+            <p className="text-sm text-gray-700 mb-2">
+              {t('settings.cloudinarySignUp') || 'New to Cloudinary?'}{' '}
+              <a 
+                href="https://cloudinary.com/users/register/free" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-blue-600 hover:underline font-medium"
+              >
+                {t('settings.signUpHere') || 'Sign up here'}
+              </a>
+            </p>
+            <p className="text-xs text-gray-500">
+              {t('settings.cloudinaryFreeTier') || 'Free tier includes 25GB storage & 25GB monthly bandwidth'}
+            </p>
+          </div>
+          
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  {t('settings.cloudinaryCloudName') || 'Cloud Name'}
+                </label>
+                <input
+                  type="text"
+                  placeholder="your-cloud-name"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  {t('settings.cloudinaryApiKey') || 'API Key'}
+                </label>
+                <input
+                  type="text"
+                  placeholder="123456789012345"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                />
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                {t('settings.cloudinaryApiSecret') || 'API Secret'}
+              </label>
+              <input
+                type="password"
+                placeholder="xxxxxxxxxxxxxxxxxxxxxxxxxxx"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                {t('settings.cloudinaryUploadPreset') || 'Upload Preset'}
+              </label>
+              <input
+                type="text"
+                placeholder="your-unsigned-preset"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                {t('settings.uploadPresetHint') || 'Create an unsigned upload preset in your Cloudinary dashboard'}
+              </p>
+            </div>
+          </div>
+        </div>
+
         {/* Account */}
         <div className="bg-white rounded-lg border border-gray-200 p-6">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">{t('profile.title')}</h2>
