@@ -378,12 +378,12 @@ function DatePanelContent({ date, drivers, availability, tours, onSave, saving }
             </div>
             
             <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center text-sm">
-              {driver.first_name[0]}{driver.last_name[0]}
+              {(driver.first_name || '')[0]}{(driver.last_name || '')[0]}
             </div>
             
             <div className="flex-1">
-              <div className="font-medium text-gray-900">{driver.first_name} {driver.last_name}</div>
-              <div className="text-xs text-gray-500">{driver.email}</div>
+              <div className="font-medium text-gray-900">{driver.first_name || ''} {driver.last_name || ''}</div>
+              <div className="text-xs text-gray-500">{driver.email || ''}</div>
             </div>
             
             {hasAssignedTour && (
