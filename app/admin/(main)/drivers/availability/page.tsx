@@ -182,7 +182,7 @@ export default function DriverAvailabilityPage() {
   if (loading) {
     return (
       <div className="h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-gray-500">{t('common.loading') || 'Loading...'}</div>
+        <div className="text-gray-500">{t('common.loading')}</div>
       </div>
     )
   }
@@ -201,8 +201,8 @@ export default function DriverAvailabilityPage() {
         <div className="px-6 py-4">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-xl font-bold text-gray-900">{t('roles.driver') || 'Driver'} {t('calendar.title') || 'Availability'}</h1>
-              <p className="text-gray-500 text-sm">{t('calendar.clickDate') || 'Click a date to manage availability'}</p>
+              <h1 className="text-xl font-bold text-gray-900">{t('roles.driver')} {t('calendar.title')}</h1>
+              <p className="text-gray-500 text-sm">{t('calendar.clickDate')}</p>
             </div>
             <div className="flex items-center gap-4">
               <button onClick={() => setCurrentMonthStr(addMonths(currentMonthStr, -1))} className="p-2 hover:bg-gray-100 rounded-lg">←</button>
@@ -266,15 +266,15 @@ export default function DriverAvailabilityPage() {
           <div className="flex items-center gap-6 mt-4 text-sm text-gray-600">
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 rounded-full bg-blue-400"></div>
-              <span>{t('calendar.unavailable') || 'Unavailable'}</span>
+              <span>{t('calendar.unavailable')}</span>
             </div>
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 rounded-full bg-red-500"></div>
-              <span>{t('calendar.conflict') || 'Conflict'}</span>
+              <span>{t('calendar.conflict')}</span>
             </div>
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 border-2 border-blue-500"></div>
-              <span>{t('calendar.today') || 'Today'}</span>
+              <span>{t('calendar.today')}</span>
             </div>
           </div>
         </div>
@@ -288,7 +288,7 @@ export default function DriverAvailabilityPage() {
               <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
                 <div>
                   <h2 className="text-lg font-semibold text-gray-900">{selectedDate}</h2>
-                  <p className="text-sm text-gray-500">{t('calendar.selectUnavailable') || 'Select unavailable drivers'}</p>
+                  <p className="text-sm text-gray-500">{t('calendar.selectUnavailable')}</p>
                 </div>
                 <button onClick={() => setSelectedDate(null)} className="p-2 hover:bg-gray-100 rounded-lg">✕</button>
               </div>

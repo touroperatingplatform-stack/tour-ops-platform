@@ -181,7 +181,7 @@ export default function GuideAvailabilityPage() {
   if (loading) {
     return (
       <div className="h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-gray-500">{t('common.loading') || 'Loading...'}</div>
+        <div className="text-gray-500">{t('common.loading')}</div>
       </div>
     )
   }
@@ -200,8 +200,8 @@ export default function GuideAvailabilityPage() {
         <div className="px-6 py-4">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-xl font-bold text-gray-900">{t('roles.guide') || 'Guide'} {t('calendar.title') || 'Availability'}</h1>
-              <p className="text-gray-500 text-sm">{t('calendar.clickDate') || 'Click a date to manage availability'}</p>
+              <h1 className="text-xl font-bold text-gray-900">{t('roles.guide')} {t('calendar.title')}</h1>
+              <p className="text-gray-500 text-sm">{t('calendar.clickDate')}</p>
             </div>
             <div className="flex items-center gap-4">
               <button onClick={() => setCurrentMonthStr(addMonths(currentMonthStr, -1))} className="p-2 hover:bg-gray-100 rounded-lg">←</button>
@@ -265,15 +265,15 @@ export default function GuideAvailabilityPage() {
           <div className="flex items-center gap-6 mt-4 text-sm text-gray-600">
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 rounded-full bg-amber-400"></div>
-              <span>{t('calendar.unavailable') || 'Unavailable'}</span>
+              <span>{t('calendar.unavailable')}</span>
             </div>
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 rounded-full bg-red-500"></div>
-              <span>{t('calendar.conflict') || 'Conflict'}</span>
+              <span>{t('calendar.conflict')}</span>
             </div>
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 border-2 border-blue-500"></div>
-              <span>{t('calendar.today') || 'Today'}</span>
+              <span>{t('calendar.today')}</span>
             </div>
           </div>
         </div>
@@ -287,7 +287,7 @@ export default function GuideAvailabilityPage() {
               <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
                 <div>
                   <h2 className="text-lg font-semibold text-gray-900">{selectedDate}</h2>
-                  <p className="text-sm text-gray-500">{t('calendar.selectUnavailable') || 'Select unavailable guides'}</p>
+                  <p className="text-sm text-gray-500">{t('calendar.selectUnavailable')}</p>
                 </div>
                 <button onClick={() => setSelectedDate(null)} className="p-2 hover:bg-gray-100 rounded-lg">✕</button>
               </div>
@@ -387,7 +387,7 @@ function DatePanelContent({ date, guides, availability, tours, onSave, saving }:
             
             {hasAssignedTour && (
               <div className="flex items-center gap-1 text-xs text-red-600">
-                ⚠️ <span>{t('calendar.hasTour') || 'Has tour'}</span>
+                ⚠️ <span>Has tour</span>
               </div>
             )}
           </div>
@@ -399,7 +399,7 @@ function DatePanelContent({ date, guides, availability, tours, onSave, saving }:
         disabled={saving}
         className="w-full py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50"
       >
-        {saving ? (t('calendar.saving') || 'Saving...') : (t('calendar.saveChanges') || 'Save Changes')}
+        {saving ? 'Saving...' : 'Save Changes'}
       </button>
     </div>
   )
