@@ -311,10 +311,15 @@ export default function GuideAvailabilityPage() {
                         .from('guide_schedules')
                         .upsert(updates, { onConflict: 'guide_id,schedule_date' })
                       
-                      if (error) throw error
+                      if (error) {
+                        console.error('Supabase error:', error)
+                        throw error
+                      }
                       await loadData()
+                      setSelectedDate(null) // Close panel on success
                     } catch (e: any) {
-                      setError('Save failed: ' + e.message)
+                      console.error('Save error:', e)
+                      setError('Save failed: ' + (e.message || 'Unknown error'))
                     }
                     setSaving(false)
                   }}

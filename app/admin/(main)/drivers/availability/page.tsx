@@ -312,10 +312,15 @@ export default function DriverAvailabilityPage() {
                         .from('driver_schedules')
                         .upsert(updates, { onConflict: 'driver_id,schedule_date' })
                       
-                      if (error) throw error
+                      if (error) {
+                        console.error('Supabase error:', error)
+                        throw error
+                      }
                       await loadData()
+                      setSelectedDate(null)
                     } catch (e: any) {
-                      setError('Save failed: ' + e.message)
+                      console.error('Save error:', e)
+                      setError('Save failed: ' + (e.message || 'Unknown error'))
                     }
                     setSaving(false)
                   }}
