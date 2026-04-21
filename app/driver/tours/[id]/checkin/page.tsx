@@ -45,9 +45,10 @@ function CheckinContent() {
         .single()
 
       if (tourData) {
+        const vehicle = Array.isArray(tourData.vehicles) ? tourData.vehicles[0] : tourData.vehicles
         setTour({
           ...tourData,
-          vehicle_plate: tourData.vehicles?.plate_number || 'Unknown'
+          vehicle_plate: vehicle?.plate_number || 'Unknown'
         })
       }
     } catch (error) {
