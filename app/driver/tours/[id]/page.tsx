@@ -54,10 +54,11 @@ function TourDetailContent() {
 
       if (tourData) {
         const profile = Array.isArray(tourData.profiles) ? tourData.profiles[0] : tourData.profiles
+        const vehicle = Array.isArray(tourData.vehicles) ? tourData.vehicles[0] : tourData.vehicles
         setTour({
           ...tourData,
           guide_name: profile ? `${profile.first_name} ${profile.last_name}` : 'Unassigned',
-          vehicle_plate: tourData.vehicles?.plate_number || 'Unknown'
+          vehicle_plate: vehicle?.plate_number || 'Unknown'
         })
       }
     } catch (error) {
