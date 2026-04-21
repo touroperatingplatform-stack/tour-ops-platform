@@ -30,13 +30,28 @@ export default function TourAddModal({ selectedDate, onClose, onSave }: TourAddM
   })
 
   useEffect(() => {
-    // Load guides, drivers, and vehicles for dropdowns
+    // Load guides, drivers, and vehicles for dropdowns - FILTER by availability
     async function loadResources() {
+      // Load guides
       const { data: guidesData } = await supabase
         .from('profiles')
         .select('id, first_name, last_name')
         .in('role', ['guide', 'operations', 'manager', 'company_admin'])
 
+      // Load guide availability for selected date
+      const guideIds = guidesData?.map(g => g.id) || []
+      const { data: guideAvailData } = await supabase
+        .from('guide_schedules')
+        .select('guide_id, is_available')
+        .in('guide_id', guideIds.length > 0 ? guideIds : ['00000000-0000-0000-0000-000000000000'])
+        .eq('schedule_date', selectedDate)
+
+      const guideAvailMap: Record<string, boolean> = {}
+      guideAvailData?.forEach((a: any) => {
+        guideAvailMap[a.guide_id] = a.is_available
+      })
+
+      // Load drivers
       const { data: driversData } = await supabase
         .from('driver_profiles')
         .select(`
@@ -48,23 +63,42 @@ export default function TourAddModal({ selectedDate, onClose, onSave }: TourAddM
         `)
         .eq('status', 'active')
 
+      // Load driver availability for selected date
+      const driverIds = driversData?.map((d: any) => d.profile_id) || []
+      const { data: driverAvailData } = await supabase
+        .from('driver_schedules')
+        .select('driver_id, is_available')
+        .in('driver_id', driverIds.length > 0 ? driverIds : ['00000000-0000-0000-0000-000000000000'])
+        .eq('schedule_date', selectedDate)
+
+      const driverAvailMap: Record<string, boolean> = {}
+      driverAvailData?.forEach((a: any) => {
+        driverAvailMap[a.driver_id] = a.is_available
+      })
+
       const { data: vehiclesData } = await supabase
         .from('vehicles')
         .select('id, plate_number, capacity')
         .eq('status', 'available')
 
       if (guidesData) {
-        setGuides(guidesData.map(g => ({
-          id: g.id,
-          name: `${g.first_name || ''} ${g.last_name || ''}`.trim()
-        })))
+        // Only show guides that are available (no schedule entry = available)
+        setGuides(guidesData
+          .filter(g => guideAvailMap[g.id] !== false)
+          .map(g => ({
+            id: g.id,
+            name: `${g.first_name || ''} ${g.last_name || ''}`.trim()
+          })))
       }
 
       if (driversData) {
-        setDrivers(driversData.map((d: any) => ({
-          id: d.profile_id,
-          name: `${d.profiles?.first_name || ''} ${d.profiles?.last_name || ''}`.trim()
-        })))
+        // Only show drivers that are available (no schedule entry = available)
+        setDrivers(driversData
+          .filter((d: any) => driverAvailMap[d.profile_id] !== false)
+          .map((d: any) => ({
+            id: d.profile_id,
+            name: `${d.profiles?.first_name || ''} ${d.profiles?.last_name || ''}`.trim()
+          })))
       }
 
       if (vehiclesData) {
@@ -76,7 +110,7 @@ export default function TourAddModal({ selectedDate, onClose, onSave }: TourAddM
       }
     }
     loadResources()
-  }, [])
+  }, [selectedDate])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
