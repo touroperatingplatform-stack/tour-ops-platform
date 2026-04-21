@@ -69,11 +69,28 @@ export default function EditTourPage() {
 
     setGuides(guidesData || [])
 
-    // Load vehicles
-    const { data: vehiclesData } = await supabase
+    // Load vehicles (filtered by company)
+    const { data: { user } } = await supabase.auth.getUser()
+    let companyId = null
+    
+    if (user) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('company_id')
+        .eq('id', user.id)
+        .single()
+      companyId = profile?.company_id
+    }
+    
+    let vehiclesQuery = supabase
       .from('vehicles')
       .select('id, plate_number, make, model')
-
+    
+    if (companyId) {
+      vehiclesQuery = vehiclesQuery.eq('company_id', companyId)
+    }
+    
+    const { data: vehiclesData } = await vehiclesQuery
     setVehicles(vehiclesData || [])
     setLoading(false)
   }
@@ -266,7 +283,7 @@ export default function EditTourPage() {
               </select>
             </div>
 
-            {/* Pre-Pickup Toggle */}
+              {/* Pre-Pickup Toggle */}
             <div className="bg-orange-50 rounded-lg p-4 border border-orange-200">
               <label className="flex items-center gap-3 cursor-pointer">
                 <input
@@ -277,8 +294,8 @@ export default function EditTourPage() {
                   className="w-5 h-5 text-orange-600 border-gray-300 rounded focus:ring-orange-500"
                 />
                 <div>
-                  <span className="font-medium text-gray-900">Require Pre-Pickup</span>
-                  <p className="text-sm text-gray-600">Guide must check in 20 min before pickup time (for private tours)</p>
+                  <span className="font-medium text-gray-900">{t('templates.requirePrePickup')}</span>
+                  <p className="text-sm text-gray-600">{t('templates.prePickupDescription')}</p>
                 </div>
               </label>
             </div>
