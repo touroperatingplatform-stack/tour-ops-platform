@@ -47,10 +47,18 @@ function DriverTourContent() {
   const [stops, setStops] = useState<Stop[]>([])
   const [checkins, setCheckins] = useState<Checkin[]>([])
   const [checkingIn, setCheckingIn] = useState<string | null>(null)
+  const [shouldRedirect, setShouldRedirect] = useState(false)
 
   useEffect(() => {
     loadTour()
   }, [])
+
+  useEffect(() => {
+    if (tour && tour.status === 'scheduled' && !tour.acknowledged_at && !shouldRedirect) {
+      setShouldRedirect(true)
+      router.push(`/driver/tours/${params.id}/acknowledge`)
+    }
+  }, [tour, shouldRedirect, router, params.id])
 
   async function loadTour() {
     const { data: tourData } = await supabase
