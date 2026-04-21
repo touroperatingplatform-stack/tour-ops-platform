@@ -21,6 +21,18 @@ interface Tour {
   guide_name: string
   vehicle_plate: string
   status: string
+  acknowledged_at: string | null
+}
+
+interface Stop {
+  id: string
+  location_name: string
+  stop_type: 'pickup' | 'activity' | 'dropoff'
+}
+
+interface Checkin {
+  id: string
+  checkin_type: string
 }
 
 function TourDetailContent() {
@@ -29,6 +41,8 @@ function TourDetailContent() {
   const tourId = params.id as string
   
   const [tour, setTour] = useState<Tour | null>(null)
+  const [stops, setStops] = useState<Stop[]>([])
+  const [checkins, setCheckins] = useState<Checkin[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -44,7 +58,7 @@ function TourDetailContent() {
         .from('tours')
         .select(`
           id, name, pickup_location, dropoff_location, start_time,
-          tour_type, guide_id, status,
+          tour_type, guide_id, status, acknowledged_at,
           profiles!guide_id (first_name, last_name),
           vehicles!vehicle_id (plate_number)
         `)
@@ -61,6 +75,23 @@ function TourDetailContent() {
           vehicle_plate: vehicle?.plate_number || 'Unknown'
         })
       }
+
+      // Load stops
+      const { data: stopsData } = await supabase
+        .from('pickup_stops')
+        .select('id, location_name, stop_type')
+        .eq('tour_id', tourId)
+        .order('sort_order')
+
+      if (stopsData) setStops(stopsData)
+
+      // Load checkins
+      const { data: checkinsData } = await supabase
+        .from('guide_checkins')
+        .select('id, checkin_type')
+        .eq('tour_id', tourId)
+
+      if (checkinsData) setCheckins(checkinsData)
     } catch (error) {
       console.error('Error loading tour:', error)
     } finally {
@@ -135,6 +166,55 @@ function TourDetailContent() {
         </div>
       </div>
 
+      {/* Gates Progress */}
+      {!isTransfer && (
+        <div className="bg-white rounded-xl shadow p-4">
+          <h2 className="font-semibold mb-3">Tour Gates</h2>
+          <div className="space-y-2">
+            <GateRow
+              icon="📋"
+              label="Acknowledge Tour"
+              href={`/driver/tours/${tourId}/acknowledge`}
+              completed={!!tour.acknowledged_at}
+              status={tour.status}
+              requiredStatus="scheduled"
+            />
+            <GateRow
+              icon="🚌"
+              label="Pre-Trip Check-in"
+              href={`/driver/tours/${tourId}/checkin`}
+              completed={checkins.some(c => c.checkin_type === 'checkin')}
+              status={tour.status}
+              requiredStatus="scheduled"
+            />
+            <GateRow
+              icon="👥"
+              label="Pickup Check-in"
+              href={`/driver/tours/${tourId}/pickup`}
+              completed={checkins.some(c => c.checkin_type === 'pickup')}
+              status={tour.status}
+              requiredStatus="in_progress"
+            />
+            <GateRow
+              icon="🎯"
+              label="Activity Check-in"
+              href={`/driver/tours/${tourId}/activity`}
+              completed={checkins.some(c => c.checkin_type === 'activity')}
+              status={tour.status}
+              requiredStatus="in_progress"
+            />
+            <GateRow
+              icon="🏁"
+              label="Drop-off Check-in"
+              href={`/driver/tours/${tourId}/dropoff`}
+              completed={checkins.some(c => c.checkin_type === 'dropoff')}
+              status={tour.status}
+              requiredStatus="in_progress"
+            />
+          </div>
+        </div>
+      )}
+
       {/* Action Buttons */}
       <div className="space-y-3">
         {tour.status === 'scheduled' && (
@@ -162,6 +242,38 @@ function TourDetailContent() {
         )}
       </div>
     </div>
+  )
+}
+
+function GateRow({ icon, label, href, completed, status, requiredStatus }: {
+  icon: string
+  label: string
+  href: string
+  completed: boolean
+  status: string
+  requiredStatus: string
+}) {
+  const isLocked = status !== requiredStatus && !completed
+  
+  return (
+    <Link href={href} className={`flex items-center justify-between p-3 rounded-lg border ${
+      completed ? 'bg-green-50 border-green-200' : isLocked ? 'bg-gray-50 border-gray-200' : 'bg-white border-gray-200'
+    }`}>
+      <div className="flex items-center gap-3">
+        <span className="text-2xl">{icon}</span>
+        <div>
+          <div className="font-medium text-sm">{label}</div>
+          {completed && <div className="text-xs text-green-600">✓ Completed</div>}
+        </div>
+      </div>
+      {isLocked ? (
+        <span className="text-gray-400">🔒</span>
+      ) : completed ? (
+        <span className="text-green-600">✓</span>
+      ) : (
+        <span className="text-blue-600">→</span>
+      )}
+    </Link>
   )
 }
 
