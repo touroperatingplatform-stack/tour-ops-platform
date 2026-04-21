@@ -15,6 +15,7 @@ interface Tour {
   name: string
   start_time: string
   pickup_location: string
+  guide_id: string | null
   guide_name: string
   vehicle: {
     plate_number: string
@@ -60,7 +61,7 @@ function DriverDashboardContent() {
       const { data: toursData } = await supabase
         .from('tours')
         .select(`
-          id, name, start_time, pickup_location,
+          id, name, start_time, pickup_location, guide_id,
           profiles!guide_id (first_name, last_name),
           vehicles (plate_number, model)
         `)
@@ -78,6 +79,7 @@ function DriverDashboardContent() {
           name: toursData.name,
           start_time: toursData.start_time,
           pickup_location: toursData.pickup_location,
+          guide_id: toursData.guide_id,
           guide_name: profile ? `${profile.first_name} ${profile.last_name}` : 'Unknown',
           vehicle: Array.isArray(toursData.vehicles) ? toursData.vehicles[0] : toursData.vehicles
         })
@@ -117,7 +119,13 @@ function DriverDashboardContent() {
                 <span className="text-gray-400 text-sm">{todayTour.start_time?.slice(0, 5)}</span>
               </div>
               <h2 className="text-2xl font-bold mb-1">{todayTour.name}</h2>
-              <p className="text-gray-500 text-sm mb-3">{t('driver.guide')}: {todayTour.guide_name}</p>
+              {todayTour.guide_id ? (
+                // Tour with guide - show guide info
+                <p className="text-gray-500 text-sm mb-3">{t('driver.guide')}: {todayTour.guide_name}</p>
+              ) : (
+                // Transfer only - show transfer badge
+                <p className="text-amber-600 text-sm mb-3">🚗 {t('driver.transferOnly')}</p>
+              )}
               
               {checkinStatus === 'pending' ? (
                 <Link 
@@ -128,9 +136,23 @@ function DriverDashboardContent() {
                   <span>{t('driver.startPreTrip')}</span>
                 </Link>
               ) : (
-                <div className="flex items-center gap-2 text-green-600 font-medium">
-                  <span>✓</span>
-                  <span>{t('driver.checkinComplete')}</span>
+                <div className="flex items-center gap-2">
+                  {!todayTour.guide_id ? (
+                    // Transfer - go to transfer workflow
+                    <Link 
+                      href={`/driver/transfer?tour_id=${todayTour.id}`}
+                      className="inline-flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors"
+                    >
+                      <span>🚗</span>
+                      <span>{t('driver.startTransfer')}</span>
+                    </Link>
+                  ) : (
+                    // Tour with guide - show complete status
+                    <div className="flex items-center gap-2 text-green-600 font-medium">
+                      <span>✓</span>
+                      <span>{t('driver.checkinComplete')}</span>
+                    </div>
+                  )}
                 </div>
               )}
             </div>

@@ -858,6 +858,25 @@
     "signOut": "Sign Out",
     "tourOpsPlatform": "Tour Ops Platform",
     "driverPortal": "Driver Portal",
+    "transferOnly": "Transfer Only",
+    "startTransfer": "Start Transfer",
+    "pickup": "Pickup",
+    "dropoff": "Dropoff",
+    "totalPassengers": "total passengers",
+    "transferComplete": "Transfer Complete",
+    "steps": {
+      "vehicleChecked": "Vehicle Checked",
+      "enRoutePickup": "En Route to Pickup",
+      "pickedUp": "Passengers Picked Up",
+      "enRouteDropoff": "En Route to Dropoff",
+      "completed": "Transfer Complete"
+    },
+    "actions": {
+      "startPickup": "Start to Pickup",
+      "confirmPickup": "Confirm Pickup",
+      "startTransfer": "Start Transfer",
+      "completeTransfer": "Complete Transfer"
+    },
     "weekdays": {
       "mon": "M",
       "tue": "T",

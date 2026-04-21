@@ -692,6 +692,26 @@
     "signOut": "Cerrar Sesión",
     "tourOpsPlatform": "Plataforma de Tours",
     "driverPortal": "Portal de Conductores",
+    "transferOnly": "Solo Traslado",
+    "startTransfer": "Iniciar Traslado",
+    "pickup": "Recogida",
+    "dropoff": "Entrega",
+    "passengers": "Pasajeros",
+    "totalPassengers": "total de pasajeros",
+    "transferComplete": "Traslado Completado",
+    "steps": {
+      "vehicleChecked": "Vehículo Verificado",
+      "enRoutePickup": "En Camino a Recogida",
+      "pickedUp": "Pasajeros Recogidos",
+      "enRouteDropoff": "En Camino a Entrega",
+      "completed": "Traslado Completado"
+    },
+    "actions": {
+      "startPickup": "Ir a Recogida",
+      "confirmPickup": "Confirmar Recogida",
+      "startTransfer": "Iniciar Traslado",
+      "completeTransfer": "Completar Traslado"
+    },
     "weekdays": {
       "mon": "L",
       "tue": "M",
