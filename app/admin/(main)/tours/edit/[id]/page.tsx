@@ -17,6 +17,7 @@ export default function EditTourPage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [guides, setGuides] = useState<any[]>([])
+  const [drivers, setDrivers] = useState<any[]>([])
   const [vehicles, setVehicles] = useState<any[]>([])
   
   const [formData, setFormData] = useState({
@@ -28,6 +29,7 @@ export default function EditTourPage() {
     pickup_location: '',
     dropoff_location: '',
     guide_id: '',
+    driver_id: '',
     vehicle_id: '',
     status: 'scheduled',
     has_pre_pickup: false,
@@ -55,21 +57,14 @@ export default function EditTourPage() {
         pickup_location: tour.pickup_location || '',
         dropoff_location: tour.dropoff_location || '',
         guide_id: tour.guide_id || '',
+        driver_id: tour.driver_id || '',
         vehicle_id: tour.vehicle_id || '',
         status: tour.status || 'scheduled',
         has_pre_pickup: tour.has_pre_pickup || false,
       })
     }
 
-    // Load guides
-    const { data: guidesData } = await supabase
-      .from('profiles')
-      .select('id, first_name, last_name')
-      .eq('role', 'guide')
-
-    setGuides(guidesData || [])
-
-    // Load vehicles (filtered by company)
+    // Get user's company
     const { data: { user } } = await supabase.auth.getUser()
     let companyId = null
     
@@ -81,7 +76,34 @@ export default function EditTourPage() {
         .single()
       companyId = profile?.company_id
     }
+
+    // Load guides
+    let guidesQuery = supabase
+      .from('profiles')
+      .select('id, first_name, last_name')
+      .eq('role', 'guide')
     
+    if (companyId) {
+      guidesQuery = guidesQuery.eq('company_id', companyId)
+    }
+    
+    const { data: guidesData } = await guidesQuery
+    setGuides(guidesData || [])
+
+    // Load drivers
+    let driversQuery = supabase
+      .from('profiles')
+      .select('id, first_name, last_name')
+      .eq('role', 'driver')
+    
+    if (companyId) {
+      driversQuery = driversQuery.eq('company_id', companyId)
+    }
+    
+    const { data: driversData } = await driversQuery
+    setDrivers(driversData || [])
+
+    // Load vehicles
     let vehiclesQuery = supabase
       .from('vehicles')
       .select('id, plate_number, make, model')
@@ -114,6 +136,7 @@ export default function EditTourPage() {
         pickup_location: formData.pickup_location || null,
         dropoff_location: formData.dropoff_location || null,
         guide_id: formData.guide_id || null,
+        driver_id: formData.driver_id || null,
         vehicle_id: formData.vehicle_id || null,
         status: formData.status,
         has_pre_pickup: formData.has_pre_pickup,
@@ -237,7 +260,7 @@ export default function EditTourPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">{t('templates.guide')}</label>
                 <select
@@ -249,6 +272,20 @@ export default function EditTourPage() {
                   <option value="">{t('templates.unassigned')}</option>
                   {guides.map((g) => (
                     <option key={g.id} value={g.id}>{g.first_name} {g.last_name}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t('schedule.driver')}</label>
+                <select
+                  name="driver_id"
+                  value={formData.driver_id}
+                  onChange={handleChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                >
+                  <option value="">{t('templates.unassigned')}</option>
+                  {drivers.map((d) => (
+                    <option key={d.id} value={d.id}>{d.first_name} {d.last_name}</option>
                   ))}
                 </select>
               </div>
@@ -283,7 +320,7 @@ export default function EditTourPage() {
               </select>
             </div>
 
-              {/* Pre-Pickup Toggle */}
+            {/* Pre-Pickup Toggle */}
             <div className="bg-orange-50 rounded-lg p-4 border border-orange-200">
               <label className="flex items-center gap-3 cursor-pointer">
                 <input
