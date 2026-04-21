@@ -4,10 +4,9 @@ export const dynamic = 'force-dynamic'
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { useSearchParams } from 'next/navigation'
+import { useParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase/client'
 import RoleGuard from '@/lib/auth/RoleGuard'
-import { getLocalDate } from '@/lib/timezone'
 import { useTranslation } from '@/lib/i18n/useTranslation'
 import DriverNav from '@/components/navigation/DriverNav'
 
@@ -36,8 +35,8 @@ interface TransferDetails {
 
 function TransferWorkflowContent() {
   const { t } = useTranslation()
-  const searchParams = useSearchParams()
-  const tourId = searchParams.get('tour_id')
+  const params = useParams()
+  const tourId = params.id as string
   
   const [transfer, setTransfer] = useState<TransferDetails | null>(null)
   const [loading, setLoading] = useState(true)

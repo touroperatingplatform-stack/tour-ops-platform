@@ -129,10 +129,10 @@ function DriverDashboardContent() {
               
               {checkinStatus === 'pending' ? (
                 <Link 
-                  href={`/driver/checkin?tour_id=${todayTour.id}`}
+                  href={`/driver/tours/${todayTour.id}/checkin`}
                   className="inline-flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors"
                 >
-                  <span>🚗</span>
+                  <span>📋</span>
                   <span>{t('driver.startPreTrip')}</span>
                 </Link>
               ) : (
@@ -140,18 +140,21 @@ function DriverDashboardContent() {
                   {!todayTour.guide_id ? (
                     // Transfer - go to transfer workflow
                     <Link 
-                      href={`/driver/transfer?tour_id=${todayTour.id}`}
+                      href={`/driver/tours/${todayTour.id}/transfer`}
                       className="inline-flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors"
                     >
                       <span>🚗</span>
                       <span>{t('driver.startTransfer')}</span>
                     </Link>
                   ) : (
-                    // Tour with guide - show complete status
-                    <div className="flex items-center gap-2 text-green-600 font-medium">
+                    // Tour with guide - link to tour detail
+                    <Link 
+                      href={`/driver/tours/${todayTour.id}`}
+                      className="inline-flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-green-700 transition-colors"
+                    >
                       <span>✓</span>
-                      <span>{t('driver.checkinComplete')}</span>
-                    </div>
+                      <span>View Tour</span>
+                    </Link>
                   )}
                 </div>
               )}
