@@ -19,18 +19,22 @@ export default function EditTourPage() {
   const [guides, setGuides] = useState<any[]>([])
   const [drivers, setDrivers] = useState<any[]>([])
   const [vehicles, setVehicles] = useState<any[]>([])
+  const [brands, setBrands] = useState<any[]>([])
+  const [products, setProducts] = useState<any[]>([])
   
   const [formData, setFormData] = useState({
     name: '',
     description: '',
     tour_date: '',
     start_time: '',
-    end_time: '',
     pickup_location: '',
     dropoff_location: '',
     guide_id: '',
     driver_id: '',
     vehicle_id: '',
+    brand_id: '',
+    product_id: '',
+    tour_type: 'shared',
     status: 'scheduled',
     has_pre_pickup: false,
   })
@@ -53,12 +57,14 @@ export default function EditTourPage() {
         description: tour.description || '',
         tour_date: tour.tour_date || '',
         start_time: tour.start_time || '',
-        end_time: tour.end_time || '',
         pickup_location: tour.pickup_location || '',
         dropoff_location: tour.dropoff_location || '',
         guide_id: tour.guide_id || '',
         driver_id: tour.driver_id || '',
         vehicle_id: tour.vehicle_id || '',
+        brand_id: tour.brand_id || '',
+        product_id: tour.product_id || '',
+        tour_type: tour.tour_type || 'shared',
         status: tour.status || 'scheduled',
         has_pre_pickup: tour.has_pre_pickup || false,
       })
@@ -103,6 +109,32 @@ export default function EditTourPage() {
     const { data: driversData } = await driversQuery
     setDrivers(driversData || [])
 
+    // Load brands
+    let brandsQuery = supabase
+      .from('brands')
+      .select('id, name')
+      .eq('is_active', true)
+    
+    if (companyId) {
+      brandsQuery = brandsQuery.eq('company_id', companyId)
+    }
+    
+    const { data: brandsData } = await brandsQuery
+    setBrands(brandsData || [])
+
+    // Load tour products
+    let productsQuery = supabase
+      .from('tour_products')
+      .select('id, name, service_code')
+      .eq('is_active', true)
+    
+    if (companyId) {
+      productsQuery = productsQuery.eq('company_id', companyId)
+    }
+    
+    const { data: productsData } = await productsQuery
+    setProducts(productsData || [])
+
     // Load vehicles
     let vehiclesQuery = supabase
       .from('vehicles')
@@ -132,12 +164,14 @@ export default function EditTourPage() {
         description: formData.description || null,
         tour_date: formData.tour_date,
         start_time: formData.start_time,
-        end_time: formData.end_time || null,
         pickup_location: formData.pickup_location || null,
         dropoff_location: formData.dropoff_location || null,
         guide_id: formData.guide_id || null,
         driver_id: formData.driver_id || null,
         vehicle_id: formData.vehicle_id || null,
+        brand_id: formData.brand_id || null,
+        product_id: formData.product_id || null,
+        tour_type: formData.tour_type,
         status: formData.status,
         has_pre_pickup: formData.has_pre_pickup,
       })
@@ -202,7 +236,7 @@ export default function EditTourPage() {
               />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">{t('templates.date')} *</label>
                 <input
@@ -221,16 +255,6 @@ export default function EditTourPage() {
                   name="start_time"
                   required
                   value={formData.start_time}
-                  onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">{t('templates.endTime')}</label>
-                <input
-                  type="time"
-                  name="end_time"
-                  value={formData.end_time}
                   onChange={handleChange}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg"
                 />
@@ -318,6 +342,50 @@ export default function EditTourPage() {
                 <option value="completed">{t('templates.completed')}</option>
                 <option value="cancelled">{t('templates.cancelled')}</option>
               </select>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Brand</label>
+                <select
+                  name="brand_id"
+                  value={formData.brand_id}
+                  onChange={handleChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                >
+                  <option value="">Select Brand...</option>
+                  {brands.map((b) => (
+                    <option key={b.id} value={b.id}>{b.name}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Tour Product</label>
+                <select
+                  name="product_id"
+                  value={formData.product_id}
+                  onChange={handleChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                >
+                  <option value="">Select Product...</option>
+                  {products.map((p) => (
+                    <option key={p.id} value={p.id}>{p.name} ({p.service_code})</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Tour Type</label>
+                <select
+                  name="tour_type"
+                  value={formData.tour_type}
+                  onChange={handleChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                >
+                  <option value="shared">Shared</option>
+                  <option value="private">Private</option>
+                  <option value="transfer">Transfer</option>
+                </select>
+              </div>
             </div>
 
             {/* Pre-Pickup Toggle */}
