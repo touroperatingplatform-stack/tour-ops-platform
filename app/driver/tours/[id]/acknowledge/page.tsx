@@ -125,7 +125,7 @@ function AcknowledgeContent() {
       return
     }
 
-    router.push(`/driver/tours/${params.id}`)
+    router.push('/driver')
   }
 
   if (loading) {
