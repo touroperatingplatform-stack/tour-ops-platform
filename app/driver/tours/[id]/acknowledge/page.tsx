@@ -16,6 +16,9 @@ interface Tour {
   start_time: string
   status: string
   acknowledged_at: string | null
+  confirmed_office_arrival_time: string | null
+  confirmed_pickup_time: string | null
+  brand_id: string
   vehicle_id: string | null
   vehicles?: { plate_number: string; model: string }
 }
@@ -29,12 +32,22 @@ interface Stop {
   sort_order: number
 }
 
+interface Reservation {
+  id: string
+  adult_pax: number
+  child_pax: number
+  infant_pax: number
+  dietary_restrictions: string[]
+  accessibility_needs: string[]
+  special_requests: string | null
+}
+
 interface Profile {
   full_name: string
   phone: string
 }
 
-function AcknowledgeContent() {
+export default function AcknowledgeTourPage() {
   const { t } = useTranslation()
   const params = useParams()
   const router = useRouter()
@@ -42,6 +55,7 @@ function AcknowledgeContent() {
   const [pickupStops, setPickupStops] = useState<Stop[]>([])
   const [activityStops, setActivityStops] = useState<Stop[]>([])
   const [dropoffStops, setDropoffStops] = useState<Stop[]>([])
+  const [reservations, setReservations] = useState<Reservation[]>([])
   const [supervisor, setSupervisor] = useState<Profile | null>(null)
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
@@ -64,6 +78,7 @@ function AcknowledgeContent() {
     if (tourData) {
       setTour(tourData)
       
+      // Set defaults based on tour start time
       const [hours, minutes] = tourData.start_time.split(':').map(Number)
       const pickupDate = new Date()
       pickupDate.setHours(hours, minutes, 0)
@@ -76,6 +91,7 @@ function AcknowledgeContent() {
       setPickupStartTime(tourData.confirmed_pickup_time || defaultPickup)
       setOfficeArrivalTime(tourData.confirmed_office_arrival_time || defaultOffice)
       
+      // Load all stops
       const { data: allStops } = await supabase
         .from('pickup_stops')
         .select('id, location_name, scheduled_time, guest_count, stop_type, sort_order')
@@ -88,6 +104,15 @@ function AcknowledgeContent() {
         setDropoffStops(allStops.filter(s => s.stop_type === 'dropoff'))
       }
 
+      // Load reservations for special needs
+      const { data: resData } = await supabase
+        .from('reservation_manifest')
+        .select('id, adult_pax, child_pax, infant_pax, dietary_restrictions, accessibility_needs, special_requests')
+        .eq('tour_id', params.id)
+      
+      if (resData) setReservations(resData)
+
+      // Load brand supervisor (first admin)
       const { data: brandAdmins } = await supabase
         .from('profiles')
         .select('full_name, phone')
@@ -104,7 +129,7 @@ function AcknowledgeContent() {
 
   async function handleAcknowledge() {
     if (!officeArrivalTime || !pickupStartTime || !vanConfirmed) {
-      alert('Please confirm all items')
+      alert(t('guideAcknowledge.confirmAllItems'))
       return
     }
 
@@ -120,107 +145,304 @@ function AcknowledgeContent() {
       .eq('id', params.id)
 
     if (error) {
-      console.error('Acknowledge error:', error)
-      alert('Failed to acknowledge tour: ' + error.message)
+      alert(t('guideAcknowledge.failedToAcknowledge'))
       setSubmitting(false)
       return
     }
 
-    // Redirect to dashboard like guide does
     router.push('/driver')
   }
 
   if (loading) {
-    return <div className="p-4 text-center">{t('common.loading')}</div>
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-gray-500">{t('guideAcknowledge.loading')}</div>
+      </div>
+    )
   }
 
   if (!tour) {
     return (
-      <div className="p-4 text-center">
-        <div className="text-4xl mb-2">❌</div>
-        <h2 className="text-lg font-semibold">Tour not found</h2>
-        <Link href="/driver" className="text-blue-600 mt-2 inline-block">← Back to Dashboard</Link>
+      <div className="text-center py-12">
+        <h1 className="text-2xl font-bold text-gray-900 mb-2">{t('guideAcknowledge.tourNotFound')}</h1>
+        <Link href="/driver" className="text-blue-600 hover:underline">{t('guideAcknowledge.back')}</Link>
       </div>
     )
   }
 
   if (tour.acknowledged_at) {
-    return (
-      <div className="p-4 text-center">
-        <div className="text-4xl mb-2">✅</div>
-        <h2 className="text-lg font-semibold">Tour Already Acknowledged</h2>
-        <Link href={`/driver/tours/${params.id}`} className="text-blue-600 mt-2 inline-block">← Back to Tour</Link>
-      </div>
-    )
+    router.push('/driver')
+    return null
   }
 
+  // Calculate totals
+  const totalAdults = reservations.reduce((sum, r) => sum + (r.adult_pax || 0), 0)
+  const totalChildren = reservations.reduce((sum, r) => sum + (r.child_pax || 0), 0)
+  const totalInfants = reservations.reduce((sum, r) => sum + (r.infant_pax || 0), 0)
+  const totalGuests = totalAdults + totalChildren + totalInfants
+
+  // Collect special needs
+  const dietaryNeeds = reservations.flatMap(r => r.dietary_restrictions || []).filter((v, i, a) => a.indexOf(v) === i)
+  const accessibilityNeeds = reservations.flatMap(r => r.accessibility_needs || []).filter((v, i, a) => a.indexOf(v) === i)
+  const specialRequests = reservations.filter(r => r.special_requests).map(r => r.special_requests)
+
+  // Time until tour
+  const tourDate = new Date(tour.tour_date)
+  const now = new Date()
+  const diffHours = Math.round((tourDate.getTime() - now.getTime()) / (1000 * 60 * 60))
+  const timeLabel = diffHours <= 0 ? t('guideAcknowledge.today') : diffHours <= 24 ? `${diffHours} ${t('guideAcknowledge.hours')}` : `${Math.round(diffHours / 24)} ${t('guideAcknowledge.days')}`
+
   return (
-    <div className="p-4 space-y-4 max-w-md mx-auto">
-      <div className="flex items-center justify-between">
-        <Link href={`/driver/tours/${params.id}`} className="text-gray-500 hover:text-gray-700">← {t('common.back')}</Link>
-        <span className="text-sm text-gray-500">Acknowledge Tour</span>
-      </div>
-
-      <div className="bg-white rounded-xl shadow p-4">
-        <h1 className="text-xl font-bold mb-1">{tour.name}</h1>
-        <p className="text-gray-500 text-sm mb-4">{tour.vehicles?.plate_number || 'Unknown Vehicle'}</p>
-      </div>
-
-      <div className="bg-white rounded-xl shadow p-4 space-y-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Office Arrival Time</label>
-          <input
-            type="time"
-            value={officeArrivalTime}
-            onChange={(e) => setOfficeArrivalTime(e.target.value)}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-          />
+    <DriverNav>
+      <div className="p-4 space-y-4">
+        {/* Header */}
+        <div className="bg-white rounded-2xl border border-gray-200 p-5">
+          <div className="flex items-center justify-between mb-3">
+            <Link href="/driver" className="text-blue-600 hover:text-blue-700 text-sm font-medium">
+              {t('guideAcknowledge.backToTours')}
+            </Link>
+            <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm font-medium">
+              {timeLabel}
+            </span>
+          </div>
+          <h1 className="text-xl font-bold text-gray-900">{tour.name}</h1>
+          <p className="text-gray-500 text-sm mt-1">
+            {new Date(tour.tour_date).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
+          </p>
         </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Pickup Start Time</label>
-          <input
-            type="time"
-            value={pickupStartTime}
-            onChange={(e) => setPickupStartTime(e.target.value)}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-          />
+        {/* Guest Summary */}
+        <div className="bg-white rounded-2xl border border-gray-200 p-5">
+          <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+            <span>👥</span> {t('guideAcknowledge.guestSummary')}
+          </h3>
+          <div className="flex items-baseline gap-2 mb-3">
+            <span className="text-3xl font-bold text-gray-900">{totalGuests}</span>
+            <span className="text-gray-500">{t('guideAcknowledge.guestsTotal')}</span>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <span className="bg-blue-100 text-blue-700 px-3 py-1.5 rounded-full text-sm font-medium">{totalAdults} {t('guideAcknowledge.adults')}</span>
+            {totalChildren > 0 && <span className="bg-green-100 text-green-700 px-3 py-1.5 rounded-full text-sm font-medium">{totalChildren} {t('guideAcknowledge.children')}</span>}
+            {totalInfants > 0 && <span className="bg-yellow-100 text-yellow-700 px-3 py-1.5 rounded-full text-sm font-medium">{totalInfants} {t('guideAcknowledge.infants')}</span>}
+          </div>
         </div>
 
-        <label className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg cursor-pointer">
-          <input
-            type="checkbox"
-            checked={vanConfirmed}
-            onChange={(e) => setVanConfirmed(e.target.checked)}
-            className="w-5 h-5 text-blue-600 rounded"
-          />
-          <span className="font-medium">I have confirmed the vehicle assignment</span>
-        </label>
+        {/* Pickup Locations */}
+        <div className="bg-white rounded-2xl border border-gray-200 p-5">
+          <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+            <span>📍</span> {t('guideAcknowledge.pickupLocations')}
+          </h3>
+          <div className="space-y-3">
+            {pickupStops.map((stop, idx) => (
+              <div key={stop.id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
+                <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold text-sm">
+                  {idx + 1}
+                </div>
+                <div className="flex-1">
+                  <div className="font-medium text-gray-900">{stop.location_name}</div>
+                  <div className="text-sm text-gray-500">{stop.guest_count} {t('guideAcknowledge.guests')}</div>
+                </div>
+                <div className="text-blue-600 font-semibold">{stop.scheduled_time?.slice(0, 5)}</div>
+              </div>
+            ))}
+          </div>
+        </div>
 
-        {supervisor && (
-          <div className="text-sm text-gray-600 p-3 bg-blue-50 rounded-lg">
-            <div className="font-medium">Supervisor:</div>
-            <div>{supervisor.full_name}</div>
-            <a href={`tel:${supervisor.phone}`} className="text-blue-600">{supervisor.phone}</a>
+        {/* Activities */}
+        {activityStops.length > 0 && (
+          <div className="bg-white rounded-2xl border border-gray-200 p-5">
+            <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+              <span>🎯</span> {t('guideAcknowledge.activities')}
+            </h3>
+            <div className="space-y-2">
+              {activityStops.map((stop, idx) => (
+                <div key={stop.id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
+                  <div className="w-8 h-8 rounded-full bg-orange-500 flex items-center justify-center text-white font-bold text-sm">
+                    {idx + 1}
+                  </div>
+                  <div className="font-medium text-gray-900">{stop.location_name}</div>
+                </div>
+              ))}
+            </div>
           </div>
         )}
 
-        <button
-          onClick={handleAcknowledge}
-          disabled={submitting}
-          className="w-full bg-blue-600 text-white py-4 rounded-xl font-semibold text-lg shadow-lg hover:bg-blue-700 disabled:opacity-50"
-        >
-          {submitting ? 'Acknowledging...' : '✓ Acknowledge Tour'}
-        </button>
-      </div>
-    </div>
-  )
-}
+        {/* Dropoff */}
+        <div className="bg-white rounded-2xl border border-gray-200 p-5">
+          <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+            <span>🏁</span> {t('guideAcknowledge.dropoff')}
+          </h3>
+          <div className="space-y-2">
+            {dropoffStops.map((stop, idx) => (
+              <div key={stop.id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
+                <div className="w-8 h-8 rounded-full bg-green-500 flex items-center justify-center text-white font-bold text-sm">
+                  {idx + 1}
+                </div>
+                <div className="font-medium text-gray-900">{stop.location_name}</div>
+              </div>
+            ))}
+          </div>
+        </div>
 
-export default function AcknowledgePage() {
-  return (
-    <DriverNav>
-      <AcknowledgeContent />
+        {/* Return to Office */}
+        <div className="bg-gray-100 rounded-2xl border border-gray-200 p-5">
+          <h3 className="font-semibold text-gray-900 mb-1 flex items-center gap-2">
+            <span>🏢</span> {t('guideAcknowledge.returnToOffice')}
+          </h3>
+          <p className="text-gray-500 text-sm">{t('guideAcknowledge.afterCompletingDropoff')}</p>
+        </div>
+
+        {/* Special Notes */}
+        {(dietaryNeeds.length > 0 || accessibilityNeeds.length > 0 || specialRequests.length > 0) && (
+          <div className="bg-orange-50 rounded-2xl border border-orange-200 p-5">
+            <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+              <span>⚠️</span> {t('guideAcknowledge.specialNotes')}
+            </h3>
+            <div className="space-y-3">
+              {dietaryNeeds.length > 0 && (
+                <div>
+                  <span className="text-sm text-gray-500 flex items-center gap-1 mb-2">🍽️ {t('guideAcknowledge.dietary')}</span>
+                  <div className="flex flex-wrap gap-2">
+                    {dietaryNeeds.map((need, idx) => (
+                      <span key={idx} className="bg-orange-100 text-orange-700 px-3 py-1 rounded-full text-sm font-medium">{need}</span>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {accessibilityNeeds.length > 0 && (
+                <div>
+                  <span className="text-sm text-gray-500 flex items-center gap-1 mb-2">♿ {t('guideAcknowledge.accessibility')}</span>
+                  <div className="flex flex-wrap gap-2">
+                    {accessibilityNeeds.map((need, idx) => (
+                      <span key={idx} className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm font-medium">{need}</span>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {specialRequests.length > 0 && (
+                <div>
+                  <span className="text-sm text-gray-500 flex items-center gap-1 mb-2">📝 {t('guideAcknowledge.requests')}</span>
+                  <div className="space-y-1">
+                    {specialRequests.map((req, idx) => (
+                      <div key={idx} className="text-sm text-gray-700 bg-white p-2 rounded-lg">{req}</div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Equipment Check */}
+        <div className="bg-white rounded-2xl border border-gray-200 p-5">
+          <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
+            <span>✅</span> Equipment Check
+          </h3>
+          <div className="space-y-3">
+            <button
+              onClick={() => setVanConfirmed(!vanConfirmed)}
+              className={`w-full flex items-center gap-4 p-4 rounded-xl border-2 transition-all ${
+                vanConfirmed ? 'bg-green-50 border-green-300' : 'bg-white border-gray-200 hover:border-gray-300'
+              }`}
+            >
+              <span className="text-2xl">🚐</span>
+              <div className="flex-1 text-left">
+                <div className="font-semibold text-gray-900">{t('guideAcknowledge.vanAssigned')}</div>
+                <div className="text-sm text-gray-500">
+                  {tour.vehicles ? `${tour.vehicles.plate_number} • ${tour.vehicles.model}` : t('guideAcknowledge.confirmWithDispatcher')}
+                </div>
+              </div>
+              <div className={`w-8 h-8 rounded-full border-2 flex items-center justify-center ${
+                vanConfirmed ? 'bg-green-500 border-green-500' : 'border-gray-300'
+              }`}>
+                {vanConfirmed && <span className="text-white font-bold">✓</span>}
+              </div>
+            </button>
+
+            {supervisor && (
+              <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-xl">
+                <span className="text-2xl">📞</span>
+                <div className="flex-1">
+                  <div className="font-semibold text-gray-900">{t('guideAcknowledge.emergencyContact')}</div>
+                  <div className="text-sm text-gray-500">{supervisor.full_name}</div>
+                </div>
+                <a href={`tel:${supervisor.phone}`} className="text-blue-600 font-semibold">{supervisor.phone}</a>
+              </div>
+            )}
+
+            <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-xl">
+              <span className="text-2xl">📋</span>
+              <div className="flex-1">
+                <div className="font-semibold text-gray-900">Guide Packet</div>
+                <div className="text-sm text-gray-500">Ready to review</div>
+              </div>
+              <div className="text-green-600 font-bold">✓</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Time Confirmation */}
+        <div className="bg-white rounded-2xl border border-gray-200 p-5">
+          <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
+            <span>⏰</span> {t('guideAcknowledge.confirmYourTimes')}
+          </h3>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                {t('guideAcknowledge.officeArrivalTime')}
+              </label>
+              <input
+                type="time"
+                value={officeArrivalTime}
+                onChange={(e) => setOfficeArrivalTime(e.target.value)}
+                className="w-full p-4 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-lg"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                {t('guideAcknowledge.pickupStartTime')}
+              </label>
+              <input
+                type="time"
+                value={pickupStartTime}
+                onChange={(e) => setPickupStartTime(e.target.value)}
+                className="w-full p-4 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-lg"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Actions - Double height button */}
+        <div className="space-y-3 pt-4 pb-6">
+          <button
+            onClick={handleAcknowledge}
+            disabled={submitting || !officeArrivalTime || !pickupStartTime || !vanConfirmed}
+            className={`w-full py-6 rounded-2xl font-bold text-xl transition-colors flex items-center justify-center gap-3 ${
+              !submitting && officeArrivalTime && pickupStartTime && vanConfirmed
+                ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-lg'
+                : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+            }`}
+          >
+            {submitting ? (
+              <>
+                <span className="animate-spin">⟳</span>
+                {t('guideAcknowledge.acknowledging')}
+              </>
+            ) : (
+              <>
+                <span className="text-2xl">✓</span>
+                {t('guideAcknowledge.acceptTour')}
+              </>
+            )}
+          </button>
+          <button
+            onClick={() => router.back()}
+            className="w-full py-3 text-gray-500 font-medium text-center hover:text-gray-700"
+          >
+            {t('guideAcknowledge.cancel')}
+          </button>
+        </div>
+      </div>
     </DriverNav>
   )
 }
