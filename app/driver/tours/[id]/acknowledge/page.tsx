@@ -126,6 +126,7 @@ function AcknowledgeContent() {
       return
     }
 
+    // Redirect to dashboard like guide does
     router.push('/driver')
   }
 

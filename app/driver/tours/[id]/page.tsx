@@ -50,6 +50,7 @@ function DriverTourContent() {
 
   useEffect(() => {
     loadTour()
+    loadStops()
   }, [])
 
   async function loadTour() {
@@ -152,30 +153,25 @@ function DriverTourContent() {
   const activityStops = stops.filter(s => s.stop_type === 'activity')
   const dropoffStops = stops.filter(s => s.stop_type === 'dropoff')
   
-  // Check if all pickups are done
   const completedPickups = pickupStops.filter(stop => 
     checkins.some(c => c.pickup_stop_id === stop.id && c.checkin_type === 'pickup')
   )
   const allPickupsDone = pickupStops.length > 0 && completedPickups.length === pickupStops.length
   
-  // Check if all activities are done
   const completedActivities = activityStops.filter(stop => 
     checkins.some(c => c.pickup_stop_id === stop.id && c.checkin_type === 'activity')
   )
   const allActivitiesDone = activityStops.length > 0 && completedActivities.length === activityStops.length
   
-  // Check if all dropoffs are done
   const completedDropoffs = dropoffStops.filter(stop => 
     checkins.some(c => c.pickup_stop_id === stop.id && c.checkin_type === 'dropoff')
   )
   const allDropoffsDone = dropoffStops.length > 0 && completedDropoffs.length === dropoffStops.length
   
-  // Determine current phase
   let currentPhase: 'pickups' | 'activities' | 'dropoffs' = 'pickups'
   if (allPickupsDone && !allActivitiesDone) currentPhase = 'activities'
   else if (allPickupsDone && allActivitiesDone) currentPhase = 'dropoffs'
 
-  // Check if a stop is checked in
   const isCheckedIn = (stopId: string, stopType: string) => {
     return checkins.some(c => c.pickup_stop_id === stopId && c.checkin_type === stopType)
   }
@@ -215,9 +211,7 @@ function DriverTourContent() {
             </div>
             <h2 className="font-semibold text-gray-900 text-lg">Pre-Trip Check-in</h2>
           </div>
-          <p className="text-sm text-gray-500 mb-4">
-            Complete vehicle inspection before starting the tour
-          </p>
+          <p className="text-sm text-gray-500 mb-4">Complete vehicle inspection before starting the tour</p>
           <Link
             href={`/driver/tours/${params.id}/checkin`}
             className="block w-full bg-blue-600 text-white py-4 rounded-xl font-semibold text-lg text-center hover:bg-blue-700"
@@ -234,69 +228,47 @@ function DriverTourContent() {
           <div className="bg-white rounded-2xl border border-gray-200 p-6">
             <h2 className="font-semibold text-gray-900 mb-4">Tour Progress</h2>
             <div className="flex items-center gap-2">
-              {/* Phase 1: Pickups */}
               <div className={`flex-1 p-3 rounded-xl border-2 ${
                 currentPhase === 'pickups' ? 'bg-blue-50 border-blue-200' : 
                 allPickupsDone ? 'bg-green-50 border-green-200' : 'bg-gray-50 border-gray-200'
               }`}>
                 <div className="flex items-center gap-2">
                   <span className="text-xl">{allPickupsDone ? '✅' : '📍'}</span>
-                  <span className={`font-medium ${currentPhase === 'pickups' ? 'text-blue-900' : 'text-gray-600'}`}>
-                    Pickups
-                  </span>
+                  <span className={`font-medium ${currentPhase === 'pickups' ? 'text-blue-900' : 'text-gray-600'}`}>Pickups</span>
                 </div>
                 {pickupStops.length > 0 && (
-                  <div className="text-xs mt-1 text-gray-500">
-                    {completedPickups.length}/{pickupStops.length} done
-                  </div>
+                  <div className="text-xs mt-1 text-gray-500">{completedPickups.length}/{pickupStops.length} done</div>
                 )}
               </div>
-
-              {/* Connector */}
               <div className={`w-4 h-1 ${allPickupsDone ? 'bg-green-500' : 'bg-gray-300'}`} />
-
-              {/* Phase 2: Activities */}
               <div className={`flex-1 p-3 rounded-xl border-2 ${
                 currentPhase === 'activities' ? 'bg-blue-50 border-blue-200' : 
                 allActivitiesDone ? 'bg-green-50 border-green-200' : 'bg-gray-50 border-gray-200'
               }`}>
                 <div className="flex items-center gap-2">
                   <span className="text-xl">{allActivitiesDone ? '✅' : '🎯'}</span>
-                  <span className={`font-medium ${currentPhase === 'activities' ? 'text-blue-900' : 'text-gray-600'}`}>
-                    Activities
-                  </span>
+                  <span className={`font-medium ${currentPhase === 'activities' ? 'text-blue-900' : 'text-gray-600'}`}>Activities</span>
                 </div>
                 {activityStops.length > 0 && (
-                  <div className="text-xs mt-1 text-gray-500">
-                    {completedActivities.length}/{activityStops.length} done
-                  </div>
+                  <div className="text-xs mt-1 text-gray-500">{completedActivities.length}/{activityStops.length} done</div>
                 )}
               </div>
-
-              {/* Connector */}
               <div className={`w-4 h-1 ${allActivitiesDone ? 'bg-green-500' : 'bg-gray-300'}`} />
-
-              {/* Phase 3: Dropoffs */}
               <div className={`flex-1 p-3 rounded-xl border-2 ${
                 currentPhase === 'dropoffs' ? 'bg-blue-50 border-blue-200' : 
                 allDropoffsDone ? 'bg-green-50 border-green-200' : 'bg-gray-50 border-gray-200'
               }`}>
                 <div className="flex items-center gap-2">
                   <span className="text-xl">{allDropoffsDone ? '✅' : '🏁'}</span>
-                  <span className={`font-medium ${currentPhase === 'dropoffs' ? 'text-blue-900' : 'text-gray-600'}`}>
-                    Dropoffs
-                  </span>
+                  <span className={`font-medium ${currentPhase === 'dropoffs' ? 'text-blue-900' : 'text-gray-600'}`}>Dropoffs</span>
                 </div>
                 {dropoffStops.length > 0 && (
-                  <div className="text-xs mt-1 text-gray-500">
-                    {completedDropoffs.length}/{dropoffStops.length} done
-                  </div>
+                  <div className="text-xs mt-1 text-gray-500">{completedDropoffs.length}/{dropoffStops.length} done</div>
                 )}
               </div>
             </div>
           </div>
 
-          {/* Current Phase Stops */}
           {currentPhase === 'pickups' && pickupStops.length > 0 && (
             <div className="bg-white rounded-2xl border border-gray-200 p-6">
               <div className="flex items-center gap-3 mb-4">
@@ -307,34 +279,22 @@ function DriverTourContent() {
               </div>
               <div className="space-y-3">
                 {pickupStops.map((stop, idx) => (
-                  <div
-                    key={stop.id}
-                    className={`flex items-center gap-4 p-4 rounded-xl border-2 ${
-                      isCheckedIn(stop.id, 'pickup')
-                        ? 'bg-green-50 border-green-200'
-                        : 'bg-white border-gray-200'
-                    }`}
-                  >
+                  <div key={stop.id} className={`flex items-center gap-4 p-4 rounded-xl border-2 ${
+                    isCheckedIn(stop.id, 'pickup') ? 'bg-green-50 border-green-200' : 'bg-white border-gray-200'
+                  }`}>
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
                         <span className="text-xs font-medium text-gray-500">Stop {idx + 1}</span>
                         {isCheckedIn(stop.id, 'pickup') && (
-                          <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">
-                            ✓ Checked In
-                          </span>
+                          <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">✓ Checked In</span>
                         )}
                       </div>
                       <div className="font-medium text-gray-900">{stop.location_name}</div>
-                      <div className="text-sm text-gray-500">
-                        {stop.scheduled_time?.slice(0, 5)} • {stop.guest_count} guests
-                      </div>
+                      <div className="text-sm text-gray-500">{stop.scheduled_time?.slice(0, 5)} • {stop.guest_count} guests</div>
                     </div>
                     {!isCheckedIn(stop.id, 'pickup') && (
-                      <button
-                        onClick={() => handleCheckIn(stop.id, 'pickup')}
-                        disabled={checkingIn === stop.id}
-                        className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50"
-                      >
+                      <button onClick={() => handleCheckIn(stop.id, 'pickup')} disabled={checkingIn === stop.id}
+                        className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50">
                         {checkingIn === stop.id ? 'Checking In...' : 'Check In'}
                       </button>
                     )}
@@ -354,34 +314,22 @@ function DriverTourContent() {
               </div>
               <div className="space-y-3">
                 {activityStops.map((stop, idx) => (
-                  <div
-                    key={stop.id}
-                    className={`flex items-center gap-4 p-4 rounded-xl border-2 ${
-                      isCheckedIn(stop.id, 'activity')
-                        ? 'bg-green-50 border-green-200'
-                        : 'bg-white border-gray-200'
-                    }`}
-                  >
+                  <div key={stop.id} className={`flex items-center gap-4 p-4 rounded-xl border-2 ${
+                    isCheckedIn(stop.id, 'activity') ? 'bg-green-50 border-green-200' : 'bg-white border-gray-200'
+                  }`}>
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
                         <span className="text-xs font-medium text-gray-500">Activity {idx + 1}</span>
                         {isCheckedIn(stop.id, 'activity') && (
-                          <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">
-                            ✓ Checked In
-                          </span>
+                          <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">✓ Checked In</span>
                         )}
                       </div>
                       <div className="font-medium text-gray-900">{stop.location_name}</div>
-                      <div className="text-sm text-gray-500">
-                        {stop.scheduled_time?.slice(0, 5)} • {stop.guest_count} guests
-                      </div>
+                      <div className="text-sm text-gray-500">{stop.scheduled_time?.slice(0, 5)} • {stop.guest_count} guests</div>
                     </div>
                     {!isCheckedIn(stop.id, 'activity') && (
-                      <button
-                        onClick={() => handleCheckIn(stop.id, 'activity')}
-                        disabled={checkingIn === stop.id}
-                        className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50"
-                      >
+                      <button onClick={() => handleCheckIn(stop.id, 'activity')} disabled={checkingIn === stop.id}
+                        className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50">
                         {checkingIn === stop.id ? 'Checking In...' : 'Check In'}
                       </button>
                     )}
@@ -401,34 +349,22 @@ function DriverTourContent() {
               </div>
               <div className="space-y-3">
                 {dropoffStops.map((stop, idx) => (
-                  <div
-                    key={stop.id}
-                    className={`flex items-center gap-4 p-4 rounded-xl border-2 ${
-                      isCheckedIn(stop.id, 'dropoff')
-                        ? 'bg-green-50 border-green-200'
-                        : 'bg-white border-gray-200'
-                    }`}
-                  >
+                  <div key={stop.id} className={`flex items-center gap-4 p-4 rounded-xl border-2 ${
+                    isCheckedIn(stop.id, 'dropoff') ? 'bg-green-50 border-green-200' : 'bg-white border-gray-200'
+                  }`}>
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
                         <span className="text-xs font-medium text-gray-500">Drop-off {idx + 1}</span>
                         {isCheckedIn(stop.id, 'dropoff') && (
-                          <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">
-                            ✓ Checked In
-                          </span>
+                          <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">✓ Checked In</span>
                         )}
                       </div>
                       <div className="font-medium text-gray-900">{stop.location_name}</div>
-                      <div className="text-sm text-gray-500">
-                        {stop.scheduled_time?.slice(0, 5)} • {stop.guest_count} guests
-                      </div>
+                      <div className="text-sm text-gray-500">{stop.scheduled_time?.slice(0, 5)} • {stop.guest_count} guests</div>
                     </div>
                     {!isCheckedIn(stop.id, 'dropoff') && (
-                      <button
-                        onClick={() => handleCheckIn(stop.id, 'dropoff')}
-                        disabled={checkingIn === stop.id}
-                        className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50"
-                      >
+                      <button onClick={() => handleCheckIn(stop.id, 'dropoff')} disabled={checkingIn === stop.id}
+                        className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50">
                         {checkingIn === stop.id ? 'Checking In...' : 'Check In'}
                       </button>
                     )}
@@ -438,28 +374,21 @@ function DriverTourContent() {
             </div>
           )}
 
-          {/* Complete Tour Button */}
           {allDropoffsDone && (
-            <Link
-              href={`/driver/tours/${params.id}/complete`}
-              className="block w-full bg-green-600 text-white py-4 rounded-xl font-semibold text-lg text-center hover:bg-green-700"
-            >
+            <Link href={`/driver/tours/${params.id}/complete`}
+              className="block w-full bg-green-600 text-white py-4 rounded-xl font-semibold text-lg text-center hover:bg-green-700">
               ✓ Complete Tour
             </Link>
           )}
         </>
       )}
 
-      {/* Completed */}
       {tour.status === 'completed' && (
         <div className="text-center py-12">
           <div className="text-6xl mb-4">✅</div>
           <h2 className="text-2xl font-bold mb-2">Tour Completed</h2>
           <p className="text-gray-500 mb-6">Great job! This tour has been completed.</p>
-          <Link
-            href="/driver"
-            className="inline-block bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700"
-          >
+          <Link href="/driver" className="inline-block bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700">
             Back to Dashboard
           </Link>
         </div>
