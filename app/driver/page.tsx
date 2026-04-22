@@ -40,18 +40,27 @@ function DriverDashboardContent() {
       return
     }
 
-    const { data } = await supabase
+    // Query without date filter first to debug
+    const { data: allTours, error: allError } = await supabase
       .from('tours')
       .select('*')
       .eq('driver_id', user.id)
-      .eq('tour_date', today)
       .neq('status', 'cancelled')
-      .order('start_time')
+      .order('tour_date')
 
-    if (data) {
+    if (allError) {
+      console.error('Error loading tours:', allError)
+      setLoading(false)
+      return
+    }
+
+    // Filter by today's date client-side (timezone safe)
+    const todayTours = (allTours || []).filter(t => t.tour_date === today)
+    
+    if (todayTours.length > 0) {
       // Load guide names for each tour
       const toursWithGuides = await Promise.all(
-        data.map(async (tour) => {
+        todayTours.map(async (tour) => {
           let guide_name = 'Unassigned'
           if (tour.guide_id) {
             const { data: profile } = await supabase
@@ -103,8 +112,24 @@ function DriverDashboardContent() {
     )
   }
 
+  // Debug info (remove after testing)
+  const debugInfo = {
+    today: new Date().toISOString().split('T')[0],
+    tourCount: todayTours.length,
+    tours: todayTours.map(t => ({ name: t.name, date: t.tour_date, driver: t.driver_id }))
+  }
+
   return (
     <div className="p-4 space-y-6">
+      {/* Debug Info */}
+      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-xs">
+        <div className="font-mono">Today: {debugInfo.today}</div>
+        <div className="font-mono">Tours: {debugInfo.tourCount}</div>
+        {debugInfo.tours.map((t, i) => (
+          <div key={i} className="font-mono">- {t.name} ({t.date})</div>
+        ))}
+      </div>
+
       {/* Date Header */}
       <section>
         <p className="text-sm text-gray-500 mb-4">
