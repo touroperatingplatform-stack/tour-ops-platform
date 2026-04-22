@@ -5,6 +5,7 @@ export const dynamic = 'force-dynamic'
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase/client'
+import { getLocalDate } from '@/lib/timezone'
 import { useTranslation } from '@/lib/i18n/useTranslation'
 import DriverNav from '@/components/navigation/DriverNav'
 
@@ -19,6 +20,7 @@ interface Tour {
   guide_name: string
   guest_count: number
   capacity: number
+  driver_id: string | null
 }
 
 function DriverDashboardContent() {
@@ -31,7 +33,7 @@ function DriverDashboardContent() {
   }, [])
 
   async function loadTours() {
-    const today = new Date().toISOString().split('T')[0]
+    const today = getLocalDate()
     
     const { data: { user } } = await supabase.auth.getUser()
     
@@ -40,27 +42,24 @@ function DriverDashboardContent() {
       return
     }
 
-    // Query without date filter first to debug
-    const { data: allTours, error: allError } = await supabase
+    const { data, error } = await supabase
       .from('tours')
       .select('*')
       .eq('driver_id', user.id)
+      .eq('tour_date', today)
       .neq('status', 'cancelled')
-      .order('tour_date')
+      .order('start_time')
 
-    if (allError) {
-      console.error('Error loading tours:', allError)
+    if (error) {
+      console.error('Error loading tours:', error)
       setLoading(false)
       return
     }
 
-    // Filter by today's date client-side (timezone safe)
-    const todayTours = (allTours || []).filter(t => t.tour_date === today)
-    
-    if (todayTours.length > 0) {
+    if (data) {
       // Load guide names for each tour
       const toursWithGuides = await Promise.all(
-        todayTours.map(async (tour) => {
+        data.map(async (tour) => {
           let guide_name = 'Unassigned'
           if (tour.guide_id) {
             const { data: profile } = await supabase
@@ -112,24 +111,8 @@ function DriverDashboardContent() {
     )
   }
 
-  // Debug info (remove after testing)
-  const debugInfo = {
-    today: new Date().toISOString().split('T')[0],
-    tourCount: todayTours.length,
-    tours: todayTours.map(t => ({ name: t.name, date: t.tour_date, driver: t.driver_id }))
-  }
-
   return (
     <div className="p-4 space-y-6">
-      {/* Debug Info */}
-      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-xs">
-        <div className="font-mono">Today: {debugInfo.today}</div>
-        <div className="font-mono">Tours: {debugInfo.tourCount}</div>
-        {debugInfo.tours.map((t, i) => (
-          <div key={i} className="font-mono">- {t.name} ({t.date})</div>
-        ))}
-      </div>
-
       {/* Date Header */}
       <section>
         <p className="text-sm text-gray-500 mb-4">
