@@ -492,7 +492,7 @@ export default function DriverTourPage() {
               <div className="grid grid-cols-2 gap-4">
                 {/* Van Photo */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">{t('guideTour.vanPhoto')}</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">{t('guideTour.vanExterior')}</label>
                   {vanPhoto ? (
                     <div className="relative rounded-xl overflow-hidden">
                       <img src={vanPhoto} alt="Van" className="w-full h-32 object-cover" />
@@ -524,7 +524,7 @@ export default function DriverTourPage() {
 
                 {/* Equipment Photo */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">{t('guideTour.equipmentPhoto')}</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">{t('guideTour.vanInterior')}</label>
                   {equipmentPhoto ? (
                     <div className="relative rounded-xl overflow-hidden">
                       <img src={equipmentPhoto} alt="Equipment" className="w-full h-32 object-cover" />
