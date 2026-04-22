@@ -110,7 +110,7 @@ function AcknowledgeContent() {
 
     setSubmitting(true)
     
-    const { data, error } = await supabase
+    const { error } = await supabase
       .from('tours')
       .update({
         acknowledged_at: new Date().toISOString(),
@@ -118,8 +118,6 @@ function AcknowledgeContent() {
         confirmed_pickup_time: pickupStartTime
       })
       .eq('id', params.id)
-      .select()
-      .single()
 
     if (error) {
       console.error('Acknowledge error:', error)
@@ -128,7 +126,6 @@ function AcknowledgeContent() {
       return
     }
 
-    console.log('Tour acknowledged:', data)
     router.push('/driver')
   }
 
