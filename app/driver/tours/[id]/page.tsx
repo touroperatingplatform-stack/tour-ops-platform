@@ -47,18 +47,10 @@ function DriverTourContent() {
   const [stops, setStops] = useState<Stop[]>([])
   const [checkins, setCheckins] = useState<Checkin[]>([])
   const [checkingIn, setCheckingIn] = useState<string | null>(null)
-  const [shouldRedirect, setShouldRedirect] = useState(false)
 
   useEffect(() => {
     loadTour()
   }, [])
-
-  useEffect(() => {
-    if (tour && tour.status === 'scheduled' && !tour.acknowledged_at && !shouldRedirect) {
-      setShouldRedirect(true)
-      router.push(`/driver/tours/${params.id}/acknowledge`)
-    }
-  }, [tour, shouldRedirect, router, params.id])
 
   async function loadTour() {
     const { data: tourData } = await supabase
@@ -189,26 +181,27 @@ function DriverTourContent() {
   }
 
   return (
-    <div className="p-4 space-y-4 max-w-2xl mx-auto">
+    <div className="space-y-6 p-4">
       {/* Header */}
-      <div className="flex items-center justify-between mb-2">
-        <Link href="/driver" className="text-gray-500 hover:text-gray-700">← Back</Link>
-        <span className="text-sm text-gray-500">Tour Details</span>
-      </div>
-
-      {/* Tour Info */}
       <div className="bg-white rounded-2xl border border-gray-200 p-6">
-        <h1 className="text-2xl font-bold mb-2">{tour.name}</h1>
-        <p className="text-gray-500 mb-4">{tour.vehicles?.plate_number || 'Unknown Vehicle'}</p>
-        
-        <div className="flex items-center gap-4 text-sm">
-          <div className="flex items-center gap-2">
-            <span className="text-gray-500">Date:</span>
-            <span className="font-medium">{tour.tour_date}</span>
+        <div className="flex items-start justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">{tour.name}</h1>
+            <p className="text-gray-500 mt-1">
+              {new Date(tour.tour_date).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
+            </p>
+            {tour.vehicles && (
+              <p className="text-sm text-blue-600 mt-1 font-medium">
+                🚐 {tour.vehicles.plate_number} • {tour.vehicles.model}
+              </p>
+            )}
           </div>
-          <div className="flex items-center gap-2">
-            <span className="text-gray-500">Time:</span>
-            <span className="font-medium">{tour.start_time?.slice(0, 5)}</span>
+          <div className={`px-3 py-1 rounded-full text-sm font-medium ${
+            tour.status === 'in_progress' ? 'bg-blue-100 text-blue-700' :
+            tour.status === 'completed' ? 'bg-green-100 text-green-700' :
+            'bg-gray-100 text-gray-700'
+          }`}>
+            {tour.status.replace('_', ' ')}
           </div>
         </div>
       </div>
