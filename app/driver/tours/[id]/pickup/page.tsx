@@ -68,7 +68,7 @@ function PickupCheckinContent() {
       if (stopsData) setStops(stopsData)
 
       const { data: checkinsData } = await supabase
-        .from('guide_checkins')
+        .from('driver_checkins')
         .select('id, pickup_stop_id, checkin_type, checked_in_at, location_lat, location_lng')
         .eq('tour_id', params.id)
         .eq('checkin_type', 'pickup')
@@ -103,7 +103,7 @@ function PickupCheckinContent() {
         }
       }
 
-      await supabase.from('guide_checkins').insert({
+      await supabase.from('driver_checkins').insert({
         tour_id: params.id,
         pickup_stop_id: stopId,
         checkin_type: 'pickup',

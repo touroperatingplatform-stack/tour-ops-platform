@@ -169,7 +169,7 @@ export default function CheckinPage() {
     } else {
       // For activity/dropoff, count stops without check-ins
       const { data: checkinsData } = await supabase
-        .from('guide_checkins')
+        .from('driver_checkins')
         .select('pickup_stop_id, checkin_type')
         .eq('tour_id', tourId)
         .eq('checkin_type', checkinType)
@@ -417,11 +417,11 @@ export default function CheckinPage() {
         .eq('id', tourId)
         .single()
 
-      // Create guide checkin record for activity/dropoff/pre_pickup
+      // Create driver checkin record for activity/dropoff/pre_pickup
       const checkinData = {
         tour_id: tourId,
         brand_id: tourData?.brand_id,
-        guide_id: user.id,
+        driver_id: user.id,
         pickup_stop_id: selectedStop.id,
         checkin_type: checkinType, // 'activity', 'dropoff', or 'pre_pickup'
         checked_in_at: new Date().toISOString(),
@@ -432,7 +432,7 @@ export default function CheckinPage() {
         notes: notes || null
       }
       
-      const { error: checkinError } = await supabase.from('guide_checkins').insert(checkinData)
+      const { error: checkinError } = await supabase.from('driver_checkins').insert(checkinData)
 
       if (checkinError) {
         console.error('Checkin insert error:', checkinError)
@@ -485,7 +485,7 @@ export default function CheckinPage() {
         .eq('id', tourId)
         .single()
 
-      // Update reservation status - explicit boolean values
+      // Update reservation status - explicit boolean values (driver can mark for corroboration)
       const { error: updateError } = await supabase
         .from('reservation_manifest')
         .update({
@@ -500,14 +500,13 @@ export default function CheckinPage() {
         throw new Error('Failed to update reservation: ' + (updateError.message || JSON.stringify(updateError)))
       }
 
-      // Create guide checkin record
-      // Note: 'no_show' is not a valid checkin_type, use 'pickup' with NO_SHOW prefix in notes
+      // Create driver checkin record
       const checkinData = {
         tour_id: tourId,
         brand_id: tourData?.brand_id,
-        guide_id: user.id,
+        driver_id: user.id,
         pickup_stop_id: selectedReservation.pickup_stop_id,
-        checkin_type: 'pickup', // Always 'pickup' - no_show indicated in notes
+        checkin_type: 'pickup',
         checked_in_at: new Date().toISOString(),
         latitude: location.lat,
         longitude: location.lng,
@@ -515,9 +514,9 @@ export default function CheckinPage() {
         selfie_url: photoUrl,
         notes: actionType === 'noshow' ? `[NO_SHOW] ${notes || 'Guest did not show'}` : notes
       }
-      console.log('Inserting checkin with data:', checkinData)
+      console.log('Inserting driver checkin with data:', checkinData)
       
-      const { error: checkinError } = await supabase.from('guide_checkins').insert(checkinData)
+      const { error: checkinError } = await supabase.from('driver_checkins').insert(checkinData)
 
       if (checkinError) {
         console.error('Checkin insert error:', checkinError)
@@ -570,7 +569,7 @@ export default function CheckinPage() {
       }
 
       // Back to dashboard
-      router.push('/driver')
+      router.push(`/driver/tours/${tourId}`)
       
     } catch (error: any) {
       console.error('Submit error:', error)

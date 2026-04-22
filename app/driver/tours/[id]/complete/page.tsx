@@ -187,12 +187,12 @@ export default function CompleteTourPage() {
       .eq('id', params.id)
       .single()
 
-    // Create office_return checkin
+    // Create office_return checkin for driver
     if (tourData) {
-      await supabase.from('guide_checkins').insert({
+      await supabase.from('driver_checkins').insert({
         tour_id: params.id,
         brand_id: tourData.brand_id,
-        guide_id: user.id,
+        driver_id: user.id,
         checkin_type: 'office_return',
         checked_in_at: new Date().toISOString(),
       })

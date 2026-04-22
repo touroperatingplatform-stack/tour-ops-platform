@@ -65,6 +65,7 @@ interface Reservation {
   checked_in: boolean
   no_show: boolean
   pickup_location: string | null
+  hotel_name: string | null
 }
 
 export default function DriverTourPage() {
@@ -96,6 +97,16 @@ export default function DriverTourPage() {
     loadReservations()
     loadStops()
   }, [])
+
+  async function loadReservations() {
+    const { data } = await supabase
+      .from('reservation_manifest')
+      .select('id, booking_reference, booking_platform, adult_pax, child_pax, infant_pax, total_pax, primary_contact_name, dietary_restrictions, accessibility_needs, special_requests, checked_in, no_show, pickup_location, hotel_name')
+      .eq('tour_id', params.id)
+      .order('booking_reference')
+    
+    if (data) setReservations(data)
+  }
 
   async function loadTour() {
     const { data: tourData } = await supabase
@@ -154,16 +165,6 @@ export default function DriverTourPage() {
     setLoading(false)
   }
 
-  async function loadReservations() {
-    const { data } = await supabase
-      .from('reservation_manifest')
-      .select('id, booking_reference, booking_platform, adult_pax, child_pax, infant_pax, total_pax, primary_contact_name, dietary_restrictions, accessibility_needs, special_requests, checked_in, no_show, pickup_location, hotel_name')
-      .eq('tour_id', params.id)
-      .order('booking_reference')
-    
-    if (data) setReservations(data)
-  }
-
   async function loadStops() {
     const { data: stopsData } = await supabase
       .from('pickup_stops')
@@ -174,7 +175,7 @@ export default function DriverTourPage() {
     if (stopsData) setStops(stopsData)
 
     const { data: checkinsData } = await supabase
-      .from('guide_checkins')
+      .from('driver_checkins')
       .select('id, pickup_stop_id, checkin_type, checked_in_at')
       .eq('tour_id', params.id)
     
@@ -261,21 +262,21 @@ export default function DriverTourPage() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
 
-    // Save checklist completion
+    // Save checklist completion for driver
     await supabase.from('tour_equipment_checklists').upsert({
       tour_id: params.id,
       items: equipmentItems,
       completed_items: equipmentItems.filter((item: any) => preDepartureChecked[item.id]),
       is_completed: true,
       completed_at: new Date().toISOString(),
-      guide_id: user.id
+      driver_id: user.id
     }, { onConflict: 'tour_id' })
 
-    // Create pre_departure checkin
-    await supabase.from('guide_checkins').insert({
+    // Create pre_departure checkin for driver
+    await supabase.from('driver_checkins').insert({
       tour_id: params.id,
       brand_id: tour.brand_id,
-      guide_id: user.id,
+      driver_id: user.id,
       checkin_type: 'pre_departure',
       checked_in_at: new Date().toISOString()
     })
@@ -298,9 +299,11 @@ export default function DriverTourPage() {
   const activityStops = stops.filter(s => s.stop_type === 'activity')
   const dropoffStops = stops.filter(s => s.stop_type === 'dropoff')
   
-  // Check if all pickups are done (all reservations complete)
-  const completedReservations = reservations.filter(r => r.checked_in || r.no_show)
-  const allPickupsDone = reservations.length > 0 && completedReservations.length === reservations.length
+  // Check if all pickups are done (all driver check-ins complete)
+  const completedPickups = pickupStops.filter(stop => 
+    checkins.some(c => c.pickup_stop_id === stop.id && c.checkin_type === 'pickup')
+  )
+  const allPickupsDone = pickupStops.length > 0 && completedPickups.length === pickupStops.length
   
   // Check if all activities are done
   const completedActivities = activityStops.filter(stop => 
@@ -325,28 +328,7 @@ export default function DriverTourPage() {
   
   // Check if a stop has any incomplete check-ins
   const getPendingCountForStop = (stop: Stop) => {
-    // For pickups: Match reservations to stop by pickup_location OR hotel_name
-    if (stop.stop_type === 'pickup') {
-      const stopReservations = reservations.filter(r => {
-        const pickupLoc = (r.pickup_location || '').toLowerCase().trim()
-        const hotelName = ((r as any).hotel_name || '').toLowerCase().trim()
-        const stopName = stop.location_name.toLowerCase().trim()
-        
-        // Exact match
-        const matchPickup = pickupLoc && pickupLoc === stopName
-        const matchHotel = hotelName && hotelName === stopName
-        
-        // Partial match (one contains the other)
-        const partialMatch = (pickupLoc && (pickupLoc.includes(stopName) || stopName.includes(pickupLoc))) ||
-                            (hotelName && (hotelName.includes(stopName) || stopName.includes(hotelName)))
-        
-        return matchPickup || matchHotel || partialMatch
-      })
-      const pending = stopReservations.filter(r => !r.checked_in && !r.no_show)
-      return { total: stopReservations.length, pending: pending.length }
-    }
-    
-    // For activities and dropoffs: Check if there's a guide_checkin for this stop
+    // For all stop types: Check if there's a driver_checkin for this stop
     const hasCheckin = checkins.some(c => c.pickup_stop_id === stop.id && c.checkin_type === stop.stop_type)
     return { total: 1, pending: hasCheckin ? 0 : 1 }
   }
@@ -602,7 +584,7 @@ export default function DriverTourPage() {
                     </span>
                   </div>
                   <div className="text-sm text-gray-500 mt-1">
-                    {completedReservations.length}/{reservations.length} {t('guideTour.guestsDone')}
+                    {completedPickups.length}/{pickupStops.length} stops done
                   </div>
                 </div>
                 
@@ -723,10 +705,10 @@ export default function DriverTourPage() {
                             </div>
                           ) : (
                             <Link
-                              href={`/driver/tours/${tour.id}/checkin?type=pickup`}
+                              href={`/driver/tours/${tour.id}/checkin?type=pickup&stopId=${stop.id}`}
                               className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700"
                             >
-                              {pending > 0 ? `${pending} ${t('guideTour.pending')}` : t('guideTour.checkIn')}
+                              {t('guideTour.checkIn')}
                             </Link>
                           )}
                         </div>
@@ -941,7 +923,21 @@ export default function DriverTourPage() {
               </div>
             )}
 
-            {/* Guest Manifest */}
+            {/* Complete Tour Button - Only show when all phases done */}
+            {allPickupsDone && allActivitiesDone && allDropoffsDone ? (
+              <Link
+                href={`/driver/tours/${tour.id}/complete`}
+                className="block w-full bg-green-600 text-white py-4 rounded-xl font-semibold text-lg text-center hover:bg-green-700"
+              >
+                {t('guideTour.completeTour')}
+              </Link>
+            ) : (
+              <div className="block w-full bg-gray-300 text-gray-500 py-4 rounded-xl font-semibold text-lg text-center cursor-not-allowed">
+                {t('guideTour.completeAllPhases')}
+              </div>
+            )}
+
+            {/* Guest Manifest - Read Only for Driver */}
             {reservations.length > 0 && (
               <div className="bg-white rounded-2xl border border-gray-200 p-6">
                 <button
@@ -951,7 +947,7 @@ export default function DriverTourPage() {
                   <div>
                     <h2 className="font-semibold text-gray-900">{t('guideTour.guestManifest')}</h2>
                     <p className="text-sm text-gray-500 mt-1">
-                      {reservations.filter(r => r.checked_in).length}/{reservations.length} {t('guideTour.guestsDone')}
+                      {reservations.filter(r => r.checked_in).length}/{reservations.length} guests checked in
                     </p>
                   </div>
                   <span className={`transform transition-transform ${showGuestManifest ? 'rotate-180' : ''}`}>
@@ -972,14 +968,14 @@ export default function DriverTourPage() {
                               {reservation.primary_contact_name || 'Guest'}
                             </div>
                             <div className="text-sm text-gray-500">
-                              {reservation.adult_pax}{t('guests.adults')} {reservation.child_pax > 0 ? `${reservation.child_pax}${t('guests.children')}` : ''} {reservation.infant_pax > 0 ? `${reservation.infant_pax}I` : ''}
+                              {reservation.adult_pax}A {reservation.child_pax > 0 ? `${reservation.child_pax}C` : ''} {reservation.infant_pax > 0 ? `${reservation.infant_pax}I` : ''}
                             </div>
                           </div>
                           <div className={`px-2 py-1 rounded-full text-xs font-medium ${
                             reservation.no_show ? 'bg-red-100 text-red-700' :
                             reservation.checked_in ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-600'
                           }`}>
-                            {reservation.no_show ? t('guideTour.noShow') : reservation.checked_in ? t('guideTour.checkedIn') : t('guideTour.pending')}
+                            {reservation.no_show ? 'No Show' : reservation.checked_in ? 'Checked In' : 'Pending'}
                           </div>
                         </div>
                         {reservation.dietary_restrictions?.length > 0 && (
@@ -991,20 +987,6 @@ export default function DriverTourPage() {
                     ))}
                   </div>
                 )}
-              </div>
-            )}
-
-            {/* Complete Tour Button - Only show when all phases done */}
-            {allPickupsDone && allActivitiesDone && allDropoffsDone ? (
-              <Link
-                href={`/driver/tours/${tour.id}/complete`}
-                className="block w-full bg-green-600 text-white py-4 rounded-xl font-semibold text-lg text-center hover:bg-green-700"
-              >
-                {t('guideTour.completeTour')}
-              </Link>
-            ) : (
-              <div className="block w-full bg-gray-300 text-gray-500 py-4 rounded-xl font-semibold text-lg text-center cursor-not-allowed">
-                {t('guideTour.completeAllPhases')}
               </div>
             )}
           </>
