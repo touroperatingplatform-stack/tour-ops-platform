@@ -29,11 +29,18 @@ function DriverCheckinContent() {
   const [submitting, setSubmitting] = useState(false)
 
   const [inspection, setInspection] = useState({
-    mileage: '',
-    fuel_level: 'full',
-    exterior_condition: 'good',
-    interior_condition: 'good',
+    mileage_start: '',
+    fuel_level_before: 'full',
+    vehicle_condition: 'good',
     issues: '',
+    inspection_data: {
+      tires: 'ok',
+      brakes: 'ok',
+      lights: 'ok',
+      ac: 'ok',
+      cleanliness: 'good',
+      safety_equipment: 'ok',
+    },
   })
 
   useEffect(() => {
@@ -72,15 +79,29 @@ function DriverCheckinContent() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
 
+      // Get tour to get brand_id and vehicle_id
+      const { data: tourData } = await supabase
+        .from('tours')
+        .select('brand_id, vehicle_id')
+        .eq('id', selectedTour)
+        .single()
+
+      if (!tourData) {
+        alert('Tour not found')
+        setSubmitting(false)
+        return
+      }
+
       await supabase.from('driver_checkins').insert({
         driver_id: user.id,
         tour_id: selectedTour,
-        mileage: parseInt(inspection.mileage) || 0,
-        fuel_level: inspection.fuel_level,
-        exterior_condition: inspection.exterior_condition,
-        interior_condition: inspection.interior_condition,
+        brand_id: tourData.brand_id,
+        vehicle_id: tourData.vehicle_id,
+        mileage_start: parseInt(inspection.mileage_start) || 0,
+        fuel_level_before: inspection.fuel_level_before,
+        vehicle_condition: inspection.vehicle_condition,
         issues: inspection.issues,
-        tour_date: new Date().toISOString().split('T')[0],
+        inspection_data: inspection.inspection_data,
       })
 
       window.location.href = '/driver'
@@ -128,81 +149,90 @@ function DriverCheckinContent() {
       <div className="bg-white rounded-xl shadow p-4 space-y-4">
         <h2 className="font-semibold">{t('driver.inspection.title')}</h2>
 
-        {/* Mileage */}
+        {/* Mileage Start */}
         <div>
-          <label className="block text-sm font-medium mb-2">{t('driver.inspection.mileage')}</label>
+          <label className="block text-sm font-medium mb-2">Mileage Start</label>
           <input
             type="number"
-            value={inspection.mileage}
-            onChange={(e) => setInspection({ ...inspection, mileage: e.target.value })}
+            value={inspection.mileage_start}
+            onChange={(e) => setInspection({ ...inspection, mileage_start: e.target.value })}
             className="w-full p-3 border rounded-lg"
             placeholder="e.g. 45234"
             required
           />
         </div>
 
-        {/* Fuel Level */}
+        {/* Fuel Level Before */}
         <div>
-          <label className="block text-sm font-medium mb-2">{t('driver.fuel.level')}</label>
-          <div className="grid grid-cols-4 gap-2">
-            {['full', '3/4', '1/2', '1/4'].map((level) => (
+          <label className="block text-sm font-medium mb-2">Fuel Level (Before)</label>
+          <div className="grid grid-cols-5 gap-2">
+            {['full', '3/4', '1/2', '1/4', 'empty'].map((level) => (
               <button
                 key={level}
                 type="button"
-                onClick={() => setInspection({ ...inspection, fuel_level: level })}
+                onClick={() => setInspection({ ...inspection, fuel_level_before: level })}
                 className={`p-3 rounded-lg border-2 text-center ${
-                  inspection.fuel_level === level
+                  inspection.fuel_level_before === level
                     ? 'border-blue-500 bg-blue-50'
                     : 'border-gray-200'
                 }`}
               >
-                <span className="text-lg">{level === 'full' ? '⛽' : level === '3/4' ? '🟢' : level === '1/2' ? '🟡' : '🔴'}</span>
+                <span className="text-lg">{level === 'full' ? '⛽' : level === 'empty' ? '🔴' : level === '3/4' ? '🟢' : level === '1/2' ? '🟡' : '🟠'}</span>
                 <span className="block text-xs mt-1">{level}</span>
               </button>
             ))}
           </div>
         </div>
 
-        {/* Exterior Condition */}
+        {/* Vehicle Condition */}
         <div>
-          <label className="block text-sm font-medium mb-2">{t('driver.condition.exterior')}</label>
+          <label className="block text-sm font-medium mb-2">Overall Vehicle Condition</label>
           <div className="grid grid-cols-3 gap-2">
-            {['good', 'fair', 'needs_attention'].map((condition) => (
+            {['good', 'fair', 'poor'].map((condition) => (
               <button
                 key={condition}
                 type="button"
-                onClick={() => setInspection({ ...inspection, exterior_condition: condition })}
+                onClick={() => setInspection({ ...inspection, vehicle_condition: condition })}
                 className={`p-3 rounded-lg border-2 text-center ${
-                  inspection.exterior_condition === condition
+                  inspection.vehicle_condition === condition
                     ? 'border-blue-500 bg-blue-50'
                     : 'border-gray-200'
                 }`}
               >
-                <span className="text-sm">{t(`driver.status.${condition}`)}</span>
+                <span className="text-sm capitalize">{condition}</span>
               </button>
             ))}
           </div>
         </div>
 
-        {/* Interior Condition */}
-        <div>
-          <label className="block text-sm font-medium mb-2">{t('driver.condition.interior')}</label>
-          <div className="grid grid-cols-3 gap-2">
-            {['good', 'fair', 'needs_attention'].map((condition) => (
-              <button
-                key={condition}
-                type="button"
-                onClick={() => setInspection({ ...inspection, interior_condition: condition })}
-                className={`p-3 rounded-lg border-2 text-center ${
-                  inspection.interior_condition === condition
-                    ? 'border-blue-500 bg-blue-50'
-                    : 'border-gray-200'
-                }`}
-              >
-                <span className="text-sm">{t(`driver.status.${condition}`)}</span>
-              </button>
-            ))}
-          </div>
+        {/* Inspection Checklist */}
+        <div className="bg-gray-50 rounded-lg p-4 space-y-3">
+          <h3 className="font-semibold text-sm">Quick Inspection Checklist</h3>
+          {Object.entries(inspection.inspection_data).map(([key, value]) => (
+            <div key={key} className="flex items-center justify-between">
+              <span className="text-sm capitalize text-gray-700">{key.replace('_', ' ')}</span>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setInspection({ ...inspection, inspection_data: { ...inspection.inspection_data, [key]: 'ok' } })}
+                  className={`px-3 py-1 rounded text-xs font-medium ${
+                    value === 'ok' ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-600'
+                  }`}
+                >
+                  OK
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setInspection({ ...inspection, inspection_data: { ...inspection.inspection_data, [key]: 'issue' } })}
+                  className={`px-3 py-1 rounded text-xs font-medium ${
+                    value === 'issue' ? 'bg-red-500 text-white' : 'bg-gray-200 text-gray-600'
+                  }`}
+                >
+                  Issue
+                </button>
+              </div>
+            </div>
+          ))}
         </div>
 
         {/* Issues */}
