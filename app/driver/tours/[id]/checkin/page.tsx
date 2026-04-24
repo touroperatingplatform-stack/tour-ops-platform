@@ -684,22 +684,37 @@ export default function CheckinPage() {
             <div className="space-y-3">
               {reservations.map((res) => {
                 const stop = stops.find(s => s.id === res.pickup_stop_id)
+                const isCheckedIn = res.checked_in === true
+                const isNoShow = res.no_show === true
                 return (
                   <button
                     key={res.id}
-                    onClick={() => selectReservation(res)}
-                    className="w-full bg-white rounded-xl p-4 border border-gray-200 text-left hover:border-blue-300 hover:shadow-sm transition-all"
+                    onClick={() => !isCheckedIn && !isNoShow && selectReservation(res)}
+                    disabled={isCheckedIn || isNoShow}
+                    className={`w-full rounded-xl p-4 border text-left transition-all ${
+                      isCheckedIn || isNoShow
+                        ? 'bg-gray-100 border-gray-200 opacity-60 cursor-not-allowed'
+                        : 'bg-white border-gray-200 hover:border-blue-300 hover:shadow-sm'
+                    }`}
                   >
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
-                        <p className="font-semibold text-gray-900">{res.hotel_name}</p>
-                        <p className="text-sm text-gray-600 mt-1">{res.primary_contact_name}</p>
+                        <div className="flex items-center gap-2">
+                          <p className={`font-semibold ${
+                            isCheckedIn ? 'text-green-700' : isNoShow ? 'text-gray-500' : 'text-gray-900'
+                          }`}>{res.hotel_name}</p>
+                          {isCheckedIn && <span className="text-xs bg-green-500 text-white px-2 py-0.5 rounded-full">✓ Picked up</span>}
+                          {isNoShow && <span className="text-xs bg-gray-500 text-white px-2 py-0.5 rounded-full">No show</span>}
+                        </div>
+                        <p className={`text-sm mt-1 ${
+                          isCheckedIn || isNoShow ? 'text-gray-500' : 'text-gray-600'
+                        }`}>{res.primary_contact_name}</p>
                         <p className="text-xs text-gray-500 mt-2">
                           {res.adult_pax}A {res.child_pax > 0 ? `${res.child_pax}C` : ''} {res.infant_pax > 0 ? `${res.infant_pax}I` : ''}
                           {stop && ` • ${stop.scheduled_time?.slice(0, 5)}`}
                         </p>
                       </div>
-                      <span className="text-blue-600 font-medium">→</span>
+                      {!isCheckedIn && !isNoShow && <span className="text-blue-600 font-medium">→</span>}
                     </div>
                   </button>
                 )
