@@ -103,7 +103,7 @@ function ActivityCheckinContent() {
         }
       }
 
-      await supabase.from('guide_checkins').insert({
+      await supabase.from('driver_checkins').insert({
         tour_id: params.id,
         pickup_stop_id: stopId,
         checkin_type: 'activity',
