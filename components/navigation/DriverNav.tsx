@@ -2,22 +2,58 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { useEffect, useState } from 'react'
+import { supabase } from '@/lib/supabase/client'
 import { useTranslation } from '@/lib/i18n/useTranslation'
-
-const navItems = [
-  { href: '/driver', labelKey: 'driver.tours', icon: '🚌' },
-  { href: '/driver/checkin', labelKey: 'driver.checkin', icon: '🚗' },
-  { href: '/driver/profile', labelKey: 'driver.profile', icon: '👤' },
-]
 
 export default function DriverNav({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const { t } = useTranslation()
+  const [activeTourId, setActiveTourId] = useState<string | null>(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    loadActiveTour()
+  }, [])
+
+  async function loadActiveTour() {
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) {
+        setLoading(false)
+        return
+      }
+
+      const today = new Date().toISOString().split('T')[0]
+      
+      const { data } = await supabase
+        .from('tours')
+        .select('id, status')
+        .eq('driver_id', user.id)
+        .eq('tour_date', today)
+        .neq('status', 'cancelled')
+        .order('status', { ascending: false }) // in_progress before scheduled
+        .limit(1)
+        .maybeSingle()
+      
+      if (data && data.status === 'in_progress') {
+        setActiveTourId(data.id)
+      }
+    } catch (error) {
+      console.error('Error loading active tour:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const isActive = (href: string) => {
     if (href === '/driver') return pathname === '/driver'
     return pathname.startsWith(href)
   }
+
+  // Check-in link changes based on active tour
+  const checkinHref = activeTourId ? `/driver/tours/${activeTourId}` : '/driver/checkin'
+  const checkinLabel = activeTourId ? t('driver.tour') : t('driver.checkin')
 
   return (
     <div className="h-screen flex flex-col bg-gray-50 overflow-hidden">
@@ -49,21 +85,38 @@ export default function DriverNav({ children }: { children: React.ReactNode }) {
       {/* Bottom Navigation */}
       <nav className="flex-none bg-white z-50">
         <div className="flex justify-around items-center px-2 py-2">
-          {navItems.map((item) => {
-            const active = isActive(item.href)
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`flex flex-col items-center justify-center py-2 px-2 min-w-[48px] ${
-                  active ? 'text-blue-600' : 'text-gray-500'
-                }`}
-              >
-                <span className="text-xl mb-1">{item.icon}</span>
-                <span className="text-xs">{t(item.labelKey)}</span>
-              </Link>
-            )
-          })}
+          {/* Tours */}
+          <Link
+            href="/driver"
+            className={`flex flex-col items-center justify-center py-2 px-2 min-w-[48px] ${
+              isActive('/driver') ? 'text-blue-600' : 'text-gray-500'
+            }`}
+          >
+            <span className="text-xl mb-1">🚌</span>
+            <span className="text-xs">{t('driver.tours')}</span>
+          </Link>
+          
+          {/* Check-in - Dynamic based on active tour */}
+          <Link
+            href={checkinHref}
+            className={`flex flex-col items-center justify-center py-2 px-2 min-w-[48px] ${
+              isActive(checkinHref) ? 'text-blue-600' : 'text-gray-500'
+            }`}
+          >
+            <span className="text-xl mb-1">🚗</span>
+            <span className="text-xs">{checkinLabel}</span>
+          </Link>
+          
+          {/* Profile */}
+          <Link
+            href="/driver/profile"
+            className={`flex flex-col items-center justify-center py-2 px-2 min-w-[48px] ${
+              isActive('/driver/profile') ? 'text-blue-600' : 'text-gray-500'
+            }`}
+          >
+            <span className="text-xl mb-1">👤</span>
+            <span className="text-xs">{t('driver.profile')}</span>
+          </Link>
         </div>
       </nav>
     </div>
