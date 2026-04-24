@@ -160,9 +160,21 @@ export default function CheckinPage() {
         .select('id, primary_contact_name, adult_pax, child_pax, infant_pax, hotel_name, pickup_location, pickup_time, checked_in, no_show, pickup_stop_id')
         .eq('tour_id', tourId)
       
+      const { data: checkinsData } = await supabase
+        .from('driver_checkins')
+        .select('pickup_stop_id, checkin_type')
+        .eq('tour_id', tourId)
+        .eq('checkin_type', 'pickup')
+      
+      const checkedInStopIds = new Set(checkinsData?.map(c => c.pickup_stop_id) || [])
+      
       if (resData) {
-        // Filter pending (both checked_in and no_show must be explicitly false/null)
-        const pending = resData.filter(r => r.checked_in !== true && r.no_show !== true)
+        // Filter: exclude checked_in, no_show, AND reservations at stops that have been checked in
+        const pending = resData.filter(r => {
+          if (r.checked_in === true || r.no_show === true) return false
+          if (r.pickup_stop_id && checkedInStopIds.has(r.pickup_stop_id)) return false
+          return true
+        })
         setReservations(pending)
         setPendingCount(pending.length)
       }
